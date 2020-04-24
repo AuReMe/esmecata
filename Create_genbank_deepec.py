@@ -24,12 +24,13 @@ cloudfile = "partitions/cloud.txt"                  #fichier PPanGGOLiN contenan
 persistentfile = "partitions/persistent.txt"        #fichier PPanGGOLiN contenant la partition persistent
 shellfile = "partitions/shell.txt"                  #fichier PPanGGOLiN contenant la partition shell
 deepecfile = "deepec_output/DeepEC_Result.txt"      #fichier contenant les annotations de DeepEC
+allgenesfile = "all_genes/all_genes.fna"            #fichier de sortie de la commande PPanGGOLiN write --allgenes
 
 
 
 ##FONCTION
 
-def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file)
+def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_genes_file)
 
     #Ouvrir chaque fichier txt contenant les listes de séquences d'intérêt
 
@@ -66,7 +67,7 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file)
     persistent_len = 0
     shell_len = 0
 
-    for seq_record in SeqIO.parse("all_genes/all_genes.fna", "fasta"):
+    for seq_record in SeqIO.parse(all_genes_file, "fasta"):
         if (seq_record.id + "\n" in cloudlines):
             cloudstring+=str(seq_record.seq)
             found_ec = [ec for (identifiant, ec) in ec_list if identifiant==seq_record.id]
@@ -137,4 +138,4 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file)
 
 
 
-Deepec_genbank(cloudfile, persistentfile, shellfile, deepecfile)
+Deepec_genbank(cloudfile, persistentfile, shellfile, deepecfile, allgenesfile)
