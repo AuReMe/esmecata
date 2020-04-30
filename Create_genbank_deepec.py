@@ -121,19 +121,19 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_gen
         if (seq_record.id + "\n" in cloudlines):
             cloudstring+=str(seq_record.seq)
             found_ec = [ec for (identifiant, ec) in ec_list if identifiant==seq_record.id]
-            cloud_eclist.append([cloud_len + 1, cloud_len + len(str(seq_record.seq)), found_ec, dictionaire_trad[seq_record.id]])
+            cloud_eclist.append([cloud_len + 1, cloud_len + len(str(seq_record.seq)), found_ec, dictionaire_trad[seq_record.id], seq_record.id])
             cloud_len += len(str(seq_record.seq))
            
         elif (seq_record.id + "\n" in persistentlines):
             persistentstring+=str(seq_record.seq)
             found_ec = [ec for (identifiant, ec) in ec_list if identifiant==seq_record.id]
-            persistent_eclist.append([persistent_len + 1, persistent_len + len(str(seq_record.seq)), found_ec, dictionaire_trad[seq_record.id] ])
+            persistent_eclist.append([persistent_len + 1, persistent_len + len(str(seq_record.seq)), found_ec, dictionaire_trad[seq_record.id], seq_record.id])
             persistent_len += len(str(seq_record.seq))
     
         elif (seq_record.id + "\n" in shelllines):
             shellstring+=str(seq_record.seq)
             found_ec = [ec for (identifiant, ec) in ec_list if identifiant==seq_record.id]
-            shell_eclist.append([shell_len + 1, shell_len + len(str(seq_record.seq)), found_ec, dictionaire_trad[seq_record.id]])
+            shell_eclist.append([shell_len + 1, shell_len + len(str(seq_record.seq)), found_ec, dictionaire_trad[seq_record.id], seq_record.id])
             shell_len += len(str(seq_record.seq))
 
        
@@ -156,7 +156,7 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_gen
         cloud_feature_cds = sf.SeqFeature(sf.FeatureLocation(i[0], i[1], +1), type = 'CDS')
         if i[2] != []:
             cloud_feature_cds.qualifiers['EC_number'] = [(ec.replace('ec:', '')).replace('\n','') for ec in i[2]]
-        cloud_feature_cds.qualifiers['locus_tag'] = i[1]
+        cloud_feature_cds.qualifiers['locus_tag'] = i[4]
         cloud_feature_cds.qualifiers['translation'] = i[3]
         cloud_record.features.append(cloud_feature_cds)
 
@@ -164,7 +164,7 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_gen
         persistent_feature_cds = sf.SeqFeature(sf.FeatureLocation(i[0], i[1], +1) , type = 'CDS')
         if i[2] != []:
             persistent_feature_cds.qualifiers['EC_number'] = [(ec.replace('ec:', '')).replace('\n','') for ec in i[2]]
-        persistent_feature_cds.qualifiers['locus_tag'] = i[1]
+        persistent_feature_cds.qualifiers['locus_tag'] = i[4]
         persistent_feature_cds.qualifiers['translation'] = i[3]
         persistent_record.features.append(persistent_feature_cds)
         
@@ -172,7 +172,7 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_gen
         shell_feature_cds = sf.SeqFeature(sf.FeatureLocation(i[0], i[1], +1), type = 'CDS')
         if i[2] != []:
             shell_feature_cds.qualifiers['EC_number'] = [(ec.replace('ec:', '')).replace('\n','') for ec in i[2]]
-        shell_feature_cds.qualifiers['locus_tag'] = i[1]
+        shell_feature_cds.qualifiers['locus_tag'] = i[4]
         shell_feature_cds.qualifiers['translation'] = i[3]
         shell_record.features.append(shell_feature_cds)
         
