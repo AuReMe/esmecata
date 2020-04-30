@@ -121,7 +121,7 @@ def Eggnog_Genbank(cloud_file, persistent_file, shell_file, all_genes_file, info
         for idec in cloud_ecidlist:
             if (seq_record.id in idec):
                 cloudstring+=str(seq_record.seq)
-                cloud_eclist.append([cloud_len, cloud_len + len(str(seq_record.seq)), idec[1], dictionaire_trad[idec[0]]])
+                cloud_eclist.append([cloud_len, cloud_len + len(str(seq_record.seq)), idec[1], dictionaire_trad[idec[0]], idec[0]])
                 cloud_len += len(str(seq_record.seq))
                 trouve = True
             
@@ -129,7 +129,7 @@ def Eggnog_Genbank(cloud_file, persistent_file, shell_file, all_genes_file, info
             for idec in shell_ecidlist:
                 if (seq_record.id in idec):
                     shellstring+=str(seq_record.seq)
-                    shell_eclist.append([shell_len, shell_len + len(str(seq_record.seq)), idec[1], dictionaire_trad[idec[0]]])
+                    shell_eclist.append([shell_len, shell_len + len(str(seq_record.seq)), idec[1], dictionaire_trad[idec[0]], idec[0]])
                     shell_len += len(str(seq_record.seq))
                     trouve = True
                 
@@ -137,7 +137,7 @@ def Eggnog_Genbank(cloud_file, persistent_file, shell_file, all_genes_file, info
                 for idec in persistent_ecidlist:
                     if (seq_record.id in idec):
                         persistentstring+=str(seq_record.seq)
-                        persistent_eclist.append([persistent_len, persistent_len + len(str(seq_record.seq)), idec[1], dictionaire_trad[idec[0]]])
+                        persistent_eclist.append([persistent_len, persistent_len + len(str(seq_record.seq)), idec[1], dictionaire_trad[idec[0]], idec[0]])
                         persistent_len += len(str(seq_record.seq))
                         trouve = True
 
@@ -161,7 +161,7 @@ def Eggnog_Genbank(cloud_file, persistent_file, shell_file, all_genes_file, info
         cloud_feature_cds = sf.SeqFeature(sf.FeatureLocation(i[0], i[1], +1), type = 'CDS')
         if i[2] != []:
             cloud_feature_cds.qualifiers['EC_number'] = [(ec.replace('ec:', '')).replace('\n','') for ec in i[2]]
-        cloud_feature_cds.qualifiers['locus_tag'] = i[1]
+        cloud_feature_cds.qualifiers['locus_tag'] = i[4]
         cloud_feature_cds.qualifiers['translation'] = i[3]
         cloud_record.features.append(cloud_feature_cds)
 
@@ -169,7 +169,7 @@ def Eggnog_Genbank(cloud_file, persistent_file, shell_file, all_genes_file, info
         persistent_feature_cds = sf.SeqFeature(sf.FeatureLocation(i[0], i[1], +1) , type = 'CDS')
         if i[2] != []:
             persistent_feature_cds.qualifiers['EC_number'] = [(ec.replace('ec:', '')).replace('\n','') for ec in i[2]]
-        persistent_feature_cds.qualifiers['locus_tag'] = i[1]
+        persistent_feature_cds.qualifiers['locus_tag'] = i[4]
         persistent_feature_cds.qualifiers['translation'] = i[3]
         persistent_record.features.append(persistent_feature_cds)
         
@@ -177,7 +177,7 @@ def Eggnog_Genbank(cloud_file, persistent_file, shell_file, all_genes_file, info
         shell_feature_cds = sf.SeqFeature(sf.FeatureLocation(i[0], i[1], +1), type = 'CDS')
         if i[2] != []:
             shell_feature_cds.qualifiers['EC_number'] = [(ec.replace('ec:', '')).replace('\n','') for ec in i[2]]
-        shell_feature_cds.qualifiers['locus_tag'] = i[1]
+        shell_feature_cds.qualifiers['locus_tag'] = i[4]
         shell_feature_cds.qualifiers['translation'] = i[3]
         shell_record.features.append(shell_feature_cds)
         
