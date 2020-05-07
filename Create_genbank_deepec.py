@@ -107,9 +107,8 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_gen
         
     dictionaire_trad = {}
 
-    info_prot_open = open(info_prot, 'r')
-    read_info_prot = [mylines for mylines in info_prot_open.readlines()]
-
+    for i in SeqIO.parse('all_prot_families/representative_gene_families.faa', 'fasta'):
+        dictionaire_trad[i.id] = i.seq
 
     for i in range(0, len(read_info_prot), 2):
         nom_gene = (read_info_prot[i].replace(">","")).replace("\n", "")
@@ -150,13 +149,22 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_gen
 
     #On crée les Features contenant les EC correspondant à chaque partition, puis on les ajoute aux SeqRecords
 
-
+    num_cloud = 0
+    num_persistent = 0
+    num_shell = 0
             
     for i in cloud_eclist:
         cloud_feature_cds = sf.SeqFeature(sf.FeatureLocation(i[0], i[1], +1), type = 'CDS')
         if i[2] != []:
             cloud_feature_cds.qualifiers['EC_number'] = [(ec.replace('ec:', '')).replace('\n','') for ec in i[2]]
-        cloud_feature_cds.qualifiers['locus_tag'] = i[4]
+        cloud_feature_cds.qualifiers['old_locus_tag'] = i[4]
+        
+        tag_part1=i[4][19:27]
+    
+    
+        cloud_feature_cds.qualifiers['locus_tag'] = "cloud_" + tag_part1 + str(num_cloud)
+        num_cloud += 1
+    
         cloud_feature_cds.qualifiers['translation'] = i[3]
         cloud_record.features.append(cloud_feature_cds)
 
@@ -164,7 +172,14 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_gen
         persistent_feature_cds = sf.SeqFeature(sf.FeatureLocation(i[0], i[1], +1) , type = 'CDS')
         if i[2] != []:
             persistent_feature_cds.qualifiers['EC_number'] = [(ec.replace('ec:', '')).replace('\n','') for ec in i[2]]
-        persistent_feature_cds.qualifiers['locus_tag'] = i[4]
+        persistent_feature_cds.qualifiers['old_locus_tag'] = i[4]
+    
+        tag_part1=i[4][19:27]
+
+    
+        persistent_feature_cds.qualifiers['locus_tag'] = "persistent_" + tag_part1 + str(num_persistent)
+        num_persistent += 1
+
         persistent_feature_cds.qualifiers['translation'] = i[3]
         persistent_record.features.append(persistent_feature_cds)
         
@@ -172,7 +187,13 @@ def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_gen
         shell_feature_cds = sf.SeqFeature(sf.FeatureLocation(i[0], i[1], +1), type = 'CDS')
         if i[2] != []:
             shell_feature_cds.qualifiers['EC_number'] = [(ec.replace('ec:', '')).replace('\n','') for ec in i[2]]
-        shell_feature_cds.qualifiers['locus_tag'] = i[4]
+        shell_feature_cds.qualifiers['old_locus_tag'] = i[4]
+        
+        tag_part1=i[4][19:27]
+    
+        shell_feature_cds.qualifiers['locus_tag'] = "shell_" + tag_part1 + str(num_shell)
+        num_shell += 1
+    
         shell_feature_cds.qualifiers['translation'] = i[3]
         shell_record.features.append(shell_feature_cds)
         
