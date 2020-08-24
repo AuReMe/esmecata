@@ -63,7 +63,7 @@ def create_taxonomic_data(species_name):
 
 
 
-def Eggnog_Genbank(cloud_file, persistent_file, shell_file, all_genes_file, info_prot, species_name)
+def Eggnog_Genbank(cloud_file, persistent_file, shell_file, all_genes_file, info_prot, species_name):
 
     #On classe les séquences listées dans le fichier fasta en 3 strings, selon qu'on retrouve leur identifiant dans le fichier cloud, persistent ou shell
 

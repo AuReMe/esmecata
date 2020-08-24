@@ -66,7 +66,7 @@ def create_taxonomic_data(species_name):
 
 
 
-def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_genes_file, info_prot, species_name)
+def Deepec_genbank(cloud_file, persistent_file, shell_file, deepec_file, all_genes_file, info_prot, species_name):
 
     #Ouvrir chaque fichier txt contenant les listes de séquences d'intérêt
 
