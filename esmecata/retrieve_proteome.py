@@ -8,6 +8,7 @@ import gzip
 
 from ete3 import NCBITaxa
 
+
 df = pd.read_excel('Example.xlsx')
 
 # Set index on the column containing the OTU name.
@@ -41,11 +42,22 @@ print('Find proteome ID associated to taxonomy')
 tax_ids = set(tax_ids)
 proteomes_ids = {}
 for tax_id in tax_ids:
-    http_str = 'https://www.uniprot.org/proteomes/?query=reference:yes+taxonomy:{0}&format=list'.format(tax_id)
+    http_str = 'https://www.uniprot.org/proteomes/?query=reference:yes+taxonomy:{0}&format=tab'.format(tax_id)
 
     response = requests.get(http_str)
-    proteomes = response.text.split('\n')
-    proteomes.remove('')
+    csvreader = csv.reader(response.text.splitlines(), delimiter='\t')
+
+    proteomes = []
+    # Avoid header.
+    next(csvreader)
+    for line in csvreader:
+        # Check that proteome has busco score.
+        if line[4] != '':
+            proteome = line[0]
+            busco_percentage = float(line[4].split(':')[1].split('%')[0])
+            completness = line [6]
+            if busco_percentage > 90 and completness == 'full':
+                proteomes.append(proteome)
 
     if len(proteomes) > 0 and len(proteomes) < 100:
         proteomes_ids[tax_id] = proteomes
