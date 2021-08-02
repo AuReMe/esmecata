@@ -1,4 +1,4 @@
 biopython
-ete
+ete3
 pandas
 requests
