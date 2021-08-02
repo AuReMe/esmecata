@@ -121,7 +121,7 @@ def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=90):
     if '.tsv' in input_folder:
         df = pd.read_csv(input_folder, sep='\t')
     if '.csv' in input_folder:
-        df = pd.read_csv(input_folder, sep=';')
+        df = pd.read_csv(input_folder, sep=',')
 
     # Set index on the column containing the OTU name.
     df.set_index('observation_name', inplace=True)
@@ -195,8 +195,8 @@ def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=90):
         if not os.path.exists(output_cluster):
             os.mkdir(output_cluster)
         for proteome in proteomes_ids[cluster][1]:
-            output_proteome = os.path.join(output_cluster, proteome+'.faa')
             input_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
+            output_proteome = os.path.join(output_cluster, proteome+'.faa')
             with gzip.open(input_proteome_file, 'rb') as f_in:
                 with open(output_proteome, 'wb') as f_out:
                     shutil.copyfileobj(f_in, f_out)
