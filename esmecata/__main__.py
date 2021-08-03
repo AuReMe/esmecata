@@ -59,7 +59,7 @@ def main():
         "--busco",
         dest="busco",
         required=False,
-        help="busco percentage between 0 and 100 (default 90)",
+        help="busco percentage between 0 and 100. This will remove all the proteomes without BSUCO score and the score before the selected percentage.",
         metavar="BUSCO")
 
     # subparsers
@@ -84,8 +84,6 @@ def main():
     args = parser.parse_args()
 
     if args.cmd == "proteomes":
-        if args.busco is None:
-            args.busco = 90
         retrieve_proteome(args.input, args.output, args.busco)
     elif args.cmd == "clustering":
         create_coreproteome(args.input, args.output)

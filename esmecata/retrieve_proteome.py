@@ -28,6 +28,7 @@ def associate_taxon_to_taxon_id(taxonomies, ncbi):
             for taxon in taxons:
                 taxon_translations = ncbi.get_name_translator([taxon])
                 if taxon_translations == {}:
+                    print('For {0}, no taxon ID has been found associated to the taxon "{1}" in the NCBI taxonomy of ete3.'.format(cluster, taxon))
                     taxon_translations = {taxon: ['not_found']}
                 taxon_ids.update(taxon_translations)
             invert_names = {v: k for k, vs in names.items() for v in vs }
@@ -64,7 +65,7 @@ def filter_taxon(json_cluster_taxons, ncbi):
 
     return json_cluster_taxons
 
-def find_proteomes_tax_ids(json_cluster_taxons, busco_percentage_keep):
+def find_proteomes_tax_ids(json_cluster_taxons, busco_percentage_keep=None):
     # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomy.
     # If there is more thant 100 proteomes we do not keep it because there is too many proteome.
     print('Find proteome ID associated to taxonomy')
@@ -85,19 +86,25 @@ def find_proteomes_tax_ids(json_cluster_taxons, busco_percentage_keep):
                     # Avoid header.
                     next(csvreader)
                     for line in csvreader:
+                        proteome = line[0]
+                        completness = line [6]
                         # Check that proteome has busco score.
-                        if line[4] != '':
-                            proteome = line[0]
-                            busco_percentage = float(line[4].split(':')[1].split('%')[0])
-                            completness = line [6]
-                            if busco_percentage > busco_percentage_keep and completness == 'full':
+                        if busco_percentage_keep:
+                            if line[4] != '':
+                                busco_percentage = float(line[4].split(':')[1].split('%')[0])
+                                if busco_percentage >= busco_percentage_keep and completness == 'full':
+                                    proteomes.append(proteome)
+                        else:
+                            if completness == 'full':
                                 proteomes.append(proteome)
 
                     if len(proteomes) > 0 and len(proteomes) < 100:
+                        print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(taxon, tax_name, len(proteomes)))
                         proteomes_ids[taxon] = {}
                         proteomes_ids[taxon] = (tax_id, proteomes)
                         if len(proteomes) == 1:
-                            single_proteomes[tax_name] = proteomes
+                            single_proteomes[taxon] = {}
+                            single_proteomes[taxon] = (tax_id, proteomes)
                         break
 
                 # Answer is empty no corresponding proteomes to the tax_id.
@@ -111,8 +118,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, busco_percentage_keep):
 
     return proteomes_ids, single_proteomes, tax_id_not_founds
 
-def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=90):
-    busco_percentage_keep = float(busco_percentage_keep)
+def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None):
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -190,8 +196,15 @@ def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=90):
     if not os.path.exists(result_folder):
         os.mkdir(result_folder)
 
+    result_single_folder = os.path.join(output_folder, 'result_single_proteome')
+    if not os.path.exists(result_single_folder):
+        os.mkdir(result_single_folder)
+
     for cluster in proteomes_ids:
-        output_cluster = os.path.join(result_folder, cluster)
+        if cluster in single_proteomes:
+            output_cluster = os.path.join(result_single_folder, cluster)
+        else:
+            output_cluster = os.path.join(result_folder, cluster)
         if not os.path.exists(output_cluster):
             os.mkdir(output_cluster)
         for proteome in proteomes_ids[cluster][1]:
