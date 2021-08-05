@@ -4,7 +4,7 @@ import subprocess
 
 from Bio import SeqIO
 
-def create_coreproteome(proteome_folder, output_folder):
+def create_coreproteome(proteome_folder, output_folder, nb_cpu):
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -44,7 +44,7 @@ def create_coreproteome(proteome_folder, output_folder):
         # Run mmmseqs to find rapidly protein clusters.
         if not os.path.exists(coreproteome_tmp_cluster):
             os.mkdir(coreproteome_tmp_cluster)
-        subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], coreproteome_tmp_cluster_output, coreproteome_tmp_cluster])
+        subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], coreproteome_tmp_cluster_output, coreproteome_tmp_cluster, '--threads', str(nb_cpu)])
 
         # Extract protein clusters.
         proteins_representatives = {}

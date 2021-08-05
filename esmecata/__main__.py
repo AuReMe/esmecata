@@ -61,6 +61,23 @@ def main():
         required=False,
         help="busco percentage between 0 and 100. This will remove all the proteomes without BSUCO score and the score before the selected percentage.",
         metavar="BUSCO")
+    parent_parser_taxadb = argparse.ArgumentParser(add_help=False)
+    parent_parser_taxadb.add_argument(
+        "--ignore-taxadb-update",
+        dest="ignore_taxadb_update",
+        help="If you have a not up-to-date version of NCBI taxonomy database with ete3, use this option to use this version and bypass the warning message.",
+        required=False,
+        action="store_true",
+        default=None)
+    parent_parser_c = argparse.ArgumentParser(add_help=False)
+    parent_parser_c.add_argument(
+        "-c",
+        "--cpu",
+        dest="cpu",
+        help="cpu number for multiprocessing",
+        required=False,
+        type=int,
+        default=1)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -72,21 +89,22 @@ def main():
         "proteomes",
         help="Download proteomes associated to taxon from Uniprot Proteomes.",
         parents=[
-            parent_parser_i_taxon, parent_parser_o, parent_parser_b
+            parent_parser_i_taxon, parent_parser_o, parent_parser_b,
+            parent_parser_taxadb
         ])
     clustering_parser = subparsers.add_parser(
         "clustering",
         help="Cluster proteins proteomes for a taxon into a single set of representative shared proteins.",
         parents=[
-            parent_parser_i_folder, parent_parser_o
+            parent_parser_i_folder, parent_parser_o, parent_parser_c
         ])
 
     args = parser.parse_args()
-
+    print(args)
     if args.cmd == "proteomes":
-        retrieve_proteome(args.input, args.output, args.busco)
+        retrieve_proteome(args.input, args.output, args.busco, args.ignore_taxadb_update)
     elif args.cmd == "clustering":
-        create_coreproteome(args.input, args.output)
+        create_coreproteome(args.input, args.output, args.cpu)
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ import gzip
 import json
 
 from collections import OrderedDict
-from ete3 import NCBITaxa
+from ete3 import NCBITaxa, is_taxadb_up_to_date
 
 def associate_taxon_to_taxon_id(taxonomies, ncbi):
     tax_id_names = {}
@@ -72,53 +72,84 @@ def find_proteomes_tax_ids(json_cluster_taxons, busco_percentage_keep=None):
     proteomes_ids = {}
     single_proteomes = {}
     tax_id_not_founds = {}
+    tax_id_founds = {}
     for taxon in json_cluster_taxons:
         for tax_name in reversed(json_cluster_taxons[taxon]):
             tax_id = json_cluster_taxons[taxon][tax_name][0]
-            if tax_id not in proteomes_ids:
-                http_str = 'https://www.uniprot.org/proteomes/?query=reference:yes+taxonomy:{0}&format=tab'.format(tax_id)
 
-                response = requests.get(http_str)
-                if response.text != '':
-                    csvreader = csv.reader(response.text.splitlines(), delimiter='\t')
+            # If tax_id has already been found use the corresponding proteomes without new requests.
+            if tax_id in tax_id_founds:
+                proteomes_ids[taxon] = (tax_id, tax_id_founds[tax_id])
+                if len(tax_id_founds[tax_id]) == 1:
+                    single_proteomes[taxon] = (tax_id, proteomes)
+                break
 
-                    proteomes = []
-                    # Avoid header.
-                    next(csvreader)
-                    for line in csvreader:
-                        proteome = line[0]
-                        completness = line [6]
-                        # Check that proteome has busco score.
-                        if busco_percentage_keep:
-                            if line[4] != '':
-                                busco_percentage = float(line[4].split(':')[1].split('%')[0])
-                                if busco_percentage >= busco_percentage_keep and completness == 'full':
-                                    proteomes.append(proteome)
-                        else:
-                            if completness == 'full':
-                                proteomes.append(proteome)
+            # If tax_id has not been found with a request do not try a new request with the same tax_id.
+            if tax_id in tax_id_not_founds:
+                continue
 
-                    if len(proteomes) > 0 and len(proteomes) < 100:
-                        print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(taxon, tax_name, len(proteomes)))
-                        proteomes_ids[taxon] = {}
-                        proteomes_ids[taxon] = (tax_id, proteomes)
-                        if len(proteomes) == 1:
-                            single_proteomes[taxon] = {}
-                            single_proteomes[taxon] = (tax_id, proteomes)
-                        break
+            # Find proteomes associated with taxon.
+            # Take reference proteomes with "reference:yes".
+            # Avoid redundant and excluded proteomes with "redundant%3Ano+excluded%3Ano".
+            # Use "format=tab" to easily handle the ouput.
+            http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+reference:yes+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
 
-                # Answer is empty no corresponding proteomes to the tax_id.
-                else:
-                    if tax_id not in tax_id_not_founds:
-                        tax_id_not_founds[tax_id] = [tax_name]
-                    else:
-                        tax_id_not_founds[tax_id].append(tax_name)
-                    continue
+            response = requests.get(http_str)
+            if response.text == '':
                 time.sleep(1)
+                print('{0}: No reference proteomes found for {1} try non-reference proteomes.'.format(taxon, tax_id))
+                http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
+                response = requests.get(http_str)
+            if response.text != '':
+                csvreader = csv.reader(response.text.splitlines(), delimiter='\t')
+
+                proteomes = []
+                # Avoid header.
+                next(csvreader)
+                for line in csvreader:
+                    proteome = line[0]
+                    completness = line [6]
+                    # Check that proteome has busco score.
+                    if busco_percentage_keep:
+                        if line[4] != '':
+                            busco_percentage = float(line[4].split(':')[1].split('%')[0])
+                            if busco_percentage >= busco_percentage_keep and completness == 'full':
+                                proteomes.append(proteome)
+                    else:
+                        if completness == 'full':
+                            proteomes.append(proteome)
+                
+                if len(proteomes) > 0 and len(proteomes) < 100:
+                    print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(taxon, tax_name, len(proteomes)))
+                    proteomes_ids[taxon] = (tax_id, proteomes)
+                    tax_id_founds[tax_id] = proteomes
+                    if len(proteomes) == 1:
+                        single_proteomes[taxon] = (tax_id, proteomes)
+                    break
+
+            # Answer is empty no corresponding proteomes to the tax_id.
+            else:
+                if tax_id not in tax_id_not_founds:
+                    tax_id_not_founds[tax_id] = [tax_name]
+                else:
+                    tax_id_not_founds[tax_id].append(tax_name)
+                continue
+            time.sleep(1)
 
     return proteomes_ids, single_proteomes, tax_id_not_founds
 
-def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None):
+def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None):
+    if is_taxadb_up_to_date() is False:
+        print('''WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. Update it using:
+        from ete3 import NCBITaxa
+        ncbi = NCBITaxa()
+        ncbi.update_taxonomy_database()''')
+        if ignore_taxadb_update is None:
+            print('If you want to stil use esmecata with the old taxonomy database use the option --ignore-taxadb-update/ignore_taxadb_update.')
+            return
+        else:
+            print('--ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
+
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
