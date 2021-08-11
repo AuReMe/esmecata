@@ -5,6 +5,7 @@ import pkg_resources
 
 from esmecata.retrieve_proteome import retrieve_proteome
 from esmecata.coreproteome import create_coreproteome
+from esmecata.function import annotate_proteins
 
 VERSION = pkg_resources.get_distribution("metage2metabo").version
 
@@ -98,6 +99,12 @@ def main():
         parents=[
             parent_parser_i_folder, parent_parser_o, parent_parser_c
         ])
+    annotation_parser = subparsers.add_parser(
+        "annotation",
+        help="Retrieve protein annotations from Uniprot.",
+        parents=[
+            parent_parser_i_folder, parent_parser_o, parent_parser_c
+        ])
 
     args = parser.parse_args()
     print(args)
@@ -105,7 +112,8 @@ def main():
         retrieve_proteome(args.input, args.output, args.busco, args.ignore_taxadb_update)
     elif args.cmd == "clustering":
         create_coreproteome(args.input, args.output, args.cpu)
-
+    elif args.cmd == "annotation":
+        annotate_proteins(args.input, args.output, args.cpu)
 
 if __name__ == "__main__":
     main()

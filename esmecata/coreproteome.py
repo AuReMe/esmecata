@@ -66,11 +66,14 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu):
         # To keep a cluster, we have to find have at least one protein of each proteome of the OTU.
         rep_prot_to_keeps = []
         rep_prot_organims = {}
-        for rep_protein in proteins_representatives:
-            if len(proteins_representatives[rep_protein]) > 1:
-                    rep_prot_organims[rep_protein] = set([organism_prots[prot] for prot in proteins_representatives[rep_protein]])
-                    if len(rep_prot_organims[rep_protein]) == len(cluster_fasta_files[cluster]):
-                        rep_prot_to_keeps.append(rep_protein)
+        with open(output_folder+'/coreproteome.tsv', 'w') as output_file:
+            csvwriter = csv.writer(output_file, delimiter='\t')
+            for rep_protein in proteins_representatives:
+                if len(proteins_representatives[rep_protein]) > 1:
+                        rep_prot_organims[rep_protein] = set([organism_prots[prot] for prot in proteins_representatives[rep_protein]])
+                        if len(rep_prot_organims[rep_protein]) == len(cluster_fasta_files[cluster]):
+                            csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
+                            rep_prot_to_keeps.append(rep_protein)
 
         # Create BioPtyhon records with the representative proteins kept.
         new_records = []
