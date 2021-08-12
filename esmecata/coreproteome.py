@@ -63,10 +63,14 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu):
             for record in SeqIO.parse(fasta_file, 'fasta'):
                 organism_prots[record.id.split('|')[1]] = fasta_file
 
+        coreproteome_cluster = os.path.join(output_folder, 'reference_proteins')
+        if not os.path.exists(coreproteome_cluster):
+            os.mkdir(coreproteome_cluster)
+
         # To keep a cluster, we have to find have at least one protein of each proteome of the OTU.
         rep_prot_to_keeps = []
         rep_prot_organims = {}
-        with open(output_folder+'/coreproteome.tsv', 'w') as output_file:
+        with open(coreproteome_cluster+'/'+cluster+'_coreproteome.tsv', 'w') as output_file:
             csvwriter = csv.writer(output_file, delimiter='\t')
             for rep_protein in proteins_representatives:
                 if len(proteins_representatives[rep_protein]) > 1:

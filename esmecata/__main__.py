@@ -107,7 +107,7 @@ def main():
         ])
 
     args = parser.parse_args()
-    print(args)
+
     if args.cmd == "proteomes":
         retrieve_proteome(args.input, args.output, args.busco, args.ignore_taxadb_update)
     elif args.cmd == "clustering":
