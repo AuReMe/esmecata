@@ -7,7 +7,7 @@ from esmecata.retrieve_proteome import retrieve_proteome
 from esmecata.coreproteome import create_coreproteome
 from esmecata.function import annotate_proteins
 
-VERSION = pkg_resources.get_distribution("metage2metabo").version
+VERSION = pkg_resources.get_distribution("esmecata").version
 
 MESSAGE = """
 From taxonomy to metabolism
