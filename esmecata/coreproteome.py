@@ -1,15 +1,21 @@
 import os
 import csv
+import sys
 import subprocess
+
+from esmecata.utils import is_valid_path, is_valid_path
 
 from Bio import SeqIO
 
-def create_coreproteome(proteome_folder, output_folder, nb_cpu):
+def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold):
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
     # Use the result folder created by retrieve_proteome.py.
     result_folder = os.path.join(proteome_folder, 'result')
+    if not is_valid_path(result_folder):
+        print(f"Missing output from esmecata proteomes in {result_folder}.")
+        sys.exit(1)
     cluster_fasta_files = {}
     for cluster in os.listdir(result_folder):
         result_cluster_folder = os.path.join(result_folder, cluster)
@@ -75,7 +81,7 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu):
             for rep_protein in proteins_representatives:
                 if len(proteins_representatives[rep_protein]) > 1:
                         rep_prot_organims[rep_protein] = set([organism_prots[prot] for prot in proteins_representatives[rep_protein]])
-                        if len(rep_prot_organims[rep_protein]) == len(cluster_fasta_files[cluster]):
+                        if len(rep_prot_organims[rep_protein]) >= clust_threshold * len(cluster_fasta_files[cluster]):
                             csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
                             rep_prot_to_keeps.append(rep_protein)
 

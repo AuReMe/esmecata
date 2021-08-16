@@ -6,6 +6,7 @@ import pkg_resources
 from esmecata.retrieve_proteome import retrieve_proteome
 from esmecata.coreproteome import create_coreproteome
 from esmecata.function import annotate_proteins
+from esmecata.utils import range_limited_float_type
 
 VERSION = pkg_resources.get_distribution("esmecata").version
 
@@ -60,7 +61,7 @@ def main():
         "--busco",
         dest="busco",
         required=False,
-        help="busco percentage between 0 and 100. This will remove all the proteomes without BSUCO score and the score before the selected percentage.",
+        help="busco percentage between 0 and 100. This will remove all the proteomes without BUSCO score and the score before the selected percentage.",
         metavar="BUSCO")
     parent_parser_taxadb = argparse.ArgumentParser(add_help=False)
     parent_parser_taxadb.add_argument(
@@ -78,6 +79,15 @@ def main():
         help="cpu number for multiprocessing",
         required=False,
         type=int,
+        default=1)
+    parent_parser_thr = argparse.ArgumentParser(add_help=False)
+    parent_parser_thr.add_argument(
+        "-t",
+        "--threshold",
+        dest="threshold_clustering",
+        help="proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly",
+        required=False,
+        type=range_limited_float_type,
         default=1)
 
     # subparsers
@@ -97,7 +107,7 @@ def main():
         "clustering",
         help="Cluster proteins proteomes for a taxon into a single set of representative shared proteins.",
         parents=[
-            parent_parser_i_folder, parent_parser_o, parent_parser_c
+            parent_parser_i_folder, parent_parser_o, parent_parser_c, parent_parser_thr
         ])
     annotation_parser = subparsers.add_parser(
         "annotation",
@@ -111,7 +121,7 @@ def main():
     if args.cmd == "proteomes":
         retrieve_proteome(args.input, args.output, args.busco, args.ignore_taxadb_update)
     elif args.cmd == "clustering":
-        create_coreproteome(args.input, args.output, args.cpu)
+        create_coreproteome(args.input, args.output, args.cpu, args.threshold_clustering)
     elif args.cmd == "annotation":
         annotate_proteins(args.input, args.output, args.cpu)
 
