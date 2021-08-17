@@ -4,41 +4,6 @@ import os
 import urllib.parse
 import urllib.request
 
-def old_annotation_sparql_query(missing_proteins):
-    """
-    Not used and deprecated.
-    """
-    from SPARQLWrapper import SPARQLWrapper, JSON
-
-    uniprot_sparql_endpoint = 'https://sparql.uniprot.org/sparql'
-    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
-    missing_proteins_query = ['uniprotkb:'+prot_id for prot_id in missing_proteins]
-
-    """
-    PREFIX up: <http://purl.uniprot.org/core/>
-    PREFIX rh: <http://rdf.rhea-db.org/>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX uniprotkb: <http://purl.uniprot.org/uniprot/>
-                SELECT DISTINCT ?protein ?enzyme WHERE {{
-                    # ECO 269 is experimental evidence
-                    BIND (<http://purl.obolibrary.org/obo/ECO_0000269> as ?evidence)
-                    ?protein a up:Protein .
-                    ?protein up:reviewed true.
-                    ?protein up:enzyme ?enzyme .
-                    [] a rdf:Statement ;
-                            rdf:subject ?protein ;
-                            rdf:predicate up:enzyme ;
-                            rdf:object ?enzyme ;
-                            up:attribution ?attribution .
-                    ?attribution up:evidence ?evidence .
-    VALUES ?protein {{ {0} }} 
-    }}""".format()
-
-    sparql.setQuery(missing_proteins_query)
-
-    # Parse output.
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
 
 def query_uniprot_to_retrieve_function(protein_queries, output_dict):
     url = 'https://www.uniprot.org/uploadlists/'
@@ -70,9 +35,9 @@ def query_uniprot_to_retrieve_function(protein_queries, output_dict):
             review = False
         go_result = go_pattern.findall(line[3])
         gos = ['GO:'+ go_term for go_term in go_result]
-        ec_numbers = line[4].split('; ')
-        interpros =  line[5].split('; ')
-        rhea_ids = line[6].split('; ')
+        ec_numbers = [ec for ec in line[4].split('; ') if ec != '']
+        interpros =  [interpro for interpro in line[5].split('; ') if interpro != '']
+        rhea_ids = [rhea_id for rhea_id in line[6].split('; ') if rhea_id != '']
         gene_name = line[7]
         results[line[0]] = [protein_name, review, gos, ec_numbers, interpros, rhea_ids, gene_name]
         output_dict.update(results)
@@ -89,88 +54,89 @@ def chunks(lst, n):
 def annotate_coreproteome(input_folder, output_folder):
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
-    reference_protein = os.path.join(input_folder, 'reference_proteins')
-    for input_file in os.listdir(reference_protein):
-            base_file = os.path.basename(input_file)
-            base_filename = os.path.splitext(base_file)[0]
-            proteins = []
-            reference_proteins = {}
-            reference_protein_list_file = os.path.join(reference_protein, input_file)
-            with open(reference_protein_list_file, 'r') as input_file:
-                csvreader = csv.reader(input_file, delimiter='\t')
-                for line in csvreader:
-                    proteins.extend(line)
-                    reference_proteins[line[0]] = line[1:]
 
-            set_proteins = list(set(proteins))
+    reference_protein_path = os.path.join(input_folder, 'reference_proteins')
+    for input_file in os.listdir(reference_protein_path):
+        base_file = os.path.basename(input_file)
+        base_filename = os.path.splitext(base_file)[0]
+        proteins = []
+        reference_protein_list_file = os.path.join(reference_protein_path, input_file)
 
-            output_dict = {}
-            if len(set_proteins) < 20000:
-                protein_queries = ' '.join(set_proteins)
+        reference_proteins = {}
+        with open(reference_protein_list_file, 'r') as input_file:
+            csvreader = csv.reader(input_file, delimiter='\t')
+            for line in csvreader:
+                proteins.extend(line)
+                reference_proteins[line[0]] = line[1:]
 
-                query_uniprot_to_retrieve_function(protein_queries, output_dict)
-            else:
-                protein_chunks = chunks(proteins, 20000)
-                for chunk in protein_chunks:
-                    protein_queries = ' '.join(chunk)
-                    output_dict = query_uniprot_to_retrieve_function(protein_queries, output_dict)
+        set_proteins = list(set(proteins))
 
-            annotation_folder = os.path.join(output_folder, 'annotation')
-            if not os.path.exists(annotation_folder):
-                os.mkdir(annotation_folder)
-            annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
-            with open(annotation_file, 'w') as output_tsv:
-                csvwriter = csv.writer(output_tsv, delimiter='\t')
-                csvwriter.writerow(['protein_id', 'protein_name', 'review', 'gos', 'ecs', 'interpros', 'rhea_ids', 'gene_name'])
-                for protein in output_dict:
-                    protein_name = output_dict[protein][0]
-                    protein_review_satus = str(output_dict[protein][1])
-                    go_tersm = ','.join(output_dict[protein][2])
-                    ec_numbers = ','.join(output_dict[protein][3])
-                    interpros = ','.join(output_dict[protein][4])
-                    rhea_ids = ','.join(output_dict[protein][5])
-                    gene_name = output_dict[protein][6]
-                    csvwriter.writerow([protein, protein_name, protein_review_satus, go_tersm, ec_numbers, interpros, rhea_ids, gene_name])
+        output_dict = {}
+        if len(set_proteins) < 20000:
+            protein_queries = ' '.join(set_proteins)
 
-            protein_annotations = {}
-            for reference_protein in reference_proteins:
-                gos = set()
-                ecs = set()
-                pubmeds = set()
-                gene_name = ''
-                for protein in reference_proteins[reference_protein]:
-                    if protein in output_dict:
-                        if output_dict[protein][2] != ['']:
-                            gos.update(set(output_dict[protein][2]))
-                        if output_dict[protein][3] != ['']:
-                            ecs.update(set(output_dict[protein][3]))
-                        if output_dict[protein][6] != '':
-                            gene_name = output_dict[protein][6]
-                protein_annotations[reference_protein] = [output_dict[protein][0], gos, ecs, gene_name]
+            query_uniprot_to_retrieve_function(protein_queries, output_dict)
+        else:
+            protein_chunks = chunks(proteins, 20000)
+            for chunk in protein_chunks:
+                protein_queries = ' '.join(chunk)
+                output_dict = query_uniprot_to_retrieve_function(protein_queries, output_dict)
 
-            annotation_reference_folder = os.path.join(output_folder, 'annotation_reference')
-            if not os.path.exists(annotation_reference_folder):
-                os.mkdir(annotation_reference_folder)
-            annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
-            with open(annotation_reference_file, 'w') as output_tsv:
-                csvwriter = csv.writer(output_tsv, delimiter='\t')
-                csvwriter.writerow(['protein', 'GO', 'EC'])
-                for protein in protein_annotations:
-                    csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][0])), ','.join(list(protein_annotations[protein][1]))])
+        annotation_folder = os.path.join(output_folder, 'annotation')
+        if not os.path.exists(annotation_folder):
+            os.mkdir(annotation_folder)
+        annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
+        with open(annotation_file, 'w') as output_tsv:
+            csvwriter = csv.writer(output_tsv, delimiter='\t')
+            csvwriter.writerow(['protein_id', 'protein_name', 'review', 'gos', 'ecs', 'interpros', 'rhea_ids', 'gene_name'])
+            for protein in output_dict:
+                protein_name = output_dict[protein][0]
+                protein_review_satus = str(output_dict[protein][1])
+                go_tersm = ','.join(output_dict[protein][2])
+                ec_numbers = ','.join(output_dict[protein][3])
+                interpros = ','.join(output_dict[protein][4])
+                rhea_ids = ','.join(output_dict[protein][5])
+                gene_name = output_dict[protein][6]
+                csvwriter.writerow([protein, protein_name, protein_review_satus, go_tersm, ec_numbers, interpros, rhea_ids, gene_name])
 
-            """
-            with open(output_folder+'/diff_annotation_reference_protein.tsv', 'w') as output_tsv:
-                csvwriter = csv.writer(output_tsv, delimiter='\t')
-                csvwriter.writerow(['protein', 'GO', 'EC'])
-                for protein in protein_annotations:
-                    csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][0])), ','.join(list(output_dict[protein][3])), ','.join(list(protein_annotations[protein][1])), ','.join(list(output_dict[protein][4]))])
-            """
+        protein_annotations = {}
+        for reference_protein in reference_proteins:
+            gos = set()
+            ecs = set()
+            gene_name = ''
+            for protein in reference_proteins[reference_protein]:
+                if protein in output_dict:
+                    if output_dict[protein][2] != []:
+                        gos.update(set(output_dict[protein][2]))
+                    if output_dict[protein][3] != []:
+                        ecs.update(set(output_dict[protein][3]))
+                    if output_dict[protein][6] != '':
+                        gene_name = output_dict[protein][6]
+            protein_annotations[reference_protein] = [output_dict[protein][0], gos, ecs, gene_name]
+  
+        annotation_reference_folder = os.path.join(output_folder, 'annotation_reference')
+        if not os.path.exists(annotation_reference_folder):
+            os.mkdir(annotation_reference_folder)
+        annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
+        with open(annotation_reference_file, 'w') as output_tsv:
+            csvwriter = csv.writer(output_tsv, delimiter='\t')
+            csvwriter.writerow(['protein', 'GO', 'EC'])
+            for protein in protein_annotations:
+                csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][0])), ','.join(list(protein_annotations[protein][1]))])
 
-            pathologic_folder = os.path.join(output_folder, 'pathologic')
-            if not os.path.exists(pathologic_folder):
-                os.mkdir(pathologic_folder)
-            pathologic_file = os.path.join(pathologic_folder, base_filename+'.pf')
-            create_pathologic(base_filename, protein_annotations, set_proteins, pathologic_file)
+        """
+        with open(output_folder+'/diff_annotation_reference_protein.tsv', 'w') as output_tsv:
+            csvwriter = csv.writer(output_tsv, delimiter='\t')
+            csvwriter.writerow(['protein', 'GO', 'EC'])
+            for protein in protein_annotations:
+                csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][0])), ','.join(list(output_dict[protein][3])), ','.join(list(protein_annotations[protein][1])), ','.join(list(output_dict[protein][4]))])
+        """
+
+        pathologic_folder = os.path.join(output_folder, 'pathologic')
+        if not os.path.exists(pathologic_folder):
+            os.mkdir(pathologic_folder)
+        pathologic_file = os.path.join(pathologic_folder, base_filename+'.pf')
+        create_pathologic(base_filename, protein_annotations, set_proteins, pathologic_file)
 
 def create_pathologic(base_filename, protein_annotations, protein_set, pathologic_output_file):
     with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:
@@ -182,6 +148,8 @@ def create_pathologic(base_filename, protein_annotations, protein_set, pathologi
                 element_file.write('ID\t' + protein + '\n')
                 if protein_annotations[protein][3] != '':
                     element_file.write('NAME\t' + protein_annotations[protein][3] + '\n')
+                else:
+                    element_file.write('NAME\t' + protein + '\n')
                 if protein_annotations[protein][0] != '':
                     element_file.write('FUNCTION\t' + protein_annotations[protein][0] + '\n')
                 element_file.write('PRODUCT-TYPE\tP' + '\n')

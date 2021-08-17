@@ -1,14 +1,10 @@
-
 import argparse
-
-import pkg_resources
 
 from esmecata.retrieve_proteome import retrieve_proteome
 from esmecata.coreproteome import create_coreproteome
 from esmecata.function import annotate_proteins
 from esmecata.utils import range_limited_float_type
-
-VERSION = pkg_resources.get_distribution("esmecata").version
+from esmecata import __version__ as VERSION
 
 MESSAGE = """
 From taxonomy to metabolism
@@ -37,13 +33,22 @@ def main():
         help="input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomy (separated by ;)",
         metavar="INPUT_FILE")
 
-    parent_parser_i_folder = argparse.ArgumentParser(add_help=False)
-    parent_parser_i_folder.add_argument(
+    parent_parser_i_clustering_folder = argparse.ArgumentParser(add_help=False)
+    parent_parser_i_clustering_folder.add_argument(
         "-i",
         "--input",
         dest="input",
         required=True,
         help="This input folder of clustering is the output folder of proteomes command",
+        metavar="INPUT_DIR")
+
+    parent_parser_i_annotation_folder = argparse.ArgumentParser(add_help=False)
+    parent_parser_i_annotation_folder.add_argument(
+        "-i",
+        "--input",
+        dest="input",
+        required=True,
+        help="This input folder of annotation is the output folder of clustering command",
         metavar="INPUT_DIR")
 
     parent_parser_o = argparse.ArgumentParser(add_help=False)
@@ -107,13 +112,13 @@ def main():
         "clustering",
         help="Cluster proteins proteomes for a taxon into a single set of representative shared proteins.",
         parents=[
-            parent_parser_i_folder, parent_parser_o, parent_parser_c, parent_parser_thr
+            parent_parser_i_clustering_folder, parent_parser_o, parent_parser_c, parent_parser_thr
         ])
     annotation_parser = subparsers.add_parser(
         "annotation",
         help="Retrieve protein annotations from Uniprot.",
         parents=[
-            parent_parser_i_folder, parent_parser_o, parent_parser_c
+            parent_parser_i_annotation_folder, parent_parser_o, parent_parser_c
         ])
 
     args = parser.parse_args()
