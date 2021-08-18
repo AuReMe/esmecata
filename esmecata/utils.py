@@ -1,7 +1,8 @@
 # useful functions for the package
 
-import os
 import argparse
+import os
+import urllib.request
 
 MIN_VAL = 0
 MAX_VAL = 1
@@ -70,3 +71,28 @@ def is_valid_dir(dirpath):
             return False
     else:
         return True
+
+def get_uniprot_release():
+    """Get the release version and date of Uniprot and Trembl.
+
+    Returns:
+        dict: metadata of Uniprot release
+    """
+    uniprot_releases = {}
+
+    # Get Uniprot release version
+    uniprot_response = urllib.request.urlopen('https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/reldate.txt')
+    uniprot_lines = uniprot_response.readlines()
+    uniprot_release_number = uniprot_lines[0].decode('utf-8').split(' ')[3].replace('\n','')
+    swissprot_release_number = uniprot_lines[1].decode('utf-8').split(' ')[2].replace('\n','')
+    swissprot_release_date = uniprot_lines[1].decode('utf-8').split(' ')[4].replace('\n','')
+    trembl_release_number = uniprot_lines[2].decode('utf-8').split(' ')[2].replace('\n','')
+    trembl_release_date = uniprot_lines[2].decode('utf-8').split(' ')[4].replace('\n','')
+
+    uniprot_releases['uniprot_release'] = uniprot_release_number
+    uniprot_releases['swissprot_release_number'] = swissprot_release_number
+    uniprot_releases['swissprot_release_date'] = swissprot_release_date
+    uniprot_releases['trembl_release_number'] = trembl_release_number
+    uniprot_releases['trembl_release_date'] = trembl_release_date
+
+    return uniprot_releases

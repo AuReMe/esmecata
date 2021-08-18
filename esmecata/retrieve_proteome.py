@@ -1,14 +1,17 @@
-import pandas as pd
-import time
-import requests
-import os
 import csv
-import shutil
 import gzip
 import json
+import math
+import os
+import pandas as pd
+import random
+import requests
+import shutil
+import time
 
 from collections import OrderedDict
 from ete3 import NCBITaxa, is_taxadb_up_to_date
+from esmecata import utils
 
 def associate_taxon_to_taxon_id(taxonomies, ncbi):
     tax_id_names = {}
@@ -65,7 +68,7 @@ def filter_taxon(json_cluster_taxons, ncbi):
 
     return json_cluster_taxons
 
-def find_proteomes_tax_ids(json_cluster_taxons, busco_percentage_keep=None):
+def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None):
     # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomy.
     # If there is more thant 100 proteomes we do not keep it because there is too many proteome.
     print('Find proteome ID associated to taxonomy')
@@ -104,27 +107,80 @@ def find_proteomes_tax_ids(json_cluster_taxons, busco_percentage_keep=None):
                 csvreader = csv.reader(response.text.splitlines(), delimiter='\t')
 
                 proteomes = []
+                organism_ids = {}
                 # Avoid header.
                 next(csvreader)
                 for line in csvreader:
                     proteome = line[0]
                     completness = line [6]
+                    org_tax_id = line[2]
+
                     # Check that proteome has busco score.
                     if busco_percentage_keep:
                         if line[4] != '':
                             busco_percentage = float(line[4].split(':')[1].split('%')[0])
                             if busco_percentage >= busco_percentage_keep and completness == 'full':
                                 proteomes.append(proteome)
+                                if org_tax_id not in organism_ids:
+                                    organism_ids[org_tax_id] = [proteome]
+                                else:
+                                    organism_ids[org_tax_id].append(proteome)
                     else:
                         if completness == 'full':
                             proteomes.append(proteome)
-                
+                            if org_tax_id not in organism_ids:
+                                organism_ids[org_tax_id] = [proteome]
+                            else:
+                                organism_ids[org_tax_id].append(proteome)
+
                 if len(proteomes) > 0 and len(proteomes) < 100:
                     print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(taxon, tax_name, len(proteomes)))
                     proteomes_ids[taxon] = (tax_id, proteomes)
                     tax_id_founds[tax_id] = proteomes
                     if len(proteomes) == 1:
                         single_proteomes[taxon] = (tax_id, proteomes)
+                    break
+
+                elif len(proteomes) >= 100:
+                    print('More than 99 proteomes associated to the taxa {0} associated to {1}, esmecata will randomly select around 100 proteomes with respect to the taxonomy proportion.'.format(taxon, tax_name))
+                    tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
+
+                    # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
+                    childs = {}
+                    for parent_node in tree.get_children():
+                        parent_tax_id = str(parent_node.taxid)
+                        if parent_node.get_descendants() != []:
+                            for child_node in parent_node.get_descendants():
+                                child_tax_id = str(child_node.taxid)
+                                if parent_tax_id not in childs:
+                                    if child_tax_id in organism_ids:
+                                        childs[parent_tax_id] = organism_ids[child_tax_id]
+                                else:
+                                    if child_tax_id in organism_ids:
+                                        childs[parent_tax_id].extend(organism_ids[child_tax_id])
+                        else:
+                            if parent_tax_id in organism_ids:
+                                childs[parent_tax_id] = organism_ids[parent_tax_id]
+                            else:
+                                childs[parent_tax_id].extend(organism_ids[parent_tax_id])
+
+                    # For each direct descendant taxon, compute the number of proteomes in their childrens.
+                    elements = [v for k,v in childs.items()]
+                    elements_counts = [len(element) for element in elements]
+                    # Compute the proportion of proteomes for each direct descendant taxon compare to the total number of proteomes in all the descendant taxons.
+                    percentages = [(i/sum(elements_counts))*100  for i in elements_counts]
+                    # Can be superior to 100 if there is a lot of data with around 0.xxx percentage.
+                    percentages_round = [math.ceil(percentage) if percentage < 1 else math.floor(percentage) for percentage in percentages]
+
+                    # Choose randomly a number of proteomes corresponding to the computed percentage.
+                    all_proteomes = []
+                    for index, element in enumerate(elements):
+                        percentage_to_keep = percentages_round[index]
+                        proteomes_to_keep = random.sample(element, percentage_to_keep)
+                        all_proteomes.extend(proteomes_to_keep)
+                    proteomes_ids[taxon] = (tax_id, all_proteomes)
+                    tax_id_founds[tax_id] = all_proteomes
+                    print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(taxon, tax_name, len(all_proteomes)))
                     break
 
             # Answer is empty no corresponding proteomes to the tax_id.
@@ -137,6 +193,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, busco_percentage_keep=None):
             time.sleep(1)
 
     return proteomes_ids, single_proteomes, tax_id_not_founds
+
 
 def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None):
     if is_taxadb_up_to_date() is False:
@@ -178,7 +235,7 @@ def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None, i
     with open(json_log, 'w') as ouput_file:
         json.dump(json_cluster_taxons, ouput_file, indent=4)
 
-    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, busco_percentage_keep)
+    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep)
 
     # Write for each taxon ID the proteomes found.
     proteome_tax_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
@@ -219,6 +276,13 @@ def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None, i
         with open(output_proteome_file, 'wb') as f:
             f.write(proteome_response.content)
         time.sleep(1)
+
+    # Download Uniprot metadata and create a json file containing them.
+    uniprot_releases = utils.get_uniprot_release()
+
+    uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata.json')
+    with open(uniprot_metadata_file, 'w') as ouput_file:
+        json.dump(uniprot_releases, ouput_file, indent=4)
 
     print('Creating result folder')
     # Create a result folder which contains one sub-folder per OTU.

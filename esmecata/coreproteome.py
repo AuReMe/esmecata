@@ -1,11 +1,11 @@
-import os
 import csv
-import sys
+import os
 import subprocess
-
-from esmecata.utils import is_valid_path, is_valid_path
+import sys
 
 from Bio import SeqIO
+
+from esmecata.utils import is_valid_path, is_valid_path
 
 def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold):
     if not os.path.exists(output_folder):

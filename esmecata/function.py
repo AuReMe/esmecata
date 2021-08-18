@@ -1,9 +1,11 @@
 import csv
-import re
+import json
 import os
+import re
 import urllib.parse
 import urllib.request
 
+from esmecata import utils
 
 def query_uniprot_to_retrieve_function(protein_queries, output_dict):
     url = 'https://www.uniprot.org/uploadlists/'
@@ -54,6 +56,13 @@ def chunks(lst, n):
 def annotate_coreproteome(input_folder, output_folder):
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
+
+    # Download Uniprot metadata and create a json file containing them.
+    uniprot_releases = utils.get_uniprot_release()
+
+    uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata.json')
+    with open(uniprot_metadata_file, 'w') as ouput_file:
+        json.dump(uniprot_releases, ouput_file, indent=4)
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
     for input_file in os.listdir(reference_protein_path):
