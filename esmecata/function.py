@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import re
+import shutil
 import urllib.parse
 import urllib.request
 
@@ -141,11 +142,32 @@ def annotate_coreproteome(input_folder, output_folder):
                 csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][0])), ','.join(list(output_dict[protein][3])), ','.join(list(protein_annotations[protein][1])), ','.join(list(output_dict[protein][4]))])
         """
 
+        # Create PathoLogic fiel and folder for each input.
         pathologic_folder = os.path.join(output_folder, 'pathologic')
         if not os.path.exists(pathologic_folder):
             os.mkdir(pathologic_folder)
-        pathologic_file = os.path.join(pathologic_folder, base_filename+'.pf')
+
+        pathologic_organism_folder = os.path.join(pathologic_folder, base_filename)
+        if not os.path.exists(pathologic_organism_folder):
+            os.mkdir(pathologic_organism_folder)
+        pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
         create_pathologic(base_filename, protein_annotations, set_proteins, pathologic_file)
+
+    # Create mpwt taxon ID file.
+    clustering_taxon_id_file = os.path.join(input_folder, 'proteome_cluster_tax_id.tsv')
+    clustering_taxon_id = {}
+    with open(clustering_taxon_id_file, 'r') as input_taxon_id_file:
+        taxon_id_csvreader = csv.reader(input_taxon_id_file, delimiter='\t')
+        next(taxon_id_csvreader)
+        for line in taxon_id_csvreader:
+            clustering_taxon_id[line[0]] = line[2]
+
+    pathologic_taxon_id_file = os.path.join(pathologic_folder, 'taxon_id.tsv')
+    with open(pathologic_taxon_id_file, 'w') as taxon_id_file:
+        taxon_id_csvwriter = csv.writer(taxon_id_file, delimiter='\t')
+        taxon_id_csvwriter.writerow(['species', 'taxon_id'])
+        for species in clustering_taxon_id:
+            taxon_id_csvwriter.writerow([species, clustering_taxon_id[species]])
 
 def create_pathologic(base_filename, protein_annotations, protein_set, pathologic_output_file):
     with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:

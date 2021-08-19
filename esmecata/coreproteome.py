@@ -1,5 +1,6 @@
 import csv
 import os
+import shutil
 import subprocess
 import sys
 
@@ -16,6 +17,7 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold)
     if not is_valid_path(result_folder):
         print(f"Missing output from esmecata proteomes in {result_folder}.")
         sys.exit(1)
+
     cluster_fasta_files = {}
     for cluster in os.listdir(result_folder):
         result_cluster_folder = os.path.join(result_folder, cluster)
@@ -76,7 +78,7 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold)
         # To keep a cluster, we have to find have at least one protein of each proteome of the OTU.
         rep_prot_to_keeps = []
         rep_prot_organims = {}
-        with open(coreproteome_cluster+'/'+cluster+'_coreproteome.tsv', 'w') as output_file:
+        with open(coreproteome_cluster+'/'+cluster+'.tsv', 'w') as output_file:
             csvwriter = csv.writer(output_file, delimiter='\t')
             for rep_protein in proteins_representatives:
                 if len(proteins_representatives[rep_protein]) > 1:
@@ -94,3 +96,7 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold)
         # Create output proteome file for OTU.
         coreproteome_fasta_fifle = os.path.join(coreproteome, cluster+'.faa')
         SeqIO.write(new_records, coreproteome_fasta_fifle, 'fasta')
+
+    proteome_taxon_id_file = os.path.join(proteome_folder, 'proteome_cluster_tax_id.tsv')
+    clustering_taxon_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
+    shutil.copyfile(proteome_taxon_id_file, clustering_taxon_id_file)
