@@ -36,15 +36,15 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
         os.mkdir(mmseqs_tmp)
 
     # Create output folder containing shared representative proteins.
-    coreproteome = os.path.join(output_folder, 'coreproteome')
-    if not os.path.exists(coreproteome):
-        os.mkdir(coreproteome)
+    reference_proteins_fasta = os.path.join(output_folder, 'reference_proteins_fasta')
+    if not os.path.exists(reference_proteins_fasta):
+        os.mkdir(reference_proteins_fasta)
 
-    print('Creating coreproteome')
+    print('Clustering proteins.')
     # For each OTU run mmseqs easy-cluster on them to found the clusters that have a protein in each proteome of the OTU.
     # We take the representative protein of a cluster if the cluster contains a protein from all the proteomes of the OTU.
     # If this condition is not satisfied the cluster will be ignored.
-    # Then a fasta file containing all the representative proteins for each OTU is written in coreproteome folder.
+    # Then a fasta file containing all the representative proteins for each OTU is written in reference_proteins_fasta folder.
     for cluster in cluster_fasta_files:
         mmseqs_tmp_cluster = os.path.join(mmseqs_tmp, cluster)
         mmseqs_tmp_cluster_output = os.path.join(mmseqs_tmp_cluster, 'cluster')
@@ -71,14 +71,14 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
             for record in SeqIO.parse(fasta_file, 'fasta'):
                 organism_prots[record.id.split('|')[1]] = fasta_file
 
-        coreproteome_cluster = os.path.join(output_folder, 'reference_proteins')
-        if not os.path.exists(coreproteome_cluster):
-            os.mkdir(coreproteome_cluster)
+        reference_proteins = os.path.join(output_folder, 'reference_proteins')
+        if not os.path.exists(reference_proteins):
+            os.mkdir(reference_proteins)
 
         # To keep a cluster, we have to find have at least one protein of each proteome of the OTU.
         rep_prot_to_keeps = []
         rep_prot_organims = {}
-        cluster_proteomes_output_file = os.path.join(coreproteome_cluster, cluster+'.tsv')
+        cluster_proteomes_output_file = os.path.join(reference_proteins, cluster+'.tsv')
         with open(cluster_proteomes_output_file, 'w') as output_file:
             csvwriter = csv.writer(output_file, delimiter='\t')
             for rep_protein in proteins_representatives:
@@ -95,8 +95,8 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
                 new_records.append(record)
 
         # Create output proteome file for OTU.
-        coreproteome_fasta_fifle = os.path.join(coreproteome, cluster+'.faa')
-        SeqIO.write(new_records, coreproteome_fasta_fifle, 'fasta')
+        reference_proteins_fasta_file = os.path.join(reference_proteins_fasta, cluster+'.faa')
+        SeqIO.write(new_records, reference_proteins_fasta_file, 'fasta')
 
     proteome_taxon_id_file = os.path.join(proteome_folder, 'proteome_cluster_tax_id.tsv')
     clustering_taxon_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
