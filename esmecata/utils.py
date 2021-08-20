@@ -1,6 +1,7 @@
 # useful functions for the package
 
 import argparse
+import datetime
 import os
 import urllib.request
 
@@ -73,7 +74,7 @@ def is_valid_dir(dirpath):
         return True
 
 def get_uniprot_release():
-    """Get the release version and date of Uniprot and Trembl.
+    """Get the release version and date of Uniprot and Trembl and also the date of the query.
 
     Returns:
         dict: metadata of Uniprot release
@@ -89,7 +90,10 @@ def get_uniprot_release():
     trembl_release_number = uniprot_lines[2].decode('utf-8').split(' ')[2].replace('\n','')
     trembl_release_date = uniprot_lines[2].decode('utf-8').split(' ')[4].replace('\n','')
 
+    date = datetime.datetime.now().strftime('%d-%B-%Y %H:%M:%S')
+
     uniprot_releases['uniprot_release'] = uniprot_release_number
+    uniprot_releases['access_time'] = date
     uniprot_releases['swissprot_release_number'] = swissprot_release_number
     uniprot_releases['swissprot_release_date'] = swissprot_release_date
     uniprot_releases['trembl_release_number'] = trembl_release_number

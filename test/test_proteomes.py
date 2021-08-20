@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from ete3 import NCBITaxa
 
-from esmecata.retrieve_proteome import associate_taxon_to_taxon_id, filter_taxon, find_proteomes_tax_ids
+from esmecata.proteomes import associate_taxon_to_taxon_id, filter_taxon, find_proteomes_tax_ids
 
 TAXONOMIES = {'id_1': 'cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia;species not found'}
 

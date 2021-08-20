@@ -8,7 +8,7 @@ from Bio import SeqIO
 
 from esmecata.utils import is_valid_path, is_valid_path
 
-def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold):
+def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -31,9 +31,9 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold)
                     cluster_fasta_files[cluster].append(cluster_file_path)
 
     # Create tmp folder for mmseqs analysis.
-    coreproteome_tmp = os.path.join(output_folder, 'coreproteome_tmp')
-    if not os.path.exists(coreproteome_tmp):
-        os.mkdir(coreproteome_tmp)
+    mmseqs_tmp = os.path.join(output_folder, 'mmseqs_tmp')
+    if not os.path.exists(mmseqs_tmp):
+        os.mkdir(mmseqs_tmp)
 
     # Create output folder containing shared representative proteins.
     coreproteome = os.path.join(output_folder, 'coreproteome')
@@ -46,17 +46,17 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold)
     # If this condition is not satisfied the cluster will be ignored.
     # Then a fasta file containing all the representative proteins for each OTU is written in coreproteome folder.
     for cluster in cluster_fasta_files:
-        coreproteome_tmp_cluster = os.path.join(coreproteome_tmp, cluster)
-        coreproteome_tmp_cluster_output = os.path.join(coreproteome_tmp_cluster, 'cluster')
+        mmseqs_tmp_cluster = os.path.join(mmseqs_tmp, cluster)
+        mmseqs_tmp_cluster_output = os.path.join(mmseqs_tmp_cluster, 'cluster')
 
         # Run mmmseqs to find rapidly protein clusters.
-        if not os.path.exists(coreproteome_tmp_cluster):
-            os.mkdir(coreproteome_tmp_cluster)
-        subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], coreproteome_tmp_cluster_output, coreproteome_tmp_cluster, '--threads', str(nb_cpu)])
+        if not os.path.exists(mmseqs_tmp_cluster):
+            os.mkdir(mmseqs_tmp_cluster)
+        subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], mmseqs_tmp_cluster_output, mmseqs_tmp_cluster, '--threads', str(nb_cpu)])
 
         # Extract protein clusters.
         proteins_representatives = {}
-        with open(coreproteome_tmp_cluster_output+'_cluster.tsv') as input_file:
+        with open(mmseqs_tmp_cluster_output+'_cluster.tsv') as input_file:
             csvreader = csv.reader(input_file, delimiter='\t')
             for row in csvreader:
                 if row[0] not in proteins_representatives:
@@ -78,7 +78,8 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold)
         # To keep a cluster, we have to find have at least one protein of each proteome of the OTU.
         rep_prot_to_keeps = []
         rep_prot_organims = {}
-        with open(coreproteome_cluster+'/'+cluster+'.tsv', 'w') as output_file:
+        cluster_proteomes_output_file = os.path.join(coreproteome_cluster, cluster+'.tsv')
+        with open(cluster_proteomes_output_file, 'w') as output_file:
             csvwriter = csv.writer(output_file, delimiter='\t')
             for rep_protein in proteins_representatives:
                 if len(proteins_representatives[rep_protein]) > 1:
@@ -89,7 +90,7 @@ def create_coreproteome(proteome_folder, output_folder, nb_cpu, clust_threshold)
 
         # Create BioPtyhon records with the representative proteins kept.
         new_records = []
-        for record in SeqIO.parse(coreproteome_tmp_cluster_output + '_rep_seq.fasta', 'fasta'):
+        for record in SeqIO.parse(mmseqs_tmp_cluster_output + '_rep_seq.fasta', 'fasta'):
             if record.id.split('|')[1] in rep_prot_to_keeps:
                 new_records.append(record)
 

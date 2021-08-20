@@ -1,13 +1,13 @@
 import argparse
 
-from esmecata.retrieve_proteome import retrieve_proteome
-from esmecata.coreproteome import create_coreproteome
-from esmecata.function import annotate_proteins
+from esmecata.proteomes import retrieve_proteomes
+from esmecata.clustering import make_clustering
+from esmecata.annotation import annotate_proteins
 from esmecata.utils import range_limited_float_type
 from esmecata import __version__ as VERSION
 
 MESSAGE = """
-From taxonomy to metabolism
+From taxonomy to metabolism using Uniprot.
 """
 REQUIRES = """
 Requires: mmseqs2
@@ -30,7 +30,7 @@ def main():
         "--input",
         dest="input",
         required=True,
-        help="input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomy (separated by ;)",
+        help="Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomy (separated by ;).",
         metavar="INPUT_FILE")
 
     parent_parser_i_clustering_folder = argparse.ArgumentParser(add_help=False)
@@ -39,7 +39,7 @@ def main():
         "--input",
         dest="input",
         required=True,
-        help="This input folder of clustering is the output folder of proteomes command",
+        help="This input folder of clustering is the output folder of proteomes command.",
         metavar="INPUT_DIR")
 
     parent_parser_i_annotation_folder = argparse.ArgumentParser(add_help=False)
@@ -48,7 +48,7 @@ def main():
         "--input",
         dest="input",
         required=True,
-        help="This input folder of annotation is the output folder of clustering command",
+        help="This input folder of annotation is the output folder of clustering command.",
         metavar="INPUT_DIR")
 
     parent_parser_o = argparse.ArgumentParser(add_help=False)
@@ -57,7 +57,7 @@ def main():
         "--output",
         dest="output",
         required=True,
-        help="output directory path",
+        help="Output directory path.",
         metavar="OUPUT_DIR")
 
     parent_parser_b = argparse.ArgumentParser(add_help=False)
@@ -66,13 +66,13 @@ def main():
         "--busco",
         dest="busco",
         required=False,
-        help="busco percentage between 0 and 100. This will remove all the proteomes without BUSCO score and the score before the selected percentage.",
+        help="BUSCO percentage between 0 and 100. This will remove all the proteomes without BUSCO score and the score before the selected percentage.",
         metavar="BUSCO")
     parent_parser_taxadb = argparse.ArgumentParser(add_help=False)
     parent_parser_taxadb.add_argument(
         "--ignore-taxadb-update",
         dest="ignore_taxadb_update",
-        help="If you have a not up-to-date version of NCBI taxonomy database with ete3, use this option to use this version and bypass the warning message.",
+        help="If you have a not up-to-date version of the NCBI taxonomy database with ete3, use this option to bypass the warning message and use the old version.",
         required=False,
         action="store_true",
         default=None)
@@ -81,7 +81,7 @@ def main():
         "-c",
         "--cpu",
         dest="cpu",
-        help="cpu number for multiprocessing",
+        help="CPU number for multiprocessing.",
         required=False,
         type=int,
         default=1)
@@ -90,7 +90,7 @@ def main():
         "-t",
         "--threshold",
         dest="threshold_clustering",
-        help="proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly",
+        help="Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.",
         required=False,
         type=range_limited_float_type,
         default=1)
@@ -110,7 +110,7 @@ def main():
         ])
     clustering_parser = subparsers.add_parser(
         "clustering",
-        help="Cluster proteins proteomes for a taxon into a single set of representative shared proteins.",
+        help="Cluster the proteins of the different proteomes of a taxon into a single set of representative shared proteins.",
         parents=[
             parent_parser_i_clustering_folder, parent_parser_o, parent_parser_c, parent_parser_thr
         ])
@@ -118,17 +118,17 @@ def main():
         "annotation",
         help="Retrieve protein annotations from Uniprot.",
         parents=[
-            parent_parser_i_annotation_folder, parent_parser_o, parent_parser_c
+            parent_parser_i_annotation_folder, parent_parser_o
         ])
 
     args = parser.parse_args()
 
     if args.cmd == "proteomes":
-        retrieve_proteome(args.input, args.output, args.busco, args.ignore_taxadb_update)
+        retrieve_proteomes(args.input, args.output, args.busco, args.ignore_taxadb_update)
     elif args.cmd == "clustering":
-        create_coreproteome(args.input, args.output, args.cpu, args.threshold_clustering)
+        make_clustering(args.input, args.output, args.cpu, args.threshold_clustering)
     elif args.cmd == "annotation":
-        annotate_proteins(args.input, args.output, args.cpu)
+        annotate_proteins(args.input, args.output)
 
 if __name__ == "__main__":
     main()

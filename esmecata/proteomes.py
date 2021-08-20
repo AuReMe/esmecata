@@ -11,7 +11,7 @@ import time
 
 from collections import OrderedDict
 from ete3 import NCBITaxa, is_taxadb_up_to_date
-from esmecata import utils
+from esmecata.utils import get_uniprot_release
 
 def associate_taxon_to_taxon_id(taxonomies, ncbi):
     tax_id_names = {}
@@ -98,6 +98,8 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
             http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+reference:yes+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
 
             response = requests.get(http_str)
+            # Raise error if we have a bad request.
+            response.raise_for_status()
             if response.text == '':
                 time.sleep(1)
                 print('{0}: No reference proteomes found for {1} try non-reference proteomes.'.format(taxon, tax_id))
@@ -142,7 +144,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
                     break
 
                 elif len(proteomes) >= 100:
-                    print('More than 99 proteomes associated to the taxa {0} associated to {1}, esmecata will randomly select around 100 proteomes with respect to the taxonomy proportion.'.format(taxon, tax_name))
+                    print('More than 99 proteomes are associated to the taxa {0} associated to {1}, esmecata will randomly select around 100 proteomes with respect to the taxonomy proportion.'.format(taxon, tax_name))
                     tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
 
                     # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
@@ -195,7 +197,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
     return proteomes_ids, single_proteomes, tax_id_not_founds
 
 
-def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None):
+def retrieve_proteomes(input_folder, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None):
     if is_taxadb_up_to_date() is False:
         print('''WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. Update it using:
         from ete3 import NCBITaxa
@@ -229,28 +231,11 @@ def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None, i
 
     json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
 
-    clusters_dicts = {taxon: [tax_id for tax_id in json_cluster_taxons[taxon].values() if tax_id != ['not_found']] for taxon in json_cluster_taxons}
-
     json_log = os.path.join(output_folder, 'log.json')
     with open(json_log, 'w') as ouput_file:
         json.dump(json_cluster_taxons, ouput_file, indent=4)
 
     proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep)
-
-    # Write for each taxon ID the proteomes found.
-    proteome_tax_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
-    with open(proteome_tax_id_file, 'w') as out_file:
-        csvwriter = csv.writer(out_file, delimiter='\t')
-        csvwriter.writerow(['tax_id', 'name' ,'proteomes'])
-        for tax_id in proteomes_ids:
-            csvwriter.writerow([tax_id , proteomes_ids[tax_id][0], ','.join(proteomes_ids[tax_id][1])])
-
-    proteomes_ids = {}
-    with open(proteome_tax_id_file, 'r') as out_file:
-        csvwriter = csv.reader(out_file, delimiter='\t')
-        next(csvwriter)
-        for row in csvwriter:
-            proteomes_ids[row[0]] = (row[1], row[2].split(','))
 
     proteome_to_download = []
     for proteomes_id in proteomes_ids:
@@ -261,7 +246,7 @@ def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None, i
     # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
     with open(proteome_cluster_tax_id_file, 'w') as out_file:
         csvwriter = csv.writer(out_file, delimiter='\t')
-        csvwriter.writerow(['cluster', 'tax_id', 'name', 'proteome'])
+        csvwriter.writerow(['cluster', 'name', 'tax_id', 'proteome'])
         for cluster in proteomes_ids:
             csvwriter.writerow([cluster, tax_id_names[int(proteomes_ids[cluster][0])], proteomes_ids[cluster][0], ','.join(proteomes_ids[cluster][1])])
 
@@ -278,7 +263,7 @@ def retrieve_proteome(input_folder, output_folder, busco_percentage_keep=None, i
         time.sleep(1)
 
     # Download Uniprot metadata and create a json file containing them.
-    uniprot_releases = utils.get_uniprot_release()
+    uniprot_releases = get_uniprot_release()
 
     uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:

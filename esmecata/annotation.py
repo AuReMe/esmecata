@@ -2,11 +2,10 @@ import csv
 import json
 import os
 import re
-import shutil
 import urllib.parse
 import urllib.request
 
-from esmecata import utils
+from esmecata.utils import get_uniprot_release
 
 def query_uniprot_to_retrieve_function(protein_queries, output_dict):
     url = 'https://www.uniprot.org/uploadlists/'
@@ -47,6 +46,7 @@ def query_uniprot_to_retrieve_function(protein_queries, output_dict):
 
     return output_dict
 
+
 def chunks(lst, n):
     """Yield successive n-sized chunks from list.
     Form: https://stackoverflow.com/a/312464
@@ -54,12 +54,37 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def annotate_coreproteome(input_folder, output_folder):
+
+def create_pathologic(base_filename, protein_annotations, protein_set, pathologic_output_file):
+    with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:
+        element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
+        element_file.write(';; ' + base_filename + '\n')
+        element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
+        for protein in protein_annotations:
+            if protein in protein_set:
+                element_file.write('ID\t' + protein + '\n')
+                if protein_annotations[protein][3] != '':
+                    element_file.write('NAME\t' + protein_annotations[protein][3] + '\n')
+                else:
+                    element_file.write('NAME\t' + protein + '\n')
+                if protein_annotations[protein][0] != '':
+                    element_file.write('FUNCTION\t' + protein_annotations[protein][0] + '\n')
+                element_file.write('PRODUCT-TYPE\tP' + '\n')
+                element_file.write('PRODUCT-ID\tprot ' + protein + '\n')
+                element_file.write('DBLINK\tUNIPROT:' + protein + '\n')
+                for go in protein_annotations[protein][1]:
+                    element_file.write('GO\t' + go + '\n')
+                for ec in protein_annotations[protein][2]:
+                    element_file.write('EC\t' + ec + '\n')
+                element_file.write('//\n\n')
+
+
+def annotate_proteins(input_folder, output_folder):
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
     # Download Uniprot metadata and create a json file containing them.
-    uniprot_releases = utils.get_uniprot_release()
+    uniprot_releases = get_uniprot_release()
 
     uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
@@ -81,6 +106,9 @@ def annotate_coreproteome(input_folder, output_folder):
 
         set_proteins = list(set(proteins))
 
+        # Query Uniprot to get the annotation of each proteins.
+        # The limit of 20 000 proteins per query comes from the help of Uniprot:
+        # https://www.uniprot.org/help/uploadlists
         output_dict = {}
         if len(set_proteins) < 20000:
             protein_queries = ' '.join(set_proteins)
@@ -109,6 +137,7 @@ def annotate_coreproteome(input_folder, output_folder):
                 gene_name = output_dict[protein][6]
                 csvwriter.writerow([protein, protein_name, protein_review_satus, go_tersm, ec_numbers, interpros, rhea_ids, gene_name])
 
+        # For each reference protein, get the annotation of the other proteins clustered with it and add to its annotation.
         protein_annotations = {}
         for reference_protein in reference_proteins:
             gos = set()
@@ -134,15 +163,7 @@ def annotate_coreproteome(input_folder, output_folder):
             for protein in protein_annotations:
                 csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][0])), ','.join(list(protein_annotations[protein][1]))])
 
-        """
-        with open(output_folder+'/diff_annotation_reference_protein.tsv', 'w') as output_tsv:
-            csvwriter = csv.writer(output_tsv, delimiter='\t')
-            csvwriter.writerow(['protein', 'GO', 'EC'])
-            for protein in protein_annotations:
-                csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][0])), ','.join(list(output_dict[protein][3])), ','.join(list(protein_annotations[protein][1])), ','.join(list(output_dict[protein][4]))])
-        """
-
-        # Create PathoLogic fiel and folder for each input.
+        # Create PathoLogic file and folder for each input.
         pathologic_folder = os.path.join(output_folder, 'pathologic')
         if not os.path.exists(pathologic_folder):
             os.mkdir(pathologic_folder)
@@ -168,29 +189,3 @@ def annotate_coreproteome(input_folder, output_folder):
         taxon_id_csvwriter.writerow(['species', 'taxon_id'])
         for species in clustering_taxon_id:
             taxon_id_csvwriter.writerow([species, clustering_taxon_id[species]])
-
-def create_pathologic(base_filename, protein_annotations, protein_set, pathologic_output_file):
-    with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:
-        element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
-        element_file.write(';; ' + base_filename + '\n')
-        element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
-        for protein in protein_annotations:
-            if protein in protein_set:
-                element_file.write('ID\t' + protein + '\n')
-                if protein_annotations[protein][3] != '':
-                    element_file.write('NAME\t' + protein_annotations[protein][3] + '\n')
-                else:
-                    element_file.write('NAME\t' + protein + '\n')
-                if protein_annotations[protein][0] != '':
-                    element_file.write('FUNCTION\t' + protein_annotations[protein][0] + '\n')
-                element_file.write('PRODUCT-TYPE\tP' + '\n')
-                element_file.write('PRODUCT-ID\tprot ' + protein + '\n')
-                element_file.write('DBLINK\tUNIPROT:' + protein + '\n')
-                for go in protein_annotations[protein][1]:
-                    element_file.write('GO\t' + go + '\n')
-                for ec in protein_annotations[protein][2]:
-                    element_file.write('EC\t' + ec + '\n')
-                element_file.write('//\n\n')
-
-def annotate_proteins(input_folder, output_folder, cpu):
-    annotate_coreproteome(input_folder, output_folder)

@@ -1,4 +1,4 @@
-from esmecata.function import query_uniprot_to_retrieve_function
+from esmecata.annotation import query_uniprot_to_retrieve_function
 
 ANOTATIONS = {'Q7CGB6': ['Protein translocase subunit SecA (EC 7.4.2.8)', True,
             ['GO:0031522','GO:0005829','GO:0005887','GO:0015462','GO:0005524','GO:0046872','GO:0065002','GO:0017038','GO:0006605','GO:0043952'],
