@@ -7,11 +7,12 @@ import pandas as pd
 import random
 import requests
 import shutil
+import sys
 import time
 
 from collections import OrderedDict
 from ete3 import NCBITaxa, is_taxadb_up_to_date
-from esmecata.utils import get_uniprot_release
+from esmecata.utils import get_uniprot_release, is_valid_file
 
 def associate_taxon_to_taxon_id(taxonomies, ncbi):
     tax_id_names = {}
@@ -197,7 +198,11 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
     return proteomes_ids, single_proteomes, tax_id_not_founds
 
 
-def retrieve_proteomes(input_folder, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None):
+def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None):
+    if is_valid_file(input_file) == False:
+        print('The input {0} is not a valid file pathname.'.format(input_file))
+        sys.exit()
+
     if is_taxadb_up_to_date() is False:
         print('''WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. Update it using:
         from ete3 import NCBITaxa
@@ -212,12 +217,12 @@ def retrieve_proteomes(input_folder, output_folder, busco_percentage_keep=None, 
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
-    if '.xlsx' in input_folder:
-        df = pd.read_excel(input_folder)
-    if '.tsv' in input_folder:
-        df = pd.read_csv(input_folder, sep='\t')
-    if '.csv' in input_folder:
-        df = pd.read_csv(input_folder, sep=',')
+    if '.xlsx' in input_file:
+        df = pd.read_excel(input_file)
+    if '.tsv' in input_file:
+        df = pd.read_csv(input_file, sep='\t')
+    if '.csv' in input_file:
+        df = pd.read_csv(input_file, sep=',')
 
     # Set index on the column containing the OTU name.
     df.set_index('observation_name', inplace=True)

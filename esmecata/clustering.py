@@ -6,11 +6,12 @@ import sys
 
 from Bio import SeqIO
 
-from esmecata.utils import is_valid_path, is_valid_path
+from esmecata.utils import is_valid_path, is_valid_dir
 
 def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
+    if not is_valid_dir(proteome_folder):
+        print(f"Input must be a folder {proteome_folder}.")
+        sys.exit(1)
 
     # Use the result folder created by retrieve_proteome.py.
     result_folder = os.path.join(proteome_folder, 'result')
@@ -18,17 +19,21 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
         print(f"Missing output from esmecata proteomes in {result_folder}.")
         sys.exit(1)
 
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+
     cluster_fasta_files = {}
     for cluster in os.listdir(result_folder):
         result_cluster_folder = os.path.join(result_folder, cluster)
-        for cluster_file in os.listdir(result_cluster_folder):
-            filename, file_extension = os.path.splitext(cluster_file)
-            if file_extension == '.faa':
-                cluster_file_path = os.path.join(result_cluster_folder, cluster_file)
-                if cluster not in cluster_fasta_files:
-                    cluster_fasta_files[cluster] = [cluster_file_path]
-                else:
-                    cluster_fasta_files[cluster].append(cluster_file_path)
+        if is_valid_dir(result_cluster_folder):
+            for cluster_file in os.listdir(result_cluster_folder):
+                filename, file_extension = os.path.splitext(cluster_file)
+                if file_extension == '.faa':
+                    cluster_file_path = os.path.join(result_cluster_folder, cluster_file)
+                    if cluster not in cluster_fasta_files:
+                        cluster_fasta_files[cluster] = [cluster_file_path]
+                    else:
+                        cluster_fasta_files[cluster].append(cluster_file_path)
 
     # Create tmp folder for mmseqs analysis.
     mmseqs_tmp = os.path.join(output_folder, 'mmseqs_tmp')

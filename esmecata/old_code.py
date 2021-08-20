@@ -8,19 +8,22 @@ def old_retrieve_proteome():
         # Test with SPARQL query
         uniprot_sparql_query = """PREFIX up: <http://purl.uniprot.org/core/>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         PREFIX busco: <http://busco.ezlab.org/schema#>
         PREFIX taxon: <http://purl.uniprot.org/taxonomy/>
 
-        SELECT DISTINCT ?proteome ?score ?fragmented ?missing
+        SELECT DISTINCT ?proteome ?score ?fragmented ?missing ?organism ?completion
         WHERE
         {{
-            ?proteome rdf:type up:Proteome.
-            ?protoeme up:organism taxon:{0}.
+            ?proteome rdf:type up:Proteome .
+            ?proteome up:organism ?organism .
+            ?organism rdfs:subClassOf taxon:{0} .
             ?proteome busco:has_score ?busco .
             ?busco busco:complete ?score .
             ?busco busco:fragmented ?fragmented .
             ?busco busco:missing ?missing .
-
+            ?proteome rdfs:seeAlso ?metadataID .
+            ?metadataID rdfs:label ?completion .
         }}""".format(tax_id)
 
         sparql.setQuery(uniprot_sparql_query)
