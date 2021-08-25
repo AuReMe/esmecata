@@ -115,7 +115,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
                 next(csvreader)
                 for line in csvreader:
                     proteome = line[0]
-                    completness = line [6]
+                    completness = line[6]
                     org_tax_id = line[2]
 
                     # Check that proteome has busco score.
