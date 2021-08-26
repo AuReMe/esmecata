@@ -7,7 +7,7 @@ import urllib.request
 
 from esmecata.utils import get_uniprot_release
 
-def query_uniprot_to_retrieve_function(protein_queries, output_dict):
+def rest_query_uniprot_to_retrieve_function(protein_queries, output_dict):
     url = 'https://www.uniprot.org/uploadlists/'
 
     # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
@@ -47,6 +47,98 @@ def query_uniprot_to_retrieve_function(protein_queries, output_dict):
     return output_dict
 
 
+def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sparql_endpoint):
+    from SPARQLWrapper import SPARQLWrapper, TSV
+    from io import StringIO
+
+    proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
+
+    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
+
+    # uniprotkb:ID
+    uniprot_sparql_query = """PREFIX up: <http://purl.uniprot.org/core/>
+    PREFIX uniprotkb: <http://purl.uniprot.org/uniprot/>
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX proteome: <http://purl.uniprot.org/proteomes/>
+
+    SELECT ?protein
+    (GROUP_CONCAT(DISTINCT ?fullName; separator=";") AS ?name)
+    (GROUP_CONCAT(DISTINCT ?goTerm; separator=";") AS ?go)
+    (GROUP_CONCAT(DISTINCT ?ecNumber; separator=";") AS ?ec)
+    (GROUP_CONCAT(DISTINCT ?ecNumber2; separator=";") AS ?ec2)
+    (GROUP_CONCAT(DISTINCT ?interpro; separator=";") AS ?ipr)
+    (GROUP_CONCAT(DISTINCT ?rheaReaction; separator=";") AS ?rhea)
+    (GROUP_CONCAT(DISTINCT ?reviewed; separator=";") AS ?review)
+    (GROUP_CONCAT(DISTINCT ?geneLabel; separator=";") AS ?geneName)
+    WHERE {{
+        ?protein a up:Protein ;
+            up:proteome ?genomicComponent .
+        ?proteome skos:narrower ?genomicComponent .
+        OPTIONAL {{
+            ?protein up:reviewed ?reviewed  .
+        }}
+        OPTIONAL {{
+            ?protein up:annotation ?annot .
+            ?annot a up:Catalytic_Activity_Annotation ;
+                up:catalyticActivity ?catalyticAct .
+            ?catalyticAct up:catalyzedReaction ?rheaReaction .
+            ?catalyticAct up:enzymeClass ?ecNumber2 .
+        }}
+        OPTIONAL {{
+            ?protein up:classifiedWith ?goTerm .
+            FILTER (regex(str(?goTerm), "GO")) .
+        }}
+        OPTIONAL {{
+            ?protein rdfs:seeAlso ?interpro .
+            FILTER (regex(str(?interpro), "interpro")) .
+        }}
+        OPTIONAL {{
+            ?protein up:enzyme ?ecNumber .
+        }}
+        OPTIONAL {{
+            ?protein up:recommendedName ?recommendName .
+            ?recommendName up:fullName ?fullName .
+        }}
+        OPTIONAL {{
+            ?protein up:encodedBy ?gene .
+            ?gene skos:prefLabel ?geneLabel .
+        }}
+    VALUES (?proteome) {{ {0} }}
+    }}
+    GROUP BY ?protein
+    """.format(proteomes)
+
+    sparql.setQuery(uniprot_sparql_query)
+    # Parse output.
+    sparql.setReturnFormat(TSV)
+    results = sparql.query().convert().decode('utf-8')
+    csvreader = csv.reader(StringIO(results), delimiter='\t')
+    # Avoid header.
+    next(csvreader)
+    results = {}
+    for line in csvreader:
+        protein_id = line[0].split('/')[-1]
+        protein_name = line[1].split('^^')[0]
+        go_terms = [go_uri.split('obo/')[1].replace('_', ':') for go_uri in line[2].split('^^')[0].split(';') if go_uri != '']
+        ec_numbers = [ec_uri.split('enzyme/')[1] for ec_uri in line[3].split('^^')[0].split(';') if ec_uri != '']
+        ec_numbers.extend([ec_uri.split('enzyme/')[1] for ec_uri in line[4].split('^^')[0].split(';') if ec_uri != ''])
+        ec_numbers = list(set(ec_numbers))
+        interpros = [ipr_uri.split('interpro/')[1] for ipr_uri in line[5].split('^^')[0].split(';') if ipr_uri != '']
+        rhea_ids = [rhea_uri.split('rdf.rhea-db.org/')[1] for rhea_uri in line[6].split('^^')[0].split(';') if rhea_uri != '']
+        review = line[7].split('^^')[0]
+        if review == '0':
+            review = False
+        elif review == '1':
+            review = True
+        gene_name = line[8].split('^^')[0]
+
+        results[protein_id] = [protein_name, review, go_terms, ec_numbers, interpros, rhea_ids, gene_name]
+        output_dict.update(results)
+
+    return output_dict
+
+
 def chunks(lst, n):
     """Yield successive n-sized chunks from list.
     Form: https://stackoverflow.com/a/312464
@@ -79,7 +171,7 @@ def create_pathologic(base_filename, protein_annotations, protein_set, pathologi
                 element_file.write('//\n\n')
 
 
-def annotate_proteins(input_folder, output_folder):
+def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint):
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -89,6 +181,15 @@ def annotate_proteins(input_folder, output_folder):
     uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(uniprot_releases, ouput_file, indent=4)
+
+    if uniprot_sparql_endpoint:
+        input_proteomes = {}
+        proteome_cluster_tax_id_file = os.path.join(input_folder, 'proteome_cluster_tax_id.tsv')
+        with open(proteome_cluster_tax_id_file, 'r') as tax_id_file:
+            csvreader = csv.reader(tax_id_file, delimiter='\t')
+            next(csvreader)
+            for line in csvreader:
+                input_proteomes[line[0]] = line[3].split(',')
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
     for input_file in os.listdir(reference_protein_path):
@@ -112,13 +213,20 @@ def annotate_proteins(input_folder, output_folder):
         output_dict = {}
         if len(set_proteins) < 20000:
             protein_queries = ' '.join(set_proteins)
-
-            query_uniprot_to_retrieve_function(protein_queries, output_dict)
+            if uniprot_sparql_endpoint:
+                proteomes = input_proteomes[base_filename]
+                sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sparql_endpoint)
+            else:
+                rest_query_uniprot_to_retrieve_function(protein_queries, output_dict)
         else:
             protein_chunks = chunks(proteins, 20000)
             for chunk in protein_chunks:
                 protein_queries = ' '.join(chunk)
-                output_dict = query_uniprot_to_retrieve_function(protein_queries, output_dict)
+                if uniprot_sparql_endpoint:
+                    proteomes = input_proteomes[base_filename]
+                    output_dict = sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sparql_endpoint)
+                else:
+                    output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, output_dict)
 
         annotation_folder = os.path.join(output_folder, 'annotation')
         if not os.path.exists(annotation_folder):
@@ -161,7 +269,7 @@ def annotate_proteins(input_folder, output_folder):
             csvwriter = csv.writer(output_tsv, delimiter='\t')
             csvwriter.writerow(['protein', 'GO', 'EC'])
             for protein in protein_annotations:
-                csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][0])), ','.join(list(protein_annotations[protein][1]))])
+                csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][1])), ','.join(list(protein_annotations[protein][2]))])
 
         # Create PathoLogic file and folder for each input.
         pathologic_folder = os.path.join(output_folder, 'pathologic')

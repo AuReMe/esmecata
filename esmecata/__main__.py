@@ -94,6 +94,13 @@ def main():
         required=False,
         type=range_limited_float_type,
         default=1)
+    parent_parser_sparql = argparse.ArgumentParser(add_help=False)
+    parent_parser_sparql.add_argument(
+        "-s",
+        "--sparql",
+        dest="sparql",
+        help="Use sparql endpoint instead of REST queries on Uniprot.",
+        required=False)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -106,7 +113,7 @@ def main():
         help="Download proteomes associated to taxon from Uniprot Proteomes.",
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
-            parent_parser_taxadb
+            parent_parser_taxadb, parent_parser_sparql
         ])
     clustering_parser = subparsers.add_parser(
         "clustering",
@@ -118,17 +125,25 @@ def main():
         "annotation",
         help="Retrieve protein annotations from Uniprot.",
         parents=[
-            parent_parser_i_annotation_folder, parent_parser_o
+            parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql
         ])
 
     args = parser.parse_args()
 
-    if args.cmd == "proteomes":
-        retrieve_proteomes(args.input, args.output, args.busco, args.ignore_taxadb_update)
-    elif args.cmd == "clustering":
-        make_clustering(args.input, args.output, args.cpu, args.threshold_clustering)
-    elif args.cmd == "annotation":
-        annotate_proteins(args.input, args.output)
+    if args.cmd in ['proteomes', 'annotation']:
+        if args.sparql is None:
+            uniprot_sparql_endpoint = None
+        elif args.sparql == 'uniprot':
+            uniprot_sparql_endpoint = 'https://sparql.uniprot.org/sparql'
+        else:
+            uniprot_sparql_endpoint = args.sparql
 
-if __name__ == "__main__":
+    if args.cmd == 'proteomes':
+        retrieve_proteomes(args.input, args.output, args.busco, args.ignore_taxadb_update, uniprot_sparql_endpoint)
+    elif args.cmd == 'clustering':
+        make_clustering(args.input, args.output, args.cpu, args.threshold_clustering)
+    elif args.cmd == 'annotation':
+        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint)
+
+if __name__ == '__main__':
     main()
