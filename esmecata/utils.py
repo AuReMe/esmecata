@@ -1,6 +1,7 @@
 # useful functions for the package
 
 import argparse
+import csv
 import datetime
 import os
 import urllib.request
@@ -73,7 +74,7 @@ def is_valid_dir(dirpath):
     else:
         return True
 
-def get_uniprot_release():
+def get_rest_uniprot_release():
     """Get the release version and date of Uniprot and Trembl and also the date of the query.
 
     Returns:
@@ -92,11 +93,51 @@ def get_uniprot_release():
 
     date = datetime.datetime.now().strftime('%d-%B-%Y %H:%M:%S')
 
+    uniprot_releases['esmecata_query_system'] = 'REST queries on Uniprot'
     uniprot_releases['uniprot_release'] = uniprot_release_number
     uniprot_releases['access_time'] = date
     uniprot_releases['swissprot_release_number'] = swissprot_release_number
     uniprot_releases['swissprot_release_date'] = swissprot_release_date
     uniprot_releases['trembl_release_number'] = trembl_release_number
     uniprot_releases['trembl_release_date'] = trembl_release_date
+
+    return uniprot_releases
+
+
+def get_sparql_uniprot_release(uniprot_sparql_endpoint):
+    """Get the release version and date of Uniprot and Trembl and also the date of the query.
+
+    Returns:
+        dict: metadata of Uniprot release
+    """
+    from SPARQLWrapper import SPARQLWrapper, TSV
+    from io import StringIO
+    uniprot_releases = {}
+
+    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
+
+    # uniprotkb:ID
+    uniprot_sparql_query = """SELECT ?version
+    WHERE
+    {{
+        [] <http://purl.org/pav/2.0/version> ?version .
+    }}
+    """
+
+    sparql.setQuery(uniprot_sparql_query)
+    # Parse output.
+    sparql.setReturnFormat(TSV)
+    results = sparql.query().convert().decode('utf-8')
+    csvreader = csv.reader(StringIO(results), delimiter='\t')
+    # Avoid header.
+    next(csvreader)
+    results = {}
+    uniprot_release_number = [line[0] for line in csvreader][0]
+    date = datetime.datetime.now().strftime('%d-%B-%Y %H:%M:%S')
+
+    uniprot_releases['esmecata_query_system'] = 'SPARQL queries'
+    uniprot_releases['esmecata_sparql_endpoint'] = uniprot_sparql_endpoint
+    uniprot_releases['uniprot_release'] = uniprot_release_number
+    uniprot_releases['access_time'] = date
 
     return uniprot_releases

@@ -57,7 +57,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
         # Run mmmseqs to find rapidly protein clusters.
         if not os.path.exists(mmseqs_tmp_cluster):
             os.mkdir(mmseqs_tmp_cluster)
-        subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], mmseqs_tmp_cluster_output, mmseqs_tmp_cluster, '--threads', str(nb_cpu)])
+        subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], mmseqs_tmp_cluster_output, mmseqs_tmp_cluster, '--threads', str(nb_cpu), '-v', '2'])
 
         # Extract protein clusters.
         proteins_representatives = {}

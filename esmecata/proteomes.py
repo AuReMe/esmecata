@@ -12,7 +12,7 @@ import time
 
 from collections import OrderedDict
 from ete3 import NCBITaxa, is_taxadb_up_to_date
-from esmecata.utils import get_uniprot_release, is_valid_file
+from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file
 
 def associate_taxon_to_taxon_id(taxonomies, ncbi):
     tax_id_names = {}
@@ -159,7 +159,7 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, unipr
             VALUES ?type {{up:Representative_Proteome}}
         }}
     }}""".format(tax_id)
-    print(uniprot_sparql_query)
+
     sparql.setQuery(uniprot_sparql_query)
     # Parse output.
     sparql.setReturnFormat(TSV)
@@ -460,7 +460,10 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
         time.sleep(1)
 
     # Download Uniprot metadata and create a json file containing them.
-    uniprot_releases = get_uniprot_release()
+    if uniprot_sparql_endpoint:
+        uniprot_releases = get_sparql_uniprot_release(uniprot_sparql_endpoint)
+    else:
+        uniprot_releases = get_rest_uniprot_release()
 
     uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
