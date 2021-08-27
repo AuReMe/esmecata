@@ -71,6 +71,7 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
     (GROUP_CONCAT(DISTINCT ?rheaReaction; separator=";") AS ?rhea)
     (GROUP_CONCAT(DISTINCT ?reviewed; separator=";") AS ?review)
     (GROUP_CONCAT(DISTINCT ?geneLabel; separator=";") AS ?geneName)
+    (GROUP_CONCAT(DISTINCT ?subName; separator=";") AS ?submitName)
     WHERE {{
         ?protein a up:Protein ;
             up:proteome ?genomicComponent .
@@ -99,6 +100,10 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
         OPTIONAL {{
             ?protein up:recommendedName ?recommendName .
             ?recommendName up:fullName ?fullName .
+        }}
+        OPTIONAL {{
+            ?protein up:submittedName ?submittedName .
+            ?submittedName up:fullName ?subName .
         }}
         OPTIONAL {{
             ?protein up:encodedBy ?gene .
@@ -132,6 +137,17 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
         elif review == '1':
             review = True
         gene_name = line[8].split('^^')[0]
+
+        submitted_name = [submitted_name for submitted_name in line[9].split('^^')[0].split(';') if submitted_name != '']
+        if submitted_name != []:
+            submitted_name = submitted_name[0]
+        else:
+            submitted_name = ''
+
+        # If there is no recommendedName, use submittedName instead.
+        if protein_name == '':
+            if submitted_name != '':
+                protein_name = submitted_name
 
         results[protein_id] = [protein_name, review, go_terms, ec_numbers, interpros, rhea_ids, gene_name]
         output_dict.update(results)
