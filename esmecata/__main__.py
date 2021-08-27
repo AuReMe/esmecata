@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 from esmecata.proteomes import retrieve_proteomes
 from esmecata.clustering import make_clustering
@@ -129,6 +130,11 @@ def main():
         ])
 
     args = parser.parse_args()
+
+    # If no argument print the help.
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
 
     if args.cmd in ['proteomes', 'annotation']:
         if args.sparql is None:

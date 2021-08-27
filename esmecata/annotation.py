@@ -5,6 +5,9 @@ import re
 import urllib.parse
 import urllib.request
 
+from io import StringIO
+from SPARQLWrapper import SPARQLWrapper, TSV
+
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release
 
 def rest_query_uniprot_to_retrieve_function(protein_queries, output_dict):
@@ -48,9 +51,6 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, output_dict):
 
 
 def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sparql_endpoint):
-    from SPARQLWrapper import SPARQLWrapper, TSV
-    from io import StringIO
-
     proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
 
     sparql = SPARQLWrapper(uniprot_sparql_endpoint)

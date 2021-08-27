@@ -2,3 +2,4 @@ biopython
 ete3
 pandas
 requests
+SPARQLWrapper

@@ -10,8 +10,14 @@ import shutil
 import sys
 import time
 
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from collections import OrderedDict
 from ete3 import NCBITaxa, is_taxadb_up_to_date
+from io import StringIO
+from SPARQLWrapper import SPARQLWrapper, TSV
+
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file
 
 def associate_taxon_to_taxon_id(taxonomies, ncbi):
@@ -117,9 +123,6 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep):
 
 
 def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
-    from SPARQLWrapper import SPARQLWrapper, TSV
-    from io import StringIO
-
     sparql = SPARQLWrapper(uniprot_sparql_endpoint)
 
     # Test with SPARQL query
@@ -319,14 +322,6 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
     return proteomes_ids, single_proteomes, tax_id_not_founds
 
 def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint):
-    import gzip
-
-    from SPARQLWrapper import SPARQLWrapper, TSV
-    from io import StringIO
-    from Bio import SeqIO
-    from Bio.Seq import Seq
-    from Bio.SeqRecord import SeqRecord
-
     sparql = SPARQLWrapper(uniprot_sparql_endpoint)
 
     uniprot_sparql_query = """PREFIX up: <http://purl.uniprot.org/core/>
