@@ -2,6 +2,8 @@
 
 EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomy (for example from 16S RNA sequencing). This is useful when we do not have sequencged genomes or proteome associated to our data.
 
+![EsMeCaTa](esmecata_workflow.png)
+
 ## Requirements
 
 EsMeCaTa needs the following python packages:
