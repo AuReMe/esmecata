@@ -27,9 +27,13 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, output_dict):
     data = data.encode('utf-8')
     req = urllib.request.Request(url, data)
     with urllib.request.urlopen(req) as f:
-        csvreader = csv.reader(f.read().decode('utf-8').splitlines(), delimiter='\t')
-    # Avoid header
-    next(csvreader)
+        response_text = f.read().decode('utf-8')
+        if response_text != '':
+            csvreader = csv.reader(response_text.splitlines(), delimiter='\t')
+            # Avoid header
+            next(csvreader)
+        else:
+            csvreader = []
 
     results = {}
     for line in csvreader:
@@ -118,9 +122,13 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
     # Parse output.
     sparql.setReturnFormat(TSV)
     results = sparql.query().convert().decode('utf-8')
-    csvreader = csv.reader(StringIO(results), delimiter='\t')
-    # Avoid header.
-    next(csvreader)
+    if results != '':
+        csvreader = csv.reader(StringIO(results), delimiter='\t')
+        # Avoid header.
+        next(csvreader)
+    else:
+        csvreader = []
+
     results = {}
     for line in csvreader:
         protein_id = line[0].split('/')[-1]

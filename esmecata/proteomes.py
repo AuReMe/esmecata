@@ -84,40 +84,60 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep):
     # Use "format=tab" to easily handle the ouput.
     http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+reference:yes+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
 
+    # If esmecata does not find proteomes with only reference, search for all poroteomes even if they are not reference.
+    all_http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
+
     response = requests.get(http_str)
     # Raise error if we have a bad request.
     response.raise_for_status()
-    if response.text == '':
+
+    response_proteome_statut = False
+
+    with requests.get(http_str) as proteome_response:
+        proteome_response_text = proteome_response.text
+        if proteome_response_text != '':
+            csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
+            response_proteome_statut = True
+            # Avoid header.
+            next(csvreader)
+        else:
+            csvreader = []
+
+    if response_proteome_statut is False:
         time.sleep(1)
         print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(taxon, tax_id, tax_name))
-        http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
-        response = requests.get(http_str)
-    if response.text != '':
-        csvreader = csv.reader(response.text.splitlines(), delimiter='\t')
-        # Avoid header.
-        next(csvreader)
-        for line in csvreader:
-            proteome = line[0]
-            completness = line[6]
-            org_tax_id = line[2]
-
-            # Check that proteome has busco score.
-            if busco_percentage_keep:
-                if line[4] != '':
-                    busco_percentage = float(line[4].split(':')[1].split('%')[0])
-                    if busco_percentage >= busco_percentage_keep and completness == 'full':
-                        proteomes.append(proteome)
-                        if org_tax_id not in organism_ids:
-                            organism_ids[org_tax_id] = [proteome]
-                        else:
-                            organism_ids[org_tax_id].append(proteome)
+        with requests.get(all_http_str) as proteome_response:
+            proteome_response_text = proteome_response.text
+            if proteome_response_text != '':
+                csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
+                response_proteome_statut = True
+                # Avoid header.
+                next(csvreader)
             else:
-                if completness == 'full':
+                csvreader = []
+
+    for line in csvreader:
+        proteome = line[0]
+        completness = line[6]
+        org_tax_id = line[2]
+
+        # Check that proteome has busco score.
+        if busco_percentage_keep:
+            if line[4] != '':
+                busco_percentage = float(line[4].split(':')[1].split('%')[0])
+                if busco_percentage >= busco_percentage_keep and completness == 'full':
                     proteomes.append(proteome)
                     if org_tax_id not in organism_ids:
                         organism_ids[org_tax_id] = [proteome]
                     else:
                         organism_ids[org_tax_id].append(proteome)
+        else:
+            if completness == 'full':
+                proteomes.append(proteome)
+                if org_tax_id not in organism_ids:
+                    organism_ids[org_tax_id] = [proteome]
+                else:
+                    organism_ids[org_tax_id].append(proteome)
 
     return proteomes, organism_ids
 
@@ -166,10 +186,14 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, unipr
     sparql.setQuery(uniprot_sparql_query)
     # Parse output.
     sparql.setReturnFormat(TSV)
+
     results = sparql.query().convert().decode('utf-8')
-    csvreader = csv.reader(StringIO(results), delimiter='\t')
-    # Avoid header.
-    next(csvreader)
+    if results != '':
+        csvreader = csv.reader(StringIO(results), delimiter='\t')
+        # Avoid header.
+        next(csvreader)
+    else:
+        csvreader = []
 
     proteomes = []
     organism_ids = {}
@@ -345,10 +369,14 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     sparql.setQuery(uniprot_sparql_query)
     # Parse output.
     sparql.setReturnFormat(TSV)
+
     results = sparql.query().convert().decode('utf-8')
-    csvreader = csv.reader(StringIO(results), delimiter='\t')
-    # Avoid header.
-    next(csvreader)
+    if results != '':
+        csvreader = csv.reader(StringIO(results), delimiter='\t')
+        # Avoid header.
+        next(csvreader)
+    else:
+        csvreader = []
 
     records = []
     already_added_proteins = []
@@ -387,7 +415,13 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
         print('The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
 
-    if is_taxadb_up_to_date() is False:
+    try:
+        ete_taxadb_up_to_date = is_taxadb_up_to_date()
+    except:
+        ncbi = NCBITaxa()
+        ete_taxadb_up_to_date = is_taxadb_up_to_date()
+
+    if ete_taxadb_up_to_date is False:
         print('''WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. Update it using:
         from ete3 import NCBITaxa
         ncbi = NCBITaxa()
@@ -414,30 +448,53 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
     # taxonomy is the column containing the taxonomy separated by ';': phylum;class;order;family;genus;genus + species
     taxonomies = df.to_dict()['taxonomy']
 
-    ncbi = NCBITaxa()
-
-    tax_id_names, json_cluster_taxons = associate_taxon_to_taxon_id(taxonomies, ncbi)
-
-    json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
-
-    json_log = os.path.join(output_folder, 'log.json')
-    with open(json_log, 'w') as ouput_file:
-        json.dump(json_cluster_taxons, ouput_file, indent=4)
-
-    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep, uniprot_sparql_endpoint)
-
-    proteome_to_download = []
-    for proteomes_id in proteomes_ids:
-        proteome_to_download.extend(proteomes_ids[proteomes_id][1])
-    proteome_to_download = set(proteome_to_download)
-
     proteome_cluster_tax_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
-    # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
-    with open(proteome_cluster_tax_id_file, 'w') as out_file:
-        csvwriter = csv.writer(out_file, delimiter='\t')
-        csvwriter.writerow(['cluster', 'name', 'tax_id', 'proteome'])
-        for cluster in proteomes_ids:
-            csvwriter.writerow([cluster, tax_id_names[int(proteomes_ids[cluster][0])], proteomes_ids[cluster][0], ','.join(proteomes_ids[cluster][1])])
+
+    if not os.path.exists(proteome_cluster_tax_id_file):
+        ncbi = NCBITaxa()
+
+        tax_id_names, json_cluster_taxons = associate_taxon_to_taxon_id(taxonomies, ncbi)
+
+        json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
+
+        json_log = os.path.join(output_folder, 'log.json')
+        with open(json_log, 'w') as ouput_file:
+            json.dump(json_cluster_taxons, ouput_file, indent=4)
+
+
+    if not os.path.exists(proteome_cluster_tax_id_file):
+        proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep, uniprot_sparql_endpoint)
+
+        proteome_to_download = []
+        for proteomes_id in proteomes_ids:
+            proteome_to_download.extend(proteomes_ids[proteomes_id][1])
+        proteome_to_download = set(proteome_to_download)
+
+        # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
+        with open(proteome_cluster_tax_id_file, 'w') as out_file:
+            csvwriter = csv.writer(out_file, delimiter='\t')
+            csvwriter.writerow(['cluster', 'name', 'tax_id', 'proteome'])
+            for cluster in proteomes_ids:
+                csvwriter.writerow([cluster, tax_id_names[int(proteomes_ids[cluster][0])], proteomes_ids[cluster][0], ','.join(proteomes_ids[cluster][1])])
+    else:
+        proteome_to_download = []
+        proteomes_ids = {}
+        single_proteomes = {}
+        with open(proteome_cluster_tax_id_file, 'r') as input_file:
+            csvreader = csv.reader(input_file, delimiter='\t')
+            next(csvreader)
+            for line in csvreader:
+                observation_name = line[0]
+                name = line[1]
+                tax_id = line[2]
+                proteomes = line[3].split(',')
+                proteome_to_download.extend(proteomes)
+                if len(proteomes) == 1:
+                    single_proteomes[observation_name] = (tax_id, proteomes)
+                proteomes_ids[observation_name] = (tax_id, proteomes)
+                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, name, len(proteomes)))
+
+        proteome_to_download = set(proteome_to_download)
 
     # Download all the proteomes in tmp folder.
     print('Download proteome')
@@ -446,12 +503,13 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
         os.mkdir(tmp_folder)
     for proteome in proteome_to_download:
         output_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
-        if uniprot_sparql_endpoint is not None:
-            sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
-        else:
-            proteome_response = requests.get('https://www.uniprot.org/uniprot/?query=proteome:{0}&format=fasta&compress=yes'.format(proteome))
-            with open(output_proteome_file, 'wb') as f:
-                f.write(proteome_response.content)
+        if not os.path.exists(output_proteome_file):
+            if uniprot_sparql_endpoint is not None:
+                sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
+            else:
+                with requests.get('https://www.uniprot.org/uniprot/?query=proteome:{0}&format=fasta&compress=yes'.format(proteome)) as proteome_response:
+                    with open(output_proteome_file, 'wb') as f:
+                        f.write(proteome_response.content)
         time.sleep(1)
 
     # Download Uniprot metadata and create a json file containing them.

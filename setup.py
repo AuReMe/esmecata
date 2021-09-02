@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='EsMeCaTa',
+    name='esmecata',
     url='https://github.com/ArnaudBelcour/esmecata',
     license='GPLv3+',
     description=
