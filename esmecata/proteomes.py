@@ -91,26 +91,26 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep):
     # Raise error if we have a bad request.
     response.raise_for_status()
 
-    response_proteome_statut = False
+    response_proteome_status = False
 
     with requests.get(http_str) as proteome_response:
         proteome_response_text = proteome_response.text
         if proteome_response_text != '':
             csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
-            response_proteome_statut = True
+            response_proteome_status = True
             # Avoid header.
             next(csvreader)
         else:
             csvreader = []
 
-    if response_proteome_statut is False:
+    if response_proteome_status is False:
         time.sleep(1)
         print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(taxon, tax_id, tax_name))
         with requests.get(all_http_str) as proteome_response:
             proteome_response_text = proteome_response.text
             if proteome_response_text != '':
                 csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
-                response_proteome_statut = True
+                response_proteome_status = True
                 # Avoid header.
                 next(csvreader)
             else:
@@ -271,7 +271,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
             if tax_id in tax_id_founds:
                 proteomes_ids[taxon] = (tax_id, tax_id_founds[tax_id])
                 if len(tax_id_founds[tax_id]) == 1:
-                    single_proteomes[taxon] = (tax_id, proteomes)
+                    single_proteomes[taxon] = (tax_id, tax_id_founds[tax_id])
                 break
 
             # If tax_id has not been found with a request do not try a new request with the same tax_id.
