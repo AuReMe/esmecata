@@ -18,7 +18,7 @@ from ete3 import NCBITaxa, is_taxadb_up_to_date
 from io import StringIO
 from SPARQLWrapper import SPARQLWrapper, TSV
 
-from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file
+from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir
 
 def associate_taxon_to_taxon_id(taxonomies, ncbi):
     tax_id_names = {}
@@ -432,8 +432,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
         else:
             print('--ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
 
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
+    is_valid_dir(output_folder)
 
     if '.xlsx' in input_file:
         df = pd.read_excel(input_file)
@@ -499,8 +498,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
     # Download all the proteomes in tmp folder.
     print('Download proteome')
     tmp_folder = os.path.join(output_folder, 'tmp_proteome')
-    if not os.path.exists(tmp_folder):
-        os.mkdir(tmp_folder)
+    is_valid_dir(tmp_folder)
+
     for proteome in proteome_to_download:
         output_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
@@ -526,20 +525,17 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
     # Create a result folder which contains one sub-folder per OTU.
     # Each OTU sub-folder will contain the proteome found.
     result_folder = os.path.join(output_folder, 'result')
-    if not os.path.exists(result_folder):
-        os.mkdir(result_folder)
+    is_valid_dir(result_folder)
 
     result_single_folder = os.path.join(output_folder, 'result_single_proteome')
-    if not os.path.exists(result_single_folder):
-        os.mkdir(result_single_folder)
+    is_valid_dir(result_single_folder)
 
     for cluster in proteomes_ids:
         if cluster in single_proteomes:
             output_cluster = os.path.join(result_single_folder, cluster)
         else:
             output_cluster = os.path.join(result_folder, cluster)
-        if not os.path.exists(output_cluster):
-            os.mkdir(output_cluster)
+        is_valid_dir(output_cluster)
         for proteome in proteomes_ids[cluster][1]:
             input_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
             output_proteome = os.path.join(output_cluster, proteome+'.faa')

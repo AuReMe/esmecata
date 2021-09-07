@@ -19,8 +19,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
         print(f"Missing output from esmecata proteomes in {result_folder}.")
         sys.exit(1)
 
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
+    is_valid_dir(output_folder)
 
     cluster_fasta_files = {}
     for cluster in os.listdir(result_folder):
@@ -37,13 +36,11 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
 
     # Create tmp folder for mmseqs analysis.
     mmseqs_tmp = os.path.join(output_folder, 'mmseqs_tmp')
-    if not os.path.exists(mmseqs_tmp):
-        os.mkdir(mmseqs_tmp)
+    is_valid_dir(mmseqs_tmp)
 
     # Create output folder containing shared representative proteins.
     reference_proteins_fasta = os.path.join(output_folder, 'reference_proteins_fasta')
-    if not os.path.exists(reference_proteins_fasta):
-        os.mkdir(reference_proteins_fasta)
+    is_valid_dir(reference_proteins_fasta)
 
     print('Clustering proteins.')
     # For each OTU run mmseqs easy-cluster on them to found the clusters that have a protein in each proteome of the OTU.
@@ -98,8 +95,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
                 organism_prots[record.id.split('|')[1]] = fasta_file
 
         reference_proteins = os.path.join(output_folder, 'reference_proteins')
-        if not os.path.exists(reference_proteins):
-            os.mkdir(reference_proteins)
+        is_valid_dir(reference_proteins)
 
         # To keep a cluster, we have to find have at least one protein of each proteome of the OTU.
         rep_prot_to_keeps = []

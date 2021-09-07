@@ -8,7 +8,7 @@ import urllib.request
 from io import StringIO
 from SPARQLWrapper import SPARQLWrapper, TSV
 
-from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release
+from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir
 
 def rest_query_uniprot_to_retrieve_function(protein_queries, output_dict):
     url = 'https://www.uniprot.org/uploadlists/'
@@ -196,8 +196,16 @@ def create_pathologic(base_filename, protein_annotations, protein_set, pathologi
 
 
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint):
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
+    is_valid_dir(output_folder)
+
+    annotation_folder = os.path.join(output_folder, 'annotation')
+    is_valid_dir(annotation_folder)
+
+    annotation_reference_folder = os.path.join(output_folder, 'annotation_reference')
+    is_valid_dir(annotation_reference_folder)
+
+    pathologic_folder = os.path.join(output_folder, 'pathologic')
+    is_valid_dir(pathologic_folder)
 
     # Download Uniprot metadata and create a json file containing them.
     if uniprot_sparql_endpoint:
@@ -255,9 +263,6 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint):
                 else:
                     output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, output_dict)
 
-        annotation_folder = os.path.join(output_folder, 'annotation')
-        if not os.path.exists(annotation_folder):
-            os.mkdir(annotation_folder)
         annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
         with open(annotation_file, 'w') as output_tsv:
             csvwriter = csv.writer(output_tsv, delimiter='\t')
@@ -288,9 +293,6 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint):
                         gene_name = output_dict[protein][6]
             protein_annotations[reference_protein] = [output_dict[protein][0], gos, ecs, gene_name]
   
-        annotation_reference_folder = os.path.join(output_folder, 'annotation_reference')
-        if not os.path.exists(annotation_reference_folder):
-            os.mkdir(annotation_reference_folder)
         annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
         with open(annotation_reference_file, 'w') as output_tsv:
             csvwriter = csv.writer(output_tsv, delimiter='\t')
@@ -299,15 +301,13 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint):
                 csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][1])), ','.join(list(protein_annotations[protein][2]))])
 
         # Create PathoLogic file and folder for each input.
-        pathologic_folder = os.path.join(output_folder, 'pathologic')
-        if not os.path.exists(pathologic_folder):
-            os.mkdir(pathologic_folder)
-
-        pathologic_organism_folder = os.path.join(pathologic_folder, base_filename)
-        if not os.path.exists(pathologic_organism_folder):
-            os.mkdir(pathologic_organism_folder)
-        pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
-        create_pathologic(base_filename, protein_annotations, set_proteins, pathologic_file)
+        if len(protein_annotations) > 0:
+            pathologic_organism_folder = os.path.join(pathologic_folder, base_filename)
+            is_valid_dir(pathologic_organism_folder)
+            pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
+            create_pathologic(base_filename, protein_annotations, set_proteins, pathologic_file)
+        elif len(protein_annotations) == 0:
+            print('No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
 
     # Create mpwt taxon ID file.
     clustering_taxon_id_file = os.path.join(input_folder, 'proteome_cluster_tax_id.tsv')
