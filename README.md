@@ -59,7 +59,7 @@ For each of the representative proteins conserved, esmecata will look for the an
 
 Then esmecata will create a tabulated file for each row of the input file and also a folde rcontaing PathoLogic file that can be used as input for Pathway Tools.
 
-## EsMeCaTa commannds
+## EsMeCaTa commands
 
 ````
 usage: esmecata [-h] [--version] {proteomes,clustering,annotation} ...
