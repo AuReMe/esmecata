@@ -67,7 +67,8 @@ def main():
         '--busco',
         dest='busco',
         required=False,
-        help='BUSCO percentage between 0 and 100. This will remove all the proteomes without BUSCO score and the score before the selected percentage.',
+        type=range_limited_float_type,
+        help='BUSCO percentage between 0 and 1. This will remove all the proteomes without BUSCO score and the score before the selected ratio of completion.',
         metavar='BUSCO')
     parent_parser_taxadb = argparse.ArgumentParser(add_help=False)
     parent_parser_taxadb.add_argument(
@@ -145,7 +146,7 @@ def main():
             uniprot_sparql_endpoint = args.sparql
 
     if args.cmd == 'proteomes':
-        retrieve_proteomes(args.input, args.output, args.busco, args.ignore_taxadb_update, uniprot_sparql_endpoint)
+        retrieve_proteomes(args.input, args.output, 100*args.busco, args.ignore_taxadb_update, uniprot_sparql_endpoint)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering)
     elif args.cmd == 'annotation':
