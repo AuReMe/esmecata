@@ -41,17 +41,23 @@ For example:
 
 For each taxon in each taxonomy EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes assocaited to these taxon ID in the Uniprot Proteomes database.
 
-If there is only 1 proteomes, it will be put aside.
-
 If there is more than 100 proteomes, esmecata will apply a specific method: (1) use the taxon ID associated to each proteomes to create a taxonomy tree with ete3, (2) from the root of the tree (the input taxon), esmecata will find the direct deescendant (sub-taxons), (3) then esmecata will compute the number of proteomes associated to each sub-taxon, (4) the corresponding proportions will be used to select randomly a number of proteomes corresponding to the propotion.
 For example: for the taxon Clostridiales, 645 proteomes are found. Using the organism taxon ID associated to the 645 proteomes we found that there is 17 direct sub-taxons. Then for each sub-taxon we compute the percentage of proportion of proteomes given by the sub-taxon to the taxon Clostridiales.
 There is 198 proteomes associated to the sub-taxon Clostridiaceae, the percentage will be computed as follow: 198 / 645 = 30% (if a percentage is superior to 1 it will be round down and if the percentage is lower than 1 it will be round up to keep all the low proportion sub-taxons). We will use this 30% to select randomly 30 proteomes amongst the 198 proteomes of Clostridiaceae. This is done for all the other sub-taxons, so we get a number of proteomes around 100 (here it will be 102). Due to the different rounds (up or down) the total number of proteomes will not be equal to exactly 100 but it will be around it.
 
 Then the proteomes found will be downloaded.
 
+#### Options
+
+* It is possible to filter proteomes accordingto to their BUSCO score (from Uniprot documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By choosing a BUSCO score of 0.90, esmecata will only download proteomes with a BSUCO score of at least 0.90.
+
 ### Proteins clustering
 
 For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the proteins. Then if a cluster contains at least one protein from each proteomes, it will be kept (this threshold can be change using the --threshold option). The representative proteins from the cluster will be used. A fasta file of all the representative proteins will be created for each taxon.
+
+#### Options
+
+* It is possible to modify the requirements of the presence of at least one protein from each proteomes in a cluster to keep it. Using the threshold option one can give a float between 0 and 1 to select the ratio of representation of proteomes in a cluster to keep. For example a threshold of 0.8 means that all the cluster with at least 80% representations of proteomes will be kept (with a taxon, associated with 10 proteoems, it means that at least 8 proteomes must have a protein in the cluster so the cluster must be kept).
 
 ### Retrive proteins annotations
 

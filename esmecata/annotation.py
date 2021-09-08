@@ -5,6 +5,7 @@ import re
 import urllib.parse
 import urllib.request
 
+from collections import Counter
 from io import StringIO
 from SPARQLWrapper import SPARQLWrapper, TSV
 
@@ -277,22 +278,37 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint):
                 gene_name = output_dict[protein][6]
                 csvwriter.writerow([protein, protein_name, protein_review_satus, go_tersm, ec_numbers, interpros, rhea_ids, gene_name])
 
+        annotation_threshold = 0
         # For each reference protein, get the annotation of the other proteins clustered with it and add to its annotation.
         protein_annotations = {}
         for reference_protein in reference_proteins:
-            gos = set()
-            ecs = set()
-            gene_name = ''
+            gos = []
+            ecs = []
+            gene_name = []
             for protein in reference_proteins[reference_protein]:
                 if protein in output_dict:
                     if output_dict[protein][2] != []:
-                        gos.update(set(output_dict[protein][2]))
+                        gos.append(list(set(output_dict[protein][2])))
                     if output_dict[protein][3] != []:
-                        ecs.update(set(output_dict[protein][3]))
+                        ecs.append(list(set(output_dict[protein][3])))
                     if output_dict[protein][6] != '':
-                        gene_name = output_dict[protein][6]
-            protein_annotations[reference_protein] = [output_dict[protein][0], gos, ecs, gene_name]
-  
+                        gene_name.append(output_dict[protein][6])
+
+            keep_gos = []
+            keep_ecs = []
+            keep_names = ''
+            if len(gos) > 0:
+                all_gos = set([go for subgos in gos for go in subgos])
+                keep_gos = [go for go in all_gos if sum(subgos.count(go) for subgos in gos) >= annotation_threshold * len(reference_proteins[reference_protein])]
+            if len(ecs) > 0:
+                all_ecs = set([ec for subecs in ecs for ec in subecs])
+                keep_ecs = [ec for ec in all_ecs if sum(subecs.count(ec) for subecs in ecs) >= annotation_threshold * len(reference_proteins[reference_protein])]
+
+            if len(gene_name) > 0:
+                keep_names = max(gene_name,key=gene_name.count)
+
+            protein_annotations[reference_protein] = [output_dict[protein][0], keep_gos, keep_ecs, keep_names]
+
         annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
         with open(annotation_reference_file, 'w') as output_tsv:
             csvwriter = csv.writer(output_tsv, delimiter='\t')
