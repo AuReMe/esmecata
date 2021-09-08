@@ -104,11 +104,10 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
         with open(cluster_proteomes_output_file, 'w') as output_file:
             csvwriter = csv.writer(output_file, delimiter='\t')
             for rep_protein in proteins_representatives:
-                if len(proteins_representatives[rep_protein]) > 1:
-                        rep_prot_organims[rep_protein] = set([organism_prots[prot] for prot in proteins_representatives[rep_protein]])
-                        if len(rep_prot_organims[rep_protein]) >= clust_threshold * len(cluster_fasta_files[cluster]):
-                            csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
-                            rep_prot_to_keeps.append(rep_protein)
+                rep_prot_organims[rep_protein] = set([organism_prots[prot] for prot in proteins_representatives[rep_protein]])
+                if len(rep_prot_organims[rep_protein]) >= clust_threshold * len(cluster_fasta_files[cluster]):
+                    csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
+                    rep_prot_to_keeps.append(rep_protein)
 
         # Create BioPtyhon records with the representative proteins kept.
         new_records = []

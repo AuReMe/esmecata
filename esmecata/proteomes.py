@@ -527,14 +527,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
     result_folder = os.path.join(output_folder, 'result')
     is_valid_dir(result_folder)
 
-    result_single_folder = os.path.join(output_folder, 'result_single_proteome')
-    is_valid_dir(result_single_folder)
-
     for cluster in proteomes_ids:
-        if cluster in single_proteomes:
-            output_cluster = os.path.join(result_single_folder, cluster)
-        else:
-            output_cluster = os.path.join(result_folder, cluster)
+        output_cluster = os.path.join(result_folder, cluster)
         is_valid_dir(output_cluster)
         for proteome in proteomes_ids[cluster][1]:
             input_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
