@@ -93,10 +93,6 @@ output_folder
 │       └── Proteome_1.faa
 │       └── Proteome_2.faa
 │   └── ...
-├── result_single_proteome
-│   └── Cluster_2
-│       └── Proteome_3.faa
-│   └── ...
 ├── tmp_proteome
 │   └── Proteome_1.faa.gz
 │   └── Proteome_2.faa.gz
@@ -107,7 +103,7 @@ output_folder
 ├── uniprot_release_metadata.json
 ````
 
-The `result` folder contain one subfolder for each `observation_name` from the input file (except when only 1 proteome has been found then the results are stored in `result_single_proteome`). Each subfolder contains the proteome associated with the `observation_name`.
+The `result` folder contain one subfolder for each `observation_name` from the input file. Each subfolder contains the proteome associated with the `observation_name`.
 
 The `tmp_proteome` contains all the proteomes that have been found to be associated with one taxon.
 
