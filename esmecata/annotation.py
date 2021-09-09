@@ -196,7 +196,7 @@ def create_pathologic(base_filename, protein_annotations, protein_set, pathologi
                 element_file.write('//\n\n')
 
 
-def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint):
+def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation):
     is_valid_dir(output_folder)
 
     annotation_folder = os.path.join(output_folder, 'annotation')
@@ -278,36 +278,50 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint):
                 gene_name = output_dict[protein][6]
                 csvwriter.writerow([protein, protein_name, protein_review_satus, go_tersm, ec_numbers, interpros, rhea_ids, gene_name])
 
-        annotation_threshold = 0
         # For each reference protein, get the annotation of the other proteins clustered with it and add to its annotation.
         protein_annotations = {}
         for reference_protein in reference_proteins:
-            gos = []
-            ecs = []
-            gene_name = []
-            for protein in reference_proteins[reference_protein]:
-                if protein in output_dict:
-                    if output_dict[protein][2] != []:
-                        gos.append(list(set(output_dict[protein][2])))
-                    if output_dict[protein][3] != []:
-                        ecs.append(list(set(output_dict[protein][3])))
-                    if output_dict[protein][6] != '':
-                        gene_name.append(output_dict[protein][6])
+            if propagate_annotation is not None:
+                gos = []
+                ecs = []
+                gene_names = []
+                protein_names = []
+                for protein in reference_proteins[reference_protein]:
+                    if protein in output_dict:
+                        if output_dict[protein][0] != '':
+                            protein_names.append(output_dict[protein][0])
+                        if output_dict[protein][2] != []:
+                            gos.append(list(set(output_dict[protein][2])))
+                        if output_dict[protein][3] != []:
+                            ecs.append(list(set(output_dict[protein][3])))
+                        if output_dict[protein][6] != '':
+                            gene_names.append(output_dict[protein][6])
 
-            keep_gos = []
-            keep_ecs = []
-            keep_names = ''
-            if len(gos) > 0:
-                all_gos = set([go for subgos in gos for go in subgos])
-                keep_gos = [go for go in all_gos if sum(subgos.count(go) for subgos in gos) >= annotation_threshold * len(reference_proteins[reference_protein])]
-            if len(ecs) > 0:
-                all_ecs = set([ec for subecs in ecs for ec in subecs])
-                keep_ecs = [ec for ec in all_ecs if sum(subecs.count(ec) for subecs in ecs) >= annotation_threshold * len(reference_proteins[reference_protein])]
+                keep_gos = []
+                keep_ecs = []
+                keep_gene_names = ''
+                keep_protein_names = ''
+                # Propagate all the annotations (GO, EC) that have been found to occur in at least X proteins of the cluster. Where X is computed using the ratio given by the user and
+                # the number of proteins in the cluster.
+                if len(gos) > 0:
+                    all_gos = set([go for subgos in gos for go in subgos])
+                    keep_gos = [go for go in all_gos if sum(subgos.count(go) for subgos in gos) >= propagate_annotation * len(reference_proteins[reference_protein])]
+                if len(ecs) > 0:
+                    all_ecs = set([ec for subecs in ecs for ec in subecs])
+                    keep_ecs = [ec for ec in all_ecs if sum(subecs.count(ec) for subecs in ecs) >= propagate_annotation * len(reference_proteins[reference_protein])]
+                # Retrieve the gene and protein names by using the gene/protein name which the maximum occurrence in the proteins of the cluster.
+                if len(gene_names) > 0:
+                    keep_gene_names = max(gene_names,key=gene_names.count)
+                if len(protein_names) > 0:
+                    keep_protein_names = max(protein_names,key=protein_names.count)
 
-            if len(gene_name) > 0:
-                keep_names = max(gene_name,key=gene_name.count)
-
-            protein_annotations[reference_protein] = [output_dict[protein][0], keep_gos, keep_ecs, keep_names]
+                protein_annotations[reference_protein] = [keep_protein_names, keep_gos, keep_ecs, keep_gene_names]
+            else:
+                protein_name = output_dict[reference_protein][0]
+                gos = output_dict[reference_protein][2]
+                ecs = output_dict[reference_protein][3]
+                gene_name = output_dict[reference_protein][6]
+                protein_annotations[reference_protein] = [protein_name, gos, ecs, gene_name]
 
         annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
         with open(annotation_reference_file, 'w') as output_tsv:

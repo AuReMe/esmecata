@@ -96,6 +96,15 @@ def main():
         required=False,
         type=range_limited_float_type,
         default=1)
+    parent_parser_propagate = argparse.ArgumentParser(add_help=False)
+    parent_parser_propagate.add_argument(
+        '-p',
+        '--propagate',
+        dest='propagate_annotation',
+        help='Proportion [0 to 1] of the reccurence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotaitons from all proteins are propagated to the reference and 1 only the annotation occurring in all the proteins of the cluster.',
+        required=False,
+        type=range_limited_float_type,
+        default=1)
     parent_parser_sparql = argparse.ArgumentParser(add_help=False)
     parent_parser_sparql.add_argument(
         '-s',
@@ -127,7 +136,8 @@ def main():
         'annotation',
         help='Retrieve protein annotations from Uniprot.',
         parents=[
-            parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql
+            parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
+            parent_parser_propagate
         ])
 
     args = parser.parse_args()
@@ -150,7 +160,7 @@ def main():
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering)
     elif args.cmd == 'annotation':
-        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint)
+        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation)
 
 if __name__ == '__main__':
     main()

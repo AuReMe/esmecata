@@ -61,9 +61,13 @@ For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the pro
 
 ### Retrive proteins annotations
 
-For each of the representative proteins conserved, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot. it will also look for the annotation of the protein of the same cluster than the representative one. And all the anntoations found for a cluster will be propagated to the representative proteins.
+For each of the representative proteins conserved, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
 
 Then esmecata will create a tabulated file for each row of the input file and also a folde rcontaing PathoLogic file that can be used as input for Pathway Tools.
+
+#### Options
+
+* It is possible to modify how the annotations are retrieved. By default, esmecata will take the annotations from the representative proteins. But with the `-p` option it is possible to propagate annotation form the proteins of the cluster to the reference proteins. This option takes a flaot as input between 0 and 1, that will be used to filter the annotations retrieved. This number is multiplicated with the number of protein in the cluster to estimate a threshold. To keep an annotation the annotaiton must be higher than the threshold. For example with a threshold of 0.5, for a cluster of 10 proteins an annotation will be kept if 5 or more proteins of the cluster have this annotation. If the option is set to 0, there will be no filter all the annotation of the proteins of the clsuter will be propagated to the reference protein (it corresponds to the **union** of the cluster annnotations). If the option is set to 1, only annotations that are present in all the proteins of a clsuter will be kept (it corresponds to the **intersection** of the cluster annotations).
 
 ## EsMeCaTa commands
 
