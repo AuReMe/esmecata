@@ -35,9 +35,32 @@ For example:
 | Cluster_6        | Bacteria;Bacteroidetes;Bacteroidia;Bacteroidales;Dysgonomonadaceae;unknown genus;unknown species             |
 | Cluster_7        | Bacteria;Firmicutes;Clostridia;Clostridiales;Clostridiaceae;Clostridium;unknown species                      |
 
+## EsMeCaTa commands
+
+````
+usage: esmecata [-h] [--version] {proteomes,clustering,annotation} ...
+
+From taxonomy to metabolism using Uniprot. For specific help on each subcommand use: esmecata {cmd} --help
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+
+subcommands:
+  valid subcommands:
+
+  {proteomes,clustering,annotation}
+    proteomes           Download proteomes associated to taxon from Uniprot Proteomes.
+    clustering          Cluster the proteins of the different proteomes of a taxon into a single set of representative
+                        shared proteins.
+    annotation          Retrieve protein annotations from Uniprot.
+
+Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
+````
+
 ## EsMeCaTa functions
 
-### Retrieve proteomes associated to taxonomy
+### `esmecata proteomes`: Retrieve proteomes associated to taxonomy
 
 For each taxon in each taxonomy EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated to these taxon ID in the Uniprot Proteomes database.
 
@@ -62,7 +85,7 @@ Then the proteomes found will be downloaded.
 
 It is possible to filter proteomes according to to their BUSCO score (from Uniprot documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By choosing a BUSCO score of 0.90, esmecata will only download proteomes with a BSUCO score of at least 0.90.
 
-### Proteins clustering
+### `esmecata clustering`: Proteins clustering
 
 For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the proteins. Then if a cluster contains at least one protein from each proteomes, it will be kept (this threshold can be change using the --threshold option). The representative proteins from the cluster will be used. A fasta file of all the representative proteins will be created for each taxon.
 
@@ -74,7 +97,7 @@ It is possible to modify the requirements of the presence of at least one protei
 
 For example a threshold of 0.8 means that all the cluster with at least 80% representations of proteomes will be kept (with a taxon, associated with 10 proteomes, it means that at least 8 proteomes must have a protein in the cluster so the cluster must be kept).
 
-### Retrieve proteins annotations
+### `esmecata annotation`: Retrieve protein annotations
 
 For each of the representative proteins conserved, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
 
@@ -91,29 +114,6 @@ This option takes a float as input between 0 and 1, that will be used to filter 
 If the option is set to 0, there will be no filter all the annotation of the proteins of the cluster will be propagated to the reference protein (it corresponds to the **union** of the cluster annotations). This parameter gives the higher number of annotation for proteins. If the option is set to 1, only annotations that are present in all the proteins of a cluster will be kept (it corresponds to the **intersection** of the cluster annotations). This parameter is the most stringent and will limit the number of annotations associated to a protein.
 
 For example, for the same taxon the annotaiton with the  parameter `-p 0` leads to the reconstruction of a metabolic networks of 1006 reactions whereas the parameter `-p 1` creates a metabolic network with 940 reactions (in this example with no use of the `-p` option, so without annotaiton propagation, there was also 940 reacitons inferred).
-
-## EsMeCaTa commands
-
-````
-usage: esmecata [-h] [--version] {proteomes,clustering,annotation} ...
-
-From taxonomy to metabolism using Uniprot. For specific help on each subcommand use: esmecata {cmd} --help
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
-
-subcommands:
-  valid subcommands:
-
-  {proteomes,clustering,annotation}
-    proteomes           Download proteomes associated to taxon from Uniprot Proteomes.
-    clustering          Cluster the proteins of the different proteomes of a taxon into a single set of representative
-                        shared proteins.
-    annotation          Retrieve protein annotations from Uniprot.
-
-Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
-````
 
 ## EsMeCaTa outputs
 
