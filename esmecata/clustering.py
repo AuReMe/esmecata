@@ -121,4 +121,10 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
 
     proteome_taxon_id_file = os.path.join(proteome_folder, 'proteome_cluster_tax_id.tsv')
     clustering_taxon_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
-    shutil.copyfile(proteome_taxon_id_file, clustering_taxon_id_file)
+
+    if os.path.exists(clustering_taxon_id_file):
+        if not os.path.samefile(proteome_taxon_id_file, clustering_taxon_id_file):
+            os.remove(clustering_taxon_id_file)
+            shutil.copyfile(proteome_taxon_id_file, clustering_taxon_id_file)
+    else:
+        shutil.copyfile(proteome_taxon_id_file, clustering_taxon_id_file)
