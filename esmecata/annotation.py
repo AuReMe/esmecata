@@ -218,9 +218,10 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(uniprot_releases, ouput_file, indent=4)
 
+    proteome_cluster_tax_id_file = os.path.join(input_folder, 'proteome_cluster_tax_id.tsv')
+
     if uniprot_sparql_endpoint:
         input_proteomes = {}
-        proteome_cluster_tax_id_file = os.path.join(input_folder, 'proteome_cluster_tax_id.tsv')
         with open(proteome_cluster_tax_id_file, 'r') as tax_id_file:
             csvreader = csv.reader(tax_id_file, delimiter='\t')
             next(csvreader)
@@ -340,9 +341,8 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             print('No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
 
     # Create mpwt taxon ID file.
-    clustering_taxon_id_file = os.path.join(input_folder, 'proteome_cluster_tax_id.tsv')
     clustering_taxon_id = {}
-    with open(clustering_taxon_id_file, 'r') as input_taxon_id_file:
+    with open(proteome_cluster_tax_id_file, 'r') as input_taxon_id_file:
         taxon_id_csvreader = csv.reader(input_taxon_id_file, delimiter='\t')
         next(taxon_id_csvreader)
         for line in taxon_id_csvreader:

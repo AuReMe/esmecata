@@ -156,7 +156,13 @@ def main():
             uniprot_sparql_endpoint = args.sparql
 
     if args.cmd == 'proteomes':
-        retrieve_proteomes(args.input, args.output, 100*args.busco, args.ignore_taxadb_update, uniprot_sparql_endpoint)
+        if args.busco:
+            busco_score = 100*args.busco
+        else:
+            busco_score = None
+
+    if args.cmd == 'proteomes':
+        retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, uniprot_sparql_endpoint)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering)
     elif args.cmd == 'annotation':
