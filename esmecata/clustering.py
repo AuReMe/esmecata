@@ -5,10 +5,15 @@ import subprocess
 import sys
 
 from Bio import SeqIO
+from shutil import which
 
 from esmecata.utils import is_valid_path, is_valid_dir
 
 def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
+    if not which('mmseqs'):
+        print('mmseqs not available in path, esmecata will not be able to cluster the proteomes.')
+        sys.exit(1)
+
     if not is_valid_dir(proteome_folder):
         print(f"Input must be a folder {proteome_folder}.")
         sys.exit(1)
