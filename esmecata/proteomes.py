@@ -517,7 +517,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
     else:
         uniprot_releases = get_rest_uniprot_release()
 
-    uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata.json')
+    uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata_proteomes.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(uniprot_releases, ouput_file, indent=4)
 

@@ -214,7 +214,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     else:
         uniprot_releases = get_rest_uniprot_release()
 
-    uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata.json')
+    uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata_annotation.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(uniprot_releases, ouput_file, indent=4)
 
