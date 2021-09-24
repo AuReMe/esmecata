@@ -4,6 +4,25 @@ EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomy (for examp
 
 ![EsMeCaTa](esmecata_workflow.png)
 
+## Table of contents
+- [EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomy](#esmecata-estimating-metabolic-capabilties-from-taxonomy)
+  - [Table of contents](#table-of-contents)
+  - [Requirements](#requirements)
+  - [Requirements](#requirements-1)
+  - [Input](#input)
+  - [EsMeCaTa commands](#esmecata-commands)
+  - [EsMeCaTa functions](#esmecata-functions)
+    - [`esmecata proteomes`: Retrieve proteomes associated to taxonomy](#esmecata-proteomes-retrieve-proteomes-associated-to-taxonomy)
+      - [Options](#options)
+    - [`esmecata clustering`: Proteins clustering](#esmecata-clustering-proteins-clustering)
+      - [Options](#options-1)
+    - [`esmecata annotation`: Retrieve protein annotations](#esmecata-annotation-retrieve-protein-annotations)
+      - [Options](#options-2)
+  - [EsMeCaTa outputs](#esmecata-outputs)
+    - [EsMeCaTa proteomes](#esmecata-proteomes)
+    - [EsMeCaTa clustering](#esmecata-clustering)
+    - [EsMeCaTa annotation](#esmecata-annotation)
+
 ## Requirements
 
 EsMeCaTa needs the following python packages:
@@ -18,6 +37,12 @@ Also esmecata requires mmseqs2 for protein clustering:
 
 - [mmseqs2](https://github.com/soedinglab/MMseqs2): To cluster proteins.
 
+
+## Requirements
+
+EsMeCata can be installed with pip command (in esmecata directory):
+
+```pip install -e . ```
 
 ## Input
 
@@ -62,6 +87,30 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 
 ### `esmecata proteomes`: Retrieve proteomes associated to taxonomy
 
+````
+usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO]
+                          [--ignore-taxadb-update] [-s SPARQL]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT_FILE, --input INPUT_FILE
+                        Input taxon file (excel, tsv or csv) containing a
+                        column associating ID to a taxonomy (separated by ;).
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  -b BUSCO, --busco BUSCO
+                        BUSCO percentage between 0 and 1. This will remove
+                        all the proteomes without BUSCO score and the score
+                        before the selected ratio of completion.
+  --ignore-taxadb-update
+                        If you have a not up-to-date version of the NCBI
+                        taxonomy database with ete3, use this option to
+                        bypass the warning message and use the old version.
+  -s SPARQL, --sparql SPARQL
+                        Use sparql endpoint instead of REST queries on
+                        Uniprot.
+````
+
 For each taxon in each taxonomy EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated to these taxon ID in the Uniprot Proteomes database.
 
 If there is more than 100 proteomes, esmecata will apply a specific method:
@@ -87,6 +136,24 @@ It is possible to filter proteomes according to to their BUSCO score (from Unipr
 
 ### `esmecata clustering`: Proteins clustering
 
+````
+usage: esmecata clustering [-h] -i INPUT_DIR -o OUPUT_DIR [-c CPU]
+                           [-t THRESHOLD_CLUSTERING]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT_DIR, --input INPUT_DIR
+                        This input folder of clustering is the output folder
+                        of proteomes command.
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  -c CPU, --cpu CPU     CPU number for multiprocessing.
+  -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
+                        Proportion [0 to 1] of proteomes required to occur in
+                        a proteins cluster for that cluster to be kept in
+                        core proteome assembly.
+````
+
 For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the proteins. Then if a cluster contains at least one protein from each proteomes, it will be kept (this threshold can be change using the --threshold option). The representative proteins from the cluster will be used. A fasta file of all the representative proteins will be created for each taxon.
 
 #### Options
@@ -98,6 +165,30 @@ It is possible to modify the requirements of the presence of at least one protei
 For example a threshold of 0.8 means that all the cluster with at least 80% representations of proteomes will be kept (with a taxon, associated with 10 proteomes, it means that at least 8 proteomes must have a protein in the cluster so the cluster must be kept).
 
 ### `esmecata annotation`: Retrieve protein annotations
+
+````
+usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL]
+                           [-p PROPAGATE_ANNOTATION]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT_DIR, --input INPUT_DIR
+                        This input folder of annotation is the output folder
+                        of clustering command.
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  -s SPARQL, --sparql SPARQL
+                        Use sparql endpoint instead of REST queries on
+                        Uniprot.
+  -p PROPAGATE_ANNOTATION, --propagate PROPAGATE_ANNOTATION
+                        Proportion [0 to 1] of the reccurence of an
+                        annotation to be propagated from the protein of a
+                        cluster to the reference protein of the cluster. 0
+                        mean the annotaitons from all proteins are propagated
+                        to the reference and 1 only the annotation occurring
+                        in all the proteins of the cluster.
+
+````
 
 For each of the representative proteins conserved, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
 
@@ -117,7 +208,7 @@ For example, for the same taxon the annotaiton with the  parameter `-p 0` leads 
 
 ## EsMeCaTa outputs
 
-### EsMecaTa proteomes
+### EsMeCaTa proteomes
 
 ````
 output_folder
@@ -146,7 +237,7 @@ The `tmp_proteome` contains all the proteomes that have been found to be associa
 
 `uniprot_release_metadata.json` is a log about the Uniprot release used and how the queries ware made (REAST or SPARQL).
 
-### EsMecaTa clustering
+### EsMeCaTa clustering
 
 ````
 output_folder
@@ -172,7 +263,7 @@ The `reference_proteins_fasta` contains all the representative proteins associat
 
 The `proteome_cluster_tax_id.tsv` file is the same than the one created in `esmecata proteomes`.
 
-### EsMecaTa annotation
+### EsMeCaTa annotation
 
 ````
 output_folder
@@ -194,7 +285,7 @@ The `annotation` folder contains a tabulated file for each `observation_name`. I
 
 The `annotation_reference` contains annotation only for the representative proteins, but the annotation of the other proteins of the same cluster can be propagated to the reference protein if the `-p` was used.
 
-The `pathologic` contains one sub-folder for each `observation_name` in which there is one PathoLogic file. There is also a `taxon_id.tsv` file which corresponds to a modified version of `proteome_cluster_tax_id.tsv` with only the `observation_name` and the `taxon_id`. This folder can be used as input to [mpwt](https://github.com/AuReMe/mpwt) to reconstruct metabolic networks using Pathway Tools PathoLogic.
+The `pathologic` contains one sub-folder for each `observation_name` in which there is one PathoLogic file. There is also a `taxon_id.tsv` file which corresponds to a modified version of `proteome_cluster_tax_id.tsv` with only the `observation_name` and the `taxon_id`. This folder can be used as input to [mpwt](https://github.com/AuReMe/mpwt) to reconstruct draft metabolic networks using Pathway Tools PathoLogic.
 
 
 The `uniprot_release_metadata.json` serves the same purpose as the one used in `esmecata proteomes` to retrieve metadata about Uniprot release at the time of the query.
