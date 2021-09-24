@@ -8,7 +8,7 @@ EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomy (for examp
 - [EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomy](#esmecata-estimating-metabolic-capabilties-from-taxonomy)
   - [Table of contents](#table-of-contents)
   - [Requirements](#requirements)
-  - [Requirements](#requirements-1)
+  - [Installation](#installation)
   - [Input](#input)
   - [EsMeCaTa commands](#esmecata-commands)
   - [EsMeCaTa functions](#esmecata-functions)
@@ -38,7 +38,7 @@ Also esmecata requires mmseqs2 for protein clustering:
 - [mmseqs2](https://github.com/soedinglab/MMseqs2): To cluster proteins.
 
 
-## Requirements
+## Installation
 
 EsMeCata can be installed with pip command (in esmecata directory):
 
