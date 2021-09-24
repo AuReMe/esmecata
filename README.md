@@ -46,7 +46,7 @@ EsMeCata can be installed with pip command (in esmecata directory):
 
 ## Input
 
-EsMeCaTa takes as input a tabulated or an excel file with two columns one with the ID corresponding to the taxonomy (for example the OTU ID for 16S RNA sequencing) and a second column with taxonomy separated by ';'. In the following documentation, the first column (named `observation_name`) will be used to identify the label associated to each taxonomy.
+EsMeCaTa takes as input a tabulated or an excel file with two columns one with the ID corresponding to the taxonomy (for example the OTU ID for 16S RNA sequencing) and a second column with taxonomy separated by ';'. In the following documentation, the first column (named `observation_name`) will be used to identify the label associated to each taxonomy. An example is located in the test folder ([Example.tsv](https://github.com/ArnaudBelcour/esmecata/blob/master/test/Example.tsv)).
 
 For example:
 
