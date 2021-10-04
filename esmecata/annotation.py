@@ -327,9 +327,9 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
         with open(annotation_reference_file, 'w') as output_tsv:
             csvwriter = csv.writer(output_tsv, delimiter='\t')
-            csvwriter.writerow(['protein', 'GO', 'EC'])
+            csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC'])
             for protein in protein_annotations:
-                csvwriter.writerow([protein, ','.join(list(protein_annotations[protein][1])), ','.join(list(protein_annotations[protein][2]))])
+                csvwriter.writerow([protein, protein_annotations[protein][0], protein_annotations[protein][3], ','.join(list(protein_annotations[protein][1])), ','.join(list(protein_annotations[protein][2]))])
 
         # Create PathoLogic file and folder for each input.
         if len(protein_annotations) > 0:

@@ -78,6 +78,14 @@ def main():
         required=False,
         action='store_true',
         default=None)
+    parent_parser_all_proteomes = argparse.ArgumentParser(add_help=False)
+    parent_parser_all_proteomes.add_argument(
+        '--all-proteomes',
+        dest='all_proteomes',
+        help='Downlaod all proteomes associated to a taxon even if they are no reference proteomes.',
+        required=False,
+        action='store_true',
+        default=None)
     parent_parser_c = argparse.ArgumentParser(add_help=False)
     parent_parser_c.add_argument(
         '-c',
@@ -124,7 +132,7 @@ def main():
         help='Download proteomes associated to taxon from Uniprot Proteomes.',
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
-            parent_parser_taxadb, parent_parser_sparql
+            parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql
         ])
     clustering_parser = subparsers.add_parser(
         'clustering',
@@ -162,7 +170,7 @@ def main():
             busco_score = None
 
     if args.cmd == 'proteomes':
-        retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, uniprot_sparql_endpoint)
+        retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering)
     elif args.cmd == 'annotation':

@@ -75,7 +75,7 @@ def filter_taxon(json_cluster_taxons, ncbi):
 
     return json_cluster_taxons
 
-def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep):
+def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes):
     proteomes = []
     organism_ids = {}
     # Find proteomes associated with taxon.
@@ -83,6 +83,9 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep):
     # Avoid redundant and excluded proteomes with "redundant%3Ano+excluded%3Ano".
     # Use "format=tab" to easily handle the ouput.
     http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+reference:yes+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
+
+    if all_proteomes:
+        http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
 
     # If esmecata does not find proteomes with only reference, search for all poroteomes even if they are not reference.
     all_http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
@@ -142,7 +145,7 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep):
     return proteomes, organism_ids
 
 
-def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
+def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
     sparql = SPARQLWrapper(uniprot_sparql_endpoint)
 
     # Test with SPARQL query
@@ -246,16 +249,19 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, unipr
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
 
-    if len(reference_proteomes) == 0:
-        print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(taxon, tax_id, tax_name))
+    if all_proteomes:
         proteomes = other_proteomes
     else:
-        proteomes = reference_proteomes
+        if len(reference_proteomes) == 0:
+            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(taxon, tax_id, tax_name))
+            proteomes = other_proteomes
+        else:
+            proteomes = reference_proteomes
 
     return proteomes, organism_ids
 
 
-def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None, uniprot_sparql_endpoint=None):
+def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None):
     # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomy.
     # If there is more thant 100 proteomes we do not keep it because there is too many proteome.
     print('Find proteome ID associated to taxonomy')
@@ -279,9 +285,9 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
                 continue
 
             if uniprot_sparql_endpoint:
-                proteomes, organism_ids = sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, uniprot_sparql_endpoint)
+                proteomes, organism_ids = sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
             else:
-                proteomes, organism_ids = rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep)
+                proteomes, organism_ids = rest_query_proteomes(taxon, tax_id, tax_name, all_proteomes, busco_percentage_keep)
 
             # Answer is empty no corresponding proteomes to the tax_id.
             if len(proteomes) == 0:
@@ -410,7 +416,7 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
-def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None, uniprot_sparql_endpoint=None):
+def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None):
     if is_valid_file(input_file) == False:
         print('The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
@@ -462,7 +468,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
 
 
     if not os.path.exists(proteome_cluster_tax_id_file):
-        proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep, uniprot_sparql_endpoint)
+        proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
 
         proteome_to_download = []
         for proteomes_id in proteomes_ids:
