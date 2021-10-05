@@ -160,8 +160,10 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
     PREFIX taxon: <http://purl.uniprot.org/taxonomy/>
 
     SELECT DISTINCT ?proteome ?score ?fragmented ?missing ?organism ?completion ?type
+
     FROM <http://sparql.uniprot.org/proteomes>
     FROM <http://sparql.uniprot.org/taxonomy>
+
     WHERE
     {{
         ?proteome rdf:type up:Proteome .
@@ -363,18 +365,20 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
     SELECT ?protein ?name ?sequence ?sequenceaa ?review
+
     FROM <http://sparql.uniprot.org/uniprot>
     FROM <http://sparql.uniprot.org/proteomes>
+
     WHERE
     {{
-    ?protein a up:Protein ;
-            up:mnemonic ?name ;
-            up:reviewed ?review ;
-            up:proteome ?genomicComponent .
-    ?proteome skos:narrower ?genomicComponent .
-    ?protein up:sequence ?sequence .
-    ?sequence rdf:value ?sequenceaa .
-    VALUES (?proteome) {{ (proteome:{0}) }}
+        ?protein a up:Protein ;
+                up:mnemonic ?name ;
+                up:reviewed ?review ;
+                up:proteome ?genomicComponent .
+        ?proteome skos:narrower ?genomicComponent .
+        ?protein up:sequence ?sequence .
+        ?sequence rdf:value ?sequenceaa .
+        VALUES (?proteome) {{ (proteome:{0}) }}
     }}""".format(proteome)
 
     sparql.setQuery(uniprot_sparql_query)

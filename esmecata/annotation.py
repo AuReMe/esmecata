@@ -67,18 +67,19 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
     PREFIX proteome: <http://purl.uniprot.org/proteomes/>
 
     SELECT ?protein
-    (GROUP_CONCAT(DISTINCT ?fullName; separator=";") AS ?name)
-    (GROUP_CONCAT(DISTINCT ?goTerm; separator=";") AS ?go)
-    (GROUP_CONCAT(DISTINCT ?ecNumber; separator=";") AS ?ec)
-    (GROUP_CONCAT(DISTINCT ?ecNumber2; separator=";") AS ?ec2)
-    (GROUP_CONCAT(DISTINCT ?interpro; separator=";") AS ?ipr)
-    (GROUP_CONCAT(DISTINCT ?rheaReaction; separator=";") AS ?rhea)
-    (GROUP_CONCAT(DISTINCT ?reviewed; separator=";") AS ?review)
-    (GROUP_CONCAT(DISTINCT ?geneLabel; separator=";") AS ?geneName)
-    (GROUP_CONCAT(DISTINCT ?subName; separator=";") AS ?submitName)
+        (GROUP_CONCAT(DISTINCT ?fullName; separator=";") AS ?name)
+        (GROUP_CONCAT(DISTINCT ?goTerm; separator=";") AS ?go)
+        (GROUP_CONCAT(DISTINCT ?ecNumber; separator=";") AS ?ec)
+        (GROUP_CONCAT(DISTINCT ?ecNumber2; separator=";") AS ?ec2)
+        (GROUP_CONCAT(DISTINCT ?interpro; separator=";") AS ?ipr)
+        (GROUP_CONCAT(DISTINCT ?rheaReaction; separator=";") AS ?rhea)
+        (GROUP_CONCAT(DISTINCT ?reviewed; separator=";") AS ?review)
+        (GROUP_CONCAT(DISTINCT ?geneLabel; separator=";") AS ?geneName)
+        (GROUP_CONCAT(DISTINCT ?subName; separator=";") AS ?submitName)
 
     FROM <http://sparql.uniprot.org/uniprot>
     FROM <http://sparql.uniprot.org/proteomes>
+
     WHERE {{
         ?protein a up:Protein ;
             up:proteome ?genomicComponent .
@@ -187,6 +188,7 @@ def sparql_query_uniprot_annotaiton_uniref(proteomes, output_dict, uniprot_sparq
         FROM <http://sparql.uniprot.org/uniref>
         FROM <http://sparql.uniprot.org/uniprot>
         FROM <http://sparql.uniprot.org/proteomes>
+
         WHERE
         {{
             ?cluster up:member/up:sequenceFor ?protein ;
@@ -258,13 +260,14 @@ def sparql_query_uniprot_expression(proteomes, output_dict, uniprot_sparql_endpo
         PREFIX proteome: <http://purl.uniprot.org/proteomes/>
 
         SELECT ?protein
-        (GROUP_CONCAT(DISTINCT ?induct_comment; separator=";") AS ?induction)
-        (GROUP_CONCAT(DISTINCT ?tissue_spec_comment; separator=";") AS ?tissue_specificity)
-        (GROUP_CONCAT(DISTINCT ?disruption_comment; separator=";") AS ?disruption)
+            (GROUP_CONCAT(DISTINCT ?induct_comment; separator=";") AS ?induction)
+            (GROUP_CONCAT(DISTINCT ?tissue_spec_comment; separator=";") AS ?tissue_specificity)
+            (GROUP_CONCAT(DISTINCT ?disruption_comment; separator=";") AS ?disruption)
 
         FROM <http://sparql.uniprot.org/uniprot>
         FROM <http://sparql.uniprot.org/uniref>
         FROM <http://sparql.uniprot.org/proteomes>
+
         WHERE {{
             ?protein a up:Protein ;
                 up:proteome ?genomicComponent .
@@ -513,9 +516,14 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                 gene_name = output_dict[reference_protein][6]
                 protein_annotations[reference_protein] = [protein_name, gos, ecs, gene_name]
             if uniref_annotation:
-                if reference_protein not in uniref_output_dict:
-                    protein_annotations[reference_protein][1] = set(protein_annotations[reference_protein][1].extend(uniref_output_dict[reference_protein][1]))
-                    protein_annotations[reference_protein][2] = set(protein_annotations[reference_protein][2].extend(uniref_output_dict[reference_protein][2]))
+                    uniref_gos = uniref_output_dict[reference_protein][0]
+                    uniref_ecs = uniref_output_dict[reference_protein][1]
+
+                    protein_annotations[reference_protein][1].extend(uniref_gos)
+                    protein_annotations[reference_protein][2].extend(uniref_ecs)
+
+                    protein_annotations[reference_protein][1] = set(protein_annotations[reference_protein][1])
+                    protein_annotations[reference_protein][2] = set(protein_annotations[reference_protein][2])
 
         annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
         with open(annotation_reference_file, 'w') as output_tsv:
