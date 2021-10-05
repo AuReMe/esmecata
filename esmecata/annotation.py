@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import re
+import sys
 import urllib.parse
 import urllib.request
 
@@ -351,6 +352,14 @@ def create_pathologic(base_filename, protein_annotations, protein_set, pathologi
 
 
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation):
+    if uniprot_sparql_endpoint is None and uniref_annotation is not None:
+        print('At this moment, --uniref option needs to be used with --sparql option.')
+        sys.exit()
+
+    if uniprot_sparql_endpoint is None and expression_annotation is not None:
+        print('At this moment, --expression option needs to be used with --sparql option.')
+        sys.exit()
+
     is_valid_dir(output_folder)
 
     annotation_folder = os.path.join(output_folder, 'annotation')

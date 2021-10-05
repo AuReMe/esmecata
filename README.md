@@ -123,7 +123,7 @@ Then the proteomes found will be downloaded.
 
 * `-s/--sparql`: use SPARQL instead of REST requests
 
-It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a sparql endpoint containing UniProt. If you want to use the [SPARQL endpoint](https://sparql.uniprot.org/sparql), you can just use: `-s uniprot`.
+It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a sparql endpoint containing UniProt. If you want to use the [SPARQL endpoint of UniProt](https://sparql.uniprot.org/sparql), you can use the argument: `-s uniprot`.
 
 * `-b/--busco`: filter proteomes using BUSCO score
 
@@ -184,7 +184,8 @@ optional arguments:
   -p PROPAGATE_ANNOTATION, --propagate PROPAGATE_ANNOTATION
                         Proportion [0 to 1] of the reccurence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotaitons from all proteins are propagated to the
                         reference and 1 only the annotation occurring in all the proteins of the cluster.
-  --uniref              Use uniref cluster to extract more annotations from the re
+  --uniref              Use uniref cluster to extract more annotations from the representative member of the cluster associated to the proteins. Needs the --sparql option.
+  --expression          Extract expresion information associated to the proteins. Needs the --sparql option.
 ````
 
 For each of the representative proteins conserved, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
@@ -209,11 +210,11 @@ For example, for the same taxon the annotaiton with the  parameter `-p 0` leads 
 
 * `--uniref`: use annotation from uniref
 
-To add more annotations, esmecata can search for each reference proteins the [UniRef](https://www.uniprot.org/help/uniref) cluster associated to the protein. Then the representative protein of the cluster will be extracted and if its identity with the protein of interest is superior to 90% esmecata will find its annotaiton (GO Terms and EC numbers) andwill propagate these annotations to the portein of our dataset.
+To add more annotations, esmecata can search the [UniRef](https://www.uniprot.org/help/uniref) cluster associated to the protein associated to a taxon. Then the representative protein of the cluster will be extracted and if its identity with the protein of interest is superior to 90% esmecata will find its annotaiton (GO Terms and EC numbers) and will propagate these annotations to the protein. At this moment, this option is only usable when using the `--sparql` option.
 
 * `--expression`: extract expression information
 
-With this option, esmecata will extract the [expression information](https://www.uniprot.org/help/expression_section) associated to a protein. This contains 3 elements: Induction, Tissue specificity and Disruption Phenotype.
+With this option, esmecata will extract the [expression information](https://www.uniprot.org/help/expression_section) associated to a protein. This contains 3 elements: Induction, Tissue specificity and Disruption Phenotype. At this moment, this option is only usable when using the `--sparql` option.
 
 ## EsMeCaTa outputs
 

@@ -117,7 +117,7 @@ def main():
     parent_parser_uniref.add_argument(
         '--uniref',
         dest='uniref',
-        help='Use uniref cluster to extract more annotations from the representative member of the cluster associated to the proteins.',
+        help='Use uniref cluster to extract more annotations from the representative member of the cluster associated to the proteins. Needs the --sparql option.',
         required=False,
         action='store_true',
         default=None)
@@ -125,7 +125,7 @@ def main():
     parent_parser_expression.add_argument(
         '--expression',
         dest='expression',
-        help='Extract expresion information associated to the proteins.',
+        help='Extract expresion information associated to the proteins. Needs the --sparql option.',
         required=False,
         action='store_true',
         default=None)
