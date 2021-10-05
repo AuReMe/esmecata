@@ -262,9 +262,9 @@ def sparql_query_uniprot_expression(proteomes, output_dict, uniprot_sparql_endpo
         (GROUP_CONCAT(DISTINCT ?tissue_spec_comment; separator=";") AS ?tissue_specificity)
         (GROUP_CONCAT(DISTINCT ?disruption_comment; separator=";") AS ?disruption)
 
-		FROM <http://sparql.uniprot.org/uniprot>
+        FROM <http://sparql.uniprot.org/uniprot>
         FROM <http://sparql.uniprot.org/uniref>
-		FROM <http://sparql.uniprot.org/proteomes>
+        FROM <http://sparql.uniprot.org/proteomes>
         WHERE {{
             ?protein a up:Protein ;
                 up:proteome ?genomicComponent .
