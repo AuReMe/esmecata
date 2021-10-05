@@ -13,11 +13,18 @@ EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomy (for examp
   - [EsMeCaTa commands](#esmecata-commands)
   - [EsMeCaTa functions](#esmecata-functions)
     - [`esmecata proteomes`: Retrieve proteomes associated to taxonomy](#esmecata-proteomes-retrieve-proteomes-associated-to-taxonomy)
-      - [Options](#options)
+      - [`-s/--sparql`: use SPARQL instead of REST requests](#-s--sparql-use-sparql-instead-of-rest-requests)
+      - [`-b/--busco`: filter proteomes using BUSCO score](#-b--busco-filter-proteomes-using-busco-score)
+      - [`--ignore-taxadb-update`: ignore need to udpate ete3 taxaDB](#--ignore-taxadb-update-ignore-need-to-udpate-ete3-taxadb)
+      - [`--all-proteomes`: download all proteomes (reference and non-reference)](#--all-proteomes-download-all-proteomes-reference-and-non-reference)
     - [`esmecata clustering`: Proteins clustering](#esmecata-clustering-proteins-clustering)
-      - [Options](#options-1)
+      - [`-t/--threshold`: threshold clustering](#-t--threshold-threshold-clustering)
+      - [`-c/--cpu`: number of CPU for mmseqs2](#-c--cpu-number-of-cpu-for-mmseqs2)
     - [`esmecata annotation`: Retrieve protein annotations](#esmecata-annotation-retrieve-protein-annotations)
-      - [Options](#options-2)
+      - [`-s/--sparql`: use SPARQL instead of REST requests](#-s--sparql-use-sparql-instead-of-rest-requests-1)
+      - [`-p/--propagate`: propagation of annotation](#-p--propagate-propagation-of-annotation)
+      - [`--uniref`: use annotation from uniref](#--uniref-use-annotation-from-uniref)
+      - [`--expression`: extract expression information](#--expression-extract-expression-information)
   - [EsMeCaTa outputs](#esmecata-outputs)
     - [EsMeCaTa proteomes](#esmecata-proteomes)
     - [EsMeCaTa clustering](#esmecata-clustering)
@@ -88,27 +95,21 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 ### `esmecata proteomes`: Retrieve proteomes associated to taxonomy
 
 ````
-usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO]
-                          [--ignore-taxadb-update] [-s SPARQL]
+usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i INPUT_FILE, --input INPUT_FILE
-                        Input taxon file (excel, tsv or csv) containing a
-                        column associating ID to a taxonomy (separated by ;).
+                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomy (separated by ;).
   -o OUPUT_DIR, --output OUPUT_DIR
                         Output directory path.
   -b BUSCO, --busco BUSCO
-                        BUSCO percentage between 0 and 1. This will remove
-                        all the proteomes without BUSCO score and the score
-                        before the selected ratio of completion.
+                        BUSCO percentage between 0 and 1. This will remove all the proteomes without BUSCO score and the score before the selected ratio of completion.
   --ignore-taxadb-update
-                        If you have a not up-to-date version of the NCBI
-                        taxonomy database with ete3, use this option to
-                        bypass the warning message and use the old version.
+                        If you have a not up-to-date version of the NCBI taxonomy database with ete3, use this option to bypass the warning message and use the old version.
+  --all-proteomes       Download all proteomes associated to a taxon even if they are no reference proteomes.
   -s SPARQL, --sparql SPARQL
-                        Use sparql endpoint instead of REST queries on
-                        Uniprot.
+                        Use sparql endpoint instead of REST queries on Uniprot.
 ````
 
 For each taxon in each taxonomy EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated to these taxon ID in the Uniprot Proteomes database.
@@ -128,75 +129,79 @@ There is 198 proteomes associated to the sub-taxon Clostridiaceae, the percentag
 
 Then the proteomes found will be downloaded.
 
-#### Options
+#### `-s/--sparql`: use SPARQL instead of REST requests
 
-* `-b/--busco`:
+It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a sparql endpoint containing UniProt. If you want to use the [SPARQL endpoint](https://sparql.uniprot.org/sparql), you can just use: `-s uniprot`.
+
+#### `-b/--busco`: filter proteomes using BUSCO score
 
 It is possible to filter proteomes according to to their BUSCO score (from Uniprot documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By choosing a BUSCO score of 0.90, esmecata will only download proteomes with a BSUCO score of at least 0.90.
+
+#### `--ignore-taxadb-update`: ignore need to udpate ete3 taxaDB
+
+If you have an old version of the ete3 NCBI taxonomy database, you can use this option to use esmecata with it.
+
+#### `--all-proteomes`: download all proteomes (reference and non-reference)
+
+By default, esmecata will try to downlaod the reference proteomes associated to a taxon. But if you want to download all the proteomes associated to a taxon (either if they are non reference proteome) you can use this option. Without this option non-reference proteoems can also be used if no reference proteomes are found.
 
 ### `esmecata clustering`: Proteins clustering
 
 ````
-usage: esmecata clustering [-h] -i INPUT_DIR -o OUPUT_DIR [-c CPU]
-                           [-t THRESHOLD_CLUSTERING]
+usage: esmecata clustering [-h] -i INPUT_DIR -o OUPUT_DIR [-c CPU] [-t THRESHOLD_CLUSTERING]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i INPUT_DIR, --input INPUT_DIR
-                        This input folder of clustering is the output folder
-                        of proteomes command.
+                        This input folder of clustering is the output folder of proteomes command.
   -o OUPUT_DIR, --output OUPUT_DIR
                         Output directory path.
   -c CPU, --cpu CPU     CPU number for multiprocessing.
   -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
-                        Proportion [0 to 1] of proteomes required to occur in
-                        a proteins cluster for that cluster to be kept in
-                        core proteome assembly.
+                        Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.
 ````
 
 For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the proteins. Then if a cluster contains at least one protein from each proteomes, it will be kept (this threshold can be change using the --threshold option). The representative proteins from the cluster will be used. A fasta file of all the representative proteins will be created for each taxon.
 
-#### Options
-
-* `-t/--threshold`: threshold clustering
+#### `-t/--threshold`: threshold clustering
 
 It is possible to modify the requirements of the presence of at least one protein from each proteomes in a cluster to keep it. Using the threshold option one can give a float between 0 and 1 to select the ratio of representation of proteomes in a cluster to keep.
 
 For example a threshold of 0.8 means that all the cluster with at least 80% representations of proteomes will be kept (with a taxon, associated with 10 proteomes, it means that at least 8 proteomes must have a protein in the cluster so the cluster must be kept).
 
+#### `-c/--cpu`: number of CPU for mmseqs2
+
+You can give a numbe of CPUs to parallelise mmseqs2.
+
+
 ### `esmecata annotation`: Retrieve protein annotations
 
 ````
-usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL]
-                           [-p PROPAGATE_ANNOTATION]
+usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i INPUT_DIR, --input INPUT_DIR
-                        This input folder of annotation is the output folder
-                        of clustering command.
+                        This input folder of annotation is the output folder of clustering command.
   -o OUPUT_DIR, --output OUPUT_DIR
                         Output directory path.
   -s SPARQL, --sparql SPARQL
-                        Use sparql endpoint instead of REST queries on
-                        Uniprot.
+                        Use sparql endpoint instead of REST queries on Uniprot.
   -p PROPAGATE_ANNOTATION, --propagate PROPAGATE_ANNOTATION
-                        Proportion [0 to 1] of the reccurence of an
-                        annotation to be propagated from the protein of a
-                        cluster to the reference protein of the cluster. 0
-                        mean the annotaitons from all proteins are propagated
-                        to the reference and 1 only the annotation occurring
-                        in all the proteins of the cluster.
-
+                        Proportion [0 to 1] of the reccurence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotaitons from all proteins are propagated to the
+                        reference and 1 only the annotation occurring in all the proteins of the cluster.
+  --uniref              Use uniref cluster to extract more annotations from the re
 ````
 
 For each of the representative proteins conserved, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
 
 Then esmecata will create a tabulated file for each row of the input file and also a folder containg PathoLogic file that can be used as input for Pathway Tools.
 
-#### Options
+#### `-s/--sparql`: use SPARQL instead of REST requests
 
-* `-p/--propagate`: propagation of anntoation:
+It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a sparql endpoint containing UniProt. If you want to use the [SPARQL endpoint](https://sparql.uniprot.org/sparql), you can just use: `-s uniprot`.
+
+#### `-p/--propagate`: propagation of annotation
 
 It is possible to modify how the annotations are retrieved. By default, esmecata will take the annotations from the representative proteins. But with the `-p` option it is possible to propagate annotation form the proteins of the cluster to the reference proteins.
 
@@ -205,6 +210,14 @@ This option takes a float as input between 0 and 1, that will be used to filter 
 If the option is set to 0, there will be no filter all the annotation of the proteins of the cluster will be propagated to the reference protein (it corresponds to the **union** of the cluster annotations). This parameter gives the higher number of annotation for proteins. If the option is set to 1, only annotations that are present in all the proteins of a cluster will be kept (it corresponds to the **intersection** of the cluster annotations). This parameter is the most stringent and will limit the number of annotations associated to a protein.
 
 For example, for the same taxon the annotaiton with the  parameter `-p 0` leads to the reconstruction of a metabolic networks of 1006 reactions whereas the parameter `-p 1` creates a metabolic network with 940 reactions (in this example with no use of the `-p` option, so without annotaiton propagation, there was also 940 reacitons inferred).
+
+#### `--uniref`: use annotation from uniref
+
+To add more annotations, esmecata can search for each reference proteins the [UniRef](https://www.uniprot.org/help/uniref) cluster associated to the protein. Then the representative protein of the cluster will be extracted and if its identity with the protein of interest is superior to 90% esmecata will find its annotaiton (GO Terms and EC numbers) andwill propagate these annotations to the portein of our dataset.
+
+#### `--expression`: extract expression information
+
+With this option, esmecata will extract the [expression information](https://www.uniprot.org/help/expression_section) associated to a protein. This contains 3 elements: Induction, Tissue specificity and Disruption Phenotype.
 
 ## EsMeCaTa outputs
 
