@@ -152,6 +152,7 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
     # First FILTER NOT EXISTS to avoid redundant proteomes.
     # Second FILTER NOT EXISTS to avoid excluded proteomes.
     # OPTIONAL allows to retrive reference and non reference proteomes and split them.
+    # From: uniprot graph location https://sparql.uniprot.org/.well-known/void%3E
     uniprot_sparql_query = """PREFIX up: <http://purl.uniprot.org/core/>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -159,6 +160,8 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
     PREFIX taxon: <http://purl.uniprot.org/taxonomy/>
 
     SELECT DISTINCT ?proteome ?score ?fragmented ?missing ?organism ?completion ?type
+    FROM <http://sparql.uniprot.org/proteomes>
+    FROM <http://sparql.uniprot.org/taxonomy>
     WHERE
     {{
         ?proteome rdf:type up:Proteome .
@@ -360,6 +363,8 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
     SELECT ?protein ?name ?sequence ?sequenceaa ?review
+    FROM <http://sparql.uniprot.org/uniprot>
+    FROM <http://sparql.uniprot.org/proteomes>
     WHERE
     {{
     ?protein a up:Protein ;

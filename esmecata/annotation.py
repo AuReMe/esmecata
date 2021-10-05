@@ -60,7 +60,6 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
 
     sparql = SPARQLWrapper(uniprot_sparql_endpoint)
 
-    # uniprotkb:ID
     uniprot_sparql_query = """PREFIX up: <http://purl.uniprot.org/core/>
     PREFIX uniprotkb: <http://purl.uniprot.org/uniprot/>
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -77,6 +76,9 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
     (GROUP_CONCAT(DISTINCT ?reviewed; separator=";") AS ?review)
     (GROUP_CONCAT(DISTINCT ?geneLabel; separator=";") AS ?geneName)
     (GROUP_CONCAT(DISTINCT ?subName; separator=";") AS ?submitName)
+
+    FROM <http://sparql.uniprot.org/uniprot>
+    FROM <http://sparql.uniprot.org/proteomes>
     WHERE {{
         ?protein a up:Protein ;
             up:proteome ?genomicComponent .
@@ -85,8 +87,8 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
             ?protein up:reviewed ?reviewed  .
         }}
         OPTIONAL {{
-            ?protein up:annotation ?annot .
-            ?annot a up:Catalytic_Activity_Annotation ;
+            ?protein up:annotation ?annot_catalytic .
+            ?annot_catalytic a up:Catalytic_Activity_Annotation ;
                 up:catalyticActivity ?catalyticAct .
             ?catalyticAct up:catalyzedReaction ?rheaReaction .
             ?catalyticAct up:enzymeClass ?ecNumber2 .
@@ -164,6 +166,155 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
     return output_dict
 
 
+def sparql_query_uniprot_annotaiton_uniref(proteomes, output_dict, uniprot_sparql_endpoint):
+    proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
+
+    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
+
+    sparql_query_uniref = """PREFIX up: <http://purl.uniprot.org/core/>
+        PREFIX uniprotkb: <http://purl.uniprot.org/uniprot/>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX proteome: <http://purl.uniprot.org/proteomes/>
+
+        SELECT ?protein
+            (GROUP_CONCAT(DISTINCT ?goTerm; separator=";") AS ?go)
+            (GROUP_CONCAT(DISTINCT ?ecNumber; separator=";") AS ?ec)
+            (GROUP_CONCAT(DISTINCT ?ecNumber2; separator=";") AS ?ec2)
+            (GROUP_CONCAT(DISTINCT ?cluster; separator=";") AS ?cl)
+            (GROUP_CONCAT(DISTINCT ?member; separator=";") AS ?representativeMember)
+
+        FROM <http://sparql.uniprot.org/uniref>
+        FROM <http://sparql.uniprot.org/uniprot>
+        FROM <http://sparql.uniprot.org/proteomes>
+        WHERE
+        {{
+            ?cluster up:member/up:sequenceFor ?protein ;
+                            up:identity ?identity .
+            ?protein a up:Protein ;
+                up:proteome ?genomicComponent .
+            ?proteome skos:narrower ?genomicComponent .
+
+            ?member up:representativeFor ?cluster.
+
+            OPTIONAL {{
+                ?member up:annotation ?annot_catalytic .
+                ?annot_catalytic a up:Catalytic_Activity_Annotation ;
+                    up:catalyticActivity ?catalyticAct .
+                ?catalyticAct up:catalyzedReaction ?rheaReaction .
+                ?catalyticAct up:enzymeClass ?ecNumber2 .
+            }}
+            OPTIONAL {{
+                ?member up:classifiedWith ?goTerm .
+                FILTER (regex(str(?goTerm), "GO")) .
+            }}
+            OPTIONAL {{
+                ?member up:enzyme ?ecNumber .
+            }}
+            FILTER (?identity > 0.9)
+            VALUES (?proteome) {{ {0} }}
+        }}
+    GROUP BY ?protein
+    """.format(proteomes)
+
+    sparql.setQuery(sparql_query_uniref)
+    # Parse output.
+    sparql.setReturnFormat(TSV)
+    results = sparql.query().convert().decode('utf-8')
+    if results != '':
+        csvreader = csv.reader(StringIO(results), delimiter='\t')
+        # Avoid header.
+        next(csvreader)
+    else:
+        csvreader = []
+
+    results = {}
+    for line in csvreader:
+        protein_id = line[0].split('/')[-1]
+        go_terms = [go_uri.split('obo/')[1].replace('_', ':') for go_uri in line[1].split('^^')[0].split(';') if go_uri != '']
+        ec_numbers = [ec_uri.split('enzyme/')[1] for ec_uri in line[2].split('^^')[0].split(';') if ec_uri != '']
+        ec_numbers.extend([ec_uri.split('enzyme/')[1] for ec_uri in line[3].split('^^')[0].split(';') if ec_uri != ''])
+        ec_numbers = list(set(ec_numbers))
+
+        cluster_id = line[4].split('/')[-1]
+        representative_member = line[5].split('/')[-1]
+
+        results[protein_id] = [go_terms, ec_numbers, cluster_id, representative_member]
+
+    output_dict.update(results)
+
+    return output_dict
+
+
+def sparql_query_uniprot_expression(proteomes, output_dict, uniprot_sparql_endpoint):
+    proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
+
+    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
+
+    sparql_query_expression = """PREFIX up: <http://purl.uniprot.org/core/>
+        PREFIX uniprotkb: <http://purl.uniprot.org/uniprot/>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX proteome: <http://purl.uniprot.org/proteomes/>
+
+        SELECT ?protein
+        (GROUP_CONCAT(DISTINCT ?induct_comment; separator=";") AS ?induction)
+        (GROUP_CONCAT(DISTINCT ?tissue_spec_comment; separator=";") AS ?tissue_specificity)
+        (GROUP_CONCAT(DISTINCT ?disruption_comment; separator=";") AS ?disruption)
+
+		FROM <http://sparql.uniprot.org/uniprot>
+        FROM <http://sparql.uniprot.org/uniref>
+		FROM <http://sparql.uniprot.org/proteomes>
+        WHERE {{
+            ?protein a up:Protein ;
+                up:proteome ?genomicComponent .
+            ?proteome skos:narrower ?genomicComponent .
+
+            OPTIONAL {{
+                ?protein up:annotation ?annot_induction .
+                ?annot_induction rdf:type up:Induction_Annotation .
+                ?annot_induction rdfs:comment ?induct_comment .
+            }}
+            OPTIONAL {{
+                ?protein up:annotation ?annot_tissue .
+                ?annot_tissue rdf:type up:Tissue_Specificity_Annotation .
+                ?annot_tissue rdfs:comment ?tissue_spec_comment .
+            }}
+            OPTIONAL {{
+                ?protein up:annotation ?annot_phenotype .
+                ?annot_phenotype rdf:type up:Disruption_Phenotype_Annotation .
+                ?annot_phenotype rdfs:comment ?disruption_comment .
+            }}
+        VALUES (?proteome) {{ {0} }}
+        }}
+        GROUP BY ?protein
+    """.format(proteomes)
+
+    sparql.setQuery(sparql_query_expression)
+    # Parse output.
+    sparql.setReturnFormat(TSV)
+    results = sparql.query().convert().decode('utf-8')
+    if results != '':
+        csvreader = csv.reader(StringIO(results), delimiter='\t')
+        # Avoid header.
+        next(csvreader)
+    else:
+        csvreader = []
+
+    results = {}
+    for line in csvreader:
+        protein_id = line[0].split('/')[-1]
+        induction = line[1].split('^^')[0]
+        tissue_specificity = line[2].split('^^')[0]
+        disruption = line[3].split('^^')[0]
+
+        results[protein_id] = [induction, tissue_specificity, disruption]
+
+    output_dict.update(results)
+
+    return output_dict
+
+
 def chunks(lst, n):
     """Yield successive n-sized chunks from list.
     Form: https://stackoverflow.com/a/312464
@@ -196,7 +347,7 @@ def create_pathologic(base_filename, protein_annotations, protein_set, pathologi
                 element_file.write('//\n\n')
 
 
-def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation):
+def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation):
     is_valid_dir(output_folder)
 
     annotation_folder = os.path.join(output_folder, 'annotation')
@@ -207,6 +358,14 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
 
     pathologic_folder = os.path.join(output_folder, 'pathologic')
     is_valid_dir(pathologic_folder)
+
+    if uniref_annotation:
+        uniref_protein_path = os.path.join(output_folder, 'uniref_annotation')
+        is_valid_dir(uniref_protein_path)
+
+    if expression_annotation:
+        expression_protein_path = os.path.join(output_folder, 'expression_annotation')
+        is_valid_dir(expression_protein_path)
 
     # Download Uniprot metadata and create a json file containing them.
     if uniprot_sparql_endpoint:
@@ -272,12 +431,42 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             for protein in output_dict:
                 protein_name = output_dict[protein][0]
                 protein_review_satus = str(output_dict[protein][1])
-                go_tersm = ','.join(output_dict[protein][2])
+                go_terms = ','.join(output_dict[protein][2])
                 ec_numbers = ','.join(output_dict[protein][3])
                 interpros = ','.join(output_dict[protein][4])
                 rhea_ids = ','.join(output_dict[protein][5])
                 gene_name = output_dict[protein][6]
-                csvwriter.writerow([protein, protein_name, protein_review_satus, go_tersm, ec_numbers, interpros, rhea_ids, gene_name])
+
+                csvwriter.writerow([protein, protein_name, protein_review_satus, go_terms, ec_numbers, interpros, rhea_ids, gene_name])
+
+        if uniref_annotation:
+            if uniprot_sparql_endpoint:
+                uniref_output_dict = {}
+                uniref_output_dict = sparql_query_uniprot_annotaiton_uniref(proteomes, uniref_output_dict, uniprot_sparql_endpoint)
+                uniref_annotation_file = os.path.join(uniref_protein_path, base_filename+'.tsv')
+                with open(uniref_annotation_file, 'w') as output_tsv:
+                    csvwriter = csv.writer(output_tsv, delimiter='\t')
+                    csvwriter.writerow(['protein_id', 'gos', 'ecs', 'uniref_cluster', 'representative_member'])
+                    for protein in uniref_output_dict:
+                        go_terms = ','.join(uniref_output_dict[protein][0])
+                        ec_numbers = ','.join(uniref_output_dict[protein][1])
+                        cluster_id = uniref_output_dict[protein][2]
+                        representative_member = uniref_output_dict[protein][3]
+                        csvwriter.writerow([protein, go_terms, ec_numbers, cluster_id, representative_member])
+
+        if expression_annotation:
+            if uniprot_sparql_endpoint:
+                expression_output_dict = {}
+                expression_output_dict = sparql_query_uniprot_expression(proteomes, expression_output_dict, uniprot_sparql_endpoint)
+                expression_annotation_file = os.path.join(expression_protein_path, base_filename+'.tsv')
+                with open(expression_annotation_file, 'w') as output_tsv:
+                    csvwriter = csv.writer(output_tsv, delimiter='\t')
+                    csvwriter.writerow(['protein_id', 'Induction_Annotation', 'Tissue_Specificity_Annotation', 'Disruption_Phenotype_Annotation'])
+                    for protein in expression_output_dict:
+                        induction = expression_output_dict[protein][0]
+                        tissue_specificity = expression_output_dict[protein][1]
+                        disruption = expression_output_dict[protein][2]
+                        csvwriter.writerow([protein, induction, tissue_specificity, disruption])
 
         # For each reference protein, get the annotation of the other proteins clustered with it and add to its annotation.
         protein_annotations = {}
@@ -323,13 +512,30 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                 ecs = output_dict[reference_protein][3]
                 gene_name = output_dict[reference_protein][6]
                 protein_annotations[reference_protein] = [protein_name, gos, ecs, gene_name]
+            if uniref_annotation:
+                if reference_protein not in uniref_output_dict:
+                    protein_annotations[reference_protein][1] = set(protein_annotations[reference_protein][1].extend(uniref_output_dict[reference_protein][1]))
+                    protein_annotations[reference_protein][2] = set(protein_annotations[reference_protein][2].extend(uniref_output_dict[reference_protein][2]))
 
         annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
         with open(annotation_reference_file, 'w') as output_tsv:
             csvwriter = csv.writer(output_tsv, delimiter='\t')
-            csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC'])
+            if expression_annotation:
+                csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC', 'Induction', 'Tissue_Specificity', 'Disruption_Phenotype'])
+            else:
+                csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC'])
             for protein in protein_annotations:
-                csvwriter.writerow([protein, protein_annotations[protein][0], protein_annotations[protein][3], ','.join(list(protein_annotations[protein][1])), ','.join(list(protein_annotations[protein][2]))])
+                protein_name = protein_annotations[protein][0]
+                gene_name = protein_annotations[protein][3]
+                gos = ','.join(list(protein_annotations[protein][1]))
+                ecs = ','.join(list(protein_annotations[protein][2]))
+                if expression_annotation:
+                    induction = expression_output_dict[protein][0]
+                    tissue_specificity = expression_output_dict[protein][1]
+                    disruption = expression_output_dict[protein][2]
+                    csvwriter.writerow([protein, protein_name, gene_name, gos, ecs, induction, tissue_specificity, disruption])
+                else:
+                    csvwriter.writerow([protein, protein_name, gene_name, gos, gos])
 
         # Create PathoLogic file and folder for each input.
         if len(protein_annotations) > 0:

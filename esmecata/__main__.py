@@ -82,7 +82,7 @@ def main():
     parent_parser_all_proteomes.add_argument(
         '--all-proteomes',
         dest='all_proteomes',
-        help='Downlaod all proteomes associated to a taxon even if they are no reference proteomes.',
+        help='Download all proteomes associated to a taxon even if they are no reference proteomes.',
         required=False,
         action='store_true',
         default=None)
@@ -113,6 +113,22 @@ def main():
         required=False,
         type=range_limited_float_type,
         default=1)
+    parent_parser_uniref = argparse.ArgumentParser(add_help=False)
+    parent_parser_uniref.add_argument(
+        '--uniref',
+        dest='uniref',
+        help='Use uniref cluster to extract more annotations from the representative member of the cluster associated to the proteins.',
+        required=False,
+        action='store_true',
+        default=None)
+    parent_parser_expression = argparse.ArgumentParser(add_help=False)
+    parent_parser_expression.add_argument(
+        '--expression',
+        dest='expression',
+        help='Extract expresion information associated to the proteins.',
+        required=False,
+        action='store_true',
+        default=None)
     parent_parser_sparql = argparse.ArgumentParser(add_help=False)
     parent_parser_sparql.add_argument(
         '-s',
@@ -145,7 +161,7 @@ def main():
         help='Retrieve protein annotations from Uniprot.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
-            parent_parser_propagate
+            parent_parser_propagate, parent_parser_uniref, parent_parser_expression
         ])
 
     args = parser.parse_args()
@@ -174,7 +190,7 @@ def main():
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering)
     elif args.cmd == 'annotation':
-        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation)
+        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression)
 
 if __name__ == '__main__':
     main()

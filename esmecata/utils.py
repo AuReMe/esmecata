@@ -116,7 +116,6 @@ def get_sparql_uniprot_release(uniprot_sparql_endpoint):
 
     sparql = SPARQLWrapper(uniprot_sparql_endpoint)
 
-    # uniprotkb:ID
     uniprot_sparql_query = """SELECT ?version
     WHERE
     {{
