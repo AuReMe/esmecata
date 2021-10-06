@@ -20,6 +20,7 @@ from SPARQLWrapper import SPARQLWrapper, TSV
 
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir
 
+
 def associate_taxon_to_taxon_id(taxonomies, ncbi):
     tax_id_names = {}
     clusters_dicts = {}
@@ -187,7 +188,7 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
                 }}
         OPTIONAL {{
             ?proteome rdf:type ?type .
-            VALUES ?type {{up:Representative_Proteome}}
+            ?type a up:Representative_Proteome.
         }}
     }}""".format(tax_id)
 
@@ -471,7 +472,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
 
         json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
 
-        json_log = os.path.join(output_folder, 'log.json')
+        json_log = os.path.join(output_folder, 'association_taxon_taxID.json')
         with open(json_log, 'w') as ouput_file:
             json.dump(json_cluster_taxons, ouput_file, indent=4)
 

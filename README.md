@@ -232,7 +232,7 @@ output_folder
 │   └── Proteome_2.faa.gz
 │   └── Proteome_3.faa.gz
 │   └── ...
-├── log.json
+├── association_taxon_taxID.json
 ├── proteome_cluster_tax_id.tsv
 ├── uniprot_release_metadata_proteomes.json
 ````
@@ -241,7 +241,7 @@ The `result` folder contain one sub-folder for each `observation_name` from the 
 
 The `tmp_proteome` contains all the proteomes that have been found to be associated with one taxon.
 
-`log.json` contains for each `observation_name` the name of the taxon and the corresponding taxon_id found with `ete3`.
+`association_taxon_taxID.json` contains for each `observation_name` the name of the taxon and the corresponding taxon_id found with `ete3`.
 
 `proteome_cluster_tax_id.tsv` contains the name, the taxon_id and the proteomes associated to each `observation_name`.
 
