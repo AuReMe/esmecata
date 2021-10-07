@@ -7,10 +7,12 @@ import urllib.parse
 import urllib.request
 
 from collections import Counter
-from io import StringIO
-from SPARQLWrapper import SPARQLWrapper, TSV
 
-from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir
+from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query
+from esmecata import __version__ as esmecata_version
+
+URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
+
 
 def rest_query_uniprot_to_retrieve_function(protein_queries, output_dict):
     url = 'https://www.uniprot.org/uploadlists/'
@@ -27,7 +29,7 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, output_dict):
     go_pattern = re.compile(r'\[GO:(?P<go>\d{7})\]')
     data = urllib.parse.urlencode(params)
     data = data.encode('utf-8')
-    req = urllib.request.Request(url, data)
+    req = urllib.request.Request(url, data, headers=URLLIB_HEADERS)
     with urllib.request.urlopen(req) as f:
         response_text = f.read().decode('utf-8')
         if response_text != '':
@@ -56,10 +58,8 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, output_dict):
     return output_dict
 
 
-def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sparql_endpoint):
+def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint):
     proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
-
-    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
 
     uniprot_sparql_query = """PREFIX up: <http://purl.uniprot.org/core/>
     PREFIX uniprotkb: <http://purl.uniprot.org/uniprot/>
@@ -123,16 +123,7 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
     GROUP BY ?protein
     """.format(proteomes)
 
-    sparql.setQuery(uniprot_sparql_query)
-    # Parse output.
-    sparql.setReturnFormat(TSV)
-    results = sparql.query().convert().decode('utf-8')
-    if results != '':
-        csvreader = csv.reader(StringIO(results), delimiter='\t')
-        # Avoid header.
-        next(csvreader)
-    else:
-        csvreader = []
+    csvreader = send_uniprot_sparql_query(uniprot_sparql_query, uniprot_sparql_endpoint)
 
     results = {}
     for line in csvreader:
@@ -162,16 +153,11 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sp
             if submitted_name != '':
                 protein_name = submitted_name
 
-        results[protein_id] = [protein_name, review, go_terms, ec_numbers, interpros, rhea_ids, gene_name]
-        output_dict.update(results)
-
-    return output_dict
+        yield protein_id, [protein_name, review, go_terms, ec_numbers, interpros, rhea_ids, gene_name]
 
 
 def sparql_query_uniprot_annotaiton_uniref(proteomes, output_dict, uniprot_sparql_endpoint):
     proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
-
-    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
 
     sparql_query_uniref = """PREFIX up: <http://purl.uniprot.org/core/>
         PREFIX uniprotkb: <http://purl.uniprot.org/uniprot/>
@@ -220,16 +206,7 @@ def sparql_query_uniprot_annotaiton_uniref(proteomes, output_dict, uniprot_sparq
     GROUP BY ?protein
     """.format(proteomes)
 
-    sparql.setQuery(sparql_query_uniref)
-    # Parse output.
-    sparql.setReturnFormat(TSV)
-    results = sparql.query().convert().decode('utf-8')
-    if results != '':
-        csvreader = csv.reader(StringIO(results), delimiter='\t')
-        # Avoid header.
-        next(csvreader)
-    else:
-        csvreader = []
+    csvreader = send_uniprot_sparql_query(sparql_query_uniref, uniprot_sparql_endpoint)
 
     results = {}
     for line in csvreader:
@@ -251,8 +228,6 @@ def sparql_query_uniprot_annotaiton_uniref(proteomes, output_dict, uniprot_sparq
 
 def sparql_query_uniprot_expression(proteomes, output_dict, uniprot_sparql_endpoint):
     proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
-
-    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
 
     sparql_query_expression = """PREFIX up: <http://purl.uniprot.org/core/>
         PREFIX uniprotkb: <http://purl.uniprot.org/uniprot/>
@@ -294,16 +269,7 @@ def sparql_query_uniprot_expression(proteomes, output_dict, uniprot_sparql_endpo
         GROUP BY ?protein
     """.format(proteomes)
 
-    sparql.setQuery(sparql_query_expression)
-    # Parse output.
-    sparql.setReturnFormat(TSV)
-    results = sparql.query().convert().decode('utf-8')
-    if results != '':
-        csvreader = csv.reader(StringIO(results), delimiter='\t')
-        # Avoid header.
-        next(csvreader)
-    else:
-        csvreader = []
+    csvreader = send_uniprot_sparql_query(sparql_query_expression, uniprot_sparql_endpoint)
 
     results = {}
     for line in csvreader:
@@ -423,7 +389,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             protein_queries = ' '.join(set_proteins)
             if uniprot_sparql_endpoint:
                 proteomes = input_proteomes[base_filename]
-                sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sparql_endpoint)
+                output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint))
             else:
                 rest_query_uniprot_to_retrieve_function(protein_queries, output_dict)
         else:
@@ -432,7 +398,8 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                 protein_queries = ' '.join(chunk)
                 if uniprot_sparql_endpoint:
                     proteomes = input_proteomes[base_filename]
-                    output_dict = sparql_query_uniprot_to_retrieve_function(proteomes, output_dict, uniprot_sparql_endpoint)
+                    tmp_output_dict = sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint)
+                    output_dict.update(tmp_output_dict)
                 else:
                     output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, output_dict)
 
@@ -552,7 +519,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                     disruption = expression_output_dict[protein][2]
                     csvwriter.writerow([protein, protein_name, gene_name, gos, ecs, induction, tissue_specificity, disruption])
                 else:
-                    csvwriter.writerow([protein, protein_name, gene_name, gos, gos])
+                    csvwriter.writerow([protein, protein_name, gene_name, gos, ecs])
 
         # Create PathoLogic file and folder for each input.
         if len(protein_annotations) > 0:

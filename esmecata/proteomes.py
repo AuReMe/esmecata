@@ -15,10 +15,11 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from collections import OrderedDict
 from ete3 import NCBITaxa, is_taxadb_up_to_date
-from io import StringIO
-from SPARQLWrapper import SPARQLWrapper, TSV
 
-from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir
+from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir, send_uniprot_sparql_query
+from esmecata import __version__ as esmecata_version
+
+REQUESTS_HEADERS = {'User-Agent': 'EsMeCaTa proteomes v' + esmecata_version + ', request by requests package v' + requests.__version__ }
 
 
 def associate_taxon_to_taxon_id(taxonomies, ncbi):
@@ -91,7 +92,7 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
     # If esmecata does not find proteomes with only reference, search for all poroteomes even if they are not reference.
     all_http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
 
-    response = requests.get(http_str)
+    response = requests.get(http_str, headers=REQUESTS_HEADERS)
     # Raise error if we have a bad request.
     response.raise_for_status()
 
@@ -147,9 +148,7 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
 
 
 def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
-    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
-
-    # Test with SPARQL query
+    # SPARQL query to retrieve proteome
     # First FILTER NOT EXISTS to avoid redundant proteomes.
     # Second FILTER NOT EXISTS to avoid excluded proteomes.
     # OPTIONAL allows to retrive reference and non reference proteomes and split them.
@@ -192,17 +191,7 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
         }}
     }}""".format(tax_id)
 
-    sparql.setQuery(uniprot_sparql_query)
-    # Parse output.
-    sparql.setReturnFormat(TSV)
-
-    results = sparql.query().convert().decode('utf-8')
-    if results != '':
-        csvreader = csv.reader(StringIO(results), delimiter='\t')
-        # Avoid header.
-        next(csvreader)
-    else:
-        csvreader = []
+    csvreader = send_uniprot_sparql_query(uniprot_sparql_query, uniprot_sparql_endpoint)
 
     proteomes = []
     organism_ids = {}
@@ -358,8 +347,6 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
     return proteomes_ids, single_proteomes, tax_id_not_founds
 
 def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint):
-    sparql = SPARQLWrapper(uniprot_sparql_endpoint)
-
     uniprot_sparql_query = """PREFIX up: <http://purl.uniprot.org/core/>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX proteome: <http://purl.uniprot.org/proteomes/>
@@ -382,17 +369,7 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
         VALUES (?proteome) {{ (proteome:{0}) }}
     }}""".format(proteome)
 
-    sparql.setQuery(uniprot_sparql_query)
-    # Parse output.
-    sparql.setReturnFormat(TSV)
-
-    results = sparql.query().convert().decode('utf-8')
-    if results != '':
-        csvreader = csv.reader(StringIO(results), delimiter='\t')
-        # Avoid header.
-        next(csvreader)
-    else:
-        csvreader = []
+    csvreader = send_uniprot_sparql_query(uniprot_sparql_query, uniprot_sparql_endpoint)
 
     records = []
     already_added_proteins = []
@@ -522,7 +499,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
             if uniprot_sparql_endpoint is not None:
                 sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
             else:
-                with requests.get('https://www.uniprot.org/uniprot/?query=proteome:{0}&format=fasta&compress=yes'.format(proteome)) as proteome_response:
+                with requests.get('https://www.uniprot.org/uniprot/?query=proteome:{0}&format=fasta&compress=yes'.format(proteome), headers=REQUESTS_HEADERS) as proteome_response:
                     with open(output_proteome_file, 'wb') as f:
                         f.write(proteome_response.content)
         time.sleep(1)

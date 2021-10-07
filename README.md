@@ -251,6 +251,15 @@ The `tmp_proteome` contains all the proteomes that have been found to be associa
 
 ````
 output_folder
+├── computed_threshold
+│   └── Cluster_1.tsv
+│   └── ...
+├── fasta_consensus
+│   └── Cluster_1.faa
+│   └── ...
+├── fasta_representative
+│   └── Cluster_1.faa
+│   └── ...
 ├── mmseqs_tmp
 │   └── Cluster_1
 │       └── mmseqs intermediary files
@@ -259,17 +268,18 @@ output_folder
 ├── reference_proteins
 │   └── Cluster_1.tsv
 │   └── ...
-├── reference_proteins_fasta
-│   └── Cluster_1.faa
-│   └── ...
 ├── proteome_cluster_tax_id.tsv
 ````
+
+The `computed_threshold` folder contains the ratio of proteomes represented in a cluster compared to the total number of proteomes associated to a taxon. If the raio is equal to 1, it means that all the proteomes are representated by a protein in the cluster, 0.5 means that half of the proteoems are representated in the cluster. This score is used when giving the `-t` argument.
+
+The `fasta_consensus` contains all the consensus proteins associated to an `observation_name`.
+
+The `fasta_representative` contains all the representative proteins associated to an `observation_name`.
 
 The `mmseqs_tmp` folder contains the intermediary files of mmseqs2 for each `observation_name`.
 
 The `reference_proteins` contains one tsv file per `observation_name` and this contains the clustered proteins. The column on the left contains the representative proteins of a cluster and the column of the right corresponds to the other proteins of the same cluster. There is two proteins per row so the same representative protein can be found multiple times.
-
-The `reference_proteins_fasta` contains all the representative proteins associated to an `observation_name`.
 
 The `proteome_cluster_tax_id.tsv` file is the same than the one created in `esmecata proteomes`.
 
