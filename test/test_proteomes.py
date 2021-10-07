@@ -33,7 +33,7 @@ def test_find_proteomes_tax_ids():
     ncbi = NCBITaxa()
     tax_id_names, json_cluster_taxons = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
     json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
-    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons=json_cluster_taxons, ncbi=ncbi, busco_percentage_keep=90)
+    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons=json_cluster_taxons, ncbi=ncbi, busco_percentage_keep=90, all_proteomes=None)
     for taxon in expected_proteomes_ids:
         assert expected_proteomes_ids[taxon][0] == proteomes_ids[taxon][0]
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])
@@ -44,7 +44,7 @@ def test_sparql_find_proteomes_tax_ids():
     ncbi = NCBITaxa()
     tax_id_names, json_cluster_taxons = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
     json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
-    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons=json_cluster_taxons, ncbi=ncbi, busco_percentage_keep=90, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql')
+    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons=json_cluster_taxons, ncbi=ncbi, busco_percentage_keep=90, all_proteomes=None, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql')
     for taxon in expected_proteomes_ids:
         assert expected_proteomes_ids[taxon][0] == proteomes_ids[taxon][0]
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])

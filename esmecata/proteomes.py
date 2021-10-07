@@ -50,6 +50,7 @@ def associate_taxon_to_taxon_id(taxonomies, ncbi):
 
     return tax_id_names, json_cluster_taxons
 
+
 def filter_taxon(json_cluster_taxons, ncbi):
     # If there is multiple taxon ID for a taxon, use the taxonomy to find the most relevant taxon.
     # The most relevant taxon is the one with the most overlapping lineage with the taxonomy.
@@ -77,6 +78,7 @@ def filter_taxon(json_cluster_taxons, ncbi):
 
     return json_cluster_taxons
 
+
 def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes):
     proteomes = []
     organism_ids = {}
@@ -92,13 +94,11 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
     # If esmecata does not find proteomes with only reference, search for all poroteomes even if they are not reference.
     all_http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
 
-    response = requests.get(http_str, headers=REQUESTS_HEADERS)
-    # Raise error if we have a bad request.
-    response.raise_for_status()
-
     response_proteome_status = False
 
-    with requests.get(http_str) as proteome_response:
+    with requests.get(http_str, REQUESTS_HEADERS) as proteome_response:
+        # Raise error if we have a bad request.
+        proteome_response.raise_for_status()
         proteome_response_text = proteome_response.text
         if proteome_response_text != '':
             csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
@@ -111,7 +111,7 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
     if response_proteome_status is False:
         time.sleep(1)
         print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(taxon, tax_id, tax_name))
-        with requests.get(all_http_str) as proteome_response:
+        with requests.get(all_http_str, headers=REQUESTS_HEADERS) as proteome_response:
             proteome_response_text = proteome_response.text
             if proteome_response_text != '':
                 csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
@@ -187,7 +187,6 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
                 }}
         OPTIONAL {{
             ?proteome rdf:type ?type .
-            ?type a up:Representative_Proteome.
         }}
     }}""".format(tax_id)
 
@@ -213,10 +212,10 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
             missing = None
         org_tax_id = line[4].split('/')[-1]
         completness = line[5]
-        if line[6] == '':
-            reference = False
-        else:
+        if 'Representative_Proteome' in line[6]:
             reference = True
+        else:
+            reference = False
 
         if all([score, fragmented, missing]) is True:
             busco_percentage = (score / (score+fragmented+missing)) * 100
@@ -244,7 +243,7 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
 
-    if all_proteomes:
+    if all_proteomes is not None:
         proteomes = other_proteomes
     else:
         if len(reference_proteomes) == 0:
@@ -282,7 +281,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
             if uniprot_sparql_endpoint:
                 proteomes, organism_ids = sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
             else:
-                proteomes, organism_ids = rest_query_proteomes(taxon, tax_id, tax_name, all_proteomes, busco_percentage_keep)
+                proteomes, organism_ids = rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes)
 
             # Answer is empty no corresponding proteomes to the tax_id.
             if len(proteomes) == 0:
@@ -332,14 +331,14 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
                 percentages_round = [math.ceil(percentage) if percentage < 1 else math.floor(percentage) for percentage in percentages]
 
                 # Choose randomly a number of proteomes corresponding to the computed percentage.
-                all_proteomes = []
+                selected_proteomes = []
                 for index, element in enumerate(elements):
                     percentage_to_keep = percentages_round[index]
                     proteomes_to_keep = random.sample(element, percentage_to_keep)
-                    all_proteomes.extend(proteomes_to_keep)
-                proteomes_ids[taxon] = (tax_id, all_proteomes)
-                tax_id_founds[tax_id] = all_proteomes
-                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(taxon, tax_name, len(all_proteomes)))
+                    selected_proteomes.extend(proteomes_to_keep)
+                proteomes_ids[taxon] = (tax_id, selected_proteomes)
+                tax_id_founds[tax_id] = selected_proteomes
+                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(taxon, tax_name, len(selected_proteomes)))
                 break
 
             time.sleep(1)

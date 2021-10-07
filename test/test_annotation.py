@@ -23,7 +23,7 @@ def test_rest_query_uniprot_to_retrieve_function():
 
 def test_sparql_query_uniprot_to_retrieve_function():
     output_dict = {}
-    output_dict = sparql_query_uniprot_to_retrieve_function('Q7CGB6', output_dict, 'https://sparql.uniprot.org/sparql')
+    output_dict = sparql_query_uniprot_to_retrieve_function('Q7CGB6', 'https://sparql.uniprot.org/sparql')
 
     for protein in output_dict:
         assert ANOTATIONS[protein][0] == output_dict[protein][0]
