@@ -50,6 +50,21 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
     consensus_fasta = os.path.join(output_folder, 'fasta_consensus')
     is_valid_dir(consensus_fasta)
 
+    reference_proteins = os.path.join(output_folder, 'reference_proteins')
+    is_valid_dir(reference_proteins)
+
+    reference_proteins_representative_fasta = os.path.join(output_folder, 'reference_proteins_representative_fasta')
+    is_valid_dir(reference_proteins_representative_fasta)
+
+    reference_proteins_consensus_fasta = os.path.join(output_folder, 'reference_proteins_consensus_fasta')
+    is_valid_dir(reference_proteins_consensus_fasta)
+
+    cluster_founds = os.path.join(output_folder, 'cluster_founds')
+    is_valid_dir(cluster_founds)
+
+    computed_threshold = os.path.join(output_folder, 'computed_threshold')
+    is_valid_dir(computed_threshold)
+
     print('Clustering proteins.')
     # For each OTU run mmseqs easy-cluster on them to found the clusters that have a protein in each proteome of the OTU.
     # We take the representative protein of a cluster if the cluster contains a protein from all the proteomes of the OTU.
@@ -116,11 +131,6 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
             for record in SeqIO.parse(fasta_file, 'fasta'):
                 organism_prots[record.id.split('|')[1]] = os.path.splitext(os.path.basename(fasta_file))[0]
 
-        reference_proteins = os.path.join(output_folder, 'reference_proteins')
-        is_valid_dir(reference_proteins)
-        computed_threshold = os.path.join(output_folder, 'computed_threshold')
-        is_valid_dir(computed_threshold)
-
         number_proteomes = len(cluster_fasta_files[cluster])
 
         rep_prot_organims = {}
@@ -139,15 +149,20 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
 
         # To keep a cluster, we have to find have at least one protein of each proteome of the OTU (except when using threshold option).
         rep_prot_to_keeps = []
-        cluster_proteomes_output_file = os.path.join(reference_proteins, cluster+'.tsv')
+        cluster_proteomes_filtered_output_file = os.path.join(reference_proteins, cluster+'.tsv')
+        cluster_proteomes_output_file = os.path.join(cluster_founds, cluster+'.tsv')
         reference_threshold = (clust_threshold * number_proteomes) / number_proteomes
-        with open(cluster_proteomes_output_file, 'w') as output_file:
+        with open(cluster_proteomes_filtered_output_file, 'w') as filtered_output_file, open(cluster_proteomes_output_file, 'w') as output_file:
             csvwriter = csv.writer(output_file, delimiter='\t')
+            filtered_csvwriter = csv.writer(filtered_output_file, delimiter='\t')
             for rep_protein in rep_prot_organims:
+                csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
                 if computed_threshold_cluster[rep_protein] >= reference_threshold:
-                    csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
+                    filtered_csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
                     rep_prot_to_keeps.append(rep_protein)
 
+        shutil.copyfile(mmseqs_tmp_representative_fasta, os.path.join(representative_fasta, cluster+'.faa'))
+        shutil.copyfile(mmseqs_consensus_fasta, os.path.join(consensus_fasta, cluster+'.faa'))
         # Create BioPtyhon records with the representative proteins kept.
         new_records = []
         for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta'):
@@ -155,7 +170,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
                 new_records.append(record)
 
         # Create output proteome file for OTU.
-        representative_fasta_file = os.path.join(representative_fasta, cluster+'.faa')
+        representative_fasta_file = os.path.join(reference_proteins_representative_fasta, cluster+'.faa')
         SeqIO.write(new_records, representative_fasta_file, 'fasta')
 
         # Create BioPtyhon records with the consensus proteins kept.
@@ -165,7 +180,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
                 consensus_new_records.append(record)
 
         # Create output proteome file for OTU.
-        consensus_fasta_file = os.path.join(consensus_fasta, cluster+'.faa')
+        consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta, cluster+'.faa')
         SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
 
     proteome_taxon_id_file = os.path.join(proteome_folder, 'proteome_cluster_tax_id.tsv')
