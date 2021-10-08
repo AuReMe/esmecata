@@ -55,22 +55,38 @@ def filter_taxon(json_cluster_taxons, ncbi):
     # If there is multiple taxon ID for a taxon, use the taxonomy to find the most relevant taxon.
     # The most relevant taxon is the one with the most overlapping lineage with the taxonomy.
     taxon_to_modify = {}
+
     for cluster in json_cluster_taxons:
-        cluster_taxons = json_cluster_taxons[cluster].values()
-        for taxon in json_cluster_taxons[cluster]:
+        cluster_taxons = list(json_cluster_taxons[cluster].values())
+
+        for index, taxon in enumerate(json_cluster_taxons[cluster]):
             taxon_ids = json_cluster_taxons[cluster][taxon]
+            # If a taxon name is associated to more than one taxon ID, search for the one matching with the other taxon in the taxonomy.
             if len(taxon_ids) > 1:
-                relevant_taxon = None
-                previous_nb_shared_ids = 0
+                taxon_shared_ids = {}
                 for taxon_id in taxon_ids:
-                    taxons_ids = list(next(zip(*cluster_taxons)))
+                    # Extract the other taxon present in the taxonomy.
+                    data_lineage = [tax_id for tax_id_lists in cluster_taxons[0:index] for tax_id in tax_id_lists]
+                    # Extract the known taxonomy corresponding to one of the taxon ID.
                     lineage = ncbi.get_lineage(taxon_id)
-                    nb_shared_ids = len(set(taxons_ids).intersection(set(lineage)))
-                    if nb_shared_ids > previous_nb_shared_ids:
-                        relevant_taxon = taxon_id
-                    previous_nb_shared_ids = nb_shared_ids
-                taxon_to_modify[cluster] = {}
-                taxon_to_modify[cluster][taxon] = [relevant_taxon]
+                    # Computes the shared taxon ID between the known taxonomy and the taxonomy associated to the taxon.
+                    nb_shared_ids = len(set(data_lineage).intersection(set(lineage)))
+                    taxon_shared_ids[taxon_id] = nb_shared_ids
+
+                # If there is no match in the taxonomy for all the multiple taxon ID, it is not possible to decipher, stop esmecata.
+                if all(shared_id==0 for shared_id in taxon_shared_ids.values()):
+                    taxids = ','.join([str(taxid) for taxid in list(taxon_shared_ids.keys())])
+                    print('It is not possible to find the taxon ID for the taxon named "{0}" (associated to "{1}") as there is multiple taxID possible ({2}), please add taxonomy to help finding the correct one.'.format(taxon, cluster, taxids))
+                    sys.exit()
+                # If there is some matches, take the taxon ID with the most match and it will be the "correct one".
+                else:
+                    previous_nb_shared_ids = 0
+                    for taxon_id in taxon_shared_ids:
+                        if taxon_shared_ids[taxon_id] > previous_nb_shared_ids:
+                            relevant_taxon = taxon_id
+                            taxon_to_modify[cluster] = {}
+                            taxon_to_modify[cluster][taxon] = [relevant_taxon]
+                        previous_nb_shared_ids = nb_shared_ids
 
     for cluster in taxon_to_modify:
         for taxon in taxon_to_modify[cluster]:
