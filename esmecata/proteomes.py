@@ -333,10 +333,12 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
                                 if child_tax_id in organism_ids:
                                     childs[parent_tax_id].extend(organism_ids[child_tax_id])
                     else:
-                        if parent_tax_id in organism_ids:
-                            childs[parent_tax_id] = organism_ids[parent_tax_id]
+                        if parent_tax_id not in childs:
+                            if parent_tax_id in organism_ids:
+                                childs[parent_tax_id] = organism_ids[parent_tax_id]
                         else:
-                            childs[parent_tax_id].extend(organism_ids[parent_tax_id])
+                            if parent_tax_id in organism_ids:
+                                childs[parent_tax_id].extend(organism_ids[parent_tax_id])
 
                 # For each direct descendant taxon, compute the number of proteomes in their childrens.
                 elements = [v for k,v in childs.items()]
