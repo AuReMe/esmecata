@@ -506,7 +506,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
         proteome_to_download = set(proteome_to_download)
 
     # Download all the proteomes in tmp folder.
-    print('Download proteome')
+    print('Downloading {0} proteomes'.format(str(len(proteome_to_download))))
     tmp_folder = os.path.join(output_folder, 'tmp_proteome')
     is_valid_dir(tmp_folder)
 
