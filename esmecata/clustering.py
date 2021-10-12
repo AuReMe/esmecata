@@ -9,7 +9,7 @@ from shutil import which
 
 from esmecata.utils import is_valid_path, is_valid_dir
 
-def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
+def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options):
     if not which('mmseqs'):
         print('mmseqs not available in path, esmecata will not be able to cluster the proteomes.')
         sys.exit(1)
@@ -95,7 +95,15 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
             # Create database containing the protein sequences from all the proteomes of a taxon.
             subprocess.call(['mmseqs', 'createdb', *cluster_fasta_files[cluster], mmseqs_tmp_db, '-v', '2'])
             # Cluster the protein sequences.
-            subprocess.call(['mmseqs', 'cluster', mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_cluster_tmp, '--threads', str(nb_cpu), '-v', '2', '--min-seq-id', '0.3'])
+            cluster_cmd = ['mmseqs', 'cluster', mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_cluster_tmp, '--threads', str(nb_cpu), '-v', '2']
+
+            if not mmseqs_options:
+                cluster_cmd += ['--min-seq-id', '0.3', '-c', '0.8']
+            else:
+                cluster_cmd += mmseqs_options.split(' ')
+
+            subprocess.call(cluster_cmd)
+
             subprocess.call(['mmseqs', 'createsubdb', mmseqs_tmp_db_clustered, mmseqs_tmp_db, mmseqs_seq_db, '-v', '2'])
             #subprocess.call(['mmseqs', 'createsubdb', mmseqs_tmp_db_clustered, mmseqs_tmp_db_h, mmseqs_seq_db_h, '-v', '2'])
             # Create the profile from the clustering.
@@ -112,8 +120,9 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
         """
         if not os.path.exists(mmseqs_tmp_clustered_tabulated):
             # Code using easy-cluster to extract representative protein.
-            subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], mmseqs_tmp_cluster_output, mmseqs_tmp_cluster, '--threads', str(nb_cpu), '-v', '2'])
+            subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], mmseqs_tmp_cluster_output, mmseqs_tmp_cluster, '--threads', str(nb_cpu), '-v', '2', '--min-seq-id', '0.3'])
         """
+
         # Extract protein clusters.
         proteins_representatives = {}
         with open(mmseqs_tmp_clustered_tabulated) as input_file:
@@ -172,6 +181,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
         # Create output proteome file for OTU.
         representative_fasta_file = os.path.join(reference_proteins_representative_fasta, cluster+'.faa')
         SeqIO.write(new_records, representative_fasta_file, 'fasta')
+        del new_records
 
         # Create BioPtyhon records with the consensus proteins kept.
         consensus_new_records = []
@@ -182,6 +192,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold):
         # Create output proteome file for OTU.
         consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta, cluster+'.faa')
         SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
+        del consensus_new_records
 
     proteome_taxon_id_file = os.path.join(proteome_folder, 'proteome_cluster_tax_id.tsv')
     clustering_taxon_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')

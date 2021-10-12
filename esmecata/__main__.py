@@ -104,6 +104,15 @@ def main():
         required=False,
         type=range_limited_float_type,
         default=1)
+    parent_parser_mmseqs_options = argparse.ArgumentParser(add_help=False)
+    parent_parser_mmseqs_options.add_argument(
+        '-m',
+        '--mmseqs',
+        dest='mmseqs_options',
+        help='String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"',
+        required=False,
+        type=str,
+        default=None)
     parent_parser_propagate = argparse.ArgumentParser(add_help=False)
     parent_parser_propagate.add_argument(
         '-p',
@@ -154,7 +163,8 @@ def main():
         'clustering',
         help='Cluster the proteins of the different proteomes of a taxon into a single set of representative shared proteins.',
         parents=[
-            parent_parser_i_clustering_folder, parent_parser_o, parent_parser_c, parent_parser_thr
+            parent_parser_i_clustering_folder, parent_parser_o, parent_parser_c,
+            parent_parser_thr, parent_parser_mmseqs_options
         ])
     annotation_parser = subparsers.add_parser(
         'annotation',
@@ -188,7 +198,7 @@ def main():
     if args.cmd == 'proteomes':
         retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint)
     elif args.cmd == 'clustering':
-        make_clustering(args.input, args.output, args.cpu, args.threshold_clustering)
+        make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options)
     elif args.cmd == 'annotation':
         annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression)
 
