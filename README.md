@@ -149,7 +149,7 @@ By default, esmecata will try to downlaod the reference proteomes associated to 
 ### `esmecata clustering`: Proteins clustering
 
 ````
-usage: esmecata clustering [-h] -i INPUT_DIR -o OUPUT_DIR [-c CPU] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS]
+usage: esmecata clustering [-h] -i INPUT_DIR -o OUPUT_DIR [-c CPU] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS] [--linclust]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -162,6 +162,7 @@ optional arguments:
                         Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.
   -m MMSEQS_OPTIONS, --mmseqs MMSEQS_OPTIONS
                         String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"
+  --linclust            Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.
 ````
 
 For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the proteins. Then if a cluster contains at least one protein from each proteomes, it will be kept (this threshold can be change using the --threshold option). The representative proteins from the cluster will be used. A fasta file of all the representative proteins will be created for each taxon.
@@ -181,6 +182,10 @@ You can give a numbe of CPUs to parallelise mmseqs2.
 * `-m/--mmseqs`: mmseqs option to be used for the clustering.
 
 String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8".
+
+* `--linclust`: replace `mmseqs cluster` by `mmseqs linclust` (faster but less sensitive)
+
+Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.
 
 ### `esmecata annotation`: Retrieve protein annotations
 

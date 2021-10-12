@@ -9,7 +9,7 @@ from shutil import which
 
 from esmecata.utils import is_valid_path, is_valid_dir
 
-def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options):
+def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust):
     if not which('mmseqs'):
         print('mmseqs not available in path, esmecata will not be able to cluster the proteomes.')
         sys.exit(1)
@@ -94,8 +94,15 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         if not os.path.exists(mmseqs_tmp_clustered_tabulated):
             # Create database containing the protein sequences from all the proteomes of a taxon.
             subprocess.call(['mmseqs', 'createdb', *cluster_fasta_files[cluster], mmseqs_tmp_db, '-v', '2'])
+
             # Cluster the protein sequences.
-            cluster_cmd = ['mmseqs', 'cluster', mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_cluster_tmp, '--threads', str(nb_cpu), '-v', '2']
+            cluster_cmd = ['mmseqs']
+            if linclust:
+                cluster_cmd += ['linclust']
+            else:
+                cluster_cmd += ['cluster']
+
+            cluster_cmd += [mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_cluster_tmp, '--threads', str(nb_cpu), '-v', '2']
 
             if not mmseqs_options:
                 cluster_cmd += ['--min-seq-id', '0.3', '-c', '0.8']
