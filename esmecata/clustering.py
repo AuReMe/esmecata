@@ -1,4 +1,5 @@
 import csv
+import gzip
 import os
 import shutil
 import subprocess
@@ -9,7 +10,7 @@ from shutil import which
 
 from esmecata.utils import is_valid_path, is_valid_dir
 
-def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust):
+def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp):
     if not which('mmseqs'):
         print('mmseqs not available in path, esmecata will not be able to cluster the proteomes.')
         sys.exit(1)
@@ -31,8 +32,10 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         result_cluster_folder = os.path.join(result_folder, cluster)
         if is_valid_dir(result_cluster_folder):
             for cluster_file in os.listdir(result_cluster_folder):
-                filename, file_extension = os.path.splitext(cluster_file)
-                if file_extension == '.faa':
+                fasta_filename, compressed_file_extension = os.path.splitext(cluster_file)
+                filename, file_extension = os.path.splitext(fasta_filename)
+                complete_extension = file_extension + compressed_file_extension
+                if complete_extension == '.faa.gz':
                     cluster_file_path = os.path.join(result_cluster_folder, cluster_file)
                     if cluster not in cluster_fasta_files:
                         cluster_fasta_files[cluster] = [cluster_file_path]
@@ -144,8 +147,9 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         organism_prots = {}
         for fasta_file in cluster_fasta_files[cluster]:
             filename, file_extension = os.path.splitext(fasta_file)
-            for record in SeqIO.parse(fasta_file, 'fasta'):
-                organism_prots[record.id.split('|')[1]] = os.path.splitext(os.path.basename(fasta_file))[0]
+            with gzip.open(fasta_file, 'rt') as fasta_handle:
+                for record in SeqIO.parse(fasta_handle, 'fasta'):
+                    organism_prots[record.id.split('|')[1]] = os.path.splitext(os.path.basename(fasta_file))[0]
 
         number_proteomes = len(cluster_fasta_files[cluster])
 
@@ -200,6 +204,9 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta, cluster+'.faa')
         SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
         del consensus_new_records
+
+        if remove_tmp:
+            shutil.rmtree(mmseqs_tmp_cluster)
 
     proteome_taxon_id_file = os.path.join(proteome_folder, 'proteome_cluster_tax_id.tsv')
     clustering_taxon_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')

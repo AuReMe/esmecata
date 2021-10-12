@@ -37,6 +37,12 @@ Also esmecata requires mmseqs2 for protein clustering:
 
 ## Installation
 
+The easiest way to install the dependencies of EsMeCaTa is by using conda:
+
+```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 -c bioconda -c conda-forge```
+
+A conda package for esmecata will be created in the future.
+
 EsMeCata can be installed with pip command (in esmecata directory):
 
 ```pip install -e . ```
@@ -165,7 +171,7 @@ optional arguments:
   --linclust            Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.
 ````
 
-For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the proteins. Then if a cluster contains at least one protein from each proteomes, it will be kept (this threshold can be change using the --threshold option). The representative proteins from the cluster will be used. A fasta file of all the representative proteins will be created for each taxon.
+For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the proteins (using an identity of 30% and a coverage of 80%, these values can be changed with the `--mmseqs`option). Then if a cluster contains at least one protein from each proteomes, it will be kept (this threshold can be changed using the `--threshold option`). The representative proteins from the cluster will be used. A fasta file of all the representative proteins will be created for each taxon.
 
 `esmecata clustering` options:
 
@@ -181,7 +187,7 @@ You can give a numbe of CPUs to parallelise mmseqs2.
 
 * `-m/--mmseqs`: mmseqs option to be used for the clustering.
 
-String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8".
+String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8". For example you can give `--mmseqs "--min-seq-id 0.8 --kmer-per-seq 80"` to ask for a minimal identity between sequence of 80% and having 80 kmers per sequence.
 
 * `--linclust`: replace `mmseqs cluster` by `mmseqs linclust` (faster but less sensitive)
 

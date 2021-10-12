@@ -420,7 +420,7 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
-def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None):
+def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None, remove_tmp=None):
     if is_valid_file(input_file) == False:
         print('The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
@@ -542,7 +542,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
         is_valid_dir(output_cluster)
         for proteome in proteomes_ids[cluster][1]:
             input_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
-            output_proteome = os.path.join(output_cluster, proteome+'.faa')
-            with gzip.open(input_proteome_file, 'rb') as f_in:
-                with open(output_proteome, 'wb') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
+            output_proteome = os.path.join(output_cluster, proteome+'.faa.gz')
+            shutil.copyfile(input_proteome_file, output_proteome)
+
+    if remove_tmp:
+        shutil.rmtree(tmp_folder)
