@@ -100,7 +100,7 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 ### `esmecata proteomes`: Retrieve proteomes associated to taxonomy
 
 ````
-usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL]
+usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -115,6 +115,7 @@ optional arguments:
   --all-proteomes       Download all proteomes associated to a taxon even if they are no reference proteomes.
   -s SPARQL, --sparql SPARQL
                         Use sparql endpoint instead of REST queries on Uniprot.
+  --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
 ````
 
 For each taxon in each taxonomy EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated to these taxon ID in the Uniprot Proteomes database.
@@ -152,10 +153,12 @@ If you have an old version of the ete3 NCBI taxonomy database, you can use this 
 
 By default, esmecata will try to downlaod the reference proteomes associated to a taxon. But if you want to download all the proteomes associated to a taxon (either if they are non reference proteome) you can use this option. Without this option non-reference proteoems can also be used if no reference proteomes are found.
 
+* `--remove-tmp`: remove proteomes stored in `tmp_proteomes` folder
+
 ### `esmecata clustering`: Proteins clustering
 
 ````
-usage: esmecata clustering [-h] -i INPUT_DIR -o OUPUT_DIR [-c CPU] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS] [--linclust]
+usage: esmecata clustering [-h] -i INPUT_DIR -o OUPUT_DIR [-c CPU] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS] [--linclust] [--remove-tmp]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -169,6 +172,7 @@ optional arguments:
   -m MMSEQS_OPTIONS, --mmseqs MMSEQS_OPTIONS
                         String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"
   --linclust            Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.
+  --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
 ````
 
 For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the proteins (using an identity of 30% and a coverage of 80%, these values can be changed with the `--mmseqs`option). Then if a cluster contains at least one protein from each proteomes, it will be kept (this threshold can be changed using the `--threshold option`). The representative proteins from the cluster will be used. A fasta file of all the representative proteins will be created for each taxon.
@@ -192,6 +196,8 @@ String containing mmseqs options for cluster command (except --threads which is 
 * `--linclust`: replace `mmseqs cluster` by `mmseqs linclust` (faster but less sensitive)
 
 Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.
+
+* `--remove-tmp`: remove mmseqs files stored in `mmseqs_tmp` folder
 
 ### `esmecata annotation`: Retrieve protein annotations
 
