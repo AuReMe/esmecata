@@ -125,7 +125,6 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint
 
     csvreader = send_uniprot_sparql_query(uniprot_sparql_query, uniprot_sparql_endpoint)
 
-    results = {}
     for line in csvreader:
         protein_id = line[0].split('/')[-1]
         protein_name = line[1].split('^^')[0]
@@ -379,7 +378,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                 proteins.extend(line)
                 reference_proteins[line[0]] = line[1:]
 
-        set_proteins = list(set(proteins))
+        set_proteins = set(proteins)
 
         # Query Uniprot to get the annotation of each proteins.
         # The limit of 20 000 proteins per query comes from the help of Uniprot:

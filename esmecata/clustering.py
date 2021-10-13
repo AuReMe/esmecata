@@ -181,13 +181,13 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
                     filtered_csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
                     rep_prot_to_keeps.append(rep_protein)
 
+        # Use set for faster search using 'in'.
+        rep_prot_to_keeps = set(rep_prot_to_keeps)
+
         shutil.copyfile(mmseqs_tmp_representative_fasta, os.path.join(representative_fasta, cluster+'.faa'))
         shutil.copyfile(mmseqs_consensus_fasta, os.path.join(consensus_fasta, cluster+'.faa'))
         # Create BioPtyhon records with the representative proteins kept.
-        new_records = []
-        for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta'):
-            if record.id.split('|')[1] in rep_prot_to_keeps:
-                new_records.append(record)
+        new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta') if record.id.split('|')[1] in rep_prot_to_keeps]
 
         # Create output proteome file for OTU.
         representative_fasta_file = os.path.join(reference_proteins_representative_fasta, cluster+'.faa')
@@ -195,10 +195,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         del new_records
 
         # Create BioPtyhon records with the consensus proteins kept.
-        consensus_new_records = []
-        for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta'):
-            if record.id.split('|')[1] in rep_prot_to_keeps:
-                consensus_new_records.append(record)
+        consensus_new_records = [record for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta') if record.id.split('|')[1] in rep_prot_to_keeps]
 
         # Create output proteome file for OTU.
         consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta, cluster+'.faa')
