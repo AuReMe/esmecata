@@ -289,7 +289,7 @@ The `tmp_proteome` contains all the proteomes that have been found to be associa
 
 `proteome_cluster_tax_id.tsv` contains the name, the taxon_id and the proteomes associated to each `observation_name`.
 
-`uniprot_release_metadata_proteomes.json` is a log about the Uniprot release used and how the queries ware made (REAST or SPARQL).
+`uniprot_release_metadata_proteomes.json` is a log about the Uniprot release used and how the queries ware made (REST or SPARQL).
 
 ### EsMeCaTa clustering
 
