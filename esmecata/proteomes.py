@@ -271,7 +271,7 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
     return proteomes, organism_ids
 
 
-def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None, proteomes_subset_selection=99):
+def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None, limit_maximal_number_proteomes=99):
     # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomy.
     # If there is more thant 100 proteomes we do not keep it because there is too many proteome.
     print('Find proteome ID associated to taxonomy')
@@ -315,8 +315,8 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
                     single_proteomes[taxon] = (tax_id, proteomes)
                 break
 
-            elif len(proteomes) > proteomes_subset_selection:
-                print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around 100 proteomes with respect to the taxonomy proportion.'.format(proteomes_subset_selection, taxon, tax_name))
+            elif len(proteomes) > limit_maximal_number_proteomes:
+                print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around 100 proteomes with respect to the taxonomy proportion.'.format(limit_maximal_number_proteomes, taxon, tax_name))
                 tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
 
                 # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
@@ -347,7 +347,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
                 percentages = [(i/sum(elements_counts))*100  for i in elements_counts]
                 # Can be superior to 100 if there is a lot of data with around 0.xxx percentage.
                 percentages_round = [math.ceil(percentage) if percentage < 1 else math.floor(percentage) for percentage in percentages]
-                selection_percentages_round = [math.ceil((proteomes_subset_selection*percentage)/100) for percentage in percentages_round]
+                selection_percentages_round = [math.ceil((limit_maximal_number_proteomes*percentage)/100) for percentage in percentages_round]
 
                 # Choose randomly a number of proteomes corresponding to the computed percentage.
                 selected_proteomes = []
@@ -426,7 +426,9 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
-def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None, remove_tmp=None, proteomes_subset_selection=99):
+def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None,
+                        ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
+                        remove_tmp=None, limit_maximal_number_proteomes=99):
     if is_valid_file(input_file) == False:
         print('The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
@@ -478,7 +480,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None, ig
 
 
     if not os.path.exists(proteome_cluster_tax_id_file):
-        proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, proteomes_subset_selection)
+        proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, limit_maximal_number_proteomes)
 
         proteome_to_download = []
         for proteomes_id in proteomes_ids:

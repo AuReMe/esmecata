@@ -45,6 +45,10 @@ A conda package for esmecata will be created in the future.
 
 EsMeCata can be installed with pip command (in esmecata directory):
 
+```git clone https://github.com/ArnaudBelcour/esmecata.git```
+
+```cd esmecata```
+
 ```pip install -e . ```
 
 ## Input
@@ -100,7 +104,7 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 ### `esmecata proteomes`: Retrieve proteomes associated to taxonomy
 
 ````
-usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp]
+usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -116,6 +120,8 @@ optional arguments:
   -s SPARQL, --sparql SPARQL
                         Use sparql endpoint instead of REST queries on Uniprot.
   --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
+  -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
+                        Choose themaximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
 ````
 
 For each taxon in each taxonomy EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated to these taxon ID in the Uniprot Proteomes database.
@@ -131,7 +137,7 @@ If there is more than 100 proteomes, esmecata will apply a specific method:
 * (4) the corresponding proportions will be used to select randomly a number of proteomes corresponding to the proportion.
 
 For example: for the taxon Clostridiales, 645 proteomes are found. Using the organism taxon ID associated to the 645 proteomes we found that there is 17 direct sub-taxons. Then for each sub-taxon we compute the percentage of proportion of proteomes given by the sub-taxon to the taxon Clostridiales.
-There is 198 proteomes associated to the sub-taxon Clostridiaceae, the percentage will be computed as follow: 198 / 645 = 30% (if a percentage is superior to 1 it will be round down and if the percentage is lower than 1 it will be round up to keep all the low proportion sub-taxons). We will use this 30% to select randomly 30 proteomes amongst the 198 proteomes of Clostridiaceae. This is done for all the other sub-taxons, so we get a number of proteomes around 100 (here it will be 102). Due to the different rounds (up or down) the total number of proteomes will not be equal to exactly 100 but it will be around it.
+There is 198 proteomes associated to the sub-taxon Clostridiaceae, the percentage will be computed as follow: 198 / 645 = 30% (if a percentage is superior to 1 it will be round down and if the percentage is lower than 1 it will be round up to keep all the low proportion sub-taxons). We will use this 30% to select randomly 30 proteomes amongst the 198 proteomes of Clostridiaceae. This is done for all the other sub-taxons, so we get a number of proteomes around 100 (here it will be 102). Due to the different rounds (up or down) the total number of proteomes will not be equal to exactly 100 but it will be around it. The number of proteomes leading to this behavior is set to 99 by default but the user can modify it with the `-l/--limit-proteomes` option.
 
 Then the proteomes found will be downloaded. For protein with isoforms, the [canonical sequence](https://www.uniprot.org/help/canonical_and_isoforms) is retrieved except when the isoforms are separated in different Uniprot entries.
 
@@ -154,6 +160,10 @@ If you have an old version of the ete3 NCBI taxonomy database, you can use this 
 By default, esmecata will try to downlaod the reference proteomes associated to a taxon. But if you want to download all the proteomes associated to a taxon (either if they are non reference proteome) you can use this option. Without this option non-reference proteoems can also be used if no reference proteomes are found.
 
 * `--remove-tmp`: remove proteomes stored in `tmp_proteomes` folder
+
+* `-l/--limit-proteomes`: choose the number of proteomes that will lead to the used of the selection of a subset of proteoems
+
+To avoid working on too many proteomes, esmecata works on subset of proteomes when there is too many proteomes (by default this limit is set on 99 proteomes). Using this option the user can modify the limit.
 
 ### `esmecata clustering`: Proteins clustering
 
