@@ -20,14 +20,26 @@ def range_limited_float_type(arg):
     """Type function for argparse - a float within some predefined bounds
 
     Args:
-        arg: argparse argument 
+        arg: argparse argument
     """
     try:
         f = float(arg)
-    except ValueError:    
+    except ValueError:
         raise argparse.ArgumentTypeError("Must be a floating point number")
     if f < MIN_VAL or f > MAX_VAL:
         raise argparse.ArgumentTypeError("Argument must be < " + str(MAX_VAL) + " and > " + str(MIN_VAL))
+    return f
+
+def limited_integer_type(arg):
+    """Type function for argparse - an integer
+
+    Args:
+        arg: argparse argument
+    """
+    try:
+        f = int(arg)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Must be an integer number")
     return f
 
 def is_valid_path(filepath):

@@ -4,7 +4,7 @@ import sys
 from esmecata.proteomes import retrieve_proteomes
 from esmecata.clustering import make_clustering
 from esmecata.annotation import annotate_proteins
-from esmecata.utils import range_limited_float_type
+from esmecata.utils import limited_integer_type, range_limited_float_type
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''
@@ -86,6 +86,15 @@ def main():
         required=False,
         action='store_true',
         default=None)
+    parent_parser_proteomes_subset_selection = argparse.ArgumentParser(add_help=False)
+    parent_parser_proteomes_subset_selection.add_argument(
+        '-l',
+        '--limit-proteomes',
+        dest='limit_proteomes_subset_selection',
+        required=False,
+        type=limited_integer_type,
+        help='Put a maximal number of proteomes after which esmecata will select a subset of proteomes instead of using all the available proteomes (default is 99).',
+        default=99)
     parent_parser_c = argparse.ArgumentParser(add_help=False)
     parent_parser_c.add_argument(
         '-c',
@@ -174,7 +183,7 @@ def main():
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
-            parent_parser_remove_tmp
+            parent_parser_remove_tmp, parent_parser_proteomes_subset_selection
         ])
     clustering_parser = subparsers.add_parser(
         'clustering',
@@ -214,7 +223,7 @@ def main():
             busco_score = None
 
     if args.cmd == 'proteomes':
-        retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp)
+        retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp, args.limit_proteomes_subset_selection)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
