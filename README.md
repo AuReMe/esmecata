@@ -133,7 +133,7 @@ If there is more than 100 proteomes, esmecata will apply a specific method:
 For example: for the taxon Clostridiales, 645 proteomes are found. Using the organism taxon ID associated to the 645 proteomes we found that there is 17 direct sub-taxons. Then for each sub-taxon we compute the percentage of proportion of proteomes given by the sub-taxon to the taxon Clostridiales.
 There is 198 proteomes associated to the sub-taxon Clostridiaceae, the percentage will be computed as follow: 198 / 645 = 30% (if a percentage is superior to 1 it will be round down and if the percentage is lower than 1 it will be round up to keep all the low proportion sub-taxons). We will use this 30% to select randomly 30 proteomes amongst the 198 proteomes of Clostridiaceae. This is done for all the other sub-taxons, so we get a number of proteomes around 100 (here it will be 102). Due to the different rounds (up or down) the total number of proteomes will not be equal to exactly 100 but it will be around it.
 
-Then the proteomes found will be downloaded.
+Then the proteomes found will be downloaded. For protein with isoforms, the [canonical sequence](https://www.uniprot.org/help/canonical_and_isoforms) is retrieved except when the isoforms are separated in different Uniprot entries.
 
 `esmecata proteomes` options:
 
@@ -255,10 +255,13 @@ With this option, esmecata will extract the [expression information](https://www
 output_folder
 ├── result
 │   └── Cluster_1
-│       └── Proteome_1.faa
-│       └── Proteome_2.faa
-│   └── ...
-├── tmp_proteome
+│       └── Proteome_1.faa.gz
+│       └── Proteome_2.faa.gz
+│   └── Cluster_2
+│       └── Proteome_3.faa.gz
+│   └── Cluster_3
+│       └── ...
+├── tmp_proteome (can be cleaned to spare disk space using --remove-tmp option)
 │   └── Proteome_1.faa.gz
 │   └── Proteome_2.faa.gz
 │   └── Proteome_3.faa.gz
@@ -294,7 +297,7 @@ output_folder
 ├── fasta_representative
 │   └── Cluster_1.faa
 │   └── ...
-├── mmseqs_tmp
+├── mmseqs_tmp (can be cleaned to spare disk space using --remove-tmp option)
 │   └── Cluster_1
 │       └── mmseqs intermediary files
 │       └── ...
