@@ -392,7 +392,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             if uniprot_sparql_endpoint:
                 proteomes = input_proteomes[base_filename]
                 if len(proteomes) > 100:
-                    proteomes_chunks = chunks(proteomes, 100)
+                    proteomes_chunks = chunks(list(proteomes), 100)
                     for proteome_chunk in proteomes_chunks:
                         tmp_output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteome_chunk, uniprot_sparql_endpoint))
                         output_dict.update(tmp_output_dict)
@@ -409,7 +409,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                     output_dict.update(tmp_output_dict)
                     time.sleep(1)
                 else:
-                    protein_chunks = chunks(set_proteins, 20000)
+                    protein_chunks = chunks(list(set_proteins), 20000)
                     for chunk in protein_chunks:
                         protein_queries = ' '.join(chunk)
                         tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries)

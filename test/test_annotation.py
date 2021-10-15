@@ -9,7 +9,7 @@ ANOTATIONS = {'Q7CGB6': ['Protein translocase subunit SecA (EC 7.4.2.8)', True,
 
 def test_rest_query_uniprot_to_retrieve_function():
     output_dict = {}
-    output_dict = rest_query_uniprot_to_retrieve_function('Q7CGB6', output_dict)
+    output_dict = rest_query_uniprot_to_retrieve_function('Q7CGB6')
 
     for protein in output_dict:
         assert ANOTATIONS[protein][0] == output_dict[protein][0]
