@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import re
+import time
 import sys
 import urllib.parse
 import urllib.request
@@ -14,7 +15,8 @@ from esmecata import __version__ as esmecata_version
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
 
 
-def rest_query_uniprot_to_retrieve_function(protein_queries, output_dict):
+def rest_query_uniprot_to_retrieve_function(protein_queries):
+    output_dict = {}
     url = 'https://www.uniprot.org/uploadlists/'
 
     # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
@@ -385,26 +387,34 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             set_proteins = set(proteins)
 
             # Query Uniprot to get the annotation of each proteins.
+            # Add a limit of 100 proteomes per query.
+            output_dict = {}
+            if uniprot_sparql_endpoint:
+                proteomes = input_proteomes[base_filename]
+                if len(proteomes) > 100:
+                    proteomes_chunks = chunks(proteomes, 100)
+                    for proteome_chunk in proteomes_chunks:
+                        tmp_output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteome_chunk, uniprot_sparql_endpoint))
+                        output_dict.update(tmp_output_dict)
+                        time.sleep(1)
+                else:
+                    output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint))
+                    time.sleep(1)
             # The limit of 20 000 proteins per query comes from the help of Uniprot:
             # https://www.uniprot.org/help/uploadlists
-            output_dict = {}
-            if len(set_proteins) < 20000:
-                protein_queries = ' '.join(set_proteins)
-                if uniprot_sparql_endpoint:
-                    proteomes = input_proteomes[base_filename]
-                    output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint))
-                else:
-                    rest_query_uniprot_to_retrieve_function(protein_queries, output_dict)
             else:
-                protein_chunks = chunks(proteins, 20000)
-                for chunk in protein_chunks:
-                    protein_queries = ' '.join(chunk)
-                    if uniprot_sparql_endpoint:
-                        proteomes = input_proteomes[base_filename]
-                        tmp_output_dict = sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint)
+                if len(set_proteins) < 20000:
+                    protein_queries = ' '.join(set_proteins)
+                    tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries)
+                    output_dict.update(tmp_output_dict)
+                    time.sleep(1)
+                else:
+                    protein_chunks = chunks(set_proteins, 20000)
+                    for chunk in protein_chunks:
+                        protein_queries = ' '.join(chunk)
+                        tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries)
                         output_dict.update(tmp_output_dict)
-                    else:
-                        output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, output_dict)
+                        time.sleep(1)
 
             with open(annotation_file, 'w') as output_tsv:
                 csvwriter = csv.writer(output_tsv, delimiter='\t')
