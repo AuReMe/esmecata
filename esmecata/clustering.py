@@ -149,7 +149,10 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
             filename, file_extension = os.path.splitext(fasta_file)
             with gzip.open(fasta_file, 'rt') as fasta_handle:
                 for record in SeqIO.parse(fasta_handle, 'fasta'):
-                    organism_prots[record.id.split('|')[1]] = os.path.splitext(os.path.basename(fasta_file))[0]
+                    compressed_filebasename = os.path.basename(fasta_file)
+                    fasta_filebasename = os.path.splitext(compressed_filebasename)[0]
+                    filebasename = os.path.splitext(fasta_filebasename)[0]
+                    organism_prots[record.id.split('|')[1]] = filebasename
 
         number_proteomes = len(cluster_fasta_files[cluster])
 
