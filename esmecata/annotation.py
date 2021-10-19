@@ -379,6 +379,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                 input_proteomes[line[0]] = line[3].split(',')
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
+    already_annotated_proteins = {}
     for input_file in os.listdir(reference_protein_path):
         base_file = os.path.basename(input_file)
         base_filename = os.path.splitext(base_file)[0]
@@ -398,9 +399,32 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
 
             set_proteins = set(proteins)
 
+            # Retrieve already annotated protein using the annotation files from the annotation_folder.
+            output_dict = {}
+            alreay_annoated_set = set(already_annotated_proteins.keys())
+            reference_files = {}
+            for protein in set_proteins:
+                if protein in alreay_annoated_set:
+                    reference_file = already_annotated_proteins[protein]
+                    if reference_file not in reference_files:
+                        reference_files[reference_file] = [protein]
+                    else:
+                        reference_files[reference_file].append(protein)
+
+            protein_to_remove = []
+            for reference_file in reference_files:
+                already_annotated_file = os.path.join(annotation_folder, reference_file+'.tsv')
+                with open(already_annotated_file) as already_process_file:
+                    csvreader = csv.reader(already_process_file, delimiter='\t')
+                    for line in csvreader:
+                        if line[0] in set(reference_files[reference_file]):
+                            output_dict[line[0]] = line[1:8]
+                            protein_to_remove.append(line[0])
+
+            set_proteins = set_proteins.difference(set(protein_to_remove))
+
             # Query Uniprot to get the annotation of each proteins.
             # Add a limit of 100 proteomes per query.
-            output_dict = {}
             if uniprot_sparql_endpoint:
                 proteomes = input_proteomes[base_filename]
                 if len(proteomes) > 100:
@@ -410,7 +434,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                         output_dict.update(tmp_output_dict)
                         time.sleep(1)
                 else:
-                    output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint))
+                    output_dict.update(dict(sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint)))
                     time.sleep(1)
             # The limit of 20 000 proteins per query comes from the help of Uniprot:
             # https://www.uniprot.org/help/uploadlists
@@ -432,6 +456,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                 csvwriter = csv.writer(output_tsv, delimiter='\t')
                 csvwriter.writerow(['protein_id', 'protein_name', 'review', 'gos', 'ecs', 'interpros', 'rhea_ids', 'gene_name'])
                 for protein in output_dict:
+                    already_annotated_proteins[protein] = base_filename
                     protein_name = output_dict[protein][0]
                     protein_review_satus = str(output_dict[protein][1])
                     go_terms = ','.join(output_dict[protein][2])
