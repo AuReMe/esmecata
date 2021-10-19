@@ -516,14 +516,14 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                     gene_name = output_dict[reference_protein][6]
                     protein_annotations[reference_protein] = [protein_name, gos, ecs, gene_name]
                 if uniref_annotation:
-                        uniref_gos = uniref_output_dict[reference_protein][0]
-                        uniref_ecs = uniref_output_dict[reference_protein][1]
+                    uniref_gos = uniref_output_dict[reference_protein][0]
+                    uniref_ecs = uniref_output_dict[reference_protein][1]
 
-                        protein_annotations[reference_protein][1].extend(uniref_gos)
-                        protein_annotations[reference_protein][2].extend(uniref_ecs)
+                    protein_annotations[reference_protein][1].extend(uniref_gos)
+                    protein_annotations[reference_protein][2].extend(uniref_ecs)
 
-                        protein_annotations[reference_protein][1] = set(protein_annotations[reference_protein][1])
-                        protein_annotations[reference_protein][2] = set(protein_annotations[reference_protein][2])
+                    protein_annotations[reference_protein][1] = set(protein_annotations[reference_protein][1])
+                    protein_annotations[reference_protein][2] = set(protein_annotations[reference_protein][2])
 
 
             with open(annotation_reference_file, 'w') as output_tsv:

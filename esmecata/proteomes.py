@@ -454,7 +454,7 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
-def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=90,
+def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         remove_tmp=None, limit_maximal_number_proteomes=99):
     if is_valid_file(input_file) is False:
@@ -521,9 +521,12 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=90,
         # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
         with open(proteome_cluster_tax_id_file, 'w') as out_file:
             csvwriter = csv.writer(out_file, delimiter='\t')
-            csvwriter.writerow(['cluster', 'name', 'tax_id', 'proteome'])
+            csvwriter.writerow(['cluster', 'name', 'tax_id', 'tax_rank', 'proteome'])
             for cluster in proteomes_ids:
-                csvwriter.writerow([cluster, tax_id_names[int(proteomes_ids[cluster][0])], proteomes_ids[cluster][0], ','.join(proteomes_ids[cluster][1])])
+                tax_id = int(proteomes_ids[cluster][0])
+                tax_name = tax_id_names[tax_id]
+                tax_rank = ncbi.get_rank([tax_id])[tax_id]
+                csvwriter.writerow([cluster, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[cluster][1])])
     else:
         proteome_to_download = []
         proteomes_ids = {}
