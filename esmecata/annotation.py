@@ -418,7 +418,14 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                     csvreader = csv.reader(already_process_file, delimiter='\t')
                     for line in csvreader:
                         if line[0] in set(reference_files[reference_file]):
-                            output_dict[line[0]] = line[1:8]
+                            protein_name = line[1]
+                            review = line[2]
+                            gos = line[3].split(',')
+                            ecs = line[4].split(',')
+                            interpros = line[5].split(',')
+                            rhea_ids = line[6].split(',')
+                            gene_name = line[7]
+                            output_dict[line[0]] = [protein_name, review, gos, ecs, interpros, rhea_ids, gene_name]
                             protein_to_remove.append(line[0])
 
             set_proteins = set_proteins.difference(set(protein_to_remove))
