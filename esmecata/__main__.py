@@ -69,7 +69,8 @@ def main():
         required=False,
         type=range_limited_float_type,
         help='BUSCO percentage between 0 and 1. This will remove all the proteomes without BUSCO score and the score before the selected ratio of completion.',
-        metavar='BUSCO')
+        metavar='BUSCO',
+        default=0.9)
     parent_parser_taxadb = argparse.ArgumentParser(add_help=False)
     parent_parser_taxadb.add_argument(
         '--ignore-taxadb-update',
@@ -220,7 +221,7 @@ def main():
         if args.busco:
             busco_score = 100*args.busco
         else:
-            busco_score = None
+            busco_score = 90
 
     if args.cmd == 'proteomes':
         retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp, args.limit_maximal_number_proteomes)

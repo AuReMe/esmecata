@@ -1,3 +1,6 @@
+import os
+import shutil
+
 from collections import OrderedDict
 from ete3 import NCBITaxa
 
@@ -33,7 +36,11 @@ def test_find_proteomes_tax_ids():
     ncbi = NCBITaxa()
     tax_id_names, json_cluster_taxons = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
     json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
-    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons=json_cluster_taxons, ncbi=ncbi, busco_percentage_keep=90, all_proteomes=None)
+    proteomes_description_folder = 'proteomes_description'
+    os.mkdir(proteomes_description_folder)
+    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons=json_cluster_taxons, ncbi=ncbi, proteomes_description_folder=proteomes_description_folder,
+                                                                        busco_percentage_keep=90, all_proteomes=None)
+    shutil.rmtree(proteomes_description_folder)
     for taxon in expected_proteomes_ids:
         assert expected_proteomes_ids[taxon][0] == proteomes_ids[taxon][0]
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])
@@ -44,7 +51,11 @@ def test_sparql_find_proteomes_tax_ids():
     ncbi = NCBITaxa()
     tax_id_names, json_cluster_taxons = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
     json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
-    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons=json_cluster_taxons, ncbi=ncbi, busco_percentage_keep=90, all_proteomes=None, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql')
+    proteomes_description_folder = 'proteomes_description'
+    os.mkdir(proteomes_description_folder)
+    proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons=json_cluster_taxons, ncbi=ncbi, proteomes_description_folder=proteomes_description_folder,
+                                                                            busco_percentage_keep=90, all_proteomes=None, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql')
+    shutil.rmtree(proteomes_description_folder)
     for taxon in expected_proteomes_ids:
         assert expected_proteomes_ids[taxon][0] == proteomes_ids[taxon][0]
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])

@@ -10,11 +10,17 @@ import shutil
 import sys
 import time
 
+from collections import OrderedDict
+
+from Bio import __version__ as biopython_version
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from collections import OrderedDict
+
+from ete3 import __version__ as ete3_version
 from ete3 import NCBITaxa, is_taxadb_up_to_date
+
+from SPARQLWrapper import __version__ as sparqlwrapper_version
 
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir, send_uniprot_sparql_query
 from esmecata import __version__ as esmecata_version
@@ -97,6 +103,7 @@ def filter_taxon(json_cluster_taxons, ncbi):
 
 def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes):
     proteomes = []
+    proteomes_data = []
     organism_ids = {}
     # Find proteomes associated with taxon.
     # Take reference proteomes with "reference:yes".
@@ -123,6 +130,7 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
             next(csvreader)
         else:
             csvreader = []
+        reference_proteome = True
 
     if response_proteome_status is False:
         time.sleep(1)
@@ -136,22 +144,26 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
                 next(csvreader)
             else:
                 csvreader = []
+        reference_proteome = False
 
     for line in csvreader:
         proteome = line[0]
         completness = line[6]
         org_tax_id = line[2]
 
+        if line[4] != '':
+            busco_percentage = float(line[4].split(':')[1].split('%')[0])
+        else:
+            busco_percentage = None
+
         # Check that proteome has busco score.
         if busco_percentage_keep:
-            if line[4] != '':
-                busco_percentage = float(line[4].split(':')[1].split('%')[0])
-                if busco_percentage >= busco_percentage_keep and completness == 'full':
-                    proteomes.append(proteome)
-                    if org_tax_id not in organism_ids:
-                        organism_ids[org_tax_id] = [proteome]
-                    else:
-                        organism_ids[org_tax_id].append(proteome)
+            if busco_percentage and busco_percentage >= busco_percentage_keep and completness == 'full':
+                proteomes.append(proteome)
+                if org_tax_id not in organism_ids:
+                    organism_ids[org_tax_id] = [proteome]
+                else:
+                    organism_ids[org_tax_id].append(proteome)
         else:
             if completness == 'full':
                 proteomes.append(proteome)
@@ -160,7 +172,9 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
                 else:
                     organism_ids[org_tax_id].append(proteome)
 
-    return proteomes, organism_ids
+        proteomes_data.append([proteome, busco_percentage, completness, org_tax_id, reference_proteome])
+
+    return proteomes, organism_ids, proteomes_data
 
 
 def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
@@ -209,6 +223,7 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
     csvreader = send_uniprot_sparql_query(uniprot_sparql_query, uniprot_sparql_endpoint)
 
     proteomes = []
+    proteomes_data = []
     organism_ids = {}
     reference_proteomes = []
     other_proteomes = []
@@ -259,6 +274,7 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
 
+        proteomes_data.append([proteome_id, busco_percentage, completness, org_tax_id, reference])
     if all_proteomes is not None:
         proteomes = other_proteomes
     else:
@@ -268,12 +284,12 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
         else:
             proteomes = reference_proteomes
 
-    return proteomes, organism_ids
+    return proteomes, organism_ids, proteomes_data
 
 
-def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None, limit_maximal_number_proteomes=99):
+def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_folder, busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None, limit_maximal_number_proteomes=99):
     # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomy.
-    # If there is more thant 100 proteomes we do not keep it because there is too many proteome.
+    # If there is more than limit_maximal_number_proteomes proteomes a method is applied to extract a subset of the data.
     print('Find proteome ID associated to taxonomy')
     proteomes_ids = {}
     single_proteomes = {}
@@ -295,9 +311,21 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
                 continue
 
             if uniprot_sparql_endpoint:
-                proteomes, organism_ids = sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
+                proteomes, organism_ids, data_proteomes = sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
             else:
-                proteomes, organism_ids = rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes)
+                proteomes, organism_ids, data_proteomes = rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes)
+
+            proteomes_description_file = os.path.join(proteomes_description_folder, taxon+'.tsv')
+            if os.path.exists(proteomes_description_file):
+                proteomes_description_file_writer = 'a'
+            else:
+                proteomes_description_file_writer = 'w'
+            with open(proteomes_description_file, proteomes_description_file_writer) as proteome_output:
+                csvwriter = csv.writer(proteome_output, delimiter='\t')
+                if proteomes_description_file_writer == 'w':
+                    csvwriter.writerow(['tax_id', 'tax_name', 'proteome_id', 'busco_percentage', 'completness', 'org_tax_id', 'reference_proteome'])
+                for data_proteome in data_proteomes:
+                    csvwriter.writerow([tax_id, tax_name, *data_proteome])
 
             # Answer is empty no corresponding proteomes to the tax_id.
             if len(proteomes) == 0:
@@ -316,7 +344,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep=None
                 break
 
             elif len(proteomes) > limit_maximal_number_proteomes:
-                print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around 100 proteomes with respect to the taxonomy proportion.'.format(limit_maximal_number_proteomes, taxon, tax_name))
+                print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around {0} proteomes with respect to the taxonomy proportion.'.format(limit_maximal_number_proteomes, taxon, tax_name))
                 tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
 
                 # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
@@ -426,10 +454,10 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
-def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None,
+def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=90,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         remove_tmp=None, limit_maximal_number_proteomes=99):
-    if is_valid_file(input_file) == False:
+    if is_valid_file(input_file) is False:
         print('The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
 
@@ -451,6 +479,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None,
             print('--ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
 
     is_valid_dir(output_folder)
+
+    proteomes_description_folder = os.path.join(output_folder, 'proteomes_description')
+    is_valid_dir(proteomes_description_folder)
 
     if '.xlsx' in input_file:
         df = pd.read_excel(input_file)
@@ -478,9 +509,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None,
         with open(json_log, 'w') as ouput_file:
             json.dump(json_cluster_taxons, ouput_file, indent=4)
 
-
     if not os.path.exists(proteome_cluster_tax_id_file):
-        proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, limit_maximal_number_proteomes)
+        proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_folder,
+                                                        busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, limit_maximal_number_proteomes)
 
         proteome_to_download = []
         for proteomes_id in proteomes_ids:
@@ -530,12 +561,26 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=None,
         time.sleep(1)
 
     # Download Uniprot metadata and create a json file containing them.
-    if uniprot_sparql_endpoint:
-        uniprot_releases = get_sparql_uniprot_release(uniprot_sparql_endpoint)
-    else:
-        uniprot_releases = get_rest_uniprot_release()
+    options = {'input_file': input_file, 'output_folder': output_folder, 'busco_percentage_keep': busco_percentage_keep,
+                        'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
+                        'remove_tmp': remove_tmp, 'limit_maximal_number_proteomes': limit_maximal_number_proteomes}
 
-    uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata_proteomes.json')
+    options['tool_dependencies'] = {}
+    options['tool_dependencies']['python_package'] = {}
+    options['tool_dependencies']['python_package']['Python_version'] = sys.version
+    options['tool_dependencies']['python_package']['biopython'] = biopython_version
+    options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
+    options['tool_dependencies']['python_package']['ete3'] = ete3_version
+    options['tool_dependencies']['python_package']['pandas'] = pd.__version__
+    options['tool_dependencies']['python_package']['requests'] = requests.__version__
+    options['tool_dependencies']['python_package']['SPARQLWrapper'] = sparqlwrapper_version
+
+    if uniprot_sparql_endpoint:
+        uniprot_releases = get_sparql_uniprot_release(uniprot_sparql_endpoint, options)
+    else:
+        uniprot_releases = get_rest_uniprot_release(options)
+
+    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_proteomes.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(uniprot_releases, ouput_file, indent=4)
 

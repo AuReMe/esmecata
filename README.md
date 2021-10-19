@@ -147,9 +147,9 @@ Then the proteomes found will be downloaded. For protein with isoforms, the [can
 
 It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a sparql endpoint containing UniProt. If you want to use the [SPARQL endpoint of UniProt](https://sparql.uniprot.org/sparql), you can use the argument: `-s uniprot`.
 
-* `-b/--busco`: filter proteomes using BUSCO score
+* `-b/--busco`: filter proteomes using BUSCO score (default is 0.9)
 
-It is possible to filter proteomes according to to their BUSCO score (from Uniprot documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By choosing a BUSCO score of 0.90, esmecata will only download proteomes with a BSUCO score of at least 0.90.
+It is possible to filter proteomes according to to their BUSCO score (from Uniprot documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By default esmecata uses a BUSCO score of 0.90, it will only download proteomes with a BUSCO score of at least 90%.
 
 * `--ignore-taxadb-update`: ignore need to udpate ete3 taxaDB
 
@@ -263,6 +263,9 @@ With this option, esmecata will extract the [expression information](https://www
 
 ````
 output_folder
+├── proteomes_description
+│   └── Cluster_1.tsv
+│   └── Cluster_1.tsv
 ├── result
 │   └── Cluster_1
 │       └── Proteome_1.faa.gz
@@ -278,8 +281,10 @@ output_folder
 │   └── ...
 ├── association_taxon_taxID.json
 ├── proteome_cluster_tax_id.tsv
-├── uniprot_release_metadata_proteomes.json
+├── esmecata_metadata_proteomes.json
 ````
+
+The `proteomes_description` contains list of proteomes find by esmecata on Uniprot associated to the taxonomy.
 
 The `result` folder contain one sub-folder for each `observation_name` from the input file. Each sub-folder contains the proteome associated with the `observation_name`.
 
@@ -289,7 +294,7 @@ The `tmp_proteome` contains all the proteomes that have been found to be associa
 
 `proteome_cluster_tax_id.tsv` contains the name, the taxon_id and the proteomes associated to each `observation_name`.
 
-`uniprot_release_metadata_proteomes.json` is a log about the Uniprot release used and how the queries ware made (REST or SPARQL).
+`esmecata_metadata_proteomes.json` is a log about the Uniprot release used and how the queries ware made (REST or SPARQL). It also gets the metadata associated to the command used with esmecata and the dependencies.
 
 ### EsMeCaTa clustering
 
@@ -322,6 +327,7 @@ output_folder
 │   └── Cluster_1.faa
 │   └── ...
 ├── proteome_cluster_tax_id.tsv
+├── esmecata_metadata_clustering.json
 ````
 
 The `cluster_founds` contains one tsv file per `observation_name` and these files contain the clustered proteins The first column contains the representative proteins of a cluster and the following columns correspond to the other proteins of the same cluster. The first protein occurs two time: one as the representative member of the cluster and a second time as a member of the cluster.
@@ -342,6 +348,8 @@ The `reference_proteins_representative_fasta` contains the consensus proteins as
 
 The `proteome_cluster_tax_id.tsv` file is the same than the one created in `esmecata proteomes`.
 
+`esmecata_metadata_clustering.json` is a log about the the metadata associated to the command used with esmecata and the dependencies.
+
 ### EsMeCaTa annotation
 
 ````
@@ -360,10 +368,10 @@ output_folder
 │       └── Cluster_1.pf
 │   └── ...
 │   └── taxon_id.tsv
-├── uniprot_release_metadata_annotation.json
 ├── uniref_annotation (if --uniref option)
 │   └── Cluster_1.tsv
 │   └── ...
+├── esmecata_metadata_annotation.json
 ````
 
 The `annotation` folder contains a tabulated file for each `observation_name`. It contains the annotation retrieved with Uniprot (protein_name, review, GO Terms, EC numbers, Interpros, Rhea IDs and gene name) associated to all the proteins in a proteome or associated to an `observation_name`.
@@ -374,6 +382,6 @@ The `expression_annotation` contains expression annotation for the proteins of a
 
 The `pathologic` contains one sub-folder for each `observation_name` in which there is one PathoLogic file. There is also a `taxon_id.tsv` file which corresponds to a modified version of `proteome_cluster_tax_id.tsv` with only the `observation_name` and the `taxon_id`. This folder can be used as input to [mpwt](https://github.com/AuReMe/mpwt) to reconstruct draft metabolic networks using Pathway Tools PathoLogic.
 
-The `uniprot_release_metadata_annotation.json` serves the same purpose as the one used in `esmecata proteomes` to retrieve metadata about Uniprot release at the time of the query.
+The `esmecata_metadata_annotation.json` serves the same purpose as the one used in `esmecata proteomes` to retrieve metadata about Uniprot release at the time of the query. It also gets the metadata associated to the command used with esmecata and the dependencies.
 
 The `uniref_annotation` contains the annotation from the representative protein of teh UniRef cluster associated to the proteins of a taxon (if the `--uniref` option was used).

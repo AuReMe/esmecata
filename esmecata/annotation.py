@@ -9,6 +9,8 @@ import urllib.request
 
 from collections import Counter
 
+from SPARQLWrapper import __version__ as sparqlwrapper_version
+
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query
 from esmecata import __version__ as esmecata_version
 
@@ -347,12 +349,22 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         is_valid_dir(expression_protein_path)
 
     # Download Uniprot metadata and create a json file containing them.
-    if uniprot_sparql_endpoint:
-        uniprot_releases = get_sparql_uniprot_release(uniprot_sparql_endpoint)
-    else:
-        uniprot_releases = get_rest_uniprot_release()
+    options = {'input_folder': input_folder, 'output_folder': output_folder, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
+                'propagate_annotation': propagate_annotation, 'uniref_annotation': uniref_annotation, 'expression_annotation': expression_annotation}
 
-    uniprot_metadata_file = os.path.join(output_folder, 'uniprot_release_metadata_annotation.json')
+    options['tool_dependencies'] = {}
+    options['tool_dependencies']['python_package'] = {}
+    options['tool_dependencies']['python_package']['Python_version'] = sys.version
+    options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
+    options['tool_dependencies']['python_package']['SPARQLWrapper'] = sparqlwrapper_version
+    options['tool_dependencies']['python_package']['urllib'] = urllib.request.__version__
+
+    if uniprot_sparql_endpoint:
+        uniprot_releases = get_sparql_uniprot_release(uniprot_sparql_endpoint, options)
+    else:
+        uniprot_releases = get_rest_uniprot_release(options)
+
+    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(uniprot_releases, ouput_file, indent=4)
 

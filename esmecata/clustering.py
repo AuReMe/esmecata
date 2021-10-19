@@ -1,17 +1,21 @@
 import csv
 import gzip
+import json
 import os
 import shutil
 import subprocess
 import sys
 
 from Bio import SeqIO
+from Bio import __version__ as biopython_version
 from shutil import which
 
+from esmecata import __version__ as esmecata_version
 from esmecata.utils import is_valid_path, is_valid_dir
 
 def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp):
-    if not which('mmseqs'):
+    mmseqs_path = which('mmseqs')
+    if not mmseqs_path:
         print('mmseqs not available in path, esmecata will not be able to cluster the proteomes.')
         sys.exit(1)
 
@@ -26,6 +30,26 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         sys.exit(1)
 
     is_valid_dir(output_folder)
+
+    # Create metadata file.
+    clustering_metadata = {}
+    clustering_metadata['tool_options'] = {'proteome_folder': proteome_folder, 'output_folder': output_folder, 'nb_cpu':nb_cpu,
+                                        'clust_threshold':clust_threshold, 'mmseqs_options': mmseqs_options, 'linclust':linclust,
+                                        'remove_tmp': remove_tmp}
+
+    clustering_metadata['tool_dependencies'] = {}
+    subprocess_output = subprocess.check_output(['mmseqs', 'version'])
+    mmseqs_version = subprocess_output.decode('utf-8')
+    clustering_metadata['tool_dependencies']['mmseqs_version'] = mmseqs_version
+    clustering_metadata['tool_dependencies']['mmseqs_path'] = mmseqs_path
+    clustering_metadata['tool_dependencies']['python_package'] = {}
+    clustering_metadata['tool_dependencies']['python_package']['Python_version'] = sys.version
+    clustering_metadata['tool_dependencies']['python_package']['biopython'] = biopython_version
+    clustering_metadata['tool_dependencies']['python_package']['esmecata'] = esmecata_version
+
+    clustering_metadata_file = os.path.join(output_folder, 'esmecata_metadata_clustering.json')
+    with open(clustering_metadata_file, 'w') as ouput_file:
+        json.dump(clustering_metadata, ouput_file, indent=4)
 
     cluster_fasta_files = {}
     for cluster in os.listdir(result_folder):

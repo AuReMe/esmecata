@@ -93,7 +93,7 @@ def is_valid_dir(dirpath):
     else:
         return True
 
-def get_rest_uniprot_release():
+def get_rest_uniprot_release(options):
     """Get the release version and date of Uniprot and Trembl and also the date of the query.
 
     Returns:
@@ -121,11 +121,12 @@ def get_rest_uniprot_release():
     uniprot_releases['swissprot_release_date'] = swissprot_release_date
     uniprot_releases['trembl_release_number'] = trembl_release_number
     uniprot_releases['trembl_release_date'] = trembl_release_date
+    uniprot_releases['tool_options'] = options
 
     return uniprot_releases
 
 
-def get_sparql_uniprot_release(uniprot_sparql_endpoint):
+def get_sparql_uniprot_release(uniprot_sparql_endpoint, options):
     """Get the release version and date of Uniprot and Trembl and also the date of the query.
 
     Returns:
@@ -148,6 +149,7 @@ def get_sparql_uniprot_release(uniprot_sparql_endpoint):
     uniprot_releases['esmecata_sparql_endpoint'] = uniprot_sparql_endpoint
     uniprot_releases['uniprot_release'] = uniprot_release_number
     uniprot_releases['access_time'] = date
+    uniprot_releases['tool_options'] = options
 
     return uniprot_releases
 
