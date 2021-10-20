@@ -531,8 +531,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         proteome_to_download = []
         proteomes_ids = {}
         single_proteomes = {}
-        with open(proteome_cluster_tax_id_file, 'r') as input_file:
-            csvreader = csv.reader(input_file, delimiter='\t')
+        with open(proteome_cluster_tax_id_file, 'r') as proteome_tax_file:
+            csvreader = csv.reader(proteome_tax_file, delimiter='\t')
             next(csvreader)
             for line in csvreader:
                 observation_name = line[0]
