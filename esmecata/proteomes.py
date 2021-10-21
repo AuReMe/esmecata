@@ -498,6 +498,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     proteome_cluster_tax_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
 
+    result_folder = os.path.join(output_folder, 'result')
+
     if not os.path.exists(proteome_cluster_tax_id_file):
         ncbi = NCBITaxa()
 
@@ -538,12 +540,14 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 observation_name = line[0]
                 name = line[1]
                 tax_id = line[2]
-                proteomes = line[3].split(',')
-                proteome_to_download.extend(proteomes)
-                if len(proteomes) == 1:
-                    single_proteomes[observation_name] = (tax_id, proteomes)
-                proteomes_ids[observation_name] = (tax_id, proteomes)
-                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, name, len(proteomes)))
+                proteomes = line[4].split(',')
+                taxon_result_folder = os.path.join(result_folder, observation_name)
+                if not os.path.exists(taxon_result_folder):
+                    proteome_to_download.extend(proteomes)
+                    if len(proteomes) == 1:
+                        single_proteomes[observation_name] = (tax_id, proteomes)
+                    proteomes_ids[observation_name] = (tax_id, proteomes)
+                    print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, name, len(proteomes)))
 
         proteome_to_download = set(proteome_to_download)
 
@@ -590,7 +594,6 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     print('Creating result folder')
     # Create a result folder which contains one sub-folder per OTU.
     # Each OTU sub-folder will contain the proteome found.
-    result_folder = os.path.join(output_folder, 'result')
     is_valid_dir(result_folder)
 
     for cluster in proteomes_ids:
