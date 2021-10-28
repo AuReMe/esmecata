@@ -296,28 +296,27 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
-def create_pathologic(base_filename, protein_annotations, protein_set, pathologic_output_file):
+def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_output_file):
     with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:
         element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
         element_file.write(';; ' + base_filename + '\n')
         element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
-        for protein in protein_annotations:
-            if protein in protein_set:
-                element_file.write('ID\t' + protein + '\n')
-                if protein_annotations[protein][3] != '':
-                    element_file.write('NAME\t' + protein_annotations[protein][3] + '\n')
-                else:
-                    element_file.write('NAME\t' + protein + '\n')
-                if protein_annotations[protein][0] != '':
-                    element_file.write('FUNCTION\t' + protein_annotations[protein][0] + '\n')
-                element_file.write('PRODUCT-TYPE\tP' + '\n')
-                element_file.write('PRODUCT-ID\tprot ' + protein + '\n')
-                element_file.write('DBLINK\tUNIPROT:' + protein + '\n')
-                for go in protein_annotations[protein][1]:
-                    element_file.write('GO\t' + go + '\n')
-                for ec in protein_annotations[protein][2]:
-                    element_file.write('EC\t' + ec + '\n')
-                element_file.write('//\n\n')
+        for protein in annotated_protein_to_keeps:
+            element_file.write('ID\t' + protein + '\n')
+            if annotated_protein_to_keeps[protein][3] != '':
+                element_file.write('NAME\t' + annotated_protein_to_keeps[protein][3] + '\n')
+            else:
+                element_file.write('NAME\t' + protein + '\n')
+            if annotated_protein_to_keeps[protein][0] != '':
+                element_file.write('FUNCTION\t' + annotated_protein_to_keeps[protein][0] + '\n')
+            element_file.write('PRODUCT-TYPE\tP' + '\n')
+            element_file.write('PRODUCT-ID\tprot ' + protein + '\n')
+            element_file.write('DBLINK\tUNIPROT:' + protein + '\n')
+            for go in annotated_protein_to_keeps[protein][1]:
+                element_file.write('GO\t' + go + '\n')
+            for ec in annotated_protein_to_keeps[protein][2]:
+                element_file.write('EC\t' + ec + '\n')
+            element_file.write('//\n\n')
 
 
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation):
@@ -394,8 +393,9 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             with open(reference_protein_list_file, 'r') as input_file:
                 csvreader = csv.reader(input_file, delimiter='\t')
                 for line in csvreader:
-                    proteins.extend(line)
-                    reference_proteins[line[0]] = line[1:]
+                    if line != '':
+                        proteins.extend(line)
+                        reference_proteins[line[0]] = line[1:]
 
             set_proteins = set(proteins)
 
@@ -578,12 +578,13 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                         csvwriter.writerow([protein, protein_name, gene_name, gos, ecs])
 
             # Create PathoLogic file and folder for each input.
-            if len(protein_annotations) > 0:
+            annotated_protein_to_keeps = {protein: protein_annotations[protein] for protein in protein_annotations if protein in set_proteins}
+            if len(annotated_protein_to_keeps) > 0:
                 pathologic_organism_folder = os.path.join(pathologic_folder, base_filename)
                 is_valid_dir(pathologic_organism_folder)
                 pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
-                create_pathologic(base_filename, protein_annotations, set_proteins, pathologic_file)
-            elif len(protein_annotations) == 0:
+                create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_file)
+            elif len(annotated_protein_to_keeps) == 0:
                 print('No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
 
     # Create mpwt taxon ID file.
