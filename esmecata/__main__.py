@@ -171,6 +171,14 @@ def main():
         dest='sparql',
         help='Use sparql endpoint instead of REST queries on Uniprot.',
         required=False)
+    parent_parser_beta = argparse.ArgumentParser(add_help=False)
+    parent_parser_beta.add_argument(
+        '--beta',
+        dest='beta',
+        help='Use uniprot beta REST query.',
+        required=False,
+        action='store_true',
+        default=None)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -184,7 +192,8 @@ def main():
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
-            parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes
+            parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
+            parent_parser_beta
         ])
     clustering_parser = subparsers.add_parser(
         'clustering',
@@ -222,7 +231,7 @@ def main():
             busco_score = 100*args.busco
 
     if args.cmd == 'proteomes':
-        retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp, args.limit_maximal_number_proteomes)
+        retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp, args.limit_maximal_number_proteomes, args.beta)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
