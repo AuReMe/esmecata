@@ -219,6 +219,17 @@ The following ranks can be given to this option (from Supplementary Table S3 of 
 |40              |strain          |
 |41              |isolate         |
 
+Some ranks (which are not non-hierarchical) are not used for the moment when using this method (so some taxons can be removed whereas they are below a kept rank):
+
+|Level           |Rank                   |Note                                                                                              |
+|----------------|-----------------------|--------------------------------------------------------------------------------------------------|
+|                |clade                  |newly introduced, can appear anywhere in the lineage w/o breaking the order                       |
+|                |environmental samples  |no order below this rank is required                                                              |
+|                |incertae sedis         |can appear anywhere in the lineage w/o breaking the order, implies taxa with uncertain placements |
+|                |unclassified <name>    |no order below this rank is required, includes undefined or unspecified names                     |
+|                |no rank                |applied to nodes not categorized here yet, additional rank and groups names will be released      |
+
+
 ### `esmecata clustering`: Proteins clustering
 
 ````
