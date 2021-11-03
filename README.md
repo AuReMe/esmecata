@@ -104,7 +104,7 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 ### `esmecata proteomes`: Retrieve proteomes associated to taxonomy
 
 ````
-usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES]
+usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [--beta] [-r RANK_LIMIT]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -122,6 +122,9 @@ optional arguments:
   --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
   -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
                         Choose themaximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
+  --beta                Use uniprot beta REST query.
+  -r RANK_LIMIT, --rank-limit RANK_LIMIT
+                        This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
 ````
 
 For each taxon in each taxonomy EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated to these taxon ID in the Uniprot Proteomes database.
@@ -161,9 +164,60 @@ By default, esmecata will try to downlaod the reference proteomes associated to 
 
 * `--remove-tmp`: remove proteomes stored in `tmp_proteomes` folder
 
-* `-l/--limit-proteomes`: choose the number of proteomes that will lead to the used of the selection of a subset of proteoems
+* `-l/--limit-proteomes`: choose the number of proteomes that will lead to the used of the selection of a subset of proteomes
 
 To avoid working on too many proteomes, esmecata works on subset of proteomes when there is too many proteomes (by default this limit is set on 99 proteomes). Using this option the user can modify the limit.
+
+* `-r/--rank-limit`: This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored.
+
+To avoid working on rank with too much proteomes (which can have an heavy impact on the number of proteomes downloaded and then on the clustering) it is possible to select a limit on the taxonomy rank used by the tool.
+
+The selected rank will be used to find the ranks to keep. For example, if the rank 'phylum' is given, all the rank below (from subphylum to isolate) will be kept. And the ranks from phylum to superkingdom will be ignored when searching for proteomes.
+The following ranks can be given to this option (from Supplementary Table S3 of [PMC7408187](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/)):
+
+|Level           |Rank            |
+|----------------|----------------|
+|1               |superkingdom    |
+|2               |kingdom         |
+|3               |subkingdom      |
+|4               |superphylum     |
+|5               |phylum          |
+|6               |subphylum       |
+|7               |infraphylum     |
+|8               |superclass      |
+|9               |class           |
+|10              |subclass        |
+|11              |infraclass      |
+|12              |cohort          |
+|13              |subcohort       |
+|14              |superorder      |
+|15              |order           |
+|16              |suborder        |
+|17              |infraorder      |
+|18              |parvorder       |
+|19              |superfamily     |
+|20              |family          |
+|21              |subfamily       |
+|22              |tribe           |
+|23              |subtribe        |
+|24              |genus           |
+|25              |subgenus        |
+|26              |section         |
+|27              |subsection      |
+|28              |series          |
+|29              |subseries       |
+|30              |species group   |
+|31              |species subgroup|
+|32              |species         |
+|33              |forma specialis |
+|34              |subspecies      |
+|35              |varietas        |
+|36              |subvariety      |
+|37              |forma           |
+|38              |serogroup       |
+|39              |serotype        |
+|40              |strain          |
+|41              |isolate         |
 
 ### `esmecata clustering`: Proteins clustering
 

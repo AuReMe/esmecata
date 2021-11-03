@@ -101,6 +101,48 @@ def filter_taxon(json_cluster_taxons, ncbi):
     return json_cluster_taxons
 
 
+def filter_rank_limit(json_cluster_taxons, ncbi, rank_limit):
+    """
+    Using teh rank_limit specificied, remove the taxon associated ot this rank.
+    For example, if rank_limit == 'superkingdom', Bacteria will be removed.
+    """
+    # Rank level from Supplementary Table S3 of https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/
+    rank_level = {'superkingdom': 1, 'kingdom': 2, 'subkingdom': 3, 'superphylum': 4,
+                    'phylum': 5, 'subphylum': 6, 'infraphylum': 7, 'superclass': 8,
+                    'class': 9, 'subclass': 10, 'infraclass': 11, 'cohort': 12, 'subcohort': 13,
+                    'superorder': 14, 'order': 15, 'suborder': 16, 'infraorder': 17, 'parvorder': 18,
+                    'superfamily': 19, 'family': 20, 'subfamily': 21, 'tribe': 22, 'subtribe': 23,
+                    'genus': 24, 'subgenus': 25, 'section': 26, 'subsection': 27, 'series': 28,
+                    'subseries': 29, 'species group': 30, 'species subgroup': 31, 'species': 32,
+                    'forma specialis': 33, 'subspecies': 34, 'varietas': 35, 'subvariety': 36,
+                    'forma': 37, 'serogroup': 38, 'serotype': 39, 'strain': 40, 'isolate': 41}
+    rank_limit_level = rank_level[rank_limit]
+    rank_to_keeps = [rank for rank in rank_level if rank_level[rank] > rank_limit_level]
+
+    for cluster in json_cluster_taxons:
+        cluster_taxons = json_cluster_taxons[cluster]
+
+        tax_ranks = {}
+        tax_names = {}
+        keep_tax_ids = []
+        for tax_name in cluster_taxons:
+            tax_id = cluster_taxons[tax_name][0]
+            if tax_id != 'not_found':
+                tax_rank = ncbi.get_rank([tax_id])[tax_id]
+                if tax_rank in rank_to_keeps:
+                    keep_tax_ids.append(tax_id)
+                tax_ranks[tax_rank] = tax_id
+                tax_names[tax_id] = tax_name
+
+        all_tax_ids = tax_ranks.values()
+        tax_id_to_deletes = set(all_tax_ids) - set(keep_tax_ids)
+        for tax_id in tax_id_to_deletes:
+            tax_name = tax_names[tax_id]
+            del json_cluster_taxons[cluster][tax_name]
+
+    return json_cluster_taxons
+
+
 def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, beta=None):
     proteomes = []
     proteomes_data = []
@@ -342,6 +384,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_fold
     single_proteomes = {}
     tax_id_not_founds = {}
     tax_id_founds = {}
+
     for taxon in json_cluster_taxons:
         for tax_name in reversed(json_cluster_taxons[taxon]):
             tax_id = json_cluster_taxons[taxon][tax_name][0]
@@ -503,7 +546,7 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
 
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
-                        remove_tmp=None, limit_maximal_number_proteomes=99, beta=None):
+                        remove_tmp=None, limit_maximal_number_proteomes=99, beta=None, rank_limit=None):
     if is_valid_file(input_file) is False:
         print('The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
@@ -553,6 +596,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         tax_id_names, json_cluster_taxons = associate_taxon_to_taxon_id(taxonomies, ncbi)
 
         json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
+
+        if rank_limit:
+            json_cluster_taxons = filter_rank_limit(json_cluster_taxons, ncbi, rank_limit)
 
         json_log = os.path.join(output_folder, 'association_taxon_taxID.json')
         with open(json_log, 'w') as ouput_file:

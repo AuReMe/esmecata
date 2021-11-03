@@ -179,6 +179,14 @@ def main():
         required=False,
         action='store_true',
         default=None)
+    parent_parser_rank_limit = argparse.ArgumentParser(add_help=False)
+    parent_parser_rank_limit.add_argument(
+        '-r',
+        '--rank-limit',
+        dest='rank_limit',
+        required=False,
+        help='This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).',
+        default=None)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -193,7 +201,7 @@ def main():
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
             parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
-            parent_parser_beta
+            parent_parser_beta, parent_parser_rank_limit
         ])
     clustering_parser = subparsers.add_parser(
         'clustering',
@@ -227,11 +235,13 @@ def main():
             uniprot_sparql_endpoint = args.sparql
 
     if args.cmd == 'proteomes':
-        if args.busco:
+        if args.busco is not None:
             busco_score = 100*args.busco
 
     if args.cmd == 'proteomes':
-        retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp, args.limit_maximal_number_proteomes, args.beta)
+        retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
+                            args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
+                            args.limit_maximal_number_proteomes, args.beta, args.rank_limit)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
