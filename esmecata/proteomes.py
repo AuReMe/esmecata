@@ -116,26 +116,57 @@ def filter_rank_limit(json_cluster_taxons, ncbi, rank_limit):
                     'subseries': 29, 'species group': 30, 'species subgroup': 31, 'species': 32,
                     'forma specialis': 33, 'subspecies': 34, 'varietas': 35, 'subvariety': 36,
                     'forma': 37, 'serogroup': 38, 'serotype': 39, 'strain': 40, 'isolate': 41}
+    unclassified_rank = ['unclassified '+rank for rank in rank_level]
+    non_hierarchical_ranks = ['clade', 'environmental samples', 'incertae sedis', 'no rank'] + unclassified_rank
+
     rank_limit_level = rank_level[rank_limit]
     rank_to_keeps = [rank for rank in rank_level if rank_level[rank] > rank_limit_level]
 
     for cluster in json_cluster_taxons:
         cluster_taxons = json_cluster_taxons[cluster]
-
+        tax_keep = []
         tax_ranks = {}
         tax_names = {}
-        keep_tax_ids = []
-        for tax_name in cluster_taxons:
+        tax_rank_position = {}
+        tax_ids = []
+        for index, tax_name in enumerate(cluster_taxons):
             tax_id = cluster_taxons[tax_name][0]
+            tax_ids.append(tax_id)
             if tax_id != 'not_found':
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
+                tax_rank_position[tax_rank] = index
                 if tax_rank in rank_to_keeps:
-                    keep_tax_ids.append(tax_id)
-                tax_ranks[tax_rank] = tax_id
+                    tax_ranks[tax_rank] = tax_id
                 tax_names[tax_id] = tax_name
+                # If the rank is below the rank to remove keep it.
+                if tax_rank in rank_to_keeps:
+                    tax_keep.append(True)
+                elif tax_rank in non_hierarchical_ranks:
+                    # If a nonhierarchical rank is below a rank that has been checked as being below the rank to remove, keep it.
+                    if any(tax_keep):
+                        tax_keep.append(True)
+                    # If not remove it.
+                    else:
+                        tax_keep.append(False)
+                else:
+                    tax_keep.append(False)
+            else:
+                tax_keep.append(False)
 
-        all_tax_ids = tax_ranks.values()
-        tax_id_to_deletes = set(all_tax_ids) - set(keep_tax_ids)
+        # If the rank to remove is in the tax_ranks, keep all the rank below this rank.
+        if rank_limit in tax_ranks:
+            tax_rank_max_index = tax_rank_position[rank_limit]
+            keep_tax_ids = [tax_id[0] for tax_name, tax_id in list(cluster_taxons.items())[tax_rank_max_index+1:]]
+        # If not find all the rank below this rank (by using rank_level and rank_to_keeps) in the list and keep them.
+        # Use the tax_keep to keep non_hierarchical_ranks below the rank to remove.
+        # But they need to be below a hierarchical rank that has been checked as being below the rank to remove.
+        else:
+            keep_tax_ids = [tax_ids[tax_index] for tax_index, bool_choice in enumerate(tax_keep) if bool_choice is True]
+
+        tax_ids_wo_not_found = [tax_id for tax_id in tax_ids if tax_id != 'not_found']
+        tax_id_to_deletes = set(tax_ids_wo_not_found) - set(keep_tax_ids)
+
+        # Delete the remvoed rank and all its superior.
         for tax_id in tax_id_to_deletes:
             tax_name = tax_names[tax_id]
             del json_cluster_taxons[cluster][tax_name]
