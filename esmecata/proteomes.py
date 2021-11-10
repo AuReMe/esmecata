@@ -253,10 +253,12 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
     else:
         proteome_response = requests.get(url=beta_httpt_str, params=REQUESTS_HEADERS)
         proteome_response.raise_for_status()
+        check_code = proteome_response.status_code
         data = proteome_response.json()
         reference_proteome = True
         if len(data['results']) == 0:
             print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(taxon, tax_id, tax_name))
+            time.sleep(1)
             proteome_response = requests.get(url=all_beta_httpt_str, params=REQUESTS_HEADERS)
             proteome_response.raise_for_status()
             data = proteome_response.json()
@@ -264,16 +266,22 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
 
         for proteome_data in data['results']:
             proteome_id = proteome_data['id']
-            if 'buscoReport' in proteome_data['proteomeCompletenessReport']:
-                proteome_busco = proteome_data['proteomeCompletenessReport']['buscoReport']
-            else:
-                proteome_busco = None
-            if proteome_busco:
-                busco_score = (proteome_busco['complete'] / proteome_busco['total']) * 100
+            if 'proteomeCompletenessReport' in proteome_data:
+                if 'buscoReport' in proteome_data['proteomeCompletenessReport']:
+                    proteome_busco = proteome_data['proteomeCompletenessReport']['buscoReport']
+                else:
+                    proteome_busco = None
+                if proteome_busco:
+                    busco_score = (proteome_busco['complete'] / proteome_busco['total']) * 100
+                else:
+                    busco_score = None
             else:
                 busco_score = None
 
-            assembly_level = proteome_data['genomeAssembly']['level']
+            if 'level' in proteome_data['genomeAssembly']:
+                assembly_level = proteome_data['genomeAssembly']['level']
+            else:
+                assembly_level = ''
             org_tax_id = proteome_data['taxonomy']['taxonId']
             proteome_type = proteome_data['proteomeType']
             if busco_percentage_keep:
@@ -429,6 +437,10 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_fold
 
             # If tax_id has not been found with a request do not try a new request with the same tax_id.
             if tax_id in tax_id_not_founds:
+                continue
+
+            # If tax_id not found because the tax_name has no tax_id associated avoid it.
+            if tax_id == 'not_found':
                 continue
 
             if uniprot_sparql_endpoint:

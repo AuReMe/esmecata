@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import re
+import requests
 import time
 import sys
 import urllib.parse
@@ -17,47 +18,127 @@ from esmecata import __version__ as esmecata_version
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
 
 
-def rest_query_uniprot_to_retrieve_function(protein_queries):
+def rest_query_uniprot_to_retrieve_function(protein_queries, beta):
     output_dict = {}
-    url = 'https://www.uniprot.org/uploadlists/'
 
     # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
     # from and to are linked to mapping ID: https://www.uniprot.org/help/api%5Fidmapping
-    params = {
-        'from': 'ACC+ID',
-        'to': 'ACC',
-        'format': 'tab',
-        'query': protein_queries,
-        'columns': 'id,protein names,reviewed,go,ec,interpro(db_abbrev),rhea-id,genes(PREFERRED)'
-    }
-    go_pattern = re.compile(r'\[GO:(?P<go>\d{7})\]')
-    data = urllib.parse.urlencode(params)
-    data = data.encode('utf-8')
-    req = urllib.request.Request(url, data, headers=URLLIB_HEADERS)
-    with urllib.request.urlopen(req) as f:
-        response_text = f.read().decode('utf-8')
-        if response_text != '':
-            csvreader = csv.reader(response_text.splitlines(), delimiter='\t')
-            # Avoid header
-            next(csvreader)
-        else:
-            csvreader = []
+    if not beta:
+        url = 'https://www.uniprot.org/uploadlists/'
 
-    results = {}
-    for line in csvreader:
-        protein_name = line[1]
-        if line[2] == 'reviewed':
-            review = True
-        else:
-            review = False
-        go_result = go_pattern.findall(line[3])
-        gos = ['GO:'+ go_term for go_term in go_result]
-        ec_numbers = [ec for ec in line[4].split('; ') if ec != '']
-        interpros =  [interpro for interpro in line[5].split('; ') if interpro != '']
-        rhea_ids = [rhea_id for rhea_id in line[6].split('; ') if rhea_id != '']
-        gene_name = line[7]
-        results[line[0]] = [protein_name, review, gos, ec_numbers, interpros, rhea_ids, gene_name]
-        output_dict.update(results)
+        params = {
+            'from': 'ACC+ID',
+            'to': 'ACC',
+            'format': 'tab',
+            'query': protein_queries,
+            'columns': 'id,protein names,reviewed,go,ec,interpro(db_abbrev),rhea-id,genes(PREFERRED)'
+        }
+
+        go_pattern = re.compile(r'\[GO:(?P<go>\d{7})\]')
+        data = urllib.parse.urlencode(params)
+        data = data.encode('utf-8')
+        req = urllib.request.Request(url, data, headers=URLLIB_HEADERS)
+
+        with urllib.request.urlopen(req) as f:
+            response_text = f.read().decode('utf-8')
+            if response_text != '':
+                csvreader = csv.reader(response_text.splitlines(), delimiter='\t')
+                # Avoid header
+                next(csvreader)
+            else:
+                csvreader = []
+
+        results = {}
+        for line in csvreader:
+            protein_name = line[1]
+            if line[2] == 'reviewed':
+                review = True
+            else:
+                review = False
+            go_result = go_pattern.findall(line[3])
+            gos = ['GO:'+ go_term for go_term in go_result]
+            ec_numbers = [ec for ec in line[4].split('; ') if ec != '']
+            interpros =  [interpro for interpro in line[5].split('; ') if interpro != '']
+            rhea_ids = [rhea_id for rhea_id in line[6].split('; ') if rhea_id != '']
+            gene_name = line[7]
+            results[line[0]] = [protein_name, review, gos, ec_numbers, interpros, rhea_ids, gene_name]
+            output_dict.update(results)
+    else:
+        url = 'http://rest.uniprot.org/beta/idmapping/run'
+
+        # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
+        # from and to are linked to mapping ID: https://www.uniprot.org/help/api%5Fidmapping
+
+        params = {
+            'from': 'UniProtKB_AC-ID',
+            'to': 'UniProtKB',
+            'ids': protein_queries
+        }
+        data = urllib.parse.urlencode(params)
+        data = data.encode('utf-8')
+        req = urllib.request.Request(url, data)
+
+        data_js = json.load(urllib.request.urlopen(req))
+        job_id = data_js['jobId']
+
+        http_check_status = 'http://rest.uniprot.org/beta/idmapping/status/{0}'.format(job_id)
+
+        response = requests.head(http_check_status)
+        response.raise_for_status()
+        check_code = response.status_code
+
+        # Not working because the code is 200 instead of 303...
+        # Issue with protein_queries formatting?
+        while response.status_code != 303:
+            time.sleep(1)
+            if response.status_code == 303:
+                break
+
+        if check_code == 303:
+            http_download = 'http://rest.uniprot.org/beta/idmapping/uniprotkb/results/stream/{0}'.format(job_id)
+            response = requests.get(http_download)
+            response.raise_for_status()
+            data = response.json()
+
+            results = {}
+            for result in data['results']:
+                protein_id = result['from']
+                protein_data = result['to']
+                reviewed = protein_data['entryType']
+                if 'reviewed' in reviewed:
+                    review = True
+                else:
+                    review = False
+                protein_description = protein_data['proteinDescription']
+                if 'recommendedName' in protein_description:
+                    if 'ecNumbers' in protein_description['recommendedName']:
+                        protein_ecs = list(set([ecnumber['value'] for ecnumber in protein_description['recommendedName']['ecNumbers']]))
+                    else:
+                        protein_ecs = []
+                    protein_fullname = protein_description['recommendedName']['fullName']['value']
+                else:
+                    protein_ecs = []
+                    protein_fullname = ''
+
+                gene_names = [gene['geneName']['value'] for gene in protein_data['genes'] if 'geneName' in gene]
+                if len(gene_names) > 0:
+                    gene_name = gene_names[0]
+                else:
+                    gene_name = ''
+                protein_xrefs = protein_data['uniProtKBCrossReferences']
+
+                rhea_ids = []
+                if 'comments' in protein_data:
+                    protein_comments = protein_data['comments']
+                    protein_reactions = [comment['reaction'] for comment in protein_comments if comment['commentType'] == 'CATALYTIC ACTIVITY']
+                    for reaction in protein_reactions:
+                        if 'reactionCrossReferences' in reaction:
+                            rhea_ids.extend([dbxref['id'] for dbxref in reaction['reactionCrossReferences'] if dbxref['database'] == 'Rhea' and 'RHEA:' in dbxref['id']])
+                    rhea_ids = list(set(rhea_ids))
+                gos = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'GO']))
+                interpros = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'InterPro']))
+                results[protein_id] = [protein_fullname, review, gos, protein_ecs, interpros, rhea_ids, gene_name]
+                output_dict.update(results)
 
     return output_dict
 
@@ -319,7 +400,7 @@ def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_outp
             element_file.write('//\n\n')
 
 
-def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation):
+def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation, beta=None):
     if uniprot_sparql_endpoint is None and uniref_annotation is not None:
         print('At this moment, --uniref option needs to be used with --sparql option.')
         sys.exit()
@@ -447,15 +528,21 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             # https://www.uniprot.org/help/uploadlists
             else:
                 if len(set_proteins) < 20000:
-                    protein_queries = ' '.join(set_proteins)
-                    tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries)
+                    if not beta:
+                        protein_queries = ' '.join(set_proteins)
+                    else:
+                        protein_queries = ','.join(set_proteins)
+                    tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, beta)
                     output_dict.update(tmp_output_dict)
                     time.sleep(1)
                 else:
                     protein_chunks = chunks(list(set_proteins), 20000)
                     for chunk in protein_chunks:
-                        protein_queries = ' '.join(chunk)
-                        tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries)
+                        if not beta:
+                            protein_queries = ' '.join(chunk)
+                        else:
+                            protein_queries = ','.join(chunk)
+                        tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, beta)
                         output_dict.update(tmp_output_dict)
                         time.sleep(1)
 

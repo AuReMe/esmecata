@@ -216,7 +216,8 @@ def main():
         help='Retrieve protein annotations from Uniprot.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
-            parent_parser_propagate, parent_parser_uniref, parent_parser_expression
+            parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
+            parent_parser_beta
         ])
 
     args = parser.parse_args()
@@ -245,7 +246,7 @@ def main():
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
-        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression)
+        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression, args.beta)
 
 if __name__ == '__main__':
     main()
