@@ -146,7 +146,7 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta):
 def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint):
     proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
 
-    uniprot_sparql_query = """PREFIX up: <http://purl.uniprot.org/core/>
+    uniprot_sparql_function_query = """PREFIX up: <http://purl.uniprot.org/core/>
     PREFIX uniprotkb: <http://purl.uniprot.org/uniprot/>
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -208,7 +208,7 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint
     GROUP BY ?protein
     """.format(proteomes)
 
-    csvreader = send_uniprot_sparql_query(uniprot_sparql_query, uniprot_sparql_endpoint)
+    csvreader = send_uniprot_sparql_query(uniprot_sparql_function_query, uniprot_sparql_endpoint)
 
     for line in csvreader:
         protein_id = line[0].split('/')[-1]
@@ -240,7 +240,7 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint
         yield protein_id, [protein_name, review, go_terms, ec_numbers, interpros, rhea_ids, gene_name]
 
 
-def sparql_query_uniprot_annotaiton_uniref(proteomes, output_dict, uniprot_sparql_endpoint):
+def sparql_query_uniprot_annotation_uniref(proteomes, output_dict, uniprot_sparql_endpoint):
     proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
 
     sparql_query_uniref = """PREFIX up: <http://purl.uniprot.org/core/>
@@ -456,7 +456,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             csvreader = csv.reader(tax_id_file, delimiter='\t')
             next(csvreader)
             for line in csvreader:
-                input_proteomes[line[0]] = line[3].split(',')
+                input_proteomes[line[0]] = line[4].split(',')
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
     already_annotated_proteins = {}
@@ -479,13 +479,12 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                         reference_proteins[line[0]] = line[1:]
 
             set_proteins = set(proteins)
-
             # Retrieve already annotated protein using the annotation files from the annotation_folder.
             output_dict = {}
-            alreay_annoated_set = set(already_annotated_proteins.keys())
+            alreay_annotated_set = set(already_annotated_proteins.keys())
             reference_files = {}
             for protein in set_proteins:
-                if protein in alreay_annoated_set:
+                if protein in alreay_annotated_set:
                     reference_file = already_annotated_proteins[protein]
                     if reference_file not in reference_files:
                         reference_files[reference_file] = [protein]
@@ -509,8 +508,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                             output_dict[line[0]] = [protein_name, review, gos, ecs, interpros, rhea_ids, gene_name]
                             protein_to_remove.append(line[0])
 
-            set_proteins = set_proteins.difference(set(protein_to_remove))
-
+            protein_to_search_on_uniprots = set_proteins.difference(set(protein_to_remove))
             # Query Uniprot to get the annotation of each proteins.
             # Add a limit of 100 proteomes per query.
             if uniprot_sparql_endpoint:
@@ -522,21 +520,22 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                         output_dict.update(tmp_output_dict)
                         time.sleep(1)
                 else:
-                    output_dict.update(dict(sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint)))
+                    tmp_output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint))
+                    output_dict.update(tmp_output_dict)
                     time.sleep(1)
             # The limit of 20 000 proteins per query comes from the help of Uniprot:
             # https://www.uniprot.org/help/uploadlists
             else:
-                if len(set_proteins) < 20000:
+                if len(protein_to_search_on_uniprots) < 20000:
                     if not beta:
-                        protein_queries = ' '.join(set_proteins)
+                        protein_queries = ' '.join(protein_to_search_on_uniprots)
                     else:
-                        protein_queries = ','.join(set_proteins)
+                        protein_queries = ','.join(protein_to_search_on_uniprots)
                     tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, beta)
                     output_dict.update(tmp_output_dict)
                     time.sleep(1)
                 else:
-                    protein_chunks = chunks(list(set_proteins), 20000)
+                    protein_chunks = chunks(list(protein_to_search_on_uniprots), 20000)
                     for chunk in protein_chunks:
                         if not beta:
                             protein_queries = ' '.join(chunk)
@@ -564,7 +563,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             if uniref_annotation:
                 if uniprot_sparql_endpoint:
                     uniref_output_dict = {}
-                    uniref_output_dict = sparql_query_uniprot_annotaiton_uniref(proteomes, uniref_output_dict, uniprot_sparql_endpoint)
+                    uniref_output_dict = sparql_query_uniprot_annotation_uniref(proteomes, uniref_output_dict, uniprot_sparql_endpoint)
                     uniref_annotation_file = os.path.join(uniref_protein_path, base_filename+'.tsv')
                     with open(uniref_annotation_file, 'w') as output_tsv:
                         csvwriter = csv.writer(output_tsv, delimiter='\t')
