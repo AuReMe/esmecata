@@ -202,7 +202,8 @@ def main():
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
             parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
             parent_parser_beta, parent_parser_rank_limit
-        ])
+            ],
+        allow_abbrev=False)
     clustering_parser = subparsers.add_parser(
         'clustering',
         help='Cluster the proteins of the different proteomes of a taxon into a single set of representative shared proteins.',
@@ -210,7 +211,8 @@ def main():
             parent_parser_i_clustering_folder, parent_parser_o, parent_parser_c,
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
             parent_parser_remove_tmp
-        ])
+            ],
+        allow_abbrev=False)
     annotation_parser = subparsers.add_parser(
         'annotation',
         help='Retrieve protein annotations from Uniprot.',
@@ -218,7 +220,8 @@ def main():
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
             parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
             parent_parser_beta
-        ])
+            ],
+        allow_abbrev=False)
 
     args = parser.parse_args()
 
