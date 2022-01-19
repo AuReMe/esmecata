@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='esmecata',
-    url='https://github.com/ArnaudBelcour/esmecata',
+    url='https://github.com/AuReMe/esmecata',
     license='GPLv3+',
     description=
     'EsMeCaTa: Estimating Metabolic Capabilties from Taxonomy',
