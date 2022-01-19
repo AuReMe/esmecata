@@ -37,7 +37,7 @@ def associate_taxon_to_taxon_id(taxonomies, ncbi):
         print('Empty taxonomy dictionary.')
         return
 
-    # For each taxonomy find the taxonomy ID corresponding to each taxon.
+    # For each taxon find the taxon ID corresponding to each taxon.
     for cluster in taxonomies:
         if isinstance(taxonomies[cluster], str):
             taxons = [taxon for taxon in taxonomies[cluster].split(';')]
@@ -58,8 +58,8 @@ def associate_taxon_to_taxon_id(taxonomies, ncbi):
 
 
 def filter_taxon(json_cluster_taxons, ncbi):
-    # If there is multiple taxon ID for a taxon, use the taxonomy to find the most relevant taxon.
-    # The most relevant taxon is the one with the most overlapping lineage with the taxonomy.
+    # If there is multiple taxon ID for a taxon, use the taxon ID lineage to find the most relevant taxon.
+    # The most relevant taxon is the one with the most overlapping lineage with the taxonomic assignation.
     taxon_to_modify = {}
 
     for cluster in json_cluster_taxons:
@@ -67,22 +67,22 @@ def filter_taxon(json_cluster_taxons, ncbi):
 
         for index, taxon in enumerate(json_cluster_taxons[cluster]):
             taxon_ids = json_cluster_taxons[cluster][taxon]
-            # If a taxon name is associated to more than one taxon ID, search for the one matching with the other taxon in the taxonomy.
+            # If a taxon name is associated to more than one taxon ID, search for the one matching with the other taxon in the taxonomic assignation.
             if len(taxon_ids) > 1:
                 taxon_shared_ids = {}
                 for taxon_id in taxon_ids:
-                    # Extract the other taxon present in the taxonomy.
+                    # Extract the other taxon present in the taxonomic assignation.
                     data_lineage = [tax_id for tax_id_lists in cluster_taxons[0:index] for tax_id in tax_id_lists]
-                    # Extract the known taxonomy corresponding to one of the taxon ID.
+                    # Extract the known lineage corresponding to one of the taxon ID.
                     lineage = ncbi.get_lineage(taxon_id)
-                    # Computes the shared taxon ID between the known taxonomy and the taxonomy associated to the taxon.
+                    # Computes the shared taxon ID between the known lineage and the taxonomic assignation associated to the taxon.
                     nb_shared_ids = len(set(data_lineage).intersection(set(lineage)))
                     taxon_shared_ids[taxon_id] = nb_shared_ids
 
-                # If there is no match in the taxonomy for all the multiple taxon ID, it is not possible to decipher, stop esmecata.
+                # If there is no match with the lineage for all the multiple taxon ID, it is not possible to decipher, stop esmecata.
                 if all(shared_id==0 for shared_id in taxon_shared_ids.values()):
                     taxids = ','.join([str(taxid) for taxid in list(taxon_shared_ids.keys())])
-                    print('It is not possible to find the taxon ID for the taxon named "{0}" (associated to "{1}") as there is multiple taxID possible ({2}), please add taxonomy to help finding the correct one.'.format(taxon, cluster, taxids))
+                    print('It is not possible to find the taxon ID for the taxon named "{0}" (associated to "{1}") as there is multiple taxID possible ({2}), please add a more detailed taxonomic classification to help finding the correct one.'.format(taxon, cluster, taxids))
                     sys.exit()
                 # If there is some matches, take the taxon ID with the most match and it will be the "correct one".
                 else:
@@ -416,9 +416,9 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
 def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_folder,
                         busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, beta=None):
-    # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomy.
+    # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomic assignation.
     # If there is more than limit_maximal_number_proteomes proteomes a method is applied to extract a subset of the data.
-    print('Find proteome ID associated to taxonomy')
+    print('Find proteome ID associated to taxonomic assignation')
     proteomes_ids = {}
     single_proteomes = {}
     tax_id_not_founds = {}
@@ -477,7 +477,7 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_fold
                 break
 
             elif len(proteomes) > limit_maximal_number_proteomes:
-                print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around {0} proteomes with respect to the taxonomy proportion.'.format(limit_maximal_number_proteomes, taxon, tax_name))
+                print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around {0} proteomes with respect to the taxonomic diversity.'.format(limit_maximal_number_proteomes, taxon, tax_name))
                 tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
 
                 # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
@@ -626,8 +626,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     # Set index on the column containing the OTU name.
     df.set_index('observation_name', inplace=True)
 
-    # taxonomy is the column containing the taxonomy separated by ';': phylum;class;order;family;genus;genus + species
-    taxonomies = df.to_dict()['taxonomy']
+    # taxonomic_assignation is the column containing the taxonomic assignation separated by ';': phylum;class;order;family;genus;genus + species
+    taxonomies = df.to_dict()['taxonomic_assignation']
 
     proteome_cluster_tax_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
 

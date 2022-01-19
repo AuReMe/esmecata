@@ -18,7 +18,7 @@ from esmecata import __version__ as esmecata_version
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
 
 
-def rest_query_uniprot_to_retrieve_function(protein_queries, beta):
+def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
     output_dict = {}
 
     # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names

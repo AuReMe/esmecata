@@ -4,11 +4,12 @@ import sys
 from esmecata.proteomes import retrieve_proteomes
 from esmecata.clustering import make_clustering
 from esmecata.annotation import annotate_proteins
+from esmecata.workflow import perform_workflow
 from esmecata.utils import limited_integer_type, range_limited_float_type
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''
-From taxonomy to metabolism using Uniprot.
+From taxonomic assignation to metabolism using Uniprot.
 '''
 REQUIRES = '''
 Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
@@ -31,7 +32,7 @@ def main():
         '--input',
         dest='input',
         required=True,
-        help='Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomy (separated by ;).',
+        help='Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic assignation (separated by ;).',
         metavar='INPUT_FILE')
 
     parent_parser_i_clustering_folder = argparse.ArgumentParser(add_help=False)
@@ -113,7 +114,7 @@ def main():
         help='Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.',
         required=False,
         type=range_limited_float_type,
-        default=1)
+        default=0.95)
     parent_parser_mmseqs_options = argparse.ArgumentParser(add_help=False)
     parent_parser_mmseqs_options.add_argument(
         '-m',
@@ -222,6 +223,18 @@ def main():
             parent_parser_beta
             ],
         allow_abbrev=False)
+    workflow_parser = subparsers.add_parser(
+        'workflow',
+        help='Run all esmecata steps (proteomes, clustering and annotation).',
+        parents=[
+            parent_parser_i_taxon, parent_parser_o, parent_parser_b, parent_parser_c,
+            parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
+            parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
+            parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
+            parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
+            parent_parser_beta, parent_parser_rank_limit
+            ],
+        allow_abbrev=False)
 
     args = parser.parse_args()
 
@@ -230,7 +243,7 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    if args.cmd in ['proteomes', 'annotation']:
+    if args.cmd in ['proteomes', 'annotation', 'workflow']:
         if args.sparql is None:
             uniprot_sparql_endpoint = None
         elif args.sparql == 'uniprot':
@@ -238,7 +251,7 @@ def main():
         else:
             uniprot_sparql_endpoint = args.sparql
 
-    if args.cmd == 'proteomes':
+    if args.cmd in ['proteomes', 'workflow']:
         if args.busco is not None:
             busco_score = 100*args.busco
 
@@ -250,6 +263,13 @@ def main():
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
         annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression, args.beta)
+    elif args.cmd == 'workflow':
+        perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
+                            args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
+                            args.limit_maximal_number_proteomes, args.rank_limit,
+                            args.cpu, args.threshold_clustering, args.mmseqs_options,
+                            args.linclust, args.propagate_annotation, args.uniref,
+                            args.expression, args.beta)
 
 if __name__ == '__main__':
     main()
