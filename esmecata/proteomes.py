@@ -59,7 +59,7 @@ def associate_taxon_to_taxon_id(taxonomies, ncbi):
 
 def filter_taxon(json_cluster_taxons, ncbi):
     # If there is multiple taxon ID for a taxon, use the taxon ID lineage to find the most relevant taxon.
-    # The most relevant taxon is the one with the most overlapping lineage with the taxonomic assignation.
+    # The most relevant taxon is the one with the most overlapping lineage with the taxonomic annotation.
     taxon_to_modify = {}
 
     for cluster in json_cluster_taxons:
@@ -67,15 +67,15 @@ def filter_taxon(json_cluster_taxons, ncbi):
 
         for index, taxon in enumerate(json_cluster_taxons[cluster]):
             taxon_ids = json_cluster_taxons[cluster][taxon]
-            # If a taxon name is associated to more than one taxon ID, search for the one matching with the other taxon in the taxonomic assignation.
+            # If a taxon name is associated to more than one taxon ID, search for the one matching with the other taxon in the taxonomic annotation.
             if len(taxon_ids) > 1:
                 taxon_shared_ids = {}
                 for taxon_id in taxon_ids:
-                    # Extract the other taxon present in the taxonomic assignation.
+                    # Extract the other taxon present in the taxonomic annotation.
                     data_lineage = [tax_id for tax_id_lists in cluster_taxons[0:index] for tax_id in tax_id_lists]
                     # Extract the known lineage corresponding to one of the taxon ID.
                     lineage = ncbi.get_lineage(taxon_id)
-                    # Computes the shared taxon ID between the known lineage and the taxonomic assignation associated to the taxon.
+                    # Computes the shared taxon ID between the known lineage and the taxonomic annotation associated to the taxon.
                     nb_shared_ids = len(set(data_lineage).intersection(set(lineage)))
                     taxon_shared_ids[taxon_id] = nb_shared_ids
 
@@ -416,9 +416,9 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
 def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_folder,
                         busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, beta=None):
-    # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomic assignation.
+    # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomic annotation.
     # If there is more than limit_maximal_number_proteomes proteomes a method is applied to extract a subset of the data.
-    print('Find proteome ID associated to taxonomic assignation')
+    print('Find proteome ID associated to taxonomic annotation')
     proteomes_ids = {}
     single_proteomes = {}
     tax_id_not_founds = {}
@@ -626,8 +626,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     # Set index on the column containing the OTU name.
     df.set_index('observation_name', inplace=True)
 
-    # taxonomic_assignation is the column containing the taxonomic assignation separated by ';': phylum;class;order;family;genus;genus + species
-    taxonomies = df.to_dict()['taxonomic_assignation']
+    # taxonomic_annotation is the column containing the taxonomic annotation separated by ';': phylum;class;order;family;genus;genus + species
+    taxonomies = df.to_dict()['taxonomic_annotation']
 
     proteome_cluster_tax_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
 

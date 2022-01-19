@@ -1,19 +1,19 @@
 [![PyPI version](https://img.shields.io/pypi/v/esmecata.svg)](https://pypi.org/project/esmecata/) [![GitHub license](https://img.shields.io/github/license/AuReMe/esmecata.svg)](https://github.com/AuReMe/esmecata/blob/master/LICENSE) [![Actions Status](https://github.com/AuReMe/esmecata/workflows/Python%20package/badge.svg)](https://github.com/AuReMe/esmecata/actions)
-# EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic assignations
+# EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic annotations
 
-EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomic assignations (for example after analysis on 16S RNA sequencing). This is useful if no sequenced genomes or proteomes are available.
+EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomic annotations (for example after analysis on 16S RNA sequencing). This is useful if no sequenced genomes or proteomes are available.
 
 ![EsMeCaTa](esmecata_workflow.png)
 
 ## Table of contents
-- [EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic assignations](#esmecata-estimating-metabolic-capabilties-from-taxonomic-assignations)
+- [EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic annotations](#esmecata-estimating-metabolic-capabilties-from-taxonomic-annotations)
   - [Table of contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Installation](#installation)
   - [Input](#input)
   - [EsMeCaTa commands](#esmecata-commands)
   - [EsMeCaTa functions](#esmecata-functions)
-    - [`esmecata proteomes`: Retrieve proteomes associated to taxonomic assignation](#esmecata-proteomes-retrieve-proteomes-associated-to-taxonomic-assignation)
+    - [`esmecata proteomes`: Retrieve proteomes associated to taxonomic annotation](#esmecata-proteomes-retrieve-proteomes-associated-to-taxonomic-annotation)
     - [`esmecata clustering`: Proteins clustering](#esmecata-clustering-proteins-clustering)
     - [`esmecata annotation`: Retrieve protein annotations](#esmecata-annotation-retrieve-protein-annotations)
   - [EsMeCaTa outputs](#esmecata-outputs)
@@ -28,7 +28,7 @@ EsMeCaTa needs the following python packages:
 - [biopython](https://pypi.org/project/biopython/): To create fasta files.
 - [pandas](https://pypi.org/project/pandas/): To read the input files.
 - [requests](https://pypi.org/project/requests/): For the REST queries on Uniprot.
-- [ete3](https://pypi.org/project/ete3/): To analyse the taxonomic assignations and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.
+- [ete3](https://pypi.org/project/ete3/): To analyse the taxonomic annotations and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.
 - [SPARQLwrapper](https://pypi.org/project/SPARQLWrapper/): Optionnaly, you can use SPARQL queries instead of REST queries. This can be done either with the [Uniprot SPARQL Endpoint](https://sparql.uniprot.org/) (with the option `--sparql uniprot`) or with a Uniprot SPARQL Endpoint that you created locally (it is supposed to work but not tested, only SPARQL queries on the Uniprot SPARQL endpoint have been tested). **Warning**: using SPARQL queries will lead to minor differences in functional annotations and metabolic reactions due to how the results are retrieved with REST query or SPARQL query.
 
 Also esmecata requires mmseqs2 for protein clustering:
@@ -54,11 +54,11 @@ EsMeCata can be installed with pip command (in esmecata directory):
 
 ## Input
 
-EsMeCaTa takes as input a tabulated or an excel file with two columns one with the ID corresponding to the taxonomic assignation (for example the OTU ID for 16S RNA sequencing) and a second column with the taxonomic classification separated by ';'. In the following documentation, the first column (named `observation_name`) will be used to identify the label associated to each taxonomic assignation. An example is located in the test folder ([Example.tsv](https://github.com/ArnaudBelcour/esmecata/blob/master/test/Example.tsv)).
+EsMeCaTa takes as input a tabulated or an excel file with two columns one with the ID corresponding to the taxonomic annotation (for example the OTU ID for 16S RNA sequencing) and a second column with the taxonomic classification separated by ';'. In the following documentation, the first column (named `observation_name`) will be used to identify the label associated to each taxonomic annotation. An example is located in the test folder ([Example.tsv](https://github.com/ArnaudBelcour/esmecata/blob/master/test/Example.tsv)).
 
 For example:
 
-| observation_name | taxonomic_assignation                                                                                        |
+| observation_name | taxonomic_annotation                                                                                         |
 |------------------|--------------------------------------------------------------------------------------------------------------|
 | Cluster_1        | Bacteria;Spirochaetes;Spirochaetia;Spirochaetales;Spirochaetaceae;Sphaerochaeta;unknown species              |
 | Cluster_2        | Bacteria;Chloroflexi;Anaerolineae;Anaerolineales;Anaerolineaceae;ADurb.Bin120;unknown species                |
@@ -68,21 +68,21 @@ For example:
 | Cluster_6        | Bacteria;Bacteroidetes;Bacteroidia;Bacteroidales;Dysgonomonadaceae;unknown genus;unknown species             |
 | Cluster_7        | Bacteria;Firmicutes;Clostridia;Clostridiales;Clostridiaceae;Clostridium;unknown species                      |
 
-It is possible to use EsMeCaTa with a taxonomic assignation containing only one taxon:
+It is possible to use EsMeCaTa with a taxonomic annotation containing only one taxon:
 
-| observation_name |taxonomic_assignation|
+| observation_name |taxonomic_annotation |
 |------------------|---------------------|
 | Cluster_1        | Sphaerochaeta       |
 | Cluster_2        | Yersinia            |
 
-But this can cause issue. For example, "Cluster_2" is associated to Yersinia but two genus are associated to this name (one mantid (taxId: 444888) and one bacteria (taxId: 629)). EsMeCaTa will not able to differentiate them. But if you give more informations by adding more taxons (for example: 'Bacteria;Gammaproteobacteria;Yersinia'), EsMeCaTa will compare all the taxons of the taxonomic assignation (here: 2 (Bacteria) and 1236 (Gammaproteobacteria)) to the lineage associated to the two taxIDs (for bacteria Yersinia: [1, 131567, 2, 1224, 1236, 91347, 1903411, 629] and for the mantid one: [1, 131567, 2759, 33154, 33208, 6072, 33213, 33317, 1206794, 88770, 6656, 197563, 197562, 6960, 50557, 85512, 7496, 33340, 33341, 6970, 7504, 7505, 267071, 444888]). In this exmaple, there is 2 matches for the bacteria one (2 and 1236) and 0 for the mantid one. So EsMeCaTa will select the taxId associated to the bacteria (629).
+But this can cause issue. For example, "Cluster_2" is associated to Yersinia but two genus are associated to this name (one mantid (taxId: 444888) and one bacteria (taxId: 629)). EsMeCaTa will not able to differentiate them. But if you give more informations by adding more taxons (for example: 'Bacteria;Gammaproteobacteria;Yersinia'), EsMeCaTa will compare all the taxons of the taxonomic annotation (here: 2 (Bacteria) and 1236 (Gammaproteobacteria)) to the lineage associated to the two taxIDs (for bacteria Yersinia: [1, 131567, 2, 1224, 1236, 91347, 1903411, 629] and for the mantid one: [1, 131567, 2759, 33154, 33208, 6072, 33213, 33317, 1206794, 88770, 6656, 197563, 197562, 6960, 50557, 85512, 7496, 33340, 33341, 6970, 7504, 7505, 267071, 444888]). In this exmaple, there is 2 matches for the bacteria one (2 and 1236) and 0 for the mantid one. So EsMeCaTa will select the taxId associated to the bacteria (629).
 
 ## EsMeCaTa commands
 
 ````
 usage: esmecata [-h] [--version] {proteomes,clustering,annotation} ...
 
-From taxonomic assignation to metabolism using Uniprot. For specific help on each subcommand use: esmecata {cmd} --help
+From taxonomic annotation to metabolism using Uniprot. For specific help on each subcommand use: esmecata {cmd} --help
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -102,7 +102,7 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 
 ## EsMeCaTa functions
 
-### `esmecata proteomes`: Retrieve proteomes associated to taxonomic assignation
+### `esmecata proteomes`: Retrieve proteomes associated to taxonomic annotation
 
 ````
 usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [--beta] [-r RANK_LIMIT]
@@ -110,7 +110,7 @@ usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-t
 optional arguments:
   -h, --help            show this help message and exit
   -i INPUT_FILE, --input INPUT_FILE
-                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic assignation (separated by ;).
+                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic annotation (separated by ;).
   -o OUPUT_DIR, --output OUPUT_DIR
                         Output directory path.
   -b BUSCO, --busco BUSCO
@@ -128,7 +128,7 @@ optional arguments:
                         This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
 ````
 
-For each taxon in each taxonomic assignation EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated to these taxon ID in the Uniprot Proteomes database.
+For each taxon in each taxonomic annotations EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated to these taxon ID in the Uniprot Proteomes database.
 
 If there is more than 100 proteomes, esmecata will apply a specific method:
 
@@ -350,7 +350,7 @@ output_folder
 ├── esmecata_metadata_proteomes.json
 ````
 
-The `proteomes_description` contains list of proteomes find by esmecata on Uniprot associated to the taxonomic assignation.
+The `proteomes_description` contains list of proteomes find by esmecata on Uniprot associated to the taxonomic annotation.
 
 The `result` folder contain one sub-folder for each `observation_name` from the input file. Each sub-folder contains the proteome associated with the `observation_name`.
 
