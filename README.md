@@ -1,3 +1,4 @@
+[![PyPI version](https://img.shields.io/pypi/v/esmecata.svg)](https://pypi.org/project/esmecata/) [![GitHub license](https://img.shields.io/github/license/AuReMe/esmecata.svg)](https://github.com/AuReMe/esmecata/blob/master/LICENSE) [![Actions Status](https://github.com/AuReMe/esmecata/workflows/Python%20package/badge.svg)](https://github.com/AuReMe/esmecata/actions)
 # EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic assignations
 
 EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomic assignations (for example after analysis on 16S RNA sequencing). This is useful if no sequenced genomes or proteomes are available.
