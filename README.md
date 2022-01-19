@@ -3,6 +3,8 @@
 
 EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomic annotations (for example after analysis on 16S RNA sequencing). This is useful if no sequenced genomes or proteomes are available.
 
+**Warning: EsMeCaTa is in development so it can be unstable.**
+
 ![EsMeCaTa](esmecata_workflow.png)
 
 ## Table of contents
