@@ -587,9 +587,25 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
+def compute_stat_proteomes(result_folder, stat_file):
+    proteome_numbers = {}
+    for folder in os.listdir(result_folder):
+        result_folder_path = os.path.join(result_folder, folder)
+        number_proteome = len([proteome for proteome in os.listdir(result_folder_path)])
+        proteome_numbers[folder] = number_proteome
+
+    with open(stat_file, 'w') as stat_file_open:
+        csvwriter = csv.writer(stat_file_open, delimiter='\t')
+        csvwriter.writerow(['observation_name', 'Number_proteomes'])
+        for observation_name in proteome_numbers:
+            csvwriter.writerow([observation_name, proteome_numbers[observation_name]])
+
+
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         remove_tmp=None, limit_maximal_number_proteomes=99, beta=None, rank_limit=None):
+    starttime = time.time()
+
     if is_valid_file(input_file) is False:
         print('The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
@@ -727,10 +743,6 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     else:
         uniprot_releases = get_rest_uniprot_release(options)
 
-    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_proteomes.json')
-    with open(uniprot_metadata_file, 'w') as ouput_file:
-        json.dump(uniprot_releases, ouput_file, indent=4)
-
     print('Creating result folder')
     # Create a result folder which contains one sub-folder per OTU.
     # Each OTU sub-folder will contain the proteome found.
@@ -746,3 +758,14 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     if remove_tmp:
         shutil.rmtree(tmp_folder)
+
+    stat_file = os.path.join(output_folder, 'stat_number_proteome.tsv')
+    compute_stat_proteomes(result_folder, stat_file)
+
+    endtime = time.time()
+    duration = endtime - starttime
+    uniprot_releases['esmecata_proteomes_duration'] = duration
+    json_log = os.path.join(output_folder, 'association_taxon_taxID.json')
+    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_proteomes.json')
+    with open(uniprot_metadata_file, 'w') as ouput_file:
+        json.dump(uniprot_releases, ouput_file, indent=4)

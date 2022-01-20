@@ -400,7 +400,35 @@ def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_outp
             element_file.write('//\n\n')
 
 
+def compute_stat_annotation(annotation_reference_folder, stat_file):
+    annotation_numbers = {}
+    for infile in os.listdir(annotation_reference_folder):
+        if '.tsv' in infile:
+            annotation_input_file_path = os.path.join(annotation_reference_folder, infile)
+            infile_gos = []
+            infile_ecs = []
+            with open(annotation_input_file_path, 'r') as open_annotation_input_file_path:
+                csvreader = csv.reader(open_annotation_input_file_path, delimiter='\t')
+                next(csvreader)
+                for line in csvreader:
+                    gos = line[3].split(',')
+                    ecs = line[4].split(',')
+                    infile_gos.extend(gos)
+                    infile_ecs.extend(ecs)
+            infile_gos = set(infile_gos)
+            infile_ecs = set(infile_ecs)
+            annotation_numbers[infile.replace('.tsv','')] = (len(infile_gos), len(infile_ecs))
+
+    with open(stat_file, 'w') as stat_file_open:
+        csvwriter = csv.writer(stat_file_open, delimiter='\t')
+        csvwriter.writerow(['observation_name', 'Number_go_terms', 'Number_ecs'])
+        for observation_name in annotation_numbers:
+            csvwriter.writerow([observation_name, annotation_numbers[observation_name][0], annotation_numbers[observation_name][1]])
+
+
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation, beta=None):
+    starttime = time.time()
+
     if uniprot_sparql_endpoint is None and uniref_annotation is not None:
         print('At this moment, --uniref option needs to be used with --sparql option.')
         sys.exit()
@@ -443,10 +471,6 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         uniprot_releases = get_sparql_uniprot_release(uniprot_sparql_endpoint, options)
     else:
         uniprot_releases = get_rest_uniprot_release(options)
-
-    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation.json')
-    with open(uniprot_metadata_file, 'w') as ouput_file:
-        json.dump(uniprot_releases, ouput_file, indent=4)
 
     proteome_cluster_tax_id_file = os.path.join(input_folder, 'proteome_cluster_tax_id.tsv')
 
@@ -687,3 +711,13 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         taxon_id_csvwriter.writerow(['species', 'taxon_id'])
         for species in clustering_taxon_id:
             taxon_id_csvwriter.writerow([species, clustering_taxon_id[species]])
+
+    stat_file = os.path.join(output_folder, 'stat_number_annotation.tsv')
+    compute_stat_annotation(annotation_reference_folder, stat_file)
+
+    endtime = time.time()
+    duration = endtime - starttime
+    uniprot_releases['esmecata_annotaiton_duration'] = duration
+    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation.json')
+    with open(uniprot_metadata_file, 'w') as ouput_file:
+        json.dump(uniprot_releases, ouput_file, indent=4)

@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 from Bio import SeqIO
 from Bio import __version__ as biopython_version
@@ -13,7 +14,23 @@ from shutil import which
 from esmecata import __version__ as esmecata_version
 from esmecata.utils import is_valid_path, is_valid_dir
 
+
+def compute_stat_clustering(result_folder, stat_file):
+    clustering_numbers = {}
+    for clustering_file in os.listdir(result_folder):
+        clustering_file_path = os.path.join(result_folder, clustering_file)
+        num_lines = sum(1 for line in open(clustering_file_path))
+        clustering_numbers[clustering_file.replace('.tsv', '')] = num_lines
+
+    with open(stat_file, 'w') as stat_file_open:
+        csvwriter = csv.writer(stat_file_open, delimiter='\t')
+        csvwriter.writerow(['observation_name', 'Number_shared_proteins'])
+        for observation_name in clustering_numbers:
+            csvwriter.writerow([observation_name, clustering_numbers[observation_name]])
+
+
 def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp):
+    starttime = time.time()
     mmseqs_path = which('mmseqs')
     if not mmseqs_path:
         print('mmseqs not available in path, esmecata will not be able to cluster the proteomes.')
@@ -46,10 +63,6 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     clustering_metadata['tool_dependencies']['python_package']['Python_version'] = sys.version
     clustering_metadata['tool_dependencies']['python_package']['biopython'] = biopython_version
     clustering_metadata['tool_dependencies']['python_package']['esmecata'] = esmecata_version
-
-    clustering_metadata_file = os.path.join(output_folder, 'esmecata_metadata_clustering.json')
-    with open(clustering_metadata_file, 'w') as ouput_file:
-        json.dump(clustering_metadata, ouput_file, indent=4)
 
     cluster_fasta_files = {}
     for cluster in os.listdir(result_folder):
@@ -235,9 +248,19 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     proteome_taxon_id_file = os.path.join(proteome_folder, 'proteome_cluster_tax_id.tsv')
     clustering_taxon_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
 
+    stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
+    compute_stat_clustering(reference_proteins, stat_file)
+
     if os.path.exists(clustering_taxon_id_file):
         if not os.path.samefile(proteome_taxon_id_file, clustering_taxon_id_file):
             os.remove(clustering_taxon_id_file)
             shutil.copyfile(proteome_taxon_id_file, clustering_taxon_id_file)
     else:
         shutil.copyfile(proteome_taxon_id_file, clustering_taxon_id_file)
+
+    endtime = time.time()
+    duration = endtime - starttime
+    clustering_metadata['esmecata_clustering_duration'] = duration
+    clustering_metadata_file = os.path.join(output_folder, 'esmecata_metadata_clustering.json')
+    with open(clustering_metadata_file, 'w') as ouput_file:
+        json.dump(clustering_metadata, ouput_file, indent=4)
