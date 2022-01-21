@@ -18,10 +18,12 @@ EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomic annotatio
     - [`esmecata proteomes`: Retrieve proteomes associated to taxonomic annotation](#esmecata-proteomes-retrieve-proteomes-associated-to-taxonomic-annotation)
     - [`esmecata clustering`: Proteins clustering](#esmecata-clustering-proteins-clustering)
     - [`esmecata annotation`: Retrieve protein annotations](#esmecata-annotation-retrieve-protein-annotations)
+    - [`esmecata workflow`: Consecutive runs of the three steps](#esmecata-workflow-consecutive-runs-of-the-three-steps)
   - [EsMeCaTa outputs](#esmecata-outputs)
     - [EsMeCaTa proteomes](#esmecata-proteomes)
     - [EsMeCaTa clustering](#esmecata-clustering)
     - [EsMeCaTa annotation](#esmecata-annotation)
+    - [EsMeCaTa workflow](#esmecata-workflow)
 
 ## Requirements
 
@@ -325,6 +327,46 @@ To add more annotations, esmecata can search the [UniRef](https://www.uniprot.or
 
 With this option, esmecata will extract the [expression information](https://www.uniprot.org/help/expression_section) associated to a protein. This contains 3 elements: Induction, Tissue specificity and Disruption Phenotype. At this moment, this option is only usable when using the `--sparql` option.
 
+### `esmecata workflow`: Consecutive runs of the three steps
+
+````
+usage: esmecata workflow [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [-c CPU] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS]
+                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--beta] [-r RANK_LIMIT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT_FILE, --input INPUT_FILE
+                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic annotation (separated by ;).
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  -b BUSCO, --busco BUSCO
+                        BUSCO percentage between 0 and 1. This will remove all the proteomes without BUSCO score and the score before the selected ratio of completion.
+  -c CPU, --cpu CPU     CPU number for multiprocessing.
+  --ignore-taxadb-update
+                        If you have a not up-to-date version of the NCBI taxonomy database with ete3, use this option to bypass the warning message and use the old version.
+  --all-proteomes       Download all proteomes associated to a taxon even if they are no reference proteomes.
+  -s SPARQL, --sparql SPARQL
+                        Use sparql endpoint instead of REST queries on Uniprot.
+  --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
+  -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
+                        Choose themaximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
+  -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
+                        Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.
+  -m MMSEQS_OPTIONS, --mmseqs MMSEQS_OPTIONS
+                        String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"
+  --linclust            Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.
+  -p PROPAGATE_ANNOTATION, --propagate PROPAGATE_ANNOTATION
+                        Proportion [0 to 1] of the reccurence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotaitons from all proteins are propagated to the
+                        reference and 1 only the annotation occurring in all the proteins of the cluster.
+  --uniref              Use uniref cluster to extract more annotations from the representative member of the cluster associated to the proteins. Needs the --sparql option.
+  --expression          Extract expresion information associated to the proteins. Needs the --sparql option.
+  --beta                Use uniprot beta REST query.
+  -r RANK_LIMIT, --rank-limit RANK_LIMIT
+                        This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
+````
+
+EsMeCTa will perform the search for proteomes, the protein clustering and the annotation.
+
 ## EsMeCaTa outputs
 
 ### EsMeCaTa proteomes
@@ -350,6 +392,7 @@ output_folder
 ├── association_taxon_taxID.json
 ├── proteome_cluster_tax_id.tsv
 ├── esmecata_metadata_proteomes.json
+├── stat_number_proteome.tsv
 ````
 
 The `proteomes_description` contains list of proteomes find by esmecata on Uniprot associated to the taxonomic annotation.
@@ -363,6 +406,8 @@ The `tmp_proteome` contains all the proteomes that have been found to be associa
 `proteome_cluster_tax_id.tsv` contains the name, the taxon_id and the proteomes associated to each `observation_name`.
 
 `esmecata_metadata_proteomes.json` is a log about the Uniprot release used and how the queries ware made (REST or SPARQL). It also gets the metadata associated to the command used with esmecata and the dependencies.
+
+`stat_number_proteome.tsv` is a tabulated file contaning the number of proteomes found for each observation name.
 
 ### EsMeCaTa clustering
 
@@ -396,6 +441,7 @@ output_folder
 │   └── ...
 ├── proteome_cluster_tax_id.tsv
 ├── esmecata_metadata_clustering.json
+├── stat_number_clustering.tsv
 ````
 
 The `cluster_founds` contains one tsv file per `observation_name` and these files contain the clustered proteins The first column contains the representative proteins of a cluster and the following columns correspond to the other proteins of the same cluster. The first protein occurs two time: one as the representative member of the cluster and a second time as a member of the cluster.
@@ -418,29 +464,11 @@ The `proteome_cluster_tax_id.tsv` file is the same than the one created in `esme
 
 `esmecata_metadata_clustering.json` is a log about the the metadata associated to the command used with esmecata and the dependencies.
 
+`stat_number_clustering.tsv` is a tabulated file contaning the number of shared proteins found for each observation name.
+
 ### EsMeCaTa annotation
 
-````
-output_folder
-├── annotation
-│   └── Cluster_1.tsv
-│   └── ...
-├── annotation_reference
-│   └── Cluster_1.tsv
-│   └── ...
-├── expression_annotation (if --expression option)
-│   └── Cluster_1.tsv
-│   └── ...
-├── pathologic
-│   └── Cluster_1
-│       └── Cluster_1.pf
-│   └── ...
-│   └── taxon_id.tsv
-├── uniref_annotation (if --uniref option)
-│   └── Cluster_1.tsv
-│   └── ...
-├── esmecata_metadata_annotation.json
-````
+c
 
 The `annotation` folder contains a tabulated file for each `observation_name`. It contains the annotation retrieved with Uniprot (protein_name, review, GO Terms, EC numbers, Interpros, Rhea IDs and gene name) associated to all the proteins in a proteome or associated to an `observation_name`.
 
@@ -453,3 +481,90 @@ The `pathologic` contains one sub-folder for each `observation_name` in which th
 The `esmecata_metadata_annotation.json` serves the same purpose as the one used in `esmecata proteomes` to retrieve metadata about Uniprot release at the time of the query. It also gets the metadata associated to the command used with esmecata and the dependencies.
 
 The `uniref_annotation` contains the annotation from the representative protein of teh UniRef cluster associated to the proteins of a taxon (if the `--uniref` option was used).
+
+`stat_number_clustering.tsv` is a tabulated file contaning the number of GO Terms and EC numbers found for each observation name.
+
+### EsMeCaTa workflow
+
+````
+output_folder
+├── 0_proteomes
+  ├── proteomes_description
+  │   └── Cluster_1.tsv
+  │   └── Cluster_1.tsv
+  ├── result
+  │   └── Cluster_1
+  │       └── Proteome_1.faa.gz
+  │       └── Proteome_2.faa.gz
+  │   └── Cluster_2
+  │       └── Proteome_3.faa.gz
+  │   └── Cluster_3
+  │       └── ...
+  ├── tmp_proteome (can be cleaned to spare disk space using --remove-tmp option)
+  │   └── Proteome_1.faa.gz
+  │   └── Proteome_2.faa.gz
+  │   └── Proteome_3.faa.gz
+  │   └── ...
+  ├── association_taxon_taxID.json
+  ├── proteome_cluster_tax_id.tsv
+  ├── esmecata_metadata_proteomes.json
+  ├── stat_number_proteome.tsv
+├── 1_clustering
+  ├── cluster_founds
+  │   └── Cluster_1.tsv
+  │   └── ...
+  ├── computed_threshold
+  │   └── Cluster_1.tsv
+  │   └── ...
+  ├── fasta_consensus
+  │   └── Cluster_1.faa
+  │   └── ...
+  ├── fasta_representative
+  │   └── Cluster_1.faa
+  │   └── ...
+  ├── mmseqs_tmp (can be cleaned to spare disk space using --remove-tmp option)
+  │   └── Cluster_1
+  │       └── mmseqs intermediary files
+  │       └── ...
+  │   └── ...
+  ├── reference_proteins
+  │   └── Cluster_1.tsv
+  │   └── ...
+  ├── reference_proteins_consensus_fasta
+  │   └── Cluster_1.faa
+  │   └── ...
+  ├── reference_proteins_representative_fasta
+  │   └── Cluster_1.faa
+  │   └── ...
+  ├── proteome_cluster_tax_id.tsv
+  ├── esmecata_metadata_clustering.json
+  ├── stat_number_clustering.tsv
+├── 2_annotation
+  ├── annotation
+  │   └── Cluster_1.tsv
+  │   └── ...
+  ├── annotation_reference
+  │   └── Cluster_1.tsv
+  │   └── ...
+  ├── expression_annotation (if --expression option)
+  │   └── Cluster_1.tsv
+  │   └── ...
+  ├── pathologic
+  │   └── Cluster_1
+  │       └── Cluster_1.pf
+  │   └── ...
+  │   └── taxon_id.tsv
+  ├── uniref_annotation (if --uniref option)
+  │   └── Cluster_1.tsv
+  │   └── ...
+  ├── esmecata_metadata_annotation.json
+  ├── stat_number_annotation.tsv
+├── esmecata_metadata_workflow.json
+├── stat_number_workflow.tsv
+````
+
+The files in the folders `0_proteomes`, `1_clustering` and `2_annotation` are the same than the other presented in the previous steps.
+
+The `esmecata_metadata_workflow.json` retrieves metadata about Uniprot release at the time of the query, the command used and its duration.
+
+`stat_number_workflow.tsv` is a tabulated file contaning the number of proteomes, shared proteins, GO Terms and EC numbers found for each observation name.
