@@ -84,7 +84,7 @@ But this can cause issue. For example, "Cluster_2" is associated to Yersinia but
 ## EsMeCaTa commands
 
 ````
-usage: esmecata [-h] [--version] {proteomes,clustering,annotation} ...
+usage: esmecata [-h] [--version] {proteomes,clustering,annotation,workflow} ...
 
 From taxonomic annotation to metabolism using Uniprot. For specific help on each subcommand use: esmecata {cmd} --help
 
@@ -95,11 +95,11 @@ optional arguments:
 subcommands:
   valid subcommands:
 
-  {proteomes,clustering,annotation}
+  {proteomes,clustering,annotation,workflow}
     proteomes           Download proteomes associated to taxon from Uniprot Proteomes.
-    clustering          Cluster the proteins of the different proteomes of a taxon into a single set of representative
-                        shared proteins.
+    clustering          Cluster the proteins of the different proteomes of a taxon into a single set of representative shared proteins.
     annotation          Retrieve protein annotations from Uniprot.
+    workflow            Run all esmecata steps (proteomes, clustering and annotation).
 
 Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
 ````
