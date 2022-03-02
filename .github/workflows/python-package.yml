@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        conda install mmseqs2 pandas sparqlwrapper requests biopython ete3
+        conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 -c conda-forge -c bioconda
     - name: Prepare environment
       run: |
         python -m pip install --upgrade pip
