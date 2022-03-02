@@ -32,7 +32,7 @@ def test_filter_taxon():
 
 
 def test_find_proteomes_tax_ids():
-    expected_proteomes_ids = {'id_1': (629, ['UP000255169', 'UP000000815'])}
+    expected_proteomes_ids = {'id_1': (629, ['UP000000815'])}
     ncbi = NCBITaxa()
     tax_id_names, json_cluster_taxons = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
     json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
