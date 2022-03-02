@@ -9,7 +9,7 @@ from esmecata.utils import limited_integer_type, range_limited_float_type
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''
-From taxonomic annotation to metabolism using Uniprot.
+From taxonomic affiliation to metabolism using Uniprot.
 '''
 REQUIRES = '''
 Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
@@ -32,7 +32,7 @@ def main():
         '--input',
         dest='input',
         required=True,
-        help='Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic annotation (separated by ;).',
+        help='Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic affiliation (separated by ;).',
         metavar='INPUT_FILE')
 
     parent_parser_i_clustering_folder = argparse.ArgumentParser(add_help=False)
