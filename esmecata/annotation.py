@@ -89,12 +89,15 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
 
         # Not working because the code is 200 instead of 303...
         # Issue with protein_queries formatting?
+        # Wait 5 secodns to check again return code.
+        # But is there no better way?
         while response.status_code != 303:
-            time.sleep(1)
+            time.sleep(5)
+            response = requests.head(http_check_status)
             if response.status_code == 303:
                 break
 
-        if check_code == 303:
+        if response.status_code == 303:
             http_download = 'http://rest.uniprot.org/beta/idmapping/uniprotkb/results/stream/{0}'.format(job_id)
             response = requests.get(http_download)
             response.raise_for_status()

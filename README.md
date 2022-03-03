@@ -44,11 +44,15 @@ Also esmecata requires mmseqs2 for protein clustering:
 
 The easiest way to install the dependencies of EsMeCaTa is by using conda:
 
-```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3```
+```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 -c conda-forge -c bioconda```
 
 A conda package for esmecata will be created in the future.
 
-EsMeCata can be installed with pip command (in esmecata directory):
+EsMeCata can be installed with pip command:
+
+```pip install esmecata ```
+
+It can also be installed using esmecata github directory:
 
 ```git clone https://github.com/ArnaudBelcour/esmecata.git```
 
