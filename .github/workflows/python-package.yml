@@ -9,13 +9,17 @@ on:
     paths-ignore:
       - 'article_data/**'
       - 'README.md'
+      - 'CHANGELOG.md'
       - 'esmecata_workflow.png'
+      - 'LICENSE'
   pull_request:
     branches: [ master ]
     paths-ignore:
       - 'article_data/**'
       - 'README.md'
       - 'esmecata_workflow.png'
+      - 'CHANGELOG.md'
+      - 'LICENSE'
 
 jobs:
   build:
