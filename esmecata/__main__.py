@@ -145,7 +145,7 @@ def main():
         '-p',
         '--propagate',
         dest='propagate_annotation',
-        help='Proportion [0 to 1] of the reccurence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotaitons from all proteins are propagated to the reference and 1 only the annotation occurring in all the proteins of the cluster.',
+        help='Proportion [0 to 1] of the frequence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotations from all proteins are propagated to the reference and 1 only the annotation occurring in all the proteins of the cluster.',
         required=False,
         type=range_limited_float_type,
         default=1)

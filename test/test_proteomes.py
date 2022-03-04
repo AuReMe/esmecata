@@ -45,7 +45,7 @@ def test_find_proteomes_tax_ids():
         assert expected_proteomes_ids[taxon][0] == proteomes_ids[taxon][0]
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])
 
-
+"""
 def test_sparql_find_proteomes_tax_ids():
     expected_proteomes_ids = {'id_1': (629, ['UP000255169', 'UP000000815'])}
     ncbi = NCBITaxa()
@@ -59,10 +59,10 @@ def test_sparql_find_proteomes_tax_ids():
     for taxon in expected_proteomes_ids:
         assert expected_proteomes_ids[taxon][0] == proteomes_ids[taxon][0]
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])
-
+"""
 
 if __name__ == "__main__":
     test_find_proteomes_tax_ids()
     test_filter_taxon()
     test_find_proteomes_tax_ids()
-    test_sparql_find_proteomes_tax_ids()
+    #test_sparql_find_proteomes_tax_ids()

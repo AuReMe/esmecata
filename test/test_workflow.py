@@ -4,12 +4,12 @@ import subprocess
 import shutil
 
 RESULTS = {
-    'Cluster_1': {'proteomes': 2, 'protein_clusters': 460, 'GOs': 627, 'ECs': 245}
+    'Cluster_1': {'proteomes': 2, 'protein_clusters': 460, 'GOs': 626, 'ECs': 244}
 }
 
 
 def test_workflow():
-    subprocess.call(['esmecata', 'workflow', '-i', 'buchnera_workflow.tsv', '-o', 'test_output'])
+    subprocess.call(['esmecata', 'workflow', '-i', 'buchnera_workflow.tsv', '-o', 'test_output', '-p', '1'])
 
     output_stat_file = os.path.join('test_output', 'stat_number_workflow.tsv')
 

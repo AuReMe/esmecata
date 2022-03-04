@@ -37,8 +37,8 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
                     ecs = line[4].split(',')
                     infile_gos.extend(gos)
                     infile_ecs.extend(ecs)
-            infile_gos = set(infile_gos)
-            infile_ecs = set(infile_ecs)
+            infile_gos = set([go for go in infile_gos if go != ''])
+            infile_ecs = set([ec for ec in infile_ecs if ec != ''])
             annotation_numbers[infile.replace('.tsv','')] = (len(infile_gos), len(infile_ecs))
 
     all_observation_names = {*proteome_numbers.keys(), *clustering_numbers.keys(), *annotation_numbers.keys()}

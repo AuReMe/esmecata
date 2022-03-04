@@ -83,21 +83,18 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
 
         http_check_status = 'http://rest.uniprot.org/beta/idmapping/status/{0}'.format(job_id)
 
-        response = requests.head(http_check_status)
-        response.raise_for_status()
-        check_code = response.status_code
+        check_status_response = requests.head(http_check_status)
+        check_status_response.raise_for_status()
 
         # Not working because the code is 200 instead of 303...
         # Issue with protein_queries formatting?
         # Wait 5 secodns to check again return code.
         # But is there no better way?
-        while response.status_code != 303:
+        while check_status_response.status_code != 303:
             time.sleep(5)
-            response = requests.head(http_check_status)
-            if response.status_code == 303:
-                break
+            check_status_response = requests.head(http_check_status)
 
-        if response.status_code == 303:
+        if check_status_response.status_code == 303:
             http_download = 'http://rest.uniprot.org/beta/idmapping/uniprotkb/results/stream/{0}'.format(job_id)
             response = requests.get(http_download)
             response.raise_for_status()
@@ -137,7 +134,10 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
                     for reaction in protein_reactions:
                         if 'reactionCrossReferences' in reaction:
                             rhea_ids.extend([dbxref['id'] for dbxref in reaction['reactionCrossReferences'] if dbxref['database'] == 'Rhea' and 'RHEA:' in dbxref['id']])
+                        if 'ecNumber' in reaction:
+                            protein_ecs.append(reaction['ecNumber'])
                     rhea_ids = list(set(rhea_ids))
+                protein_ecs = list(set(protein_ecs))
                 gos = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'GO']))
                 interpros = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'InterPro']))
                 results[protein_id] = [protein_fullname, review, gos, protein_ecs, interpros, rhea_ids, gene_name]
@@ -418,8 +418,8 @@ def compute_stat_annotation(annotation_reference_folder, stat_file):
                     ecs = line[4].split(',')
                     infile_gos.extend(gos)
                     infile_ecs.extend(ecs)
-            infile_gos = set(infile_gos)
-            infile_ecs = set(infile_ecs)
+            infile_gos = set([go for go in infile_gos if go != ''])
+            infile_ecs = set([ec for ec in infile_ecs if ec != ''])
             annotation_numbers[infile.replace('.tsv','')] = (len(infile_gos), len(infile_ecs))
 
     with open(stat_file, 'w') as stat_file_open:
@@ -579,10 +579,10 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                     already_annotated_proteins[protein] = base_filename
                     protein_name = output_dict[protein][0]
                     protein_review_satus = str(output_dict[protein][1])
-                    go_terms = ','.join(output_dict[protein][2])
-                    ec_numbers = ','.join(output_dict[protein][3])
-                    interpros = ','.join(output_dict[protein][4])
-                    rhea_ids = ','.join(output_dict[protein][5])
+                    go_terms = ','.join(sorted(output_dict[protein][2]))
+                    ec_numbers = ','.join(sorted(output_dict[protein][3]))
+                    interpros = ','.join(sorted(output_dict[protein][4]))
+                    rhea_ids = ','.join(sorted(output_dict[protein][5]))
                     gene_name = output_dict[protein][6]
 
                     csvwriter.writerow([protein, protein_name, protein_review_satus, go_terms, ec_numbers, interpros, rhea_ids, gene_name])
@@ -596,8 +596,8 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                         csvwriter = csv.writer(output_tsv, delimiter='\t')
                         csvwriter.writerow(['protein_id', 'gos', 'ecs', 'uniref_cluster', 'representative_member'])
                         for protein in uniref_output_dict:
-                            go_terms = ','.join(uniref_output_dict[protein][0])
-                            ec_numbers = ','.join(uniref_output_dict[protein][1])
+                            go_terms = ','.join(sorted(uniref_output_dict[protein][0]))
+                            ec_numbers = ','.join(sorted(uniref_output_dict[protein][1]))
                             cluster_id = uniref_output_dict[protein][2]
                             representative_member = uniref_output_dict[protein][3]
                             csvwriter.writerow([protein, go_terms, ec_numbers, cluster_id, representative_member])
@@ -680,8 +680,8 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                 for protein in protein_annotations:
                     protein_name = protein_annotations[protein][0]
                     gene_name = protein_annotations[protein][3]
-                    gos = ','.join(list(protein_annotations[protein][1]))
-                    ecs = ','.join(list(protein_annotations[protein][2]))
+                    gos = ','.join(sorted(list(protein_annotations[protein][1])))
+                    ecs = ','.join(sorted(list(protein_annotations[protein][2])))
                     if expression_annotation:
                         induction = expression_output_dict[protein][0]
                         tissue_specificity = expression_output_dict[protein][1]
