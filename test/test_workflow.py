@@ -24,9 +24,9 @@ def test_workflow():
             expected_results[line[0]]['GOs'] = int(line[3])
             expected_results[line[0]]['ECs'] = int(line[4])
 
-    for cluster in expected_results:
-        for data in expected_results[cluster]:
-            assert expected_results[cluster][data] == RESULTS[cluster][data]
+    for observation_name in expected_results:
+        for data in expected_results[observation_name]:
+            assert expected_results[observation_name][data] == RESULTS[observation_name][data]
 
     shutil.rmtree('test_output')
 

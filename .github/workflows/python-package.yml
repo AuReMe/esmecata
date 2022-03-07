@@ -49,3 +49,6 @@ jobs:
         pip install pytest
         cd test
         pytest test_proteomes.py
+        pytest test_clustering.py
+        pytest test_annotation.py
+        pytest test_workflow.py

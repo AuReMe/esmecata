@@ -28,45 +28,81 @@ from esmecata import __version__ as esmecata_version
 REQUESTS_HEADERS = {'User-Agent': 'EsMeCaTa proteomes v' + esmecata_version + ', request by requests package v' + requests.__version__ }
 
 
-def associate_taxon_to_taxon_id(taxonomies, ncbi):
-    tax_id_names = {}
-    clusters_dicts = {}
-    json_cluster_taxons = {}
+def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi=None):
+    """ From a taxonomic affiliaiton (such as cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria) find corresponding taxon ID for each taxon.
 
-    if taxonomies == {}:
+    Args:
+        observation_name (str): observation name associated to taxonomic affiliation
+        taxonomic_affiliation (str): str with taxon from highest taxon (such as kingdom) to lowest (such as species)
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+    Returns:
+        tax_ids_to_names (dict): mapping between taxon ID and taxon name
+        json_cluster_taxons (dict): mapping between taxon name and taxon ID
+    """
+    if ncbi is None:
+        ncbi = NCBITaxa()
+
+    taxons = [taxon for taxon in taxonomic_affiliation.split(';')]
+    tax_names_to_ids = ncbi.get_name_translator(taxons)
+    taxon_ids = OrderedDict()
+    for taxon in taxons:
+        taxon_translations = ncbi.get_name_translator([taxon])
+        if taxon_translations == {}:
+            print('For {0}, no taxon ID has been found associated to the taxon "{1}" in the NCBI taxonomy of ete3.'.format(observation_name, taxon))
+            taxon_translations = {taxon: ['not_found']}
+        taxon_ids.update(taxon_translations)
+    tax_ids_to_names = {v: k for k, vs in tax_names_to_ids.items() for v in vs }
+
+    return tax_ids_to_names, taxon_ids
+
+
+def associate_taxon_to_taxon_id(taxonomic_affiliations, ncbi=None):
+    """ From a dictionary containing multiple taxonomic affiliations, find the taxon ID for each.
+
+    Args:
+        taxonomic_affiliations (dict): dictionary with observation name as key and taxonomic affiliation as value
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+    Returns:
+        tax_id_names (dict): mapping between taxon ID and taxon name
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
+    """
+    tax_id_names = {}
+    json_taxonomic_affiliations = {}
+
+    if taxonomic_affiliations == {}:
         print('Empty taxonomy dictionary.')
         return
 
     # For each taxon find the taxon ID corresponding to each taxon.
-    for cluster in taxonomies:
-        if isinstance(taxonomies[cluster], str):
-            taxons = [taxon for taxon in taxonomies[cluster].split(';')]
-            names = ncbi.get_name_translator(taxons)
-            taxon_ids = OrderedDict()
-            for taxon in taxons:
-                taxon_translations = ncbi.get_name_translator([taxon])
-                if taxon_translations == {}:
-                    print('For {0}, no taxon ID has been found associated to the taxon "{1}" in the NCBI taxonomy of ete3.'.format(cluster, taxon))
-                    taxon_translations = {taxon: ['not_found']}
-                taxon_ids.update(taxon_translations)
-            invert_names = {v: k for k, vs in names.items() for v in vs }
-            tax_id_names.update(invert_names)
-            clusters_dicts[cluster] = [names[tax_name] for tax_name in taxonomies[cluster].split(';') if tax_name in names]
-            json_cluster_taxons[cluster] = taxon_ids
+    for observation_name in taxonomic_affiliations:
+        taxonomic_affiliation = taxonomic_affiliations[observation_name]
+        if isinstance(taxonomic_affiliation, str):
+            tax_ids_to_names, taxon_ids = taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi)
+            tax_id_names.update(tax_ids_to_names)
+            json_taxonomic_affiliations[observation_name] = taxon_ids
 
-    return tax_id_names, json_cluster_taxons
+    return tax_id_names, json_taxonomic_affiliations
 
 
-def filter_taxon(json_cluster_taxons, ncbi):
+def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
+    """ From json_taxonomic_affiliations (output of associate_taxon_to_taxon_id), disambiguate taxon name having multiples taxon IDs.
+    For example, Yersinia is associated to both taxon ID 629 and 444888. By using the other taxon in the taxonomic affiliation, this function selects the correct taxon ID.
+
+    Args:
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+    Returns:
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (disambiguated)
+    """
     # If there is multiple taxon ID for a taxon, use the taxon ID lineage to find the most relevant taxon.
     # The most relevant taxon is the one with the most overlapping lineage with the taxonomic affiliation.
     taxon_to_modify = {}
 
-    for cluster in json_cluster_taxons:
-        cluster_taxons = list(json_cluster_taxons[cluster].values())
+    for cluster in json_taxonomic_affiliations:
+        cluster_taxons = list(json_taxonomic_affiliations[cluster].values())
 
-        for index, taxon in enumerate(json_cluster_taxons[cluster]):
-            taxon_ids = json_cluster_taxons[cluster][taxon]
+        for index, taxon in enumerate(json_taxonomic_affiliations[cluster]):
+            taxon_ids = json_taxonomic_affiliations[cluster][taxon]
             # If a taxon name is associated to more than one taxon ID, search for the one matching with the other taxon in the taxonomic affiliation.
             if len(taxon_ids) > 1:
                 taxon_shared_ids = {}
@@ -96,15 +132,21 @@ def filter_taxon(json_cluster_taxons, ncbi):
 
     for cluster in taxon_to_modify:
         for taxon in taxon_to_modify[cluster]:
-            json_cluster_taxons[cluster][taxon] = taxon_to_modify[cluster][taxon]
+            json_taxonomic_affiliations[cluster][taxon] = taxon_to_modify[cluster][taxon]
 
-    return json_cluster_taxons
+    return json_taxonomic_affiliations
 
 
-def filter_rank_limit(json_cluster_taxons, ncbi, rank_limit):
-    """
-    Using teh rank_limit specificied, remove the taxon associated ot this rank.
+def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
+    """Using the rank_limit specificied, remove the taxon associated with this rank.
     For example, if rank_limit == 'superkingdom', Bacteria will be removed.
+
+    Args:
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        rank_limit (str): rank limit to remove from the data
+    Returns:
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
     """
     # Rank level from Supplementary Table S3 of https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/
     rank_level = {'superkingdom': 1, 'kingdom': 2, 'subkingdom': 3, 'superphylum': 4,
@@ -122,8 +164,8 @@ def filter_rank_limit(json_cluster_taxons, ncbi, rank_limit):
     rank_limit_level = rank_level[rank_limit]
     rank_to_keeps = [rank for rank in rank_level if rank_level[rank] > rank_limit_level]
 
-    for cluster in json_cluster_taxons:
-        cluster_taxons = json_cluster_taxons[cluster]
+    for cluster in json_taxonomic_affiliations:
+        cluster_taxons = json_taxonomic_affiliations[cluster]
         tax_keep = []
         tax_ranks = {}
         tax_names = {}
@@ -169,12 +211,26 @@ def filter_rank_limit(json_cluster_taxons, ncbi, rank_limit):
         # Delete the remvoed rank and all its superior.
         for tax_id in tax_id_to_deletes:
             tax_name = tax_names[tax_id]
-            del json_cluster_taxons[cluster][tax_name]
+            del json_taxonomic_affiliations[cluster][tax_name]
 
-    return json_cluster_taxons
+    return json_taxonomic_affiliations
 
 
-def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, beta=None):
+def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, beta=None):
+    """REST query on UniProt to get the proteomes associated to a taxon.
+
+    Args:
+        observation_name (str): observation name associated to the taxonomic affiliation
+        tax_id (str): taxon ID from a taxon of the taxonomic affiliation
+        tax_name (str): taxon name associated to the tax_id
+        busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
+        all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
+        beta (bool): option to use the new API of UniProt (in beta can be unstable)
+    Returns:
+        proteomes (list): list of proteome IDs associated to the taxon ID
+        organism_ids (dict): organism ID (key) associated to each proteomes (values)
+        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome
+    """
     proteomes = []
     proteomes_data = []
     organism_ids = {}
@@ -257,7 +313,7 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
         data = proteome_response.json()
         reference_proteome = True
         if len(data['results']) == 0:
-            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(taxon, tax_id, tax_name))
+            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
             time.sleep(1)
             proteome_response = requests.get(url=all_beta_httpt_str, params=REQUESTS_HEADERS)
             proteome_response.raise_for_status()
@@ -303,7 +359,22 @@ def rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_pro
     return proteomes, organism_ids, proteomes_data
 
 
-def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
+def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
+    """SPARQL query on UniProt to get the proteomes associated to a taxon.
+
+    Args:
+        observation_name (str): observation name associated to the taxonomic affiliation
+        tax_id (str): taxon ID from a taxon of the taxonomic affiliation
+        tax_name (str): taxon name associated to the tax_id
+        busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
+        all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
+        beta (bool): option to use the new API of UniProt (in beta can be unstable)
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
+    Returns:
+        proteomes (list): list of proteome IDs associated to the taxon ID
+        organism_ids (dict): organism ID (key) associated to each proteomes (values)
+        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome
+    """
     # SPARQL query to retrieve proteome
     # First FILTER NOT EXISTS to avoid redundant proteomes.
     # Second FILTER NOT EXISTS to avoid excluded proteomes.
@@ -405,7 +476,7 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
         proteomes = other_proteomes
     else:
         if len(reference_proteomes) == 0:
-            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(taxon, tax_id, tax_name))
+            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
             proteomes = other_proteomes
         else:
             proteomes = reference_proteomes
@@ -413,9 +484,27 @@ def sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_p
     return proteomes, organism_ids, proteomes_data
 
 
-def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_folder,
+def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                         busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, beta=None):
+    """Find proteomes associated to taxonomic affiliations
+
+    Args:
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        proteomes_description_folder (str): pathname to the proteomes_description_folder
+        busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
+        all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
+        limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
+        beta (bool): option to use the new API of UniProt (in beta can be unstable)
+
+    Returns:
+        proteomes_ids (dict): observation name (key) associated with proteome IDs
+        single_proteomes (dict): observation name (key) associated with proteome ID (when there is only one proteome)
+        tax_id_not_founds (dict): mapping between taxon ID and taxon name for taxon ID without proteomes
+    """
+
     # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomic affiliation.
     # If there is more than limit_maximal_number_proteomes proteomes a method is applied to extract a subset of the data.
     print('Find proteome ID associated to taxonomic affiliation')
@@ -424,15 +513,15 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_fold
     tax_id_not_founds = {}
     tax_id_founds = {}
 
-    for taxon in json_cluster_taxons:
-        for tax_name in reversed(json_cluster_taxons[taxon]):
-            tax_id = json_cluster_taxons[taxon][tax_name][0]
+    for observation_name in json_taxonomic_affiliations:
+        for tax_name in reversed(json_taxonomic_affiliations[observation_name]):
+            tax_id = json_taxonomic_affiliations[observation_name][tax_name][0]
 
             # If tax_id has already been found use the corresponding proteomes without new requests.
             if tax_id in tax_id_founds:
-                proteomes_ids[taxon] = (tax_id, tax_id_founds[tax_id])
+                proteomes_ids[observation_name] = (tax_id, tax_id_founds[tax_id])
                 if len(tax_id_founds[tax_id]) == 1:
-                    single_proteomes[taxon] = (tax_id, tax_id_founds[tax_id])
+                    single_proteomes[observation_name] = (tax_id, tax_id_founds[tax_id])
                 break
 
             # If tax_id has not been found with a request do not try a new request with the same tax_id.
@@ -444,11 +533,11 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_fold
                 continue
 
             if uniprot_sparql_endpoint:
-                proteomes, organism_ids, data_proteomes = sparql_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
+                proteomes, organism_ids, data_proteomes = sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
             else:
-                proteomes, organism_ids, data_proteomes = rest_query_proteomes(taxon, tax_id, tax_name, busco_percentage_keep, all_proteomes, beta)
+                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, beta)
 
-            proteomes_description_file = os.path.join(proteomes_description_folder, taxon+'.tsv')
+            proteomes_description_file = os.path.join(proteomes_description_folder, observation_name+'.tsv')
             if os.path.exists(proteomes_description_file):
                 proteomes_description_file_writer = 'a'
             else:
@@ -469,15 +558,15 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_fold
                 continue
 
             elif len(proteomes) > 0 and len(proteomes) < 100:
-                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(taxon, tax_name, len(proteomes)))
-                proteomes_ids[taxon] = (tax_id, proteomes)
+                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(proteomes)))
+                proteomes_ids[observation_name] = (tax_id, proteomes)
                 tax_id_founds[tax_id] = proteomes
                 if len(proteomes) == 1:
-                    single_proteomes[taxon] = (tax_id, proteomes)
+                    single_proteomes[observation_name] = (tax_id, proteomes)
                 break
 
             elif len(proteomes) > limit_maximal_number_proteomes:
-                print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around {0} proteomes with respect to the taxonomic diversity.'.format(limit_maximal_number_proteomes, taxon, tax_name))
+                print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around {0} proteomes with respect to the taxonomic diversity.'.format(limit_maximal_number_proteomes, observation_name, tax_name))
                 tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
 
                 # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
@@ -519,16 +608,24 @@ def find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_fold
                     else:
                         proteomes_to_keep = random.sample(element, percentage_to_keep)
                     selected_proteomes.extend(proteomes_to_keep)
-                proteomes_ids[taxon] = (tax_id, selected_proteomes)
+                proteomes_ids[observation_name] = (tax_id, selected_proteomes)
                 tax_id_founds[tax_id] = selected_proteomes
-                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(taxon, tax_name, len(selected_proteomes)))
+                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(selected_proteomes)))
                 break
 
             time.sleep(1)
 
     return proteomes_ids, single_proteomes, tax_id_not_founds
 
-def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint):
+
+def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
+    """ SPARQL query to find the protein sequences associated to a proteome.
+
+    Args:
+        proteome (str): proteome ID
+        output_proteome_file (str): pathname to the proteome fasta file
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
+    """
     # Implementation of the rdf:type up:Simple_Sequence to check for canonical sequence?
     # But is the rdf:type up:Simple_Sequence really associated to canonical sequence?
     uniprot_sparql_query = """PREFIX up: <http://purl.uniprot.org/core/>
@@ -588,6 +685,12 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
 
 
 def compute_stat_proteomes(result_folder, stat_file):
+    """Compute stat associated to the number of proteome for each taxonomic affiliations.
+
+    Args:
+        result_folder (str): pathname to the result folder containing subfolder containing proteomes
+        stat_file (str): pathname to the tsv stat file
+    """
     proteome_numbers = {}
     for folder in os.listdir(result_folder):
         result_folder_path = os.path.join(result_folder, folder)
@@ -604,6 +707,20 @@ def compute_stat_proteomes(result_folder, stat_file):
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         remove_tmp=None, limit_maximal_number_proteomes=99, beta=None, rank_limit=None):
+    """From a tsv file with taxonomic affiliations find the associated proteomes.
+
+    Args:
+        input_file (str): pathname to the tsv input file
+        output (str): pathname to the output folder
+        busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
+        ignore_taxadb_update (bool): option to ignore ete3 taxa database update
+        remove_tmp (bool): remove the tmp files
+        all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
+        limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
+        beta (bool): option to use the new API of UniProt (in beta can be unstable)
+        rank_limit (str): rank limit to remove from the data
+    """
     starttime = time.time()
 
     if is_valid_file(input_file) is False:
@@ -652,19 +769,19 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     if not os.path.exists(proteome_cluster_tax_id_file):
         ncbi = NCBITaxa()
 
-        tax_id_names, json_cluster_taxons = associate_taxon_to_taxon_id(taxonomies, ncbi)
+        tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, ncbi)
 
-        json_cluster_taxons = filter_taxon(json_cluster_taxons, ncbi)
+        json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
 
         if rank_limit:
-            json_cluster_taxons = filter_rank_limit(json_cluster_taxons, ncbi, rank_limit)
+            json_taxonomic_affiliations = filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit)
 
         json_log = os.path.join(output_folder, 'association_taxon_taxID.json')
         with open(json_log, 'w') as ouput_file:
-            json.dump(json_cluster_taxons, ouput_file, indent=4)
+            json.dump(json_taxonomic_affiliations, ouput_file, indent=4)
 
     if not os.path.exists(proteome_cluster_tax_id_file):
-        proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_cluster_taxons, ncbi, proteomes_description_folder,
+        proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                                                         busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, limit_maximal_number_proteomes, beta)
 
         proteome_to_download = []
