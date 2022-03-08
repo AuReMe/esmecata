@@ -35,9 +35,13 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Prepare environment
+      run: |
+        conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 -c conda-forge -c bioconda
+        conda init
     - name: Test with pytest
       run: |
-        conda install pytest mmseqs2 pandas sparqlwrapper requests biopython ete3 -c conda-forge -c bioconda
+        pip install pytest
         cd test
         pytest test_proteomes.py
         pytest test_clustering.py
