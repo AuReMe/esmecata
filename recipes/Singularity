@@ -8,6 +8,9 @@ From: ubuntu:18.04
 
 %environment
     export PATH=/opt/conda/bin:${PATH}
+    export PYTHONIOENCODING=utf8
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
 
 %post
     apt-get update && \
