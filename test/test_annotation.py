@@ -102,23 +102,9 @@ def test_propagate_annotation_in_cluster():
     compare_annotation_dict(expected_result_propagation_1_intersection, protein_annotations, True)
 
 
-def test_rest_query_uniprot_to_retrieve_function():
-    output_dict = {}
-    output_dict = rest_query_uniprot_to_retrieve_function('Q7CGB6')
-
-    compare_annotation_dict(ANOTATIONS, output_dict)
-
-
-def test_sparql_query_uniprot_to_retrieve_function():
-    output_dict = {}
-    output_dict = sparql_query_uniprot_to_retrieve_function('Q7CGB6', 'https://sparql.uniprot.org/sparql')
-
-    compare_annotation_dict(ANOTATIONS, output_dict)
-
-
 if __name__ == "__main__":
     test_extract_protein_cluster()
     test_search_already_annotated_protein()
     test_propagate_annotation_in_cluster()
-    test_rest_query_uniprot_to_retrieve_function()
-    test_sparql_query_uniprot_to_retrieve_function()
+    test_query_uniprot_annotation_rest()
+    test_query_uniprot_annotation_sparql()

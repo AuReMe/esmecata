@@ -8,8 +8,6 @@ import sys
 import urllib.parse
 import urllib.request
 
-from collections import Counter
-
 from SPARQLWrapper import __version__ as sparqlwrapper_version
 
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query
@@ -19,6 +17,15 @@ URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', 
 
 
 def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
+    """REST query to get annotation from proteomes.
+
+    Args:
+        proteomes (list): list of proteomes
+        beta (bool): option to use the new API of UniProt (in beta can be unstable)
+
+    Returns:
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+    """
     output_dict = {}
 
     # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
@@ -147,6 +154,15 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
 
 
 def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint):
+    """SPARQL query to get annotation from proteomes.
+
+    Args:
+        proteomes (list): list of proteomes
+        uniprot_sparql_endpoint (str): SPARQL endpoint to uniprot database
+
+    Returns:
+        dict: annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+    """
     proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
 
     uniprot_sparql_function_query = """PREFIX up: <http://purl.uniprot.org/core/>
@@ -243,7 +259,17 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint
         yield protein_id, [protein_name, review, go_terms, ec_numbers, interpros, rhea_ids, gene_name]
 
 
-def sparql_query_uniprot_annotation_uniref(proteomes, output_dict, uniprot_sparql_endpoint):
+def sparql_query_uniprot_annotation_uniref(proteomes, uniref_output_dict, uniprot_sparql_endpoint):
+    """SPARQL query to get annotation from proteomes and uniref.
+
+    Args:
+        proteomes (list): list of proteomes
+        uniref_output_dict (dict): annotation dict: protein as key and annotation as value
+        uniprot_sparql_endpoint (str): SPARQL endpoint to uniprot database
+
+    Returns:
+        uniref_output_dict (dict): annotation dict: protein as key and annotation as value
+    """
     proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
 
     sparql_query_uniref = """PREFIX up: <http://purl.uniprot.org/core/>
@@ -308,12 +334,22 @@ def sparql_query_uniprot_annotation_uniref(proteomes, output_dict, uniprot_sparq
 
         results[protein_id] = [go_terms, ec_numbers, cluster_id, representative_member]
 
-    output_dict.update(results)
+    uniref_output_dict.update(results)
 
-    return output_dict
+    return uniref_output_dict
 
 
-def sparql_query_uniprot_expression(proteomes, output_dict, uniprot_sparql_endpoint):
+def sparql_query_uniprot_expression(proteomes, expression_output_dict, uniprot_sparql_endpoint):
+    """SPARQL query to get expression data from proteomes.
+
+    Args:
+        proteomes (list): list of proteomes
+        expression_output_dict (dict): annotation dict: protein as key and expression data as value.
+        uniprot_sparql_endpoint (str): SPARQL endpoint to uniprot database
+
+    Returns:
+        expression_output_dict (dict): annotation dict: protein as key and expression data as value.
+    """
     proteomes = ' '.join(['( proteome:'+proteome+' )' for proteome in proteomes])
 
     sparql_query_expression = """PREFIX up: <http://purl.uniprot.org/core/>
@@ -367,20 +403,34 @@ def sparql_query_uniprot_expression(proteomes, output_dict, uniprot_sparql_endpo
 
         results[protein_id] = [induction, tissue_specificity, disruption]
 
-    output_dict.update(results)
+    expression_output_dict.update(results)
 
-    return output_dict
+    return expression_output_dict
 
 
-def chunks(lst, n):
+def chunks(elements, n):
     """Yield successive n-sized chunks from list.
     Form: https://stackoverflow.com/a/312464
+
+    Args:
+        elements (list): list of elements (proteins or proteomes) to be split in chunks of size n
+        n (int): size of the chunks
+
+    Returns:
+        list: list of elements of size n
     """
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
+    for i in range(0, len(elements), n):
+        yield elements[i:i + n]
 
 
 def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_output_file):
+    """Create pathologic files.
+
+    Args:
+        base_filename (str): observation name associated to the taxonomic affiliations and the annotation
+        annotated_protein_to_keeps (dict): annotated protein associated to the annotation of their cluster.
+        pathologic_output_file (str): pathname to the pathologic write.
+    """
     with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:
         element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
         element_file.write(';; ' + base_filename + '\n')
@@ -404,6 +454,12 @@ def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_outp
 
 
 def compute_stat_annotation(annotation_reference_folder, stat_file):
+    """Compute stat associated to the number of proteome for each taxonomic affiliations.
+
+    Args:
+        annotation_reference_folder (str): pathname to the annotation reference folder containing annotations for each cluster
+        stat_file (str): pathname to the tsv stat file
+    """
     annotation_numbers = {}
     for infile in os.listdir(annotation_reference_folder):
         if '.tsv' in infile:
