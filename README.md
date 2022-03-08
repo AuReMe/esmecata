@@ -72,7 +72,7 @@ It can also be installed using esmecata github directory:
 
 ### Singularity
 
-A Singularity recipe for EsMeCaTa is available [here](https://github.com/AuReMe/esmecata/tree/recipes/Singularity).
+A Singularity recipe for EsMeCaTa is available [here](https://github.com/AuReMe/esmecata/blob/master/recipes/Singularity).
 
 The image can be created with the following command:
 
