@@ -16,6 +16,12 @@ from esmecata.utils import is_valid_path, is_valid_dir
 
 
 def compute_stat_clustering(result_folder, stat_file):
+    """Compute stat associated to the number of proteome for each taxonomic affiliations.
+
+    Args:
+        result_folder (str): pathname to the result folder containing mmseqs results
+        stat_file (str): pathname to the tsv stat file
+    """
     clustering_numbers = {}
     for clustering_file in os.listdir(result_folder):
         clustering_file_path = os.path.join(result_folder, clustering_file)
@@ -29,8 +35,195 @@ def compute_stat_clustering(result_folder, stat_file):
             csvwriter.writerow([observation_name, clustering_numbers[observation_name]])
 
 
+def run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust):
+    """Run MMseqs2 on proteomes for an observation name
+
+    Args:
+        observation_name (str): observation name associated to a taxonomic affiliations
+        observation_name_proteomes (list): list of pathname to each proteomes associated to the observation_name
+        mmseqs_tmp_path (str): pathname to the folder which will contain mmseqs results
+        nb_cpu (int): number of CPU for mmseqs
+        mmseqs_options (str): options that will be used by mmseqs (default: '--min-seq-id', '0.3', '-c', '0.8')
+        linclust (bool): use linclust for faster clustering
+
+    Returns:
+        mmseqs_tmp_clustered_tabulated (str): pathname to the mmseqs tabulated file containg protein cluster
+        mmseqs_tmp_representative_fasta (str): pathname to the mmseqs fasta file containing representative protein sequences
+        mmseqs_consensus_fasta (str): pathname to the mmseqs fasta file containing consensus protein sequences
+    """
+    mmseqs_tmp_cluster = os.path.join(mmseqs_tmp_path, observation_name)
+    is_valid_dir(mmseqs_tmp_cluster)
+
+    mmseqs_tmp_cluster_output = os.path.join(mmseqs_tmp_cluster, 'cluster')
+    mmseqs_tmp_clustered_tabulated = mmseqs_tmp_cluster_output+'_cluster.tsv'
+    mmseqs_tmp_representative_fasta = mmseqs_tmp_cluster_output + '_rep_seq.fasta'
+    mmseqs_consensus_fasta = mmseqs_tmp_cluster_output + '_con_seq.fasta'
+    # Run mmmseqs to find rapidly protein clusters.
+
+    # Code using mmseqs database and mmseqs modules to cluster instead of easy-cluster.
+    mmseqs_tmp_db = os.path.join(mmseqs_tmp_cluster, 'db')
+    #mmseqs_tmp_db_h = os.path.join(mmseqs_tmp_cluster, 'db_h')
+    mmseqs_tmp_db_clustered = os.path.join(mmseqs_tmp_cluster, 'cluster_db')
+    mmseqs_tmp_cluster_tmp = os.path.join(mmseqs_tmp_cluster, 'cluster_tmp')
+    mmseqs_seq_db =  os.path.join(mmseqs_tmp_cluster, 'cluster_seq')
+    #mmseqs_seq_db_h =  os.path.join(mmseqs_tmp_cluster, 'cluster_seq_h')
+    mmseqs_profile =  os.path.join(mmseqs_tmp_cluster, 'cluster_profile')
+    mmseqs_consensus =  os.path.join(mmseqs_tmp_cluster, 'cluster_consensus')
+
+    if not os.path.exists(mmseqs_tmp_clustered_tabulated):
+        # Create database containing the protein sequences from all the proteomes of a taxon.
+        subprocess.call(['mmseqs', 'createdb', *observation_name_proteomes, mmseqs_tmp_db, '-v', '2'])
+
+        # Cluster the protein sequences.
+        cluster_cmd = ['mmseqs']
+        if linclust:
+            cluster_cmd += ['linclust']
+        else:
+            cluster_cmd += ['cluster']
+
+        cluster_cmd += [mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_cluster_tmp, '--threads', str(nb_cpu), '-v', '2']
+
+        # If no option given by the user, use the default options: '--min-seq-id', '0.3', '-c', '0.8'.
+        # Sequence identity of 30% and coverage of 80%.
+        if not mmseqs_options:
+            cluster_cmd += ['--min-seq-id', '0.3', '-c', '0.8']
+        else:
+            cluster_cmd += mmseqs_options.split(' ')
+
+        subprocess.call(cluster_cmd)
+
+        subprocess.call(['mmseqs', 'createsubdb', mmseqs_tmp_db_clustered, mmseqs_tmp_db, mmseqs_seq_db, '-v', '2'])
+        #subprocess.call(['mmseqs', 'createsubdb', mmseqs_tmp_db_clustered, mmseqs_tmp_db_h, mmseqs_seq_db_h, '-v', '2'])
+        # Create the profile from the clustering.
+        subprocess.call(['mmseqs', 'result2profile', mmseqs_seq_db, mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_profile, '--threads', str(nb_cpu), '-v', '2'])
+        # Create the consensus from the profile.
+        subprocess.call(['mmseqs', 'profile2consensus', mmseqs_profile, mmseqs_consensus, '--threads', str(nb_cpu), '-v', '2'])
+        # Create the consensus fasta file.
+        subprocess.call(['mmseqs', 'convert2fasta', mmseqs_consensus, mmseqs_consensus_fasta, '-v', '2'])
+        # Create TSV resulting files to be analysed after.
+        subprocess.call(['mmseqs', 'createtsv', mmseqs_tmp_db, mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_clustered_tabulated, '--threads', str(nb_cpu), '-v', '2'])
+        # Create fasta file containing representative proteins (representatives are the first protein of the alignement).
+        subprocess.call(['mmseqs', 'convert2fasta', mmseqs_seq_db, mmseqs_tmp_representative_fasta, '-v', '2'])
+
+    # Old clustering method used with easy-cluster.
+    """
+    if not os.path.exists(mmseqs_tmp_clustered_tabulated):
+        # Code using easy-cluster to extract representative protein.
+        subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], mmseqs_tmp_cluster_output, mmseqs_tmp_cluster, '--threads', str(nb_cpu), '-v', '2', '--min-seq-id', '0.3'])
+    """
+
+    return mmseqs_tmp_clustered_tabulated, mmseqs_tmp_representative_fasta, mmseqs_consensus_fasta
+
+
+def extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated):
+    """Extract protein cluster from mmseqs into a dictionary
+
+    Args:
+        mmseqs_tmp_clustered_tabulated (str): pathname to the mmseqs tabulated file containg protein cluster
+
+    Returns:
+        protein_clusters (dict): protein clusters found by mmseqs (representative protein as key and all the protein in the cluster as value)
+    """
+    # Extract protein clusters in a dictionary.
+    # The representative protein is the key and all the proteins in the cluster are the values.
+    protein_clusters = {}
+    with open(mmseqs_tmp_clustered_tabulated) as input_file:
+        csvreader = csv.reader(input_file, delimiter='\t')
+        for row in csvreader:
+            if row[0] not in protein_clusters:
+                protein_clusters[row[0]] = [row[1]]
+            else:
+                protein_clusters[row[0]].append(row[1])
+
+    return protein_clusters
+
+
+def filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold):
+    """Filter protein cluster according to the representation of each proteomes in the cluster
+
+    Args:
+        observation_name (str): observation name associated to a taxonomic affiliations
+        protein_clusters (dict): protein clusters found by mmseqs (representative protein as key and all the protein in the cluster as value)
+        observation_name_proteomes (list): list of pathname to each proteomes associated to the observation_name
+        output_folder (str): pathname to the output folder
+        clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
+
+    Returns:
+        protein_cluster_to_keeps (list): list containing representative protein IDs associated with cluster that are kept
+    """
+    reference_proteins_path = os.path.join(output_folder, 'reference_proteins')
+    is_valid_dir(reference_proteins_path)
+
+    cluster_founds_path = os.path.join(output_folder, 'cluster_founds')
+    is_valid_dir(cluster_founds_path)
+
+    computed_threshold_path = os.path.join(output_folder, 'computed_threshold')
+    is_valid_dir(computed_threshold_path)
+    # Retrieve protein ID and the corresponding proteome.
+    organism_prots = {}
+    for fasta_file in observation_name_proteomes:
+        with gzip.open(fasta_file, 'rt') as fasta_handle:
+            for record in SeqIO.parse(fasta_handle, 'fasta'):
+                compressed_filebasename = os.path.basename(fasta_file)
+                fasta_filebasename = os.path.splitext(compressed_filebasename)[0]
+                filebasename = os.path.splitext(fasta_filebasename)[0]
+                organism_prots[record.id.split('|')[1]] = filebasename
+
+    number_proteomes = len(observation_name_proteomes)
+
+    # Compute the ratio between the number of proteome represented by a protein in the cluster and the total number of proteome.
+    rep_prot_organims = {}
+    computed_threshold_cluster = {}
+    for rep_protein in protein_clusters:
+        rep_prot_organims[rep_protein] = set([organism_prots[prot] for prot in protein_clusters[rep_protein]])
+        computed_threshold_cluster[rep_protein] = len(rep_prot_organims[rep_protein]) / number_proteomes
+
+    # Create a tsv file contianing the computer threshold (number of organism in the cluster compared to the total number of organism) for each organisms.
+    computed_threshold_file = os.path.join(computed_threshold_path, observation_name+'.tsv')
+    with open(computed_threshold_file, 'w') as output_file:
+        csvwriter = csv.writer(output_file, delimiter='\t')
+        csvwriter.writerow(['representative_protein', 'cluster_ratio', 'proteomes'])
+        for rep_protein in rep_prot_organims:
+            csvwriter.writerow([rep_protein, computed_threshold_cluster[rep_protein], ','.join(rep_prot_organims[rep_protein])])
+
+    # Keep a protein cluster according to the ratio and create a list of representative proteins (being the protein cluster to keep).
+    protein_cluster_to_keeps = []
+    cluster_proteomes_filtered_output_file = os.path.join(reference_proteins_path, observation_name+'.tsv')
+    cluster_proteomes_output_file = os.path.join(cluster_founds_path, observation_name+'.tsv')
+    reference_threshold = (clust_threshold * number_proteomes) / number_proteomes
+    with open(cluster_proteomes_filtered_output_file, 'w') as filtered_output_file, open(cluster_proteomes_output_file, 'w') as output_file:
+        csvwriter = csv.writer(output_file, delimiter='\t')
+        filtered_csvwriter = csv.writer(filtered_output_file, delimiter='\t')
+        for rep_protein in rep_prot_organims:
+            csvwriter.writerow([rep_protein, *[prot for prot in protein_clusters[rep_protein]]])
+            if computed_threshold_cluster[rep_protein] >= reference_threshold:
+                filtered_csvwriter.writerow([rep_protein, *[prot for prot in protein_clusters[rep_protein]]])
+                protein_cluster_to_keeps.append(rep_protein)
+
+    # Use set for faster search using 'in'.
+    protein_cluster_to_keeps = set(protein_cluster_to_keeps)
+
+    stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
+    compute_stat_clustering(reference_proteins_path, stat_file)
+
+    return protein_cluster_to_keeps
+
+
 def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp):
+    """From a tsv file with taxonomic affiliations find the associated proteomes.
+
+    Args:
+        proteome_folder (str): pathname to folder from esmecata folder
+        output_folder (str): pathname to the output folder
+        nb_cpu (int): number of CPUs to be used by mmseqs
+        clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
+        mmseqs_options (str): use alternative mmseqs option
+        linclust (bool): use linclust
+        remove_tmp (bool): remove the tmp files
+    """
     starttime = time.time()
+
+    # Check if mmseqs is in path.
     mmseqs_path = which('mmseqs')
     if not mmseqs_path:
         print('mmseqs not available in path, esmecata will not be able to cluster the proteomes.')
@@ -64,181 +257,68 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     clustering_metadata['tool_dependencies']['python_package']['biopython'] = biopython_version
     clustering_metadata['tool_dependencies']['python_package']['esmecata'] = esmecata_version
 
-    cluster_fasta_files = {}
-    for cluster in os.listdir(result_folder):
-        result_cluster_folder = os.path.join(result_folder, cluster)
-        if is_valid_dir(result_cluster_folder):
-            for cluster_file in os.listdir(result_cluster_folder):
-                fasta_filename, compressed_file_extension = os.path.splitext(cluster_file)
-                filename, file_extension = os.path.splitext(fasta_filename)
+    # Create a dictionary with observation_name as key and the pathname to the proteomes associated to this observation_name as value.
+    observation_name_fasta_files = {}
+    for observation_name in os.listdir(result_folder):
+        result_observation_name_folder = os.path.join(result_folder, observation_name)
+        if is_valid_dir(result_observation_name_folder):
+            for fasta_file in os.listdir(result_observation_name_folder):
+                fasta_filename, compressed_file_extension = os.path.splitext(fasta_file)
+                _, file_extension = os.path.splitext(fasta_filename)
                 complete_extension = file_extension + compressed_file_extension
                 if complete_extension == '.faa.gz':
-                    cluster_file_path = os.path.join(result_cluster_folder, cluster_file)
-                    if cluster not in cluster_fasta_files:
-                        cluster_fasta_files[cluster] = [cluster_file_path]
+                    fasta_file_path = os.path.join(result_observation_name_folder, fasta_file)
+                    if observation_name not in observation_name_fasta_files:
+                        observation_name_fasta_files[observation_name] = [fasta_file_path]
                     else:
-                        cluster_fasta_files[cluster].append(cluster_file_path)
+                        observation_name_fasta_files[observation_name].append(fasta_file_path)
 
     # Create tmp folder for mmseqs analysis.
-    mmseqs_tmp = os.path.join(output_folder, 'mmseqs_tmp')
-    is_valid_dir(mmseqs_tmp)
+    mmseqs_tmp_path = os.path.join(output_folder, 'mmseqs_tmp')
+    is_valid_dir(mmseqs_tmp_path)
 
     # Create output folder containing shared representative proteins.
-    representative_fasta = os.path.join(output_folder, 'fasta_representative')
-    is_valid_dir(representative_fasta)
+    representative_fasta_path = os.path.join(output_folder, 'fasta_representative')
+    is_valid_dir(representative_fasta_path)
 
-    consensus_fasta = os.path.join(output_folder, 'fasta_consensus')
-    is_valid_dir(consensus_fasta)
+    consensus_fasta_path = os.path.join(output_folder, 'fasta_consensus')
+    is_valid_dir(consensus_fasta_path)
 
-    reference_proteins = os.path.join(output_folder, 'reference_proteins')
-    is_valid_dir(reference_proteins)
+    reference_proteins_representative_fasta_path = os.path.join(output_folder, 'reference_proteins_representative_fasta')
+    is_valid_dir(reference_proteins_representative_fasta_path)
 
-    reference_proteins_representative_fasta = os.path.join(output_folder, 'reference_proteins_representative_fasta')
-    is_valid_dir(reference_proteins_representative_fasta)
-
-    reference_proteins_consensus_fasta = os.path.join(output_folder, 'reference_proteins_consensus_fasta')
-    is_valid_dir(reference_proteins_consensus_fasta)
-
-    cluster_founds = os.path.join(output_folder, 'cluster_founds')
-    is_valid_dir(cluster_founds)
-
-    computed_threshold = os.path.join(output_folder, 'computed_threshold')
-    is_valid_dir(computed_threshold)
+    reference_proteins_consensus_fasta_path = os.path.join(output_folder, 'reference_proteins_consensus_fasta')
+    is_valid_dir(reference_proteins_consensus_fasta_path)
 
     print('Clustering proteins.')
     # For each OTU run mmseqs easy-cluster on them to found the clusters that have a protein in each proteome of the OTU.
     # We take the representative protein of a cluster if the cluster contains a protein from all the proteomes of the OTU.
     # If this condition is not satisfied the cluster will be ignored.
     # Then a fasta file containing all the representative proteins for each OTU is written in representative_fasta folder.
-    for cluster in cluster_fasta_files:
-        mmseqs_tmp_cluster = os.path.join(mmseqs_tmp, cluster)
-        is_valid_dir(mmseqs_tmp_cluster)
+    for observation_name in observation_name_fasta_files:
+        mmseqs_tmp_cluster = os.path.join(mmseqs_tmp_path, observation_name)
+        observation_name_proteomes = observation_name_fasta_files[observation_name]
+        mmseqs_tmp_clustered_tabulated, mmseqs_tmp_representative_fasta, mmseqs_consensus_fasta = run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust)
+        protein_clusters = extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated)
+        protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
 
-        mmseqs_tmp_cluster_output = os.path.join(mmseqs_tmp_cluster, 'cluster')
-        mmseqs_tmp_clustered_tabulated = mmseqs_tmp_cluster_output+'_cluster.tsv'
-        mmseqs_tmp_representative_fasta = mmseqs_tmp_cluster_output + '_rep_seq.fasta'
-        mmseqs_consensus_fasta = mmseqs_tmp_cluster_output + '_con_seq.fasta'
-        # Run mmmseqs to find rapidly protein clusters.
+        # Copy representative and consensus fasta to subfolder in output_folder.
+        shutil.copyfile(mmseqs_tmp_representative_fasta, os.path.join(representative_fasta_path, observation_name+'.faa'))
+        shutil.copyfile(mmseqs_consensus_fasta, os.path.join(consensus_fasta_path, observation_name+'.faa'))
 
-
-        # Code using mmseqs database and mmseqs modules to cluster instead of easy-cluster.
-        mmseqs_tmp_db = os.path.join(mmseqs_tmp_cluster, 'db')
-        #mmseqs_tmp_db_h = os.path.join(mmseqs_tmp_cluster, 'db_h')
-        mmseqs_tmp_db_clustered = os.path.join(mmseqs_tmp_cluster, 'cluster_db')
-        mmseqs_tmp_cluster_tmp = os.path.join(mmseqs_tmp_cluster, 'cluster_tmp')
-        mmseqs_seq_db =  os.path.join(mmseqs_tmp_cluster, 'cluster_seq')
-        #mmseqs_seq_db_h =  os.path.join(mmseqs_tmp_cluster, 'cluster_seq_h')
-        mmseqs_profile =  os.path.join(mmseqs_tmp_cluster, 'cluster_profile')
-        mmseqs_consensus =  os.path.join(mmseqs_tmp_cluster, 'cluster_consensus')
-
-        if not os.path.exists(mmseqs_tmp_clustered_tabulated):
-            # Create database containing the protein sequences from all the proteomes of a taxon.
-            subprocess.call(['mmseqs', 'createdb', *cluster_fasta_files[cluster], mmseqs_tmp_db, '-v', '2'])
-
-            # Cluster the protein sequences.
-            cluster_cmd = ['mmseqs']
-            if linclust:
-                cluster_cmd += ['linclust']
-            else:
-                cluster_cmd += ['cluster']
-
-            cluster_cmd += [mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_cluster_tmp, '--threads', str(nb_cpu), '-v', '2']
-
-            if not mmseqs_options:
-                cluster_cmd += ['--min-seq-id', '0.3', '-c', '0.8']
-            else:
-                cluster_cmd += mmseqs_options.split(' ')
-
-            subprocess.call(cluster_cmd)
-
-            subprocess.call(['mmseqs', 'createsubdb', mmseqs_tmp_db_clustered, mmseqs_tmp_db, mmseqs_seq_db, '-v', '2'])
-            #subprocess.call(['mmseqs', 'createsubdb', mmseqs_tmp_db_clustered, mmseqs_tmp_db_h, mmseqs_seq_db_h, '-v', '2'])
-            # Create the profile from the clustering.
-            subprocess.call(['mmseqs', 'result2profile', mmseqs_seq_db, mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_profile, '--threads', str(nb_cpu), '-v', '2'])
-            # Create the consensus from the profile.
-            subprocess.call(['mmseqs', 'profile2consensus', mmseqs_profile, mmseqs_consensus, '--threads', str(nb_cpu), '-v', '2'])
-            # Create the consensus fasta file.
-            subprocess.call(['mmseqs', 'convert2fasta', mmseqs_consensus, mmseqs_consensus_fasta, '-v', '2'])
-            # Create TSV resulting files to be analysed after.
-            subprocess.call(['mmseqs', 'createtsv', mmseqs_tmp_db, mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_clustered_tabulated, '--threads', str(nb_cpu), '-v', '2'])
-            # Create fasta file containing representative proteins (representatives are the first protein of the alignement).
-            subprocess.call(['mmseqs', 'convert2fasta', mmseqs_seq_db, mmseqs_tmp_representative_fasta, '-v', '2'])
-
-        """
-        if not os.path.exists(mmseqs_tmp_clustered_tabulated):
-            # Code using easy-cluster to extract representative protein.
-            subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], mmseqs_tmp_cluster_output, mmseqs_tmp_cluster, '--threads', str(nb_cpu), '-v', '2', '--min-seq-id', '0.3'])
-        """
-
-        # Extract protein clusters.
-        proteins_representatives = {}
-        with open(mmseqs_tmp_clustered_tabulated) as input_file:
-            csvreader = csv.reader(input_file, delimiter='\t')
-            for row in csvreader:
-                if row[0] not in proteins_representatives:
-                    proteins_representatives[row[0]] = [row[1]]
-                else:
-                    proteins_representatives[row[0]].append(row[1])
-
-        # Retrieve protein ID and the corresponding proteome.
-        organism_prots = {}
-        for fasta_file in cluster_fasta_files[cluster]:
-            filename, file_extension = os.path.splitext(fasta_file)
-            with gzip.open(fasta_file, 'rt') as fasta_handle:
-                for record in SeqIO.parse(fasta_handle, 'fasta'):
-                    compressed_filebasename = os.path.basename(fasta_file)
-                    fasta_filebasename = os.path.splitext(compressed_filebasename)[0]
-                    filebasename = os.path.splitext(fasta_filebasename)[0]
-                    organism_prots[record.id.split('|')[1]] = filebasename
-
-        number_proteomes = len(cluster_fasta_files[cluster])
-
-        rep_prot_organims = {}
-        computed_threshold_cluster = {}
-        for rep_protein in proteins_representatives:
-            rep_prot_organims[rep_protein] = set([organism_prots[prot] for prot in proteins_representatives[rep_protein]])
-            computed_threshold_cluster[rep_protein] = len(rep_prot_organims[rep_protein]) / number_proteomes
-
-        # Create a tsv file contianing the computer threshold (number of organism in the cluster compared to the total number of organism) for each organisms.
-        computed_threshold_file = os.path.join(computed_threshold, cluster+'.tsv')
-        with open(computed_threshold_file, 'w') as output_file:
-            csvwriter = csv.writer(output_file, delimiter='\t')
-            csvwriter.writerow(['representative_protein', 'cluster_ratio', 'proteomes'])
-            for rep_protein in rep_prot_organims:
-                csvwriter.writerow([rep_protein, computed_threshold_cluster[rep_protein], ','.join(rep_prot_organims[rep_protein])])
-
-        # To keep a cluster, we have to find have at least one protein of each proteome of the OTU (except when using threshold option).
-        rep_prot_to_keeps = []
-        cluster_proteomes_filtered_output_file = os.path.join(reference_proteins, cluster+'.tsv')
-        cluster_proteomes_output_file = os.path.join(cluster_founds, cluster+'.tsv')
-        reference_threshold = (clust_threshold * number_proteomes) / number_proteomes
-        with open(cluster_proteomes_filtered_output_file, 'w') as filtered_output_file, open(cluster_proteomes_output_file, 'w') as output_file:
-            csvwriter = csv.writer(output_file, delimiter='\t')
-            filtered_csvwriter = csv.writer(filtered_output_file, delimiter='\t')
-            for rep_protein in rep_prot_organims:
-                csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
-                if computed_threshold_cluster[rep_protein] >= reference_threshold:
-                    filtered_csvwriter.writerow([rep_protein, *[prot for prot in proteins_representatives[rep_protein]]])
-                    rep_prot_to_keeps.append(rep_protein)
-
-        # Use set for faster search using 'in'.
-        rep_prot_to_keeps = set(rep_prot_to_keeps)
-
-        shutil.copyfile(mmseqs_tmp_representative_fasta, os.path.join(representative_fasta, cluster+'.faa'))
-        shutil.copyfile(mmseqs_consensus_fasta, os.path.join(consensus_fasta, cluster+'.faa'))
         # Create BioPtyhon records with the representative proteins kept.
-        new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta') if record.id.split('|')[1] in rep_prot_to_keeps]
+        new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
 
         # Create output proteome file for OTU.
-        representative_fasta_file = os.path.join(reference_proteins_representative_fasta, cluster+'.faa')
+        representative_fasta_file = os.path.join(reference_proteins_representative_fasta_path, observation_name+'.faa')
         SeqIO.write(new_records, representative_fasta_file, 'fasta')
         del new_records
 
         # Create BioPtyhon records with the consensus proteins kept.
-        consensus_new_records = [record for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta') if record.id.split('|')[1] in rep_prot_to_keeps]
+        consensus_new_records = [record for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
 
         # Create output proteome file for OTU.
-        consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta, cluster+'.faa')
+        consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta_path, observation_name+'.faa')
         SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
         del consensus_new_records
 
@@ -247,9 +327,6 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
 
     proteome_taxon_id_file = os.path.join(proteome_folder, 'proteome_cluster_tax_id.tsv')
     clustering_taxon_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
-
-    stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
-    compute_stat_clustering(reference_proteins, stat_file)
 
     if os.path.exists(clustering_taxon_id_file):
         if not os.path.samefile(proteome_taxon_id_file, clustering_taxon_id_file):

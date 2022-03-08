@@ -2,12 +2,31 @@ import csv
 import os
 import shutil
 
-from esmecata.clustering import make_clustering
+from esmecata.clustering import make_clustering, filter_protein_cluster
+from esmecata.utils import is_valid_path, is_valid_dir
 
 RESULTS = {
     'Cluster_1': {'Number_shared_proteins': 460}
 }
 
+def test_filter_protein_cluster():
+    output_folder = 'output'
+    observation_name = 'Cluster_1'
+    protein_clusters = {'Q89AE4': ['Q89AE4', 'P57473'],
+                        'Q89AY7': ['Q89AY7']}
+    observation_name_proteomes = ['clustering_input/result/Cluster_1/UP000000601.faa.gz', 'clustering_input/result/Cluster_1/UP000001806.faa.gz']
+    clust_threshold = 0.95
+
+    expected_protein = {'Q89AE4'}
+    protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
+
+    assert expected_protein == protein_cluster_to_keeps
+
+    clust_threshold = 0
+    expected_protein = {'Q89AE4', 'Q89AY7'}
+    protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
+
+    assert expected_protein == protein_cluster_to_keeps
 
 
 def test_make_clustering():

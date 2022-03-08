@@ -504,7 +504,6 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
         single_proteomes (dict): observation name (key) associated with proteome ID (when there is only one proteome)
         tax_id_not_founds (dict): mapping between taxon ID and taxon name for taxon ID without proteomes
     """
-
     # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomic affiliation.
     # If there is more than limit_maximal_number_proteomes proteomes a method is applied to extract a subset of the data.
     print('Find proteome ID associated to taxonomic affiliation')
@@ -711,7 +710,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     Args:
         input_file (str): pathname to the tsv input file
-        output (str): pathname to the output folder
+        output_folder (str): pathname to the output folder
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         ignore_taxadb_update (bool): option to ignore ete3 taxa database update
         remove_tmp (bool): remove the tmp files
