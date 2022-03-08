@@ -12,6 +12,7 @@ on:
       - 'CHANGELOG.md'
       - 'esmecata_workflow.png'
       - 'LICENSE'
+      - 'recipes/**'
   pull_request:
     branches: [ master ]
     paths-ignore:
@@ -20,6 +21,7 @@ on:
       - 'esmecata_workflow.png'
       - 'CHANGELOG.md'
       - 'LICENSE'
+      - 'recipes/**'
 
 jobs:
   build:

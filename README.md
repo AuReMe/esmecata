@@ -18,6 +18,8 @@ Warning:
   - [Table of contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Installation](#installation)
+    - [Conda and pip](#conda-and-pip)
+    - [Singularity](#singularity)
   - [Input](#input)
   - [EsMeCaTa commands](#esmecata-commands)
   - [EsMeCaTa functions](#esmecata-functions)
@@ -48,6 +50,8 @@ Also esmecata requires mmseqs2 for protein clustering:
 
 ## Installation
 
+### Conda and pip
+
 The easiest way to install the dependencies of EsMeCaTa is by using conda:
 
 ```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 -c conda-forge -c bioconda```
@@ -65,6 +69,18 @@ It can also be installed using esmecata github directory:
 ```cd esmecata```
 
 ```pip install -e . ```
+
+### Singularity
+
+A Singularity recipe for EsMeCaTa is available [here](https://github.com/AuReMe/esmecata/tree/recipes/Singularity).
+
+The image can be created with the following command:
+
+```sudo singularity build  esmecata.sif Singularity```
+
+And EsMeCaTa can be used with:
+
+```singularity exec esmecata.sif esmecata workflow -i buchnera_workflow.tsv -o output```
 
 ## Input
 
