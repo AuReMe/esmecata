@@ -478,7 +478,27 @@ The `proteome_cluster_tax_id.tsv` file is the same than the one created in `esme
 
 ### EsMeCaTa annotation
 
-c
+````
+output_folder
+├── annotation
+│   └── Cluster_1.tsv
+│   └── ...
+├── annotation_reference
+│   └── Cluster_1.tsv
+│   └── ...
+├── expression_annotation (if --expression option)
+│   └── Cluster_1.tsv
+│   └── ...
+├── pathologic
+│   └── Cluster_1
+│       └── Cluster_1.pf
+│   └── ...
+│   └── taxon_id.tsv
+├── uniref_annotation (if --uniref option)
+│   └── Cluster_1.tsv
+│   └── ...
+├── esmecata_metadata_annotation.json
+````
 
 The `annotation` folder contains a tabulated file for each `observation_name`. It contains the annotation retrieved with Uniprot (protein_name, review, GO Terms, EC numbers, Interpros, Rhea IDs and gene name) associated to all the proteins in a proteome or associated to an `observation_name`.
 
