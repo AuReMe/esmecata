@@ -429,7 +429,372 @@ def compute_stat_annotation(annotation_reference_folder, stat_file):
             csvwriter.writerow([observation_name, annotation_numbers[observation_name][0], annotation_numbers[observation_name][1]])
 
 
+def extract_protein_cluster(reference_protein_pathname):
+    """Extract proteins from mmseqs tabulated file
+
+    Args:
+        reference_protein_pathname (str): pathname to mmseqs protein cluster tabulated file
+
+    Returns:
+        reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
+        set_proteins (set): set all of proteins present in the mmseqs tabulated file
+    """
+    proteins = []
+
+    reference_proteins = {}
+    with open(reference_protein_pathname, 'r') as input_file:
+        csvreader = csv.reader(input_file, delimiter='\t')
+        for line in csvreader:
+            if line != '':
+                proteins.extend(line)
+                reference_proteins[line[0]] = line[1:]
+
+    set_proteins = set(proteins)
+
+    return reference_proteins, set_proteins
+
+
+def search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict):
+    """Use protein annotations already retrieved from UniProt to avoid new queries.
+    This option read annotation file to retrived annotation, it is slower thant the second one (search_already_annotated_protein)) but less heavy on memory.
+
+    Args:
+        set_proteins (set): set all of proteins present in the mmseqs tabulated file
+        already_annotated_proteins_in_file (dict): the already annotated protein ID (as key) and the annotation file containing its annotation (as value)
+        annotation_folder (str): pathname to the annotation folder to retrieve annotation file
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+
+    Returns:
+        protein_to_search_on_uniprots (set): set of proteins not already annotated that will need UniProt queries
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+    """
+    # Retrieve already annotated protein using the annotation files from the annotation_folder.
+    alreay_annotated_set = set(already_annotated_proteins_in_file.keys())
+    reference_files = {}
+    for protein in set_proteins:
+        if protein in alreay_annotated_set:
+            reference_file = already_annotated_proteins_in_file[protein]
+            if reference_file not in reference_files:
+                reference_files[reference_file] = [protein]
+            else:
+                reference_files[reference_file].append(protein)
+
+    protein_to_remove = []
+    for reference_file in reference_files:
+        already_annotated_file = os.path.join(annotation_folder, reference_file+'.tsv')
+        with open(already_annotated_file) as already_process_file:
+            csvreader = csv.reader(already_process_file, delimiter='\t')
+            for line in csvreader:
+                if line[0] in set(reference_files[reference_file]):
+                    protein_name = line[1]
+                    review = line[2]
+                    gos = line[3].split(',')
+                    ecs = line[4].split(',')
+                    interpros = line[5].split(',')
+                    rhea_ids = line[6].split(',')
+                    gene_name = line[7]
+                    output_dict[line[0]] = [protein_name, review, gos, ecs, interpros, rhea_ids, gene_name]
+                    protein_to_remove.append(line[0])
+
+    protein_to_search_on_uniprots = set_proteins.difference(set(protein_to_remove))
+
+    return protein_to_search_on_uniprots, output_dict
+
+
+def search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict):
+    """Use protein annotations already retrieved from UniProt to avoid new queries.
+    This option is not used as I fear that it takes a lot of memory to keep each proteins found.
+
+    Args:
+        set_proteins (set): set all of proteins present in the mmseqs tabulated file
+        already_annotated_proteins (dict): the already annotated protein ID (as key) and the annotation associated (as value)
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+
+    Returns:
+        protein_to_search_on_uniprots (set): set of proteins not already annotated that will need UniProt queries
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+    """
+    alreay_annotated_set = set(already_annotated_proteins.keys())
+    protein_to_remove = []
+    for protein in set_proteins:
+        if protein in alreay_annotated_set:
+            output_dict[protein] = already_annotated_proteins[protein]
+            protein_to_remove.append(protein)
+
+    protein_to_search_on_uniprots = set_proteins.difference(set(protein_to_remove))
+
+    return protein_to_search_on_uniprots, output_dict
+
+
+def query_uniprot_annotation_rest(protein_to_search_on_uniprots, beta, output_dict):
+    """Query UniProt with REST to find protein annotations
+
+    Args:
+        protein_to_search_on_uniprots (set): set of proteins not already annotated that will need UniProt queries
+        beta (bool): option to use the new API of UniProt (in beta can be unstable)
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+
+    Returns:
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+    """
+    # The limit of 20 000 proteins per query comes from the help of Uniprot:
+    # https://www.uniprot.org/help/uploadlists
+    if len(protein_to_search_on_uniprots) < 20000:
+        if not beta:
+            protein_queries = ' '.join(protein_to_search_on_uniprots)
+        else:
+            protein_queries = ','.join(protein_to_search_on_uniprots)
+        tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, beta)
+        output_dict.update(tmp_output_dict)
+        time.sleep(1)
+    else:
+        protein_chunks = chunks(list(protein_to_search_on_uniprots), 20000)
+        for chunk in protein_chunks:
+            if not beta:
+                protein_queries = ' '.join(chunk)
+            else:
+                protein_queries = ','.join(chunk)
+            tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, beta)
+            output_dict.update(tmp_output_dict)
+            time.sleep(1)
+
+    return output_dict
+
+
+def query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_dict):
+    """Query UniProt with SPARQL to find protein annotations
+
+    Args:
+        proteomes (dict): list of proteomes to use as query
+        uniprot_sparql_endpoint (str): SPARQL endpoint to uniprot database
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+
+    Returns:
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+    """
+    # Query Uniprot to get the annotation of each proteins.
+    # Add a limit of 100 proteomes per query.
+    if len(proteomes) > 100:
+        proteomes_chunks = chunks(list(proteomes), 100)
+        for proteome_chunk in proteomes_chunks:
+            tmp_output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteome_chunk, uniprot_sparql_endpoint))
+            output_dict.update(tmp_output_dict)
+            time.sleep(1)
+    else:
+        tmp_output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint))
+        output_dict.update(tmp_output_dict)
+        time.sleep(1)
+
+    return output_dict
+
+
+def write_annotation_file(output_dict, annotation_file):
+    """Write annotation file from annotated protein retrieverd from UniProt
+
+    Args:
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+        annotation_file (str): pathname to output tabulated file
+    """
+    with open(annotation_file, 'w') as output_tsv:
+        csvwriter = csv.writer(output_tsv, delimiter='\t')
+        csvwriter.writerow(['protein_id', 'protein_name', 'review', 'gos', 'ecs', 'interpros', 'rhea_ids', 'gene_name'])
+        for protein in output_dict:
+            protein_name = output_dict[protein][0]
+            protein_review_satus = str(output_dict[protein][1])
+            go_terms = ','.join(sorted(output_dict[protein][2]))
+            ec_numbers = ','.join(sorted(output_dict[protein][3]))
+            interpros = ','.join(sorted(output_dict[protein][4]))
+            rhea_ids = ','.join(sorted(output_dict[protein][5]))
+            gene_name = output_dict[protein][6]
+
+            csvwriter.writerow([protein, protein_name, protein_review_satus, go_terms, ec_numbers, interpros, rhea_ids, gene_name])
+
+
+def retrieve_annotation_from_uniref(proteomes, uniprot_sparql_endpoint, uniref_annotation_file):
+    """Query UniProt uniref with SPARQL to find protein annotations
+
+    Args:
+        proteomes (dict): list of proteomes to use as query
+        uniprot_sparql_endpoint (str): SPARQL endpoint to uniprot database
+        uniref_annotation_file (str): tabulated file containing annotation
+
+    Returns:
+        uniref_output_dict (dict): annotation dict: protein as key and annotation as value
+    """
+    uniref_output_dict = {}
+    uniref_output_dict = sparql_query_uniprot_annotation_uniref(proteomes, uniref_output_dict, uniprot_sparql_endpoint)
+
+    with open(uniref_annotation_file, 'w') as output_tsv:
+        csvwriter = csv.writer(output_tsv, delimiter='\t')
+        csvwriter.writerow(['protein_id', 'gos', 'ecs', 'uniref_cluster', 'representative_member'])
+        for protein in uniref_output_dict:
+            go_terms = ','.join(sorted(uniref_output_dict[protein][0]))
+            ec_numbers = ','.join(sorted(uniref_output_dict[protein][1]))
+            cluster_id = uniref_output_dict[protein][2]
+            representative_member = uniref_output_dict[protein][3]
+            csvwriter.writerow([protein, go_terms, ec_numbers, cluster_id, representative_member])
+
+    return uniref_output_dict
+
+
+def retrieve_expresion_from_uniprot(proteomes, uniprot_sparql_endpoint, expression_annotation_file):
+    """Query UniProt uniref with SPARQL to find expression data associated to protein
+
+    Args:
+        proteomes (dict): list of proteomes to use as query
+        uniprot_sparql_endpoint (str): SPARQL endpoint to uniprot database
+        expression_annotation_file (str): tabulated file containing expression data
+
+    Returns:
+        expression_output_dict (dict): expression dict: protein as key and expression as value
+    """
+    expression_output_dict = {}
+    expression_output_dict = sparql_query_uniprot_expression(proteomes, expression_output_dict, uniprot_sparql_endpoint)
+    with open(expression_annotation_file, 'w') as output_tsv:
+        csvwriter = csv.writer(output_tsv, delimiter='\t')
+        csvwriter.writerow(['protein_id', 'Induction_Annotation', 'Tissue_Specificity_Annotation', 'Disruption_Phenotype_Annotation'])
+        for protein in expression_output_dict:
+            induction = expression_output_dict[protein][0]
+            tissue_specificity = expression_output_dict[protein][1]
+            disruption = expression_output_dict[protein][2]
+            csvwriter.writerow([protein, induction, tissue_specificity, disruption])
+
+    return expression_output_dict
+
+
+def propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict):
+    """Propagate the annotation in the cluster. If propagate_annotation is None, will only return annotations from representative proteins.
+    If propagate_annotation is 0 meaning all the annotations from all the protein in the cluster will be used (union of annotations).
+    If propagate_annotation is 1 an annotation is kept only if it occurs in all protein of the clsuter (intersection of annotation).
+
+    Args:
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+        reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
+        propagate_annotation (float): float between 0 and 1. It is the ratio of proteins in the cluster that should have the annotation to keep this annotation.
+        uniref_output_dict (dict): annotation dict: protein as key and annotation as value
+
+    Returns:
+        protein_annotations (dict): annotation dict: protein as key and annotation as value ([function_name, [go_terms], [ec_numbers], gene_name])
+    """
+    # For each reference protein, get the annotation of the other proteins clustered with it and add to its annotation.
+    protein_annotations = {}
+    for reference_protein in reference_proteins:
+        if propagate_annotation is not None:
+            gos = []
+            ecs = []
+            gene_names = []
+            protein_names = []
+            for protein in reference_proteins[reference_protein]:
+                if protein in output_dict:
+                    if output_dict[protein][0] != '':
+                        protein_names.append(output_dict[protein][0])
+                    if output_dict[protein][2] != []:
+                        gos.append(list(set(output_dict[protein][2])))
+                    if output_dict[protein][3] != []:
+                        ecs.append(list(set(output_dict[protein][3])))
+                    if output_dict[protein][6] != '':
+                        gene_names.append(output_dict[protein][6])
+
+            keep_gos = []
+            keep_ecs = []
+            keep_gene_names = ''
+            keep_protein_names = ''
+            # Propagate all the annotations (GO, EC) that have been found to occur in at least X proteins of the cluster. Where X is computed using the ratio given by the user and
+            # the number of proteins in the cluster.
+            if len(gos) > 0:
+                all_gos = set([go for subgos in gos for go in subgos])
+                keep_gos = [go for go in all_gos if sum(subgos.count(go) for subgos in gos) >= propagate_annotation * len(reference_proteins[reference_protein])]
+            if len(ecs) > 0:
+                all_ecs = set([ec for subecs in ecs for ec in subecs])
+                keep_ecs = [ec for ec in all_ecs if sum(subecs.count(ec) for subecs in ecs) >= propagate_annotation * len(reference_proteins[reference_protein])]
+            # Retrieve the gene and protein names by using the gene/protein name which the maximum occurrence in the proteins of the cluster.
+            if len(gene_names) > 0:
+                keep_gene_names = max(gene_names,key=gene_names.count)
+            if len(protein_names) > 0:
+                keep_protein_names = max(protein_names,key=protein_names.count)
+
+            protein_annotations[reference_protein] = [keep_protein_names, keep_gos, keep_ecs, keep_gene_names]
+        else:
+            # Use only annotation from representative proteins.
+            protein_name = output_dict[reference_protein][0]
+            gos = output_dict[reference_protein][2]
+            ecs = output_dict[reference_protein][3]
+            gene_name = output_dict[reference_protein][6]
+            protein_annotations[reference_protein] = [protein_name, gos, ecs, gene_name]
+
+        # Propagate anntoations from Uniref
+        if uniref_output_dict is not None:
+            uniref_gos = uniref_output_dict[reference_protein][0]
+            uniref_ecs = uniref_output_dict[reference_protein][1]
+
+            protein_annotations[reference_protein][1].extend(uniref_gos)
+            protein_annotations[reference_protein][2].extend(uniref_ecs)
+
+            protein_annotations[reference_protein][1] = set(protein_annotations[reference_protein][1])
+            protein_annotations[reference_protein][2] = set(protein_annotations[reference_protein][2])
+
+    return protein_annotations
+
+
+def write_annotation_reference(protein_annotations, annotation_reference_file, expression_output_dict):
+    """Write the annotation associated to a cluster after propagation step.
+
+    Args:
+        protein_annotations (dict): annotation dict: protein as key and annotation as value ([function_name, [go_terms], [ec_numbers], gene_name])
+        annotation_reference_file (str): pathname to output tabulated file
+        expression_output_dict (dict): expression dict: protein as key and expression as value
+    """
+    with open(annotation_reference_file, 'w') as output_tsv:
+        csvwriter = csv.writer(output_tsv, delimiter='\t')
+        if expression_output_dict:
+            csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC', 'Induction', 'Tissue_Specificity', 'Disruption_Phenotype'])
+        else:
+            csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC'])
+        for protein in protein_annotations:
+            protein_name = protein_annotations[protein][0]
+            gene_name = protein_annotations[protein][3]
+            gos = ','.join(sorted(list(protein_annotations[protein][1])))
+            ecs = ','.join(sorted(list(protein_annotations[protein][2])))
+            if expression_output_dict:
+                induction = expression_output_dict[protein][0]
+                tissue_specificity = expression_output_dict[protein][1]
+                disruption = expression_output_dict[protein][2]
+                csvwriter.writerow([protein, protein_name, gene_name, gos, ecs, induction, tissue_specificity, disruption])
+            else:
+                csvwriter.writerow([protein, protein_name, gene_name, gos, ecs])
+
+
+def write_pathologic_file(protein_annotations, pathologic_folder, base_filename, set_proteins):
+    """Write the annotation associated to a cluster after propagation step into pathologic file for run on Pathway Tools.
+
+    Args:
+        protein_annotations (dict): annotation dict: protein as key and annotation as value ([function_name, [go_terms], [ec_numbers], gene_name])
+        pathologic_folder (str): pathname to output pathologic folder
+        base_filename (str): observation name
+        set_proteins (set): set of proteins in the mmseqs tabulated file
+    """
+    # Create PathoLogic file and folder for each input.
+    annotated_protein_to_keeps = {protein: protein_annotations[protein] for protein in protein_annotations if protein in set_proteins}
+    if len(annotated_protein_to_keeps) > 0:
+        pathologic_organism_folder = os.path.join(pathologic_folder, base_filename)
+        is_valid_dir(pathologic_organism_folder)
+        pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
+        create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_file)
+    elif len(annotated_protein_to_keeps) == 0:
+        print('No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
+
+
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation, beta=None):
+    """Write the annotation associated to a cluster after propagation step into pathologic file for run on Pathway Tools.
+
+    Args:
+        input_folder (str): pathname to mmseqs clustering output folder as it is the input of annotation
+        output_folder (str): pathname to the output folder
+        propagate_annotation (float): float between 0 and 1. It is the ratio of proteins in the cluster that should have the annotation to keep this annotation.
+        uniref_annotation (bool): option to use uniref annotation to add annotation
+        expression_annotation (bool): option to add expression annotation from uniprot
+        beta (bool): option to use the new API of UniProt (in beta can be unstable)
+    """
     starttime = time.time()
 
     if uniprot_sparql_endpoint is None and uniref_annotation is not None:
@@ -486,219 +851,53 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                 input_proteomes[line[0]] = line[4].split(',')
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
+    # There is 2 ways to handle already annotated proteins:
+    # one keeping all the proteins in a dicitonary during all the analysis (I fear an issue with the memory).
     already_annotated_proteins = {}
+    # a second that use the annotation from the annotation files associated to the proteins.
+    # It is slower as it reads the annotation file to retrieve the annotation, but I think it is less heavy on the memory.
+    already_annotated_proteins_in_file = {}
     for input_file in os.listdir(reference_protein_path):
         base_file = os.path.basename(input_file)
         base_filename = os.path.splitext(base_file)[0]
-        proteins = []
-        reference_protein_list_file = os.path.join(reference_protein_path, input_file)
+
+        output_dict = {}
+        reference_protein_pathname = os.path.join(reference_protein_path, input_file)
+        reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
+
+        # First method to handle protein already annotated
+        #protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
+        # Second method to handle protein already annotated
+        protein_to_search_on_uniprots, output_dict = search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict)
+
+        if uniprot_sparql_endpoint:
+            proteomes = input_proteomes[base_filename]
+            output_dict = query_uniprot_annotation_sparql(proteomes, base_filename, uniprot_sparql_endpoint, output_dict)
+        else:
+            output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, beta, output_dict)
+
+        # First method to handle protein already annotated
+        #already_annotated_proteins.update({protein: output_dict[protein] for protein in output_dict if protein not in already_annotated_proteins})
+        # Second method to handle protein already annotated
+        for protein in output_dict:
+            already_annotated_proteins_in_file[protein] = base_filename
 
         annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
+        write_annotation_file(output_dict, annotation_file)
+        if uniref_annotation and uniprot_sparql_endpoint:
+            uniref_annotation_file = os.path.join(uniref_protein_path, base_filename+'.tsv')
+            uniref_output_dict = retrieve_annotation_from_uniref(proteomes, uniprot_sparql_endpoint, uniref_annotation_file)
+        else:
+            uniref_output_dict = None
+        if expression_annotation and uniprot_sparql_endpoint:
+            expression_annotation_file = os.path.join(expression_protein_path, base_filename+'.tsv')
+            expression_output_dict = retrieve_expresion_from_uniprot(proteomes, uniprot_sparql_endpoint, expression_annotation_file)
+        else:
+            expression_output_dict = None
+        protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
         annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
-
-        if not os.path.exists(annotation_reference_file):
-            reference_proteins = {}
-            with open(reference_protein_list_file, 'r') as input_file:
-                csvreader = csv.reader(input_file, delimiter='\t')
-                for line in csvreader:
-                    if line != '':
-                        proteins.extend(line)
-                        reference_proteins[line[0]] = line[1:]
-
-            set_proteins = set(proteins)
-            # Retrieve already annotated protein using the annotation files from the annotation_folder.
-            output_dict = {}
-            alreay_annotated_set = set(already_annotated_proteins.keys())
-            reference_files = {}
-            for protein in set_proteins:
-                if protein in alreay_annotated_set:
-                    reference_file = already_annotated_proteins[protein]
-                    if reference_file not in reference_files:
-                        reference_files[reference_file] = [protein]
-                    else:
-                        reference_files[reference_file].append(protein)
-
-            protein_to_remove = []
-            for reference_file in reference_files:
-                already_annotated_file = os.path.join(annotation_folder, reference_file+'.tsv')
-                with open(already_annotated_file) as already_process_file:
-                    csvreader = csv.reader(already_process_file, delimiter='\t')
-                    for line in csvreader:
-                        if line[0] in set(reference_files[reference_file]):
-                            protein_name = line[1]
-                            review = line[2]
-                            gos = line[3].split(',')
-                            ecs = line[4].split(',')
-                            interpros = line[5].split(',')
-                            rhea_ids = line[6].split(',')
-                            gene_name = line[7]
-                            output_dict[line[0]] = [protein_name, review, gos, ecs, interpros, rhea_ids, gene_name]
-                            protein_to_remove.append(line[0])
-
-            protein_to_search_on_uniprots = set_proteins.difference(set(protein_to_remove))
-            # Query Uniprot to get the annotation of each proteins.
-            # Add a limit of 100 proteomes per query.
-            if uniprot_sparql_endpoint:
-                proteomes = input_proteomes[base_filename]
-                if len(proteomes) > 100:
-                    proteomes_chunks = chunks(list(proteomes), 100)
-                    for proteome_chunk in proteomes_chunks:
-                        tmp_output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteome_chunk, uniprot_sparql_endpoint))
-                        output_dict.update(tmp_output_dict)
-                        time.sleep(1)
-                else:
-                    tmp_output_dict = dict(sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint))
-                    output_dict.update(tmp_output_dict)
-                    time.sleep(1)
-            # The limit of 20 000 proteins per query comes from the help of Uniprot:
-            # https://www.uniprot.org/help/uploadlists
-            else:
-                if len(protein_to_search_on_uniprots) < 20000:
-                    if not beta:
-                        protein_queries = ' '.join(protein_to_search_on_uniprots)
-                    else:
-                        protein_queries = ','.join(protein_to_search_on_uniprots)
-                    tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, beta)
-                    output_dict.update(tmp_output_dict)
-                    time.sleep(1)
-                else:
-                    protein_chunks = chunks(list(protein_to_search_on_uniprots), 20000)
-                    for chunk in protein_chunks:
-                        if not beta:
-                            protein_queries = ' '.join(chunk)
-                        else:
-                            protein_queries = ','.join(chunk)
-                        tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, beta)
-                        output_dict.update(tmp_output_dict)
-                        time.sleep(1)
-
-            with open(annotation_file, 'w') as output_tsv:
-                csvwriter = csv.writer(output_tsv, delimiter='\t')
-                csvwriter.writerow(['protein_id', 'protein_name', 'review', 'gos', 'ecs', 'interpros', 'rhea_ids', 'gene_name'])
-                for protein in output_dict:
-                    already_annotated_proteins[protein] = base_filename
-                    protein_name = output_dict[protein][0]
-                    protein_review_satus = str(output_dict[protein][1])
-                    go_terms = ','.join(sorted(output_dict[protein][2]))
-                    ec_numbers = ','.join(sorted(output_dict[protein][3]))
-                    interpros = ','.join(sorted(output_dict[protein][4]))
-                    rhea_ids = ','.join(sorted(output_dict[protein][5]))
-                    gene_name = output_dict[protein][6]
-
-                    csvwriter.writerow([protein, protein_name, protein_review_satus, go_terms, ec_numbers, interpros, rhea_ids, gene_name])
-
-            if uniref_annotation:
-                if uniprot_sparql_endpoint:
-                    uniref_output_dict = {}
-                    uniref_output_dict = sparql_query_uniprot_annotation_uniref(proteomes, uniref_output_dict, uniprot_sparql_endpoint)
-                    uniref_annotation_file = os.path.join(uniref_protein_path, base_filename+'.tsv')
-                    with open(uniref_annotation_file, 'w') as output_tsv:
-                        csvwriter = csv.writer(output_tsv, delimiter='\t')
-                        csvwriter.writerow(['protein_id', 'gos', 'ecs', 'uniref_cluster', 'representative_member'])
-                        for protein in uniref_output_dict:
-                            go_terms = ','.join(sorted(uniref_output_dict[protein][0]))
-                            ec_numbers = ','.join(sorted(uniref_output_dict[protein][1]))
-                            cluster_id = uniref_output_dict[protein][2]
-                            representative_member = uniref_output_dict[protein][3]
-                            csvwriter.writerow([protein, go_terms, ec_numbers, cluster_id, representative_member])
-
-            if expression_annotation:
-                if uniprot_sparql_endpoint:
-                    expression_output_dict = {}
-                    expression_output_dict = sparql_query_uniprot_expression(proteomes, expression_output_dict, uniprot_sparql_endpoint)
-                    expression_annotation_file = os.path.join(expression_protein_path, base_filename+'.tsv')
-                    with open(expression_annotation_file, 'w') as output_tsv:
-                        csvwriter = csv.writer(output_tsv, delimiter='\t')
-                        csvwriter.writerow(['protein_id', 'Induction_Annotation', 'Tissue_Specificity_Annotation', 'Disruption_Phenotype_Annotation'])
-                        for protein in expression_output_dict:
-                            induction = expression_output_dict[protein][0]
-                            tissue_specificity = expression_output_dict[protein][1]
-                            disruption = expression_output_dict[protein][2]
-                            csvwriter.writerow([protein, induction, tissue_specificity, disruption])
-
-            # For each reference protein, get the annotation of the other proteins clustered with it and add to its annotation.
-            protein_annotations = {}
-            for reference_protein in reference_proteins:
-                if propagate_annotation is not None:
-                    gos = []
-                    ecs = []
-                    gene_names = []
-                    protein_names = []
-                    for protein in reference_proteins[reference_protein]:
-                        if protein in output_dict:
-                            if output_dict[protein][0] != '':
-                                protein_names.append(output_dict[protein][0])
-                            if output_dict[protein][2] != []:
-                                gos.append(list(set(output_dict[protein][2])))
-                            if output_dict[protein][3] != []:
-                                ecs.append(list(set(output_dict[protein][3])))
-                            if output_dict[protein][6] != '':
-                                gene_names.append(output_dict[protein][6])
-
-                    keep_gos = []
-                    keep_ecs = []
-                    keep_gene_names = ''
-                    keep_protein_names = ''
-                    # Propagate all the annotations (GO, EC) that have been found to occur in at least X proteins of the cluster. Where X is computed using the ratio given by the user and
-                    # the number of proteins in the cluster.
-                    if len(gos) > 0:
-                        all_gos = set([go for subgos in gos for go in subgos])
-                        keep_gos = [go for go in all_gos if sum(subgos.count(go) for subgos in gos) >= propagate_annotation * len(reference_proteins[reference_protein])]
-                    if len(ecs) > 0:
-                        all_ecs = set([ec for subecs in ecs for ec in subecs])
-                        keep_ecs = [ec for ec in all_ecs if sum(subecs.count(ec) for subecs in ecs) >= propagate_annotation * len(reference_proteins[reference_protein])]
-                    # Retrieve the gene and protein names by using the gene/protein name which the maximum occurrence in the proteins of the cluster.
-                    if len(gene_names) > 0:
-                        keep_gene_names = max(gene_names,key=gene_names.count)
-                    if len(protein_names) > 0:
-                        keep_protein_names = max(protein_names,key=protein_names.count)
-
-                    protein_annotations[reference_protein] = [keep_protein_names, keep_gos, keep_ecs, keep_gene_names]
-                else:
-                    protein_name = output_dict[reference_protein][0]
-                    gos = output_dict[reference_protein][2]
-                    ecs = output_dict[reference_protein][3]
-                    gene_name = output_dict[reference_protein][6]
-                    protein_annotations[reference_protein] = [protein_name, gos, ecs, gene_name]
-                if uniref_annotation:
-                    uniref_gos = uniref_output_dict[reference_protein][0]
-                    uniref_ecs = uniref_output_dict[reference_protein][1]
-
-                    protein_annotations[reference_protein][1].extend(uniref_gos)
-                    protein_annotations[reference_protein][2].extend(uniref_ecs)
-
-                    protein_annotations[reference_protein][1] = set(protein_annotations[reference_protein][1])
-                    protein_annotations[reference_protein][2] = set(protein_annotations[reference_protein][2])
-
-
-            with open(annotation_reference_file, 'w') as output_tsv:
-                csvwriter = csv.writer(output_tsv, delimiter='\t')
-                if expression_annotation:
-                    csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC', 'Induction', 'Tissue_Specificity', 'Disruption_Phenotype'])
-                else:
-                    csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC'])
-                for protein in protein_annotations:
-                    protein_name = protein_annotations[protein][0]
-                    gene_name = protein_annotations[protein][3]
-                    gos = ','.join(sorted(list(protein_annotations[protein][1])))
-                    ecs = ','.join(sorted(list(protein_annotations[protein][2])))
-                    if expression_annotation:
-                        induction = expression_output_dict[protein][0]
-                        tissue_specificity = expression_output_dict[protein][1]
-                        disruption = expression_output_dict[protein][2]
-                        csvwriter.writerow([protein, protein_name, gene_name, gos, ecs, induction, tissue_specificity, disruption])
-                    else:
-                        csvwriter.writerow([protein, protein_name, gene_name, gos, ecs])
-
-            # Create PathoLogic file and folder for each input.
-            annotated_protein_to_keeps = {protein: protein_annotations[protein] for protein in protein_annotations if protein in set_proteins}
-            if len(annotated_protein_to_keeps) > 0:
-                pathologic_organism_folder = os.path.join(pathologic_folder, base_filename)
-                is_valid_dir(pathologic_organism_folder)
-                pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
-                create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_file)
-            elif len(annotated_protein_to_keeps) == 0:
-                print('No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
+        write_annotation_reference(protein_annotations, annotation_reference_file, expression_output_dict)
+        write_pathologic_file(protein_annotations, pathologic_folder, base_filename, set_proteins)
 
     # Create mpwt taxon ID file.
     clustering_taxon_id = {}
@@ -720,7 +919,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
 
     endtime = time.time()
     duration = endtime - starttime
-    uniprot_releases['esmecata_annotaiton_duration'] = duration
+    uniprot_releases['esmecata_annotation_duration'] = duration
     uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(uniprot_releases, ouput_file, indent=4)

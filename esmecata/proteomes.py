@@ -29,7 +29,7 @@ REQUESTS_HEADERS = {'User-Agent': 'EsMeCaTa proteomes v' + esmecata_version + ',
 
 
 def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi=None):
-    """ From a taxonomic affiliaiton (such as cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria) find corresponding taxon ID for each taxon.
+    """ From a taxonomic affiliation (such as cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria) find corresponding taxon ID for each taxon.
 
     Args:
         observation_name (str): observation name associated to taxonomic affiliation
