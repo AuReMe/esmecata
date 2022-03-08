@@ -28,7 +28,9 @@ jobs:
         platform: [ubuntu-latest]
         python-version: [3.7]
     runs-on: ${{ matrix.platform }}
-
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -41,7 +43,6 @@ jobs:
         conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 -c conda-forge -c bioconda
     - name: Test with pytest
       run: |
-        conda info
         conda activate test_env
         pip install -e .
         pip install pytest
