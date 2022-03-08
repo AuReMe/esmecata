@@ -39,9 +39,9 @@ jobs:
       run: |
         conda create -n test_env python=${{ matrix.python-version }}
         conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 -c conda-forge -c bioconda
-        conda info
     - name: Test with pytest
       run: |
+        conda info
         conda activate test_env
         pip install -e .
         pip install pytest
