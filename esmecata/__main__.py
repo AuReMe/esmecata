@@ -148,7 +148,7 @@ def main():
         help='Proportion [0 to 1] of the frequence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotations from all proteins are propagated to the reference and 1 only the annotation occurring in all the proteins of the cluster.',
         required=False,
         type=range_limited_float_type,
-        default=1)
+        default=None)
     parent_parser_uniref = argparse.ArgumentParser(add_help=False)
     parent_parser_uniref.add_argument(
         '--uniref',
