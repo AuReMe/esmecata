@@ -683,12 +683,15 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
-def compute_stat_proteomes(result_folder, stat_file):
+def compute_stat_proteomes(result_folder, stat_file=None):
     """Compute stat associated to the number of proteome for each taxonomic affiliations.
 
     Args:
         result_folder (str): pathname to the result folder containing subfolder containing proteomes
         stat_file (str): pathname to the tsv stat file
+
+    Returns:
+        clustering_numbers (dict): dict containing observation names (as key) associated with the number of proteomes
     """
     proteome_numbers = {}
     for folder in os.listdir(result_folder):
@@ -696,11 +699,14 @@ def compute_stat_proteomes(result_folder, stat_file):
         number_proteome = len([proteome for proteome in os.listdir(result_folder_path)])
         proteome_numbers[folder] = number_proteome
 
-    with open(stat_file, 'w') as stat_file_open:
-        csvwriter = csv.writer(stat_file_open, delimiter='\t')
-        csvwriter.writerow(['observation_name', 'Number_proteomes'])
-        for observation_name in proteome_numbers:
-            csvwriter.writerow([observation_name, proteome_numbers[observation_name]])
+    if stat_file:
+        with open(stat_file, 'w') as stat_file_open:
+            csvwriter = csv.writer(stat_file_open, delimiter='\t')
+            csvwriter.writerow(['observation_name', 'Number_proteomes'])
+            for observation_name in proteome_numbers:
+                csvwriter.writerow([observation_name, proteome_numbers[observation_name]])
+
+    return proteome_numbers
 
 
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
@@ -709,7 +715,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     """From a tsv file with taxonomic affiliations find the associated proteomes.
 
     Args:
-        input_file (str): pathname to the tsv input file
+        input_file (str): pathname to the tsv input file containing taxonomic affiliations
         output_folder (str): pathname to the output folder
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         ignore_taxadb_update (bool): option to ignore ete3 taxa database update

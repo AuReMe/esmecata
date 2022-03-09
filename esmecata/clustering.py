@@ -15,12 +15,15 @@ from esmecata import __version__ as esmecata_version
 from esmecata.utils import is_valid_path, is_valid_dir
 
 
-def compute_stat_clustering(result_folder, stat_file):
+def compute_stat_clustering(result_folder, stat_file=None):
     """Compute stat associated to the number of proteome for each taxonomic affiliations.
 
     Args:
         result_folder (str): pathname to the result folder containing mmseqs results
         stat_file (str): pathname to the tsv stat file
+
+    Returns:
+        clustering_numbers (dict): dict containing observation names (as key) associated with the number of protein clusters
     """
     clustering_numbers = {}
     for clustering_file in os.listdir(result_folder):
@@ -28,11 +31,14 @@ def compute_stat_clustering(result_folder, stat_file):
         num_lines = sum(1 for line in open(clustering_file_path))
         clustering_numbers[clustering_file.replace('.tsv', '')] = num_lines
 
-    with open(stat_file, 'w') as stat_file_open:
-        csvwriter = csv.writer(stat_file_open, delimiter='\t')
-        csvwriter.writerow(['observation_name', 'Number_shared_proteins'])
-        for observation_name in clustering_numbers:
-            csvwriter.writerow([observation_name, clustering_numbers[observation_name]])
+    if stat_file:
+        with open(stat_file, 'w') as stat_file_open:
+            csvwriter = csv.writer(stat_file_open, delimiter='\t')
+            csvwriter.writerow(['observation_name', 'Number_protein_clusters'])
+            for observation_name in clustering_numbers:
+                csvwriter.writerow([observation_name, clustering_numbers[observation_name]])
+
+    return clustering_numbers
 
 
 def run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust):
@@ -210,7 +216,7 @@ def filter_protein_cluster(observation_name, protein_clusters, observation_name_
 
 
 def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp):
-    """From a tsv file with taxonomic affiliations find the associated proteomes.
+    """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
         proteome_folder (str): pathname to folder from esmecata folder

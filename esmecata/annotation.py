@@ -453,12 +453,15 @@ def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_outp
             element_file.write('//\n\n')
 
 
-def compute_stat_annotation(annotation_reference_folder, stat_file):
+def compute_stat_annotation(annotation_reference_folder, stat_file=None):
     """Compute stat associated to the number of proteome for each taxonomic affiliations.
 
     Args:
         annotation_reference_folder (str): pathname to the annotation reference folder containing annotations for each cluster
         stat_file (str): pathname to the tsv stat file
+
+    Returns:
+        annotation_numbers (dict): dict containing observation names (as key) associated with GO Terms and EC (as value)
     """
     annotation_numbers = {}
     for infile in os.listdir(annotation_reference_folder):
@@ -478,11 +481,14 @@ def compute_stat_annotation(annotation_reference_folder, stat_file):
             infile_ecs = set([ec for ec in infile_ecs if ec != ''])
             annotation_numbers[infile.replace('.tsv','')] = (len(infile_gos), len(infile_ecs))
 
-    with open(stat_file, 'w') as stat_file_open:
-        csvwriter = csv.writer(stat_file_open, delimiter='\t')
-        csvwriter.writerow(['observation_name', 'Number_go_terms', 'Number_ecs'])
-        for observation_name in annotation_numbers:
-            csvwriter.writerow([observation_name, annotation_numbers[observation_name][0], annotation_numbers[observation_name][1]])
+    if stat_file:
+        with open(stat_file, 'w') as stat_file_open:
+            csvwriter = csv.writer(stat_file_open, delimiter='\t')
+            csvwriter.writerow(['observation_name', 'Number_go_terms', 'Number_ecs'])
+            for observation_name in annotation_numbers:
+                csvwriter.writerow([observation_name, annotation_numbers[observation_name][0], annotation_numbers[observation_name][1]])
+
+    return annotation_numbers
 
 
 def extract_protein_cluster(reference_protein_pathname):

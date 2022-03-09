@@ -3,63 +3,63 @@ import json
 import os
 import time
 
-from esmecata.proteomes import retrieve_proteomes
-from esmecata.clustering import make_clustering
-from esmecata.annotation import annotate_proteins
+from esmecata.proteomes import retrieve_proteomes, compute_stat_proteomes
+from esmecata.clustering import make_clustering, compute_stat_clustering
+from esmecata.annotation import annotate_proteins, compute_stat_annotation
 
-def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file):
+
+def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file=None):
+    """Compute stat associated to the number of proteome for each taxonomic affiliations.
+
+    Args:
+        proteomes_output_folder (str): pathname to the result folder containing subfolder containing proteomes
+        clustering_output_folder (str): pathname to the result folder containing mmseqs results
+        annotation_output_folder (str): pathname to the annotation reference folder containing annotations for each cluster
+        stat_file (str): pathname to the tsv stat file
+
+    Returns:
+        workflow_numbers (dict): dict containing observation names (as key) associated with proteomes, protein clusters, GO Terms and EC (as value)
+    """
+    workflow_numbers = {}
+
     result_folder = os.path.join(proteomes_output_folder, 'result')
-    proteome_numbers = {}
-    for folder in os.listdir(result_folder):
-        result_folder_path = os.path.join(result_folder, folder)
-        number_proteome = len([proteome for proteome in os.listdir(result_folder_path)])
-        proteome_numbers[folder] = number_proteome
+    proteome_numbers = compute_stat_proteomes(result_folder)
 
     clustering_folder = os.path.join(clustering_output_folder, 'reference_proteins')
-    clustering_numbers = {}
-    for clustering_file in os.listdir(clustering_folder):
-        clustering_file_path = os.path.join(clustering_folder, clustering_file)
-        num_lines = sum(1 for line in open(clustering_file_path))
-        clustering_numbers[clustering_file.replace('.tsv', '')] = num_lines
+    clustering_numbers = compute_stat_clustering(clustering_folder)
 
     annotation_reference_folder = os.path.join(annotation_output_folder, 'annotation_reference')
-    annotation_numbers = {}
-    for infile in os.listdir(annotation_reference_folder):
-        if '.tsv' in infile:
-            annotation_input_file_path = os.path.join(annotation_reference_folder, infile)
-            infile_gos = []
-            infile_ecs = []
-            with open(annotation_input_file_path, 'r') as open_annotation_input_file_path:
-                csvreader = csv.reader(open_annotation_input_file_path, delimiter='\t')
-                next(csvreader)
-                for line in csvreader:
-                    gos = line[3].split(',')
-                    ecs = line[4].split(',')
-                    infile_gos.extend(gos)
-                    infile_ecs.extend(ecs)
-            infile_gos = set([go for go in infile_gos if go != ''])
-            infile_ecs = set([ec for ec in infile_ecs if ec != ''])
-            annotation_numbers[infile.replace('.tsv','')] = (len(infile_gos), len(infile_ecs))
+    annotation_numbers = compute_stat_annotation(annotation_reference_folder)
 
     all_observation_names = {*proteome_numbers.keys(), *clustering_numbers.keys(), *annotation_numbers.keys()}
-    with open(stat_file, 'w') as stat_file_open:
-        csvwriter = csv.writer(stat_file_open, delimiter='\t')
-        csvwriter.writerow(['observation_name', 'Number_proteomes', 'Number_shared_proteins', 'Number_go_terms', 'Number_ecs'])
-        for observation_name in all_observation_names:
-            if observation_name in proteome_numbers:
-                nb_proteomes = proteome_numbers[observation_name]
-            else:
-                nb_proteomes = 'NA'
-            if observation_name in clustering_numbers:
-                nb_shared_proteins = clustering_numbers[observation_name]
-            else:
-                nb_shared_proteins = 'NA'
-            if observation_name in annotation_numbers:
-                nb_gos = annotation_numbers[observation_name][0]
-                nb_ecs = annotation_numbers[observation_name][1]
-            else:
-                nb_proteomes = 'NA'
-            csvwriter.writerow([observation_name, nb_proteomes, nb_shared_proteins, nb_gos, nb_ecs])
+    for observation_name in all_observation_names:
+        if observation_name in proteome_numbers:
+            nb_proteomes = proteome_numbers[observation_name]
+        else:
+            nb_proteomes = 'NA'
+        if observation_name in clustering_numbers:
+            nb_shared_proteins = clustering_numbers[observation_name]
+        else:
+            nb_shared_proteins = 'NA'
+        if observation_name in annotation_numbers:
+            nb_gos = annotation_numbers[observation_name][0]
+            nb_ecs = annotation_numbers[observation_name][1]
+        else:
+            nb_proteomes = 'NA'
+        workflow_numbers[observation_name] = [nb_proteomes, nb_shared_proteins, nb_gos, nb_ecs]
+
+    if stat_file:
+        with open(stat_file, 'w') as stat_file_open:
+            csvwriter = csv.writer(stat_file_open, delimiter='\t')
+            csvwriter.writerow(['observation_name', 'Number_proteomes', 'Number_shared_proteins', 'Number_go_terms', 'Number_ecs'])
+            for observation_name in workflow_numbers:
+                nb_proteomes = workflow_numbers[observation_name][0]
+                nb_shared_proteins = workflow_numbers[observation_name][1]
+                nb_gos = workflow_numbers[observation_name][2]
+                nb_ecs = workflow_numbers[observation_name][3]
+                csvwriter.writerow([observation_name, nb_proteomes, nb_shared_proteins, nb_gos, nb_ecs])
+
+    return workflow_numbers
 
 
 def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore_taxadb_update=None,
@@ -68,6 +68,27 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         nb_cpu=1, clust_threshold=1, mmseqs_options=None,
                         linclust=None, propagate_annotation=None, uniref_annotation=None,
                         expression_annotation=None, beta=None):
+    """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
+
+    Args:
+        input_file (str): pathname to the tsv input file containing taxonomic affiliations
+        output_folder (str): pathname to the output folder
+        busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
+        ignore_taxadb_update (bool): option to ignore ete3 taxa database update
+        all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
+        remove_tmp (bool): remove the tmp files
+        limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
+        rank_limit (str): rank limit to remove from the data
+        nb_cpu (int): number of CPUs to be used by mmseqs
+        clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
+        mmseqs_options (str): use alternative mmseqs option
+        linclust (bool): use linclust
+        propagate_annotation (float): float between 0 and 1. It is the ratio of proteins in the cluster that should have the annotation to keep this annotation.
+        uniref_annotation (bool): option to use uniref annotation to add annotation
+        expression_annotation (bool): option to add expression annotation from uniprot
+        beta (bool): option to use the new API of UniProt (in beta can be unstable)
+    """
     starttime = time.time()
     workflow_metadata = {}
 
