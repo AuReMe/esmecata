@@ -301,14 +301,14 @@ String containing mmseqs options for cluster command (except --threads which is 
 
 * `--linclust`: replace `mmseqs cluster` by `mmseqs linclust` (faster but less sensitive)
 
-Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.
+Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.
 
 * `--remove-tmp`: remove mmseqs files stored in `mmseqs_tmp` folder
 
 ### `esmecata annotation`: Retrieve protein annotations
 
 ````
-usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression]
+usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--beta]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -319,13 +319,16 @@ optional arguments:
   -s SPARQL, --sparql SPARQL
                         Use sparql endpoint instead of REST queries on Uniprot.
   -p PROPAGATE_ANNOTATION, --propagate PROPAGATE_ANNOTATION
-                        Proportion [0 to 1] of the reccurence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotaitons from all proteins are propagated to the
-                        reference and 1 only the annotation occurring in all the proteins of the cluster.
+                        Proportion [0 to 1] of the frequence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotations from all proteins are propagated to the
+                        reference and 1 only the annotation occurring in all the proteins of the cluster (default).
   --uniref              Use uniref cluster to extract more annotations from the representative member of the cluster associated to the proteins. Needs the --sparql option.
   --expression          Extract expresion information associated to the proteins. Needs the --sparql option.
+  --beta                Use uniprot beta REST query.
 ````
 
-For each of the representative proteins conserved, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
+For each of the protein clusters kept after the clsutering, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
+By default, esmecata will look at the annotations of each proteins from a cluster and keeps only annotation occurring in all the protein of a cluster (threshold 1 of option -p).
+It is like selecting the intersection of the annotation of the cluster. This can be changed with the option `-p` and giving a flaot between 0 and 1.
 
 Then esmecata will create a tabulated file for each row of the input file and also a folder containg PathoLogic file that can be used as input for Pathway Tools.
 
@@ -337,13 +340,13 @@ It is possible to avoid using REST queries for esmecata and instead use SPARQL q
 
 * `-p/--propagate`: propagation of annotation
 
-It is possible to modify how the annotations are retrieved. By default, esmecata will take the annotations from the representative proteins. But with the `-p` option it is possible to propagate annotation form the proteins of the cluster to the reference proteins.
+It is possible to modify how the annotations are retrieved. By default, esmecata will take the annotations occurring in at least all the proteins of the cluster (`-p 1`). But with the `-p` option it is possible to propagate annotation form the proteins of the cluster to the reference proteins.
 
 This option takes a float as input between 0 and 1, that will be used to filter the annotations retrieved. This number is multiplicated with the number of protein in the cluster to estimate a threshold. To keep an annotation the number of the protein having this annotaiton in the cluster must be higher than the threshold. For example with a threshold of 0.5, for a cluster of 10 proteins an annotation will be kept if 5 or more proteins of the cluster have this annotation.
 
 If the option is set to 0, there will be no filter all the annotation of the proteins of the cluster will be propagated to the reference protein (it corresponds to the **union** of the cluster annotations). This parameter gives the higher number of annotation for proteins. If the option is set to 1, only annotations that are present in all the proteins of a cluster will be kept (it corresponds to the **intersection** of the cluster annotations). This parameter is the most stringent and will limit the number of annotations associated to a protein.
 
-For example, for the same taxon the annotaiton with the  parameter `-p 0` leads to the reconstruction of a metabolic networks of 1006 reactions whereas the parameter `-p 1` creates a metabolic network with 940 reactions (in this example with no use of the `-p` option, so without annotaiton propagation, there was also 940 reacitons inferred).
+For example, for the same taxon the annotation with the parameter `-p 0` leads to the reconstruction of a metabolic networks of 1006 reactions whereas the parameter `-p 1` creates a metabolic network with 940 reactions (in this example with no use of the `-p` option, so without annotaiton propagation, there was also 940 reacitons inferred).
 
 * `--uniref`: use annotation from uniref
 
@@ -362,7 +365,7 @@ usage: esmecata workflow [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [-c CPU] [--
 optional arguments:
   -h, --help            show this help message and exit
   -i INPUT_FILE, --input INPUT_FILE
-                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic annotation (separated by ;).
+                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic affiliation (separated by ;).
   -o OUPUT_DIR, --output OUPUT_DIR
                         Output directory path.
   -b BUSCO, --busco BUSCO
@@ -382,8 +385,8 @@ optional arguments:
                         String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"
   --linclust            Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.
   -p PROPAGATE_ANNOTATION, --propagate PROPAGATE_ANNOTATION
-                        Proportion [0 to 1] of the reccurence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotaitons from all proteins are propagated to the
-                        reference and 1 only the annotation occurring in all the proteins of the cluster.
+                        Proportion [0 to 1] of the frequence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotations from all proteins are propagated to the
+                        reference and 1 only the annotation occurring in all the proteins of the cluster (default).
   --uniref              Use uniref cluster to extract more annotations from the representative member of the cluster associated to the proteins. Needs the --sparql option.
   --expression          Extract expresion information associated to the proteins. Needs the --sparql option.
   --beta                Use uniprot beta REST query.
