@@ -12,7 +12,7 @@
 In the article two experiments were performed:
 
 - one with 13 taxonomic affiliations from Gammaproteobacteria and Alveolata.
-- one with taxonomic affiliations from the article of [Ogier et al (2019)](https://bmcmicrobiol.biomedcentral.com/articles/10.1186/s12866-019-1546-z).
+- one with taxonomic affiliations from the article of [Ogier et al (2019)](https://bmcmicrobiol.biomedcentral.com/articles/10.1186/s12866-019-1546-z) using the supplementary [Additional File 10](https://static-content.springer.com/esm/art%3A10.1186%2Fs12866-019-1546-z/MediaObjects/12866_2019_1546_MOESM10_ESM.xlsx) and the FROGs taxonomic affiliations (sheets `rpoB_FROGS` and `16S_FROGs` and column `blast_taxonomy`).
 
 Both experiments were performed on a cluster with 20 CPUs (especially for the MMseqs part).
 
