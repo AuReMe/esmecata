@@ -2,12 +2,12 @@ import os
 import shutil
 import time
 
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 from ete3 import NCBITaxa
 
 from esmecata.proteomes import taxonomic_affiliation_to_taxon_id, associate_taxon_to_taxon_id, \
                                 disambiguate_taxon, find_proteomes_tax_ids, filter_rank_limit, \
-                                rest_query_proteomes
+                                rest_query_proteomes, subsampling_proteomes
 
 TAXONOMIES = {'id_1': 'cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia;species not found'}
 
@@ -54,6 +54,30 @@ def test_filter_rank_limit():
 
     for taxon in expected_json_taxonomic_affiliations['id_1']:
         assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
+
+
+def test_subsampling_proteomes():
+    ncbi = NCBITaxa()
+    organism_ids = {'2562891': ['UP000477739'], '208962': ['UP000292187', 'UP000193938', 'UP000650750', 'UP000407502', 'UP000003042'],
+                    '562': ['UP000000625', 'UP000000558', 'UP000464341', 'UP000219757', 'UP000092491',
+                            'UP000567387', 'UP000234906', 'UP000016096', 'UP000017268', 'UP000017618'],
+                    '564': ['UP000510927', 'UP000392711', 'UP000000745', 'UP000033773']}
+    revert_organism_ids ={}
+    for org_id, proteomes in organism_ids.items():
+        revert_organism_ids.update({proteome_id: org_id for proteome_id in proteomes})
+    limit_maximal_number_proteomes = 10
+
+    selected_proteomes = subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi)
+    selected_organisms = [revert_organism_ids[proteome] for proteome in selected_proteomes]
+
+    # 562 has 10 proteomes among a total of 20 proteomes, so 50% of proteomes, subsampling will select 50% out of 10: 5 proteomes.
+    # 208962 has 5 proteomes among the 20, so we expect at least 25% of 10 proteomes: ~3 proteomes.
+    # 564 has 4 proteoemes among the 20, so we expect at least 20% of 10 proteomes: 2 proteomes.
+    # 2562891 has 1 proteoùe with 20 proteomes the subsampling will ensure that there is this proteome among the 10 selected.
+    # This leads to 11 proteomes.
+    expected_proteomes_representation = {'562': 5, '2562891': 1, '208962': 3, '564': 2}
+    for org_id in Counter(selected_organisms):
+        assert Counter(selected_organisms)[org_id] == expected_proteomes_representation[org_id]
 
 
 def test_rest_query_proteomes():
@@ -106,4 +130,5 @@ if __name__ == "__main__":
     test_find_proteomes_tax_ids()
     test_disambiguate_taxon()
     test_find_proteomes_tax_ids()
+    test_subsampling_proteomes()
     #test_sparql_find_proteomes_tax_ids()

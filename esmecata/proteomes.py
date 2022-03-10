@@ -510,6 +510,65 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     return proteomes, organism_ids, proteomes_data
 
 
+def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
+    """If the number of proteomes is superior to limit_maximal_number_proteomes, this funciton will perform a subsampling of the proteomes to select a number around the limit_maximal_number_proteomes.
+    It will use the organism ID in organism_ids, to find the taxonomic diversity among the proteomes and keep this diversity.
+    The idea is that if I have 10 proteomes from 3 organisms: org_1 with 4 proteomes, org_2 with 4 proteomes and org_3 with 2 proteomes, i would like to keep the same reprensetation with the subsampling.
+    For example with a limit_maximal_number_proteomes at 5, subsampling will select 2 proteomes for org_1, 2 for org_2 and 1 for org_3
+
+    Args:
+        organism_ids (dict): organism ID as key and the proteome IDs associated with it as value
+        limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+
+    Returns:
+        selected_proteomes (list): subsample proteomes selected by the methods
+    """
+    tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
+
+    # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
+    childs = {}
+    for parent_node in tree.get_children():
+        parent_tax_id = str(parent_node.taxid)
+        if parent_node.get_descendants() != []:
+            for child_node in parent_node.get_descendants():
+                child_tax_id = str(child_node.taxid)
+                if parent_tax_id not in childs:
+                    if child_tax_id in organism_ids:
+                        childs[parent_tax_id] = organism_ids[child_tax_id]
+                else:
+                    if child_tax_id in organism_ids:
+                        childs[parent_tax_id].extend(organism_ids[child_tax_id])
+        else:
+            if parent_tax_id not in childs:
+                if parent_tax_id in organism_ids:
+                    childs[parent_tax_id] = organism_ids[parent_tax_id]
+            else:
+                if parent_tax_id in organism_ids:
+                    childs[parent_tax_id].extend(organism_ids[parent_tax_id])
+
+    # For each direct descendant taxon, compute the number of proteomes in their childrens.
+    elements = [v for k,v in childs.items()]
+    elements_counts = [len(element) for element in elements]
+    # Compute the percentage of proteomes for each direct descendant taxon compare to the total number of proteomes in all the descendant taxons.
+    percentages = [(i/sum(elements_counts))*100  for i in elements_counts]
+    # Can be superior to the number limit_maximal_number_proteomes if there is a lot of data with around 0.xxx percentage.
+    percentages_round = [math.ceil(percentage) if percentage < 1 else math.floor(percentage) for percentage in percentages]
+    selection_percentages_round = [math.ceil((limit_maximal_number_proteomes*percentage)/100) for percentage in percentages_round]
+
+    # Choose randomly a number of proteomes corresponding to the computed percentage.
+    selected_proteomes = []
+    for index, element in enumerate(elements):
+        percentage_to_keep = selection_percentages_round[index]
+        if percentage_to_keep > len(element):
+            proteomes_to_keep = element
+        else:
+            proteomes_to_keep = random.sample(element, percentage_to_keep)
+        selected_proteomes.extend(proteomes_to_keep)
+
+    return selected_proteomes
+
+
 def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                         busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, beta=None):
@@ -539,6 +598,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
     tax_id_founds = {}
 
     for observation_name in json_taxonomic_affiliations:
+        proteomes_descriptions = []
         for tax_name in reversed(json_taxonomic_affiliations[observation_name]):
             tax_id = json_taxonomic_affiliations[observation_name][tax_name][0]
 
@@ -562,17 +622,8 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
             else:
                 proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, beta)
 
-            proteomes_description_file = os.path.join(proteomes_description_folder, observation_name+'.tsv')
-            if os.path.exists(proteomes_description_file):
-                proteomes_description_file_writer = 'a'
-            else:
-                proteomes_description_file_writer = 'w'
-            with open(proteomes_description_file, proteomes_description_file_writer) as proteome_output:
-                csvwriter = csv.writer(proteome_output, delimiter='\t')
-                if proteomes_description_file_writer == 'w':
-                    csvwriter.writerow(['tax_id', 'tax_name', 'proteome_id', 'busco_percentage', 'completness', 'org_tax_id', 'reference_proteome'])
-                for data_proteome in data_proteomes:
-                    csvwriter.writerow([tax_id, tax_name, *data_proteome])
+            for data_proteome in data_proteomes:
+                proteomes_descriptions.append([tax_id, tax_name, *data_proteome])
 
             # Answer is empty no corresponding proteomes to the tax_id.
             if len(proteomes) == 0:
@@ -582,7 +633,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
                     tax_id_not_founds[tax_id].append(tax_name)
                 continue
 
-            elif len(proteomes) > 0 and len(proteomes) < 100:
+            elif len(proteomes) > 0 and len(proteomes) <= limit_maximal_number_proteomes:
                 print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(proteomes)))
                 proteomes_ids[observation_name] = (tax_id, proteomes)
                 tax_id_founds[tax_id] = proteomes
@@ -592,53 +643,21 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
 
             elif len(proteomes) > limit_maximal_number_proteomes:
                 print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around {0} proteomes with respect to the taxonomic diversity.'.format(limit_maximal_number_proteomes, observation_name, tax_name))
-                tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
-
-                # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
-                childs = {}
-                for parent_node in tree.get_children():
-                    parent_tax_id = str(parent_node.taxid)
-                    if parent_node.get_descendants() != []:
-                        for child_node in parent_node.get_descendants():
-                            child_tax_id = str(child_node.taxid)
-                            if parent_tax_id not in childs:
-                                if child_tax_id in organism_ids:
-                                    childs[parent_tax_id] = organism_ids[child_tax_id]
-                            else:
-                                if child_tax_id in organism_ids:
-                                    childs[parent_tax_id].extend(organism_ids[child_tax_id])
-                    else:
-                        if parent_tax_id not in childs:
-                            if parent_tax_id in organism_ids:
-                                childs[parent_tax_id] = organism_ids[parent_tax_id]
-                        else:
-                            if parent_tax_id in organism_ids:
-                                childs[parent_tax_id].extend(organism_ids[parent_tax_id])
-
-                # For each direct descendant taxon, compute the number of proteomes in their childrens.
-                elements = [v for k,v in childs.items()]
-                elements_counts = [len(element) for element in elements]
-                # Compute the proportion of proteomes for each direct descendant taxon compare to the total number of proteomes in all the descendant taxons.
-                percentages = [(i/sum(elements_counts))*100  for i in elements_counts]
-                # Can be superior to 100 if there is a lot of data with around 0.xxx percentage.
-                percentages_round = [math.ceil(percentage) if percentage < 1 else math.floor(percentage) for percentage in percentages]
-                selection_percentages_round = [math.ceil((limit_maximal_number_proteomes*percentage)/100) for percentage in percentages_round]
-
-                # Choose randomly a number of proteomes corresponding to the computed percentage.
-                selected_proteomes = []
-                for index, element in enumerate(elements):
-                    percentage_to_keep = selection_percentages_round[index]
-                    if percentage_to_keep > len(element):
-                        proteomes_to_keep = element
-                    else:
-                        proteomes_to_keep = random.sample(element, percentage_to_keep)
-                    selected_proteomes.extend(proteomes_to_keep)
+                selected_proteomes = subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi)
                 proteomes_ids[observation_name] = (tax_id, selected_proteomes)
                 tax_id_founds[tax_id] = selected_proteomes
                 print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(selected_proteomes)))
                 break
 
             time.sleep(1)
+
+        proteomes_description_file = os.path.join(proteomes_description_folder, observation_name+'.tsv')
+
+        with open(proteomes_description_file, 'w') as proteome_output:
+            csvwriter = csv.writer(proteome_output, delimiter='\t')
+            csvwriter.writerow(['tax_id', 'tax_name', 'proteome_id', 'busco_percentage', 'completness', 'org_tax_id', 'reference_proteome'])
+            for proteomes_description in proteomes_descriptions:
+                csvwriter.writerow(proteomes_description)
 
     return proteomes_ids, single_proteomes, tax_id_not_founds
 
