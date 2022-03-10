@@ -128,7 +128,7 @@ def main():
     parent_parser_linclust.add_argument(
         '--linclust',
         dest='linclust',
-        help='Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less senstitive.',
+        help='Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.',
         required=False,
         action='store_true',
         default=None)
@@ -145,7 +145,7 @@ def main():
         '-p',
         '--propagate',
         dest='propagate_annotation',
-        help='Proportion [0 to 1] of the frequence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotations from all proteins are propagated to the reference and 1 only the annotation occurring in all the proteins of the cluster (default).',
+        help='Proportion [0 to 1] of the occurrence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotations from all proteins are propagated to the reference and 1 only the annotation occurring in all the proteins of the cluster (default).',
         required=False,
         type=range_limited_float_type,
         default=1)
@@ -161,7 +161,7 @@ def main():
     parent_parser_expression.add_argument(
         '--expression',
         dest='expression',
-        help='Extract expresion information associated to the proteins. Needs the --sparql option.',
+        help='Extract expression information associated to the proteins. Needs the --sparql option.',
         required=False,
         action='store_true',
         default=None)
