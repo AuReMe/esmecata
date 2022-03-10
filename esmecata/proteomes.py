@@ -216,6 +216,32 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
     return json_taxonomic_affiliations
 
 
+def requests_query(http_str, nb_retry=5):
+    """Use requests to query an http string.
+
+    Args:
+        http_str (str): http address to query
+        nb_retry (int): number of retry to perform (default = 5)
+
+    Returns:
+        response (requests.models.Response): response returns by requests
+    """
+    passed = False
+
+    if nb_retry == 0:
+        sys.exit('5 retry attempts have been performed but were not successful, so esmecata has been stopped. You may try to relaunch it using the same command esmecata should resume.')
+    try:
+        response = requests.get(http_str, REQUESTS_HEADERS, timeout=10)
+        passed = True
+    except requests.exceptions.Timeout:
+        print('Timeout occurs for query to "{0}", try to relaunch query.'.format(http_str))
+        time.sleep(10)
+        requests_query(http_str, nb_retry-1)
+
+    if passed is True:
+        return response
+
+
 def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, beta=None):
     """REST query on UniProt to get the proteomes associated to a taxon.
 
@@ -252,9 +278,23 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
     response_proteome_status = False
 
     if not beta:
-        with requests.get(http_str, REQUESTS_HEADERS) as proteome_response:
-            # Raise error if we have a bad request.
-            proteome_response.raise_for_status()
+        proteome_response = requests_query(http_str)
+        # Raise error if we have a bad request.
+        proteome_response.raise_for_status()
+        proteome_response_text = proteome_response.text
+        if proteome_response_text != '':
+            csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
+            response_proteome_status = True
+            # Avoid header.
+            next(csvreader)
+        else:
+            csvreader = []
+        reference_proteome = True
+
+        if response_proteome_status is False:
+            time.sleep(1)
+            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
+            proteome_response = requests_query(all_http_str)
             proteome_response_text = proteome_response.text
             if proteome_response_text != '':
                 csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
@@ -263,20 +303,6 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
                 next(csvreader)
             else:
                 csvreader = []
-            reference_proteome = True
-
-        if response_proteome_status is False:
-            time.sleep(1)
-            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(taxon, tax_id, tax_name))
-            with requests.get(all_http_str, headers=REQUESTS_HEADERS) as proteome_response:
-                proteome_response_text = proteome_response.text
-                if proteome_response_text != '':
-                    csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
-                    response_proteome_status = True
-                    # Avoid header.
-                    next(csvreader)
-                else:
-                    csvreader = []
             reference_proteome = False
 
         for line in csvreader:
@@ -307,7 +333,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
 
             proteomes_data.append([proteome, busco_percentage, completness, org_tax_id, reference_proteome])
     else:
-        proteome_response = requests.get(url=beta_httpt_str, params=REQUESTS_HEADERS)
+        proteome_response = requests_query(beta_httpt_str)
         proteome_response.raise_for_status()
         check_code = proteome_response.status_code
         data = proteome_response.json()
@@ -315,7 +341,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         if len(data['results']) == 0:
             print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
             time.sleep(1)
-            proteome_response = requests.get(url=all_beta_httpt_str, params=REQUESTS_HEADERS)
+            proteome_response = requests_query(all_beta_httpt_str)
             proteome_response.raise_for_status()
             data = proteome_response.json()
             reference_proteome = False
@@ -840,9 +866,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                     http_str = 'https://rest.uniprot.org/beta/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
                 else:
                     http_str = 'https://www.uniprot.org/uniprot/?query=proteome:{0}&format=fasta&compress=yes'.format(proteome)
-                with requests.get(http_str, headers=REQUESTS_HEADERS) as proteome_response:
-                    with open(output_proteome_file, 'wb') as f:
-                        f.write(proteome_response.content)
+                proteome_response = requests_query(http_str)
+                with open(output_proteome_file, 'wb') as f:
+                    f.write(proteome_response.content)
         time.sleep(1)
 
     # Download Uniprot metadata and create a json file containing them.

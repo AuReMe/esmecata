@@ -5,9 +5,12 @@ import csv
 import datetime
 import os
 import urllib.request
+import sys
+import time
 
 from io import StringIO
 from SPARQLWrapper import SPARQLWrapper, TSV
+from socket import timeout
 
 from esmecata import __version__ as esmecata_version
 
@@ -21,6 +24,9 @@ def range_limited_float_type(arg):
 
     Args:
         arg: argparse argument
+
+    Returns:
+        arg: argparse argument
     """
     try:
         f = float(arg)
@@ -30,10 +36,14 @@ def range_limited_float_type(arg):
         raise argparse.ArgumentTypeError("Argument must be < " + str(MAX_VAL) + " and > " + str(MIN_VAL))
     return f
 
+
 def limited_integer_type(arg):
     """Type function for argparse - an integer
 
     Args:
+        arg: argparse argument
+
+    Returns:
         arg: argparse argument
     """
     try:
@@ -41,6 +51,7 @@ def limited_integer_type(arg):
     except ValueError:
         raise argparse.ArgumentTypeError("Must be an integer number")
     return f
+
 
 def is_valid_path(filepath):
     """Return True if filepath is valid
@@ -64,8 +75,10 @@ def is_valid_path(filepath):
 
 def is_valid_file(filepath):
     """Return True if filepath exists
+
     Args:
         filepath (str): path to file
+
     Returns:
         bool: True if path exists, False otherwise
     """
@@ -81,6 +94,7 @@ def is_valid_dir(dirpath):
     
     Args:
         dirpath (str): path of directory
+
     Returns:
         bool: True if dir exists, False otherwise
     """
@@ -93,8 +107,38 @@ def is_valid_dir(dirpath):
     else:
         return True
 
+
+def urllib_query(request, nb_retry=5):
+    """Use urllib to query UniProt.
+
+    Args:
+        request (urllib.request.Request): request object
+        nb_retry (int): number of retry to perform (default = 5)
+
+    Returns:
+        response (http.client.HTTPResponse): response returns by requests
+    """
+    passed = False
+
+    if nb_retry == 0:
+        sys.exit('5 retry attempts have been performed but were not successful, so esmecata has been stopped. You may try to relaunch it using the same command esmecata should resume.')
+    try:
+        response = urllib.request.urlopen(request)
+        passed = True
+    except timeout:
+        print('Timeout occurs for query, try to relaunch query.')
+        time.sleep(10)
+        urllib_query(request, nb_retry-1)
+
+    if passed is True:
+        return response
+
+
 def get_rest_uniprot_release(options):
     """Get the release version and date of Uniprot and Trembl and also the date of the query.
+
+    Args:
+        options (dict): dictionary with metadata on the esmecata run
 
     Returns:
         dict: metadata of Uniprot release
@@ -104,7 +148,7 @@ def get_rest_uniprot_release(options):
     # Get Uniprot release version
     uniprot_urllib_request = urllib.request.Request('https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/reldate.txt',
                                                     headers=URLLIB_HEADERS)
-    uniprot_response = urllib.request.urlopen(uniprot_urllib_request)
+    uniprot_response = urllib_query(uniprot_urllib_request)
     uniprot_lines = uniprot_response.readlines()
     uniprot_release_number = uniprot_lines[0].decode('utf-8').split(' ')[3].replace('\n','')
     swissprot_release_number = uniprot_lines[1].decode('utf-8').split(' ')[2].replace('\n','')
@@ -128,6 +172,10 @@ def get_rest_uniprot_release(options):
 
 def get_sparql_uniprot_release(uniprot_sparql_endpoint, options):
     """Get the release version and date of Uniprot and Trembl and also the date of the query.
+
+    Args:
+        uniprot_sparql_endpoint (str): SPARQL endpoint to uniprot database
+        options (dict): dictionary with metadata on the esmecata run
 
     Returns:
         dict: metadata of Uniprot release
@@ -155,6 +203,15 @@ def get_sparql_uniprot_release(uniprot_sparql_endpoint, options):
 
 
 def send_uniprot_sparql_query(sparql_query, uniprot_sparql_endpoint):
+    """Get the release version and date of Uniprot and Trembl and also the date of the query.
+
+    Args:
+        sparql_query (str): string containing SPARQL query
+        uniprot_sparql_endpoint (str): SPARQL endpoint to uniprot database
+
+    Returns:
+        dict: metadata of Uniprot release
+    """
     sparql = SPARQLWrapper(uniprot_sparql_endpoint)
     sparql.agent = 'EsMeCaTa proteomes v' + esmecata_version + ', wrapper=' + sparql.agent
 

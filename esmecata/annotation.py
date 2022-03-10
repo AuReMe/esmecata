@@ -10,7 +10,7 @@ import urllib.request
 
 from SPARQLWrapper import __version__ as sparqlwrapper_version
 
-from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query
+from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query, urllib_query
 from esmecata import __version__ as esmecata_version
 
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
@@ -46,8 +46,8 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
         data = data.encode('utf-8')
         req = urllib.request.Request(url, data, headers=URLLIB_HEADERS)
 
-        with urllib.request.urlopen(req) as f:
-            response_text = f.read().decode('utf-8')
+        with urllib_query(req) as http_response:
+            response_text = http_response.read().decode('utf-8')
             if response_text != '':
                 csvreader = csv.reader(response_text.splitlines(), delimiter='\t')
                 # Avoid header
@@ -85,7 +85,7 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
         data = data.encode('utf-8')
         req = urllib.request.Request(url, data)
 
-        data_js = json.load(urllib.request.urlopen(req))
+        data_js = json.load(urllib_query(req))
         job_id = data_js['jobId']
 
         http_check_status = 'http://rest.uniprot.org/beta/idmapping/status/{0}'.format(job_id)
