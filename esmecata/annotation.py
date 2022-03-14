@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 import os
 import re
 import requests
@@ -14,6 +15,8 @@ from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release,
 from esmecata import __version__ as esmecata_version
 
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
+
+logger = logging.getLogger(__name__)
 
 
 def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
@@ -843,7 +846,7 @@ def write_pathologic_file(protein_annotations, pathologic_folder, base_filename,
         pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
         create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_file)
     elif len(annotated_protein_to_keeps) == 0:
-        print('No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
+        logger.critical('No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
 
 
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation, beta=None):
@@ -860,11 +863,11 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     starttime = time.time()
 
     if uniprot_sparql_endpoint is None and uniref_annotation is not None:
-        print('At this moment, --uniref option needs to be used with --sparql option.')
+        logger.critical('At this moment, --uniref option needs to be used with --sparql option.')
         sys.exit()
 
     if uniprot_sparql_endpoint is None and expression_annotation is not None:
-        print('At this moment, --expression option needs to be used with --sparql option.')
+        logger.critical('At this moment, --expression option needs to be used with --sparql option.')
         sys.exit()
 
     is_valid_dir(output_folder)

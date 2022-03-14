@@ -1,6 +1,7 @@
 import csv
 import gzip
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -13,6 +14,8 @@ from shutil import which
 
 from esmecata import __version__ as esmecata_version
 from esmecata.utils import is_valid_path, is_valid_dir
+
+logger = logging.getLogger(__name__)
 
 
 def compute_stat_clustering(result_folder, stat_file=None):
@@ -232,17 +235,17 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     # Check if mmseqs is in path.
     mmseqs_path = which('mmseqs')
     if not mmseqs_path:
-        print('mmseqs not available in path, esmecata will not be able to cluster the proteomes.')
+        logger.critical('mmseqs not available in path, esmecata will not be able to cluster the proteomes.')
         sys.exit(1)
 
     if not is_valid_dir(proteome_folder):
-        print(f"Input must be a folder {proteome_folder}.")
+        logger.critical(f"Input must be a folder {proteome_folder}.")
         sys.exit(1)
 
     # Use the result folder created by retrieve_proteome.py.
     result_folder = os.path.join(proteome_folder, 'result')
     if not is_valid_path(result_folder):
-        print(f"Missing output from esmecata proteomes in {result_folder}.")
+        logger.critical(f"Missing output from esmecata proteomes in {result_folder}.")
         sys.exit(1)
 
     is_valid_dir(output_folder)
@@ -296,7 +299,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     reference_proteins_consensus_fasta_path = os.path.join(output_folder, 'reference_proteins_consensus_fasta')
     is_valid_dir(reference_proteins_consensus_fasta_path)
 
-    print('Clustering proteins.')
+    logger.info('Clustering proteins.')
     # For each OTU run mmseqs easy-cluster on them to found the clusters that have a protein in each proteome of the OTU.
     # We take the representative protein of a cluster if the cluster contains a protein from all the proteomes of the OTU.
     # If this condition is not satisfied the cluster will be ignored.

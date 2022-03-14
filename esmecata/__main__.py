@@ -1,11 +1,14 @@
 import argparse
+import logging
+import os
 import sys
+import time
 
 from esmecata.proteomes import retrieve_proteomes
 from esmecata.clustering import make_clustering
 from esmecata.annotation import annotate_proteins
 from esmecata.workflow import perform_workflow
-from esmecata.utils import limited_integer_type, range_limited_float_type
+from esmecata.utils import limited_integer_type, range_limited_float_type, is_valid_dir
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''
@@ -15,7 +18,12 @@ REQUIRES = '''
 Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
 '''
 
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
 def main():
+    start_time = time.time()
+
     parser = argparse.ArgumentParser(
         'esmecata',
         description=MESSAGE + ' For specific help on each subcommand use: esmecata {cmd} --help',
@@ -238,6 +246,21 @@ def main():
 
     args = parser.parse_args()
 
+    is_valid_dir(args.output)
+
+    # add logger in file
+    formatter = logging.Formatter('%(message)s')
+    log_file_path = os.path.join(args.output, f'm2m_{args.cmd}.log')
+    file_handler = logging.FileHandler(log_file_path, 'w+')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    # set up the default console logger
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
     # If no argument print the help.
     if len(sys.argv) == 1:
         parser.print_help()
@@ -270,6 +293,10 @@ def main():
                             args.cpu, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
                             args.expression, args.beta)
+
+    logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
+    logger.warning(f'--- Logs written in {log_file_path} ---')
+
 
 if __name__ == '__main__':
     main()

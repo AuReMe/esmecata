@@ -1,6 +1,7 @@
 import csv
 import gzip
 import json
+import logging
 import math
 import os
 import pandas as pd
@@ -27,6 +28,8 @@ from esmecata import __version__ as esmecata_version
 
 REQUESTS_HEADERS = {'User-Agent': 'EsMeCaTa proteomes v' + esmecata_version + ', request by requests package v' + requests.__version__ }
 
+logger = logging.getLogger(__name__)
+
 
 def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi=None):
     """ From a taxonomic affiliation (such as cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria) find corresponding taxon ID for each taxon.
@@ -48,7 +51,7 @@ def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, n
     for taxon in taxons:
         taxon_translations = ncbi.get_name_translator([taxon])
         if taxon_translations == {}:
-            print('For {0}, no taxon ID has been found associated to the taxon "{1}" in the NCBI taxonomy of ete3.'.format(observation_name, taxon))
+            logger.critical('For {0}, no taxon ID has been found associated to the taxon "{1}" in the NCBI taxonomy of ete3.'.format(observation_name, taxon))
             taxon_translations = {taxon: ['not_found']}
         taxon_ids.update(taxon_translations)
     tax_ids_to_names = {v: k for k, vs in tax_names_to_ids.items() for v in vs }
@@ -70,7 +73,7 @@ def associate_taxon_to_taxon_id(taxonomic_affiliations, ncbi=None):
     json_taxonomic_affiliations = {}
 
     if taxonomic_affiliations == {}:
-        print('Empty taxonomy dictionary.')
+        logger.critical('Empty taxonomy dictionary.')
         return
 
     # For each taxon find the taxon ID corresponding to each taxon.
@@ -118,7 +121,7 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
                 # If there is no match with the lineage for all the multiple taxon ID, it is not possible to decipher, stop esmecata.
                 if all(shared_id==0 for shared_id in taxon_shared_ids.values()):
                     taxids = ','.join([str(taxid) for taxid in list(taxon_shared_ids.keys())])
-                    print('It is not possible to find the taxon ID for the taxon named "{0}" (associated to "{1}") as there is multiple taxID possible ({2}), please add a more detailed taxonomic classification to help finding the correct one.'.format(taxon, cluster, taxids))
+                    logger.critical('It is not possible to find the taxon ID for the taxon named "{0}" (associated to "{1}") as there is multiple taxID possible ({2}), please add a more detailed taxonomic classification to help finding the correct one.'.format(taxon, cluster, taxids))
                     sys.exit()
                 # If there is some matches, take the taxon ID with the most match and it will be the "correct one".
                 else:
@@ -234,7 +237,7 @@ def requests_query(http_str, nb_retry=5):
         response = requests.get(http_str, REQUESTS_HEADERS, timeout=10)
         passed = True
     except requests.exceptions.Timeout:
-        print('Timeout occurs for query to "{0}", try to relaunch query.'.format(http_str))
+        logger.critical('Timeout occurs for query to "{0}", try to relaunch query.'.format(http_str))
         time.sleep(10)
         requests_query(http_str, nb_retry-1)
 
@@ -293,7 +296,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
 
         if response_proteome_status is False:
             time.sleep(1)
-            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
+            logger.info('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
             proteome_response = requests_query(all_http_str)
             proteome_response_text = proteome_response.text
             if proteome_response_text != '':
@@ -339,7 +342,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         data = proteome_response.json()
         reference_proteome = True
         if len(data['results']) == 0:
-            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
+            logger.info('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
             time.sleep(1)
             proteome_response = requests_query(all_beta_httpt_str)
             proteome_response.raise_for_status()
@@ -502,7 +505,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         proteomes = other_proteomes
     else:
         if len(reference_proteomes) == 0:
-            print('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
+            logger.info('{0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
             proteomes = other_proteomes
         else:
             proteomes = reference_proteomes
@@ -591,7 +594,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
     """
     # Query the Uniprot proteomes to find all the proteome IDs associated to taxonomic affiliation.
     # If there is more than limit_maximal_number_proteomes proteomes a method is applied to extract a subset of the data.
-    print('Find proteome ID associated to taxonomic affiliation')
+    logger.info('Find proteome ID associated to taxonomic affiliation')
     proteomes_ids = {}
     single_proteomes = {}
     tax_id_not_founds = {}
@@ -634,7 +637,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
                 continue
 
             elif len(proteomes) > 0 and len(proteomes) <= limit_maximal_number_proteomes:
-                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(proteomes)))
+                logger.info('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(proteomes)))
                 proteomes_ids[observation_name] = (tax_id, proteomes)
                 tax_id_founds[tax_id] = proteomes
                 if len(proteomes) == 1:
@@ -642,11 +645,11 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
                 break
 
             elif len(proteomes) > limit_maximal_number_proteomes:
-                print('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around {0} proteomes with respect to the taxonomic diversity.'.format(limit_maximal_number_proteomes, observation_name, tax_name))
+                logger.info('More than {0} proteomes are associated to the taxa {1} associated to {2}, esmecata will randomly select around {0} proteomes with respect to the taxonomic diversity.'.format(limit_maximal_number_proteomes, observation_name, tax_name))
                 selected_proteomes = subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi)
                 proteomes_ids[observation_name] = (tax_id, selected_proteomes)
                 tax_id_founds[tax_id] = selected_proteomes
-                print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(selected_proteomes)))
+                logger.info('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(selected_proteomes)))
                 break
 
             time.sleep(1)
@@ -710,8 +713,6 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
             prefix_record = 'sp'
         elif prot_review == 'false':
             prefix_record = 'tr'
-        else:
-            print(protein_id, prot_review)
 
         # Take only the canonical sequences (ending with -1):
         if protein_isoform.endswith('-1'):
@@ -774,7 +775,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     starttime = time.time()
 
     if is_valid_file(input_file) is False:
-        print('The input {0} is not a valid file pathname.'.format(input_file))
+        logger.critical('The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
 
     try:
@@ -784,15 +785,15 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         ete_taxadb_up_to_date = is_taxadb_up_to_date()
 
     if ete_taxadb_up_to_date is False:
-        print('''WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. Update it using:
+        logger.warning('''WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. Update it using:
         from ete3 import NCBITaxa
         ncbi = NCBITaxa()
         ncbi.update_taxonomy_database()''')
         if ignore_taxadb_update is None:
-            print('If you want to stil use esmecata with the old taxonomy database use the option --ignore-taxadb-update/ignore_taxadb_update.')
+            logger.info('If you want to stil use esmecata with the old taxonomy database use the option --ignore-taxadb-update/ignore_taxadb_update.')
             return
         else:
-            print('--ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
+            logger.info('--ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
 
     is_valid_dir(output_folder)
 
@@ -866,12 +867,12 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                     if len(proteomes) == 1:
                         single_proteomes[observation_name] = (tax_id, proteomes)
                     proteomes_ids[observation_name] = (tax_id, proteomes)
-                    print('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, name, len(proteomes)))
+                    logger.info('{0} will be associated to the taxon "{1}" with {2} proteomes.'.format(observation_name, name, len(proteomes)))
 
         proteome_to_download = set(proteome_to_download)
 
     # Download all the proteomes in tmp folder.
-    print('Downloading {0} proteomes'.format(str(len(proteome_to_download))))
+    logger.info('Downloading {0} proteomes'.format(str(len(proteome_to_download))))
     tmp_folder = os.path.join(output_folder, 'tmp_proteome')
     is_valid_dir(tmp_folder)
 
@@ -910,7 +911,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     else:
         uniprot_releases = get_rest_uniprot_release(options)
 
-    print('Creating result folder')
+    logger.info('Creating result folder')
     # Create a result folder which contains one sub-folder per OTU.
     # Each OTU sub-folder will contain the proteome found.
     is_valid_dir(result_folder)
