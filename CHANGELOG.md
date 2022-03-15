@@ -1,5 +1,28 @@
 # Changelog
 
+# EsMeCaTa v0.2.0 (2022-03-15)
+
+Refactor the code in EsMeCaTa to make it clearer.
+
+## Add
+
+* New functions with the refactoring.
+* Comments have been added to make the code more understandable.
+* Singularity recipe.
+* Timeout in query, this should help for issue #7.
+* Tests for the new functions.
+* Logging to show log and creates a log file at each run with the command line.
+
+## Fix
+
+* Decrease the number of proteins given to Uniprot in a query, to avoid issue #7 (from 20,000 to 15,000).
+* Fix issue in sub sampling with incorrect threshold.
+* Fix numerous typos.
+
+## Modify
+
+* Update esmecata workflow picture and readme.
+
 # EsMeCaTa v0.1.0 (2022-03-04)
 
 ## Add

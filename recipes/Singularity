@@ -3,7 +3,7 @@ From: ubuntu:18.04
 
 %labels
     Maintainer Belcour A.
-    Version v0.1.0
+    Version v0.2.0
     Description EsMeCaTa Singularity recipe
 
 %environment
@@ -25,4 +25,4 @@ From: ubuntu:18.04
     conda update conda ;\
     conda install mmseqs2=13.45111 pandas=1.4.0 sparqlwrapper=1.8.5 requests=2.26.0 biopython=1.79 ete3=3.1.2 -c conda-forge -c bioconda;\
     python3 -c 'from ete3 import NCBITaxa; ncbi = NCBITaxa()';\
-    pip install esmecata==0.1.0
+    pip install esmecata==0.2.0
