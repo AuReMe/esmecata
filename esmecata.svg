@@ -24,9 +24,9 @@
      inkscape:pagecheckerboard="true"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.5"
-     inkscape:cx="1130"
-     inkscape:cy="1376"
+     inkscape:zoom="0.35355339"
+     inkscape:cx="-90.509668"
+     inkscape:cy="842.87128"
      inkscape:window-width="1920"
      inkscape:window-height="1163"
      inkscape:window-x="0"
@@ -4608,12 +4608,12 @@
      id="layer1"
      style="display:inline">
     <rect
-       style="fill:#fffffa;fill-opacity:1;stroke:#000000;stroke-width:0.999888;stroke-linecap:round;stroke-linejoin:round"
+       style="fill:#fffffa;fill-opacity:1;stroke:#000000;stroke-width:1.00024;stroke-linecap:round;stroke-linejoin:round"
        id="rect2199"
-       width="399.00528"
-       height="929.12695"
-       x="0.21505867"
-       y="0.33604169" />
+       width="399.2829"
+       height="929.12659"
+       x="0.21523248"
+       y="0.3362155" />
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Sans;-inkscape-font-specification:'Sans, Normal';font-variant-ligatures:none;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
@@ -6504,8 +6504,8 @@
        d="M 0.53769964,350.57644 399.89683,349.49831 v 0"
        id="path1452-4" />
     <path
-       style="fill:none;stroke:#000000;stroke-width:2.00394;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="M -0.11591022,634.7589 400.81982,633.68077 v 0"
+       style="fill:none;stroke:#000000;stroke-width:2.00169;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M -0.11585606,634.75892 399.90428,633.68075 v 0"
        id="path1452-4-0" />
     <path
        style="fill:none;stroke:#008300;stroke-width:0.916493;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
@@ -6534,7 +6534,7 @@
          id="tspan21121-4"
          style="stroke-width:0.264583"
          x="283.9303"
-         y="647.09741">EsMeCaTa annotaton</tspan></text>
+         y="647.09741">EsMeCaTa annotation</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Sans;-inkscape-font-specification:'Sans, Normal';font-variant-ligatures:none;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
