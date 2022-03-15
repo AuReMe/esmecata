@@ -92,7 +92,7 @@ def main():
     parent_parser_all_proteomes.add_argument(
         '--all-proteomes',
         dest='all_proteomes',
-        help='Download all proteomes associated to a taxon even if they are no reference proteomes.',
+        help='Download all proteomes associated with a taxon even if they are no reference proteomes.',
         required=False,
         action='store_true',
         default=None)
@@ -161,7 +161,7 @@ def main():
     parent_parser_uniref.add_argument(
         '--uniref',
         dest='uniref',
-        help='Use uniref cluster to extract more annotations from the representative member of the cluster associated to the proteins. Needs the --sparql option.',
+        help='Use uniref cluster to extract more annotations from the representative member of the cluster associated with the proteins. Needs the --sparql option.',
         required=False,
         action='store_true',
         default=None)
@@ -169,7 +169,7 @@ def main():
     parent_parser_expression.add_argument(
         '--expression',
         dest='expression',
-        help='Extract expression information associated to the proteins. Needs the --sparql option.',
+        help='Extract expression information associated with the proteins. Needs the --sparql option.',
         required=False,
         action='store_true',
         default=None)
@@ -205,7 +205,7 @@ def main():
 
     proteomes_parser = subparsers.add_parser(
         'proteomes',
-        help='Download proteomes associated to taxon from Uniprot Proteomes.',
+        help='Download proteomes associated with taxon from Uniprot Proteomes.',
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
@@ -250,7 +250,7 @@ def main():
 
     # add logger in file
     formatter = logging.Formatter('%(message)s')
-    log_file_path = os.path.join(args.output, f'm2m_{args.cmd}.log')
+    log_file_path = os.path.join(args.output, f'esmecata_{args.cmd}.log')
     file_handler = logging.FileHandler(log_file_path, 'w+')
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)

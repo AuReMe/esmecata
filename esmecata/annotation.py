@@ -430,8 +430,8 @@ def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_outp
     """Create pathologic files.
 
     Args:
-        base_filename (str): observation name associated to the taxonomic affiliations and the annotation
-        annotated_protein_to_keeps (dict): annotated protein associated to the annotation of their cluster.
+        base_filename (str): observation name associated with the taxonomic affiliations and the annotation
+        annotated_protein_to_keeps (dict): annotated protein associated with the annotation of their cluster.
         pathologic_output_file (str): pathname to the pathologic write.
     """
     with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:
@@ -457,7 +457,7 @@ def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_outp
 
 
 def compute_stat_annotation(annotation_reference_folder, stat_file=None):
-    """Compute stat associated to the number of proteome for each taxonomic affiliations.
+    """Compute stat associated with the number of proteome for each taxonomic affiliations.
 
     Args:
         annotation_reference_folder (str): pathname to the annotation reference folder containing annotations for each cluster
@@ -703,7 +703,7 @@ def retrieve_annotation_from_uniref(proteomes, uniprot_sparql_endpoint, uniref_a
 
 
 def retrieve_expresion_from_uniprot(proteomes, uniprot_sparql_endpoint, expression_annotation_file):
-    """Query UniProt uniref with SPARQL to find expression data associated to protein
+    """Query UniProt uniref with SPARQL to find expression data associated with protein
 
     Args:
         proteomes (dict): list of proteomes to use as query
@@ -802,7 +802,7 @@ def propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_a
 
 
 def write_annotation_reference(protein_annotations, annotation_reference_file, expression_output_dict):
-    """Write the annotation associated to a cluster after propagation step.
+    """Write the annotation associated with a cluster after propagation step.
 
     Args:
         protein_annotations (dict): annotation dict: protein as key and annotation as value ([function_name, [go_terms], [ec_numbers], gene_name])
@@ -830,7 +830,7 @@ def write_annotation_reference(protein_annotations, annotation_reference_file, e
 
 
 def write_pathologic_file(protein_annotations, pathologic_folder, base_filename, set_proteins):
-    """Write the annotation associated to a cluster after propagation step into pathologic file for run on Pathway Tools.
+    """Write the annotation associated with a cluster after propagation step into pathologic file for run on Pathway Tools.
 
     Args:
         protein_annotations (dict): annotation dict: protein as key and annotation as value ([function_name, [go_terms], [ec_numbers], gene_name])
@@ -846,11 +846,11 @@ def write_pathologic_file(protein_annotations, pathologic_folder, base_filename,
         pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
         create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_file)
     elif len(annotated_protein_to_keeps) == 0:
-        logger.critical('No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
+        logger.critical('|EsMeCaTa|annotation| No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
 
 
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation, beta=None):
-    """Write the annotation associated to a cluster after propagation step into pathologic file for run on Pathway Tools.
+    """Write the annotation associated with a cluster after propagation step into pathologic file for run on Pathway Tools.
 
     Args:
         input_folder (str): pathname to mmseqs clustering output folder as it is the input of annotation
@@ -863,11 +863,11 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     starttime = time.time()
 
     if uniprot_sparql_endpoint is None and uniref_annotation is not None:
-        logger.critical('At this moment, --uniref option needs to be used with --sparql option.')
+        logger.critical('|EsMeCaTa|annotation| At this moment, --uniref option needs to be used with --sparql option.')
         sys.exit()
 
     if uniprot_sparql_endpoint is None and expression_annotation is not None:
-        logger.critical('At this moment, --expression option needs to be used with --sparql option.')
+        logger.critical('|EsMeCaTa|annotation| At this moment, --expression option needs to be used with --sparql option.')
         sys.exit()
 
     is_valid_dir(output_folder)
@@ -919,7 +919,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     # There is 2 ways to handle already annotated proteins:
     # one keeping all the proteins in a dicitonary during all the analysis (I fear an issue with the memory).
     already_annotated_proteins = {}
-    # a second that use the annotation from the annotation files associated to the proteins.
+    # a second that use the annotation from the annotation files associated with the proteins.
     # It is slower as it reads the annotation file to retrieve the annotation, but I think it is less heavy on the memory.
     already_annotated_proteins_in_file = {}
     for input_file in os.listdir(reference_protein_path):
@@ -964,6 +964,13 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         write_annotation_reference(protein_annotations, annotation_reference_file, expression_output_dict)
         write_pathologic_file(protein_annotations, pathologic_folder, base_filename, set_proteins)
 
+        gos = [go for protein in protein_annotations for go in protein_annotations[protein][1]]
+        unique_gos = set(gos)
+        ecs = [ec for protein in protein_annotations for ec in protein_annotations[protein][2]]
+        unique_ecs = set(ecs)
+        logger.info('|EsMeCaTa|annotation| {0} Go Terms (with {1} unique GO Terms) and {2} EC numbers (with {3} unique EC) associated with {4}.'.format(len(gos),
+                                                                                                len(unique_gos), len(ecs), len(unique_ecs), base_filename))
+
     # Create mpwt taxon ID file.
     clustering_taxon_id = {}
     with open(proteome_cluster_tax_id_file, 'r') as input_taxon_id_file:
@@ -988,3 +995,5 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(uniprot_releases, ouput_file, indent=4)
+
+    logger.info('|EsMeCaTa|annotation| Annotation complete.')

@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 import os
 import time
 
@@ -7,9 +8,11 @@ from esmecata.proteomes import retrieve_proteomes, compute_stat_proteomes
 from esmecata.clustering import make_clustering, compute_stat_clustering
 from esmecata.annotation import annotate_proteins, compute_stat_annotation
 
+logger = logging.getLogger(__name__)
+
 
 def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file=None):
-    """Compute stat associated to the number of proteome for each taxonomic affiliations.
+    """Compute stat associated with the number of proteome for each taxonomic affiliations.
 
     Args:
         proteomes_output_folder (str): pathname to the result folder containing subfolder containing proteomes
