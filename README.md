@@ -9,7 +9,7 @@ Warning:
 
 **And there seems to be an issue with SPARQL queries, the named graph Taxonomy seems to be missing from UniProt SPARQL endpoint. So the `esmecata proteoems` is not working with sparql.**
 
-![EsMeCaTa](esmecata_workflow.png)
+![](esmecata.svg)
 
 ## Table of contents
 - [EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic affiliations](#esmecata-estimating-metabolic-capabilties-from-taxonomic-affiliations)
