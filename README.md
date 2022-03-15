@@ -5,11 +5,9 @@ EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomic affiliati
 
 Warning:
 
-**EsMeCaTa is in development so it can be unstable.**
+**A new version of UniProt is in development (see [UniProt beta](https://beta.uniprot.org/)), a compatible version of EsMeCaTa is in development (with the `--beta` option) but it may also been unstable.**
 
-**A new version of UniProt is in development (see [UniProt beta](https://beta.uniprot.org/)), a compatible version of EsMeCaTa is in development (with the `--beta`option) but it may also been unstable.**
-
-**And there seems to be an issue with SPARQL queries, the named graph Taxonomy seems to be missing from UniProt SPARQL endpoint.**
+**And there seems to be an issue with SPARQL queries, the named graph Taxonomy seems to be missing from UniProt SPARQL endpoint. So the `esmecata proteoems` is not working with sparql.**
 
 ![EsMeCaTa](esmecata_workflow.png)
 
