@@ -25,8 +25,8 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.5"
-     inkscape:cx="1129"
-     inkscape:cy="896"
+     inkscape:cx="1130"
+     inkscape:cy="1376"
      inkscape:window-width="1920"
      inkscape:window-height="1163"
      inkscape:window-x="0"
@@ -4771,7 +4771,7 @@
          style="stroke-width:0.264583"
          x="295.31604"
          y="393.30008"
-         id="tspan3000">  with mmseqs2</tspan></text>
+         id="tspan3000">  with MMseqs2</tspan></text>
     <g
        id="g165150"
        clip-path="none"
