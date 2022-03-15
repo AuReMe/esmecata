@@ -10,6 +10,7 @@ on:
       - 'article_data/**'
       - 'README.md'
       - 'CHANGELOG.md'
+      - 'esmecata.svg'
       - 'esmecata_workflow.png'
       - 'LICENSE'
       - 'recipes/**'
@@ -18,6 +19,7 @@ on:
     paths-ignore:
       - 'article_data/**'
       - 'README.md'
+      - 'esmecata.svg'
       - 'esmecata_workflow.png'
       - 'CHANGELOG.md'
       - 'LICENSE'
