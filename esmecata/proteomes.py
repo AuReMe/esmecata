@@ -424,7 +424,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     {{
         ?proteome rdf:type up:Proteome .
         ?proteome up:organism ?organism .
-        ?organism rdfs:subClassOf* taxon:{0} .
+        ?organism rdfs:subClassOf taxon:{0} .
         OPTIONAL {{
             ?proteome busco:has_score ?busco .
             ?busco busco:complete ?score .
@@ -474,13 +474,13 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         else:
             reference = False
 
-        if all([score, fragmented, missing]) is True:
+        if score is not None and fragmented is not None and missing is not None:
             busco_percentage = (score / (score+fragmented+missing)) * 100
         else:
             busco_percentage = None
         # Check that proteome has busco score.
-        if busco_percentage_keep and busco_percentage:
-            if busco_percentage >= busco_percentage_keep and completness == 'full':
+        if busco_percentage_keep:
+            if busco_percentage and busco_percentage >= busco_percentage_keep and completness == 'full':
                 if reference == True:
                     reference_proteomes.append(proteome_id)
                 else:

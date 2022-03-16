@@ -110,12 +110,12 @@ def test_find_proteomes_tax_ids():
         assert expected_proteomes_ids[taxon][0] == proteomes_ids[taxon][0]
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])
 
-"""
+
 def test_sparql_find_proteomes_tax_ids():
     expected_proteomes_ids = {'id_1': (629, ['UP000255169', 'UP000000815'])}
     ncbi = NCBITaxa()
     tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
-    json_taxonomic_affiliations = filter_taxon(json_taxonomic_affiliations, ncbi)
+    json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
     proteomes_description_folder = 'proteomes_description'
     os.mkdir(proteomes_description_folder)
     proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_taxonomic_affiliations=json_taxonomic_affiliations, ncbi=ncbi, proteomes_description_folder=proteomes_description_folder,
@@ -124,7 +124,7 @@ def test_sparql_find_proteomes_tax_ids():
     for taxon in expected_proteomes_ids:
         assert expected_proteomes_ids[taxon][0] == proteomes_ids[taxon][0]
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])
-"""
+
 
 if __name__ == "__main__":
     test_find_proteomes_tax_ids()
