@@ -105,6 +105,8 @@ It is possible to use EsMeCaTa with a taxonomic affiliation containing only one 
 
 But this can cause issue. For example, "Cluster_2" is associated with Yersinia but two genus are associated with this name (one mantid (taxId: 444888) and one bacteria (taxId: 629)). EsMeCaTa will not able to differentiate them. But if you give more informations by adding more taxons (for example: 'Bacteria;Gammaproteobacteria;Yersinia'), EsMeCaTa will compare all the taxons of the taxonomic affiliation (here: 2 (Bacteria) and 1236 (Gammaproteobacteria)) to the lineage associated with the two taxIDs (for bacteria Yersinia: [1, 131567, 2, 1224, 1236, 91347, 1903411, 629] and for the mantid one: [1, 131567, 2759, 33154, 33208, 6072, 33213, 33317, 1206794, 88770, 6656, 197563, 197562, 6960, 50557, 85512, 7496, 33340, 33341, 6970, 7504, 7505, 267071, 444888]). In this example, there is 2 matches for the bacteria one (2 and 1236) and 0 for the mantid one. So EsMeCaTa will select the taxId associated with the bacteria (629).
 
+A [jupyter notebook](https://github.com/AuReMe/esmecata/blob/master/tutorials/esmecata_method.ipynb) explains how EsMeCata works.
+
 ## EsMeCaTa commands
 
 ````
