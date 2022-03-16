@@ -14,6 +14,7 @@ on:
       - 'esmecata_workflow.png'
       - 'LICENSE'
       - 'recipes/**'
+      - 'tutorials/**'
   pull_request:
     branches: [ master ]
     paths-ignore:
@@ -24,6 +25,7 @@ on:
       - 'CHANGELOG.md'
       - 'LICENSE'
       - 'recipes/**'
+      - 'tutorials/**'
 
 jobs:
   build:

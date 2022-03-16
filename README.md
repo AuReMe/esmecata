@@ -417,7 +417,7 @@ output_folder
 │   └── Proteome_3.faa.gz
 │   └── ...
 ├── association_taxon_taxID.json
-├── proteome_cluster_tax_id.tsv
+├── proteome_tax_id.tsv
 ├── esmecata_proteomes.log
 ├── esmecata_metadata_proteomes.json
 ├── stat_number_proteome.tsv
@@ -431,7 +431,7 @@ The `tmp_proteome` contains all the proteomes that have been found to be associa
 
 `association_taxon_taxID.json` contains for each `observation_name` the name of the taxon and the corresponding taxon_id found with `ete3`.
 
-`proteome_cluster_tax_id.tsv` contains the name, the taxon_id and the proteomes associated with each `observation_name`.
+`proteome_tax_id.tsv` contains the name, the taxon_id and the proteomes associated with each `observation_name`.
 
 The file `esmecata_proteomes.log` contains the log associated with the command.
 
@@ -469,7 +469,7 @@ output_folder
 ├── reference_proteins_representative_fasta
 │   └── Cluster_1.faa
 │   └── ...
-├── proteome_cluster_tax_id.tsv
+├── proteome_tax_id.tsv
 ├── esmecata_clustering.log
 ├── esmecata_metadata_clustering.json
 ├── stat_number_clustering.tsv
@@ -491,7 +491,7 @@ The `reference_proteins_consensus_fasta` contains the consensus proteins associa
 
 The `reference_proteins_representative_fasta` contains the consensus proteins associated with an `observation_name` for the cluster kept after clustering process. So compared to the fasta of `fasta_representative` it is a sublist with only cluster passing the threshold.
 
-The `proteome_cluster_tax_id.tsv` file is the same than the one created in `esmecata proteomes`.
+The `proteome_tax_id.tsv` file is the same than the one created in `esmecata proteomes`.
 
 The file `esmecata_clustering.log` contains the log associated with the command.
 
@@ -530,7 +530,7 @@ The `annotation_reference` contains annotation only for the representative prote
 
 The `expression_annotation` contains expression annotation for the proteins of a taxon (if the `--expression` option was used).
 
-The `pathologic` contains one sub-folder for each `observation_name` in which there is one PathoLogic file. There is also a `taxon_id.tsv` file which corresponds to a modified version of `proteome_cluster_tax_id.tsv` with only the `observation_name` and the `taxon_id`. This folder can be used as input to [mpwt](https://github.com/AuReMe/mpwt) to reconstruct draft metabolic networks using Pathway Tools PathoLogic.
+The `pathologic` contains one sub-folder for each `observation_name` in which there is one PathoLogic file. There is also a `taxon_id.tsv` file which corresponds to a modified version of `proteome_tax_id.tsv` with only the `observation_name` and the `taxon_id`. This folder can be used as input to [mpwt](https://github.com/AuReMe/mpwt) to reconstruct draft metabolic networks using Pathway Tools PathoLogic.
 
 The file `esmecata_annotation.log` contains the log associated with the command.
 
@@ -562,7 +562,7 @@ output_folder
   │   └── Proteome_3.faa.gz
   │   └── ...
   ├── association_taxon_taxID.json
-  ├── proteome_cluster_tax_id.tsv
+  ├── proteome_tax_id.tsv
   ├── esmecata_metadata_proteomes.json
   ├── stat_number_proteome.tsv
 ├── 1_clustering
@@ -592,7 +592,7 @@ output_folder
   ├── reference_proteins_representative_fasta
   │   └── Cluster_1.faa
   │   └── ...
-  ├── proteome_cluster_tax_id.tsv
+  ├── proteome_tax_id.tsv
   ├── esmecata_metadata_clustering.json
   ├── stat_number_clustering.tsv
 ├── 2_annotation

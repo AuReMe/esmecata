@@ -40,7 +40,7 @@ def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, n
         ncbi (ete3.NCBITaxa()): ete3 NCBI database
     Returns:
         tax_ids_to_names (dict): mapping between taxon ID and taxon name
-        json_cluster_taxons (dict): mapping between taxon name and taxon ID
+        taxon_ids (dict): mapping between taxon name and taxon ID
     """
     if ncbi is None:
         ncbi = NCBITaxa()
@@ -101,17 +101,17 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
     # The most relevant taxon is the one with the most overlapping lineage with the taxonomic affiliation.
     taxon_to_modify = {}
 
-    for cluster in json_taxonomic_affiliations:
-        cluster_taxons = list(json_taxonomic_affiliations[cluster].values())
+    for observation_name in json_taxonomic_affiliations:
+        observation_name_taxons = list(json_taxonomic_affiliations[observation_name].values())
 
-        for index, taxon in enumerate(json_taxonomic_affiliations[cluster]):
-            taxon_ids = json_taxonomic_affiliations[cluster][taxon]
+        for index, taxon in enumerate(json_taxonomic_affiliations[observation_name]):
+            taxon_ids = json_taxonomic_affiliations[observation_name][taxon]
             # If a taxon name is associated with more than one taxon ID, search for the one matching with the other taxon in the taxonomic affiliation.
             if len(taxon_ids) > 1:
                 taxon_shared_ids = {}
                 for taxon_id in taxon_ids:
                     # Extract the other taxon present in the taxonomic affiliation.
-                    data_lineage = [tax_id for tax_id_lists in cluster_taxons[0:index] for tax_id in tax_id_lists]
+                    data_lineage = [tax_id for tax_id_lists in observation_name_taxons[0:index] for tax_id in tax_id_lists]
                     # Extract the known lineage corresponding to one of the taxon ID.
                     lineage = ncbi.get_lineage(taxon_id)
                     # Computes the shared taxon ID between the known lineage and the taxonomic affiliation associated with the taxon.
@@ -121,7 +121,7 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
                 # If there is no match with the lineage for all the multiple taxon ID, it is not possible to decipher, stop esmecata.
                 if all(shared_id==0 for shared_id in taxon_shared_ids.values()):
                     taxids = ','.join([str(taxid) for taxid in list(taxon_shared_ids.keys())])
-                    logger.critical('|EsMeCaTa|proteomes| It is not possible to find the taxon ID for the taxon named "{0}" (associated with "{1}") as there is multiple taxID possible ({2}), please add a more detailed taxonomic classification to help finding the correct one.'.format(taxon, cluster, taxids))
+                    logger.critical('|EsMeCaTa|proteomes| It is not possible to find the taxon ID for the taxon named "{0}" (associated with "{1}") as there is multiple taxID possible ({2}), please add a more detailed taxonomic classification to help finding the correct one.'.format(taxon, observation_name, taxids))
                     sys.exit()
                 # If there is some matches, take the taxon ID with the most match and it will be the "correct one".
                 else:
@@ -129,13 +129,13 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
                     for taxon_id in taxon_shared_ids:
                         if taxon_shared_ids[taxon_id] > previous_nb_shared_ids:
                             relevant_taxon = taxon_id
-                            taxon_to_modify[cluster] = {}
-                            taxon_to_modify[cluster][taxon] = [relevant_taxon]
+                            taxon_to_modify[observation_name] = {}
+                            taxon_to_modify[observation_name][taxon] = [relevant_taxon]
                         previous_nb_shared_ids = nb_shared_ids
 
-    for cluster in taxon_to_modify:
-        for taxon in taxon_to_modify[cluster]:
-            json_taxonomic_affiliations[cluster][taxon] = taxon_to_modify[cluster][taxon]
+    for observation_name in taxon_to_modify:
+        for taxon in taxon_to_modify[observation_name]:
+            json_taxonomic_affiliations[observation_name][taxon] = taxon_to_modify[observation_name][taxon]
 
     return json_taxonomic_affiliations
 
@@ -167,15 +167,15 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
     rank_limit_level = rank_level[rank_limit]
     rank_to_keeps = [rank for rank in rank_level if rank_level[rank] > rank_limit_level]
 
-    for cluster in json_taxonomic_affiliations:
-        cluster_taxons = json_taxonomic_affiliations[cluster]
+    for observation_name in json_taxonomic_affiliations:
+        observation_name_taxons = json_taxonomic_affiliations[observation_name]
         tax_keep = []
         tax_ranks = {}
         tax_names = {}
         tax_rank_position = {}
         tax_ids = []
-        for index, tax_name in enumerate(cluster_taxons):
-            tax_id = cluster_taxons[tax_name][0]
+        for index, tax_name in enumerate(observation_name_taxons):
+            tax_id = observation_name_taxons[tax_name][0]
             tax_ids.append(tax_id)
             if tax_id != 'not_found':
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
@@ -201,7 +201,7 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
         # If the rank to remove is in the tax_ranks, keep all the rank below this rank.
         if rank_limit in tax_ranks:
             tax_rank_max_index = tax_rank_position[rank_limit]
-            keep_tax_ids = [tax_id[0] for tax_name, tax_id in list(cluster_taxons.items())[tax_rank_max_index+1:]]
+            keep_tax_ids = [tax_id[0] for tax_name, tax_id in list(observation_name_taxons.items())[tax_rank_max_index+1:]]
         # If not find all the rank below this rank (by using rank_level and rank_to_keeps) in the list and keep them.
         # Use the tax_keep to keep non_hierarchical_ranks below the rank to remove.
         # But they need to be below a hierarchical rank that has been checked as being below the rank to remove.
@@ -214,7 +214,7 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
         # Delete the remvoed rank and all its superior.
         for tax_id in tax_id_to_deletes:
             tax_name = tax_names[tax_id]
-            del json_taxonomic_affiliations[cluster][tax_name]
+            del json_taxonomic_affiliations[observation_name][tax_name]
 
     return json_taxonomic_affiliations
 
@@ -737,7 +737,7 @@ def compute_stat_proteomes(result_folder, stat_file=None):
         stat_file (str): pathname to the tsv stat file
 
     Returns:
-        clustering_numbers (dict): dict containing observation names (as key) associated with the number of proteomes
+        proteome_numbers (dict): dict containing observation names (as key) associated with the number of proteomes
     """
     proteome_numbers = {}
     for folder in os.listdir(result_folder):
@@ -813,11 +813,11 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     # taxonomic_affiliation is the column containing the taxonomic affiliation separated by ';': phylum;class;order;family;genus;genus + species
     taxonomies = df.to_dict()['taxonomic_affiliation']
 
-    proteome_cluster_tax_id_file = os.path.join(output_folder, 'proteome_cluster_tax_id.tsv')
+    proteome_tax_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
 
     result_folder = os.path.join(output_folder, 'result')
 
-    if not os.path.exists(proteome_cluster_tax_id_file):
+    if not os.path.exists(proteome_tax_id_file):
         ncbi = NCBITaxa()
 
         tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, ncbi)
@@ -831,7 +831,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         with open(json_log, 'w') as ouput_file:
             json.dump(json_taxonomic_affiliations, ouput_file, indent=4)
 
-    if not os.path.exists(proteome_cluster_tax_id_file):
+    if not os.path.exists(proteome_tax_id_file):
         proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                                                         busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, limit_maximal_number_proteomes, beta)
 
@@ -841,19 +841,19 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         proteome_to_download = set(proteome_to_download)
 
         # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
-        with open(proteome_cluster_tax_id_file, 'w') as out_file:
+        with open(proteome_tax_id_file, 'w') as out_file:
             csvwriter = csv.writer(out_file, delimiter='\t')
-            csvwriter.writerow(['cluster', 'name', 'tax_id', 'tax_rank', 'proteome'])
-            for cluster in proteomes_ids:
-                tax_id = int(proteomes_ids[cluster][0])
+            csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_rank', 'proteome'])
+            for observation_name in proteomes_ids:
+                tax_id = int(proteomes_ids[observation_name][0])
                 tax_name = tax_id_names[tax_id]
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
-                csvwriter.writerow([cluster, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[cluster][1])])
+                csvwriter.writerow([observation_name, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[observation_name][1])])
     else:
         proteome_to_download = []
         proteomes_ids = {}
         single_proteomes = {}
-        with open(proteome_cluster_tax_id_file, 'r') as proteome_tax_file:
+        with open(proteome_tax_id_file, 'r') as proteome_tax_file:
             csvreader = csv.reader(proteome_tax_file, delimiter='\t')
             next(csvreader)
             for line in csvreader:
@@ -915,12 +915,12 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     # Each OTU sub-folder will contain the proteome found.
     is_valid_dir(result_folder)
 
-    for cluster in proteomes_ids:
-        output_cluster = os.path.join(result_folder, cluster)
-        is_valid_dir(output_cluster)
-        for proteome in proteomes_ids[cluster][1]:
+    for observation_name in proteomes_ids:
+        output_observation_name = os.path.join(result_folder, observation_name)
+        is_valid_dir(output_observation_name)
+        for proteome in proteomes_ids[observation_name][1]:
             input_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
-            output_proteome = os.path.join(output_cluster, proteome+'.faa.gz')
+            output_proteome = os.path.join(output_observation_name, proteome+'.faa.gz')
             shutil.copyfile(input_proteome_file, output_proteome)
 
     if remove_tmp:
