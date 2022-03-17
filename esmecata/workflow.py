@@ -70,7 +70,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         limit_maximal_number_proteomes=99, rank_limit=None,
                         nb_cpu=1, clust_threshold=1, mmseqs_options=None,
                         linclust=None, propagate_annotation=None, uniref_annotation=None,
-                        expression_annotation=None, beta=None):
+                        expression_annotation=None, beta=None, minimal_number_proteomes=1):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -91,6 +91,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         uniref_annotation (bool): option to use uniref annotation to add annotation
         expression_annotation (bool): option to add expression annotation from uniprot
         beta (bool): option to use the new API of UniProt (in beta can be unstable)
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
     """
     starttime = time.time()
     workflow_metadata = {}
@@ -101,7 +102,8 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
     proteomes_output_folder = os.path.join(output_folder, '0_proteomes')
     retrieve_proteomes(input_file, proteomes_output_folder, busco_percentage_keep,
                         ignore_taxadb_update, all_proteomes, uniprot_sparql_endpoint,
-                        remove_tmp, limit_maximal_number_proteomes, beta, rank_limit)
+                        remove_tmp, limit_maximal_number_proteomes, beta, rank_limit,
+                        minimal_number_proteomes)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
     make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)

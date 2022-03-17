@@ -112,7 +112,7 @@ def test_find_proteomes_tax_ids():
 
 
 def test_sparql_find_proteomes_tax_ids():
-    expected_proteomes_ids = {'id_1': (629, ['UP000255169', 'UP000000815'])}
+    expected_proteomes_ids = {'id_1': (629, ['UP000000815'])}
     ncbi = NCBITaxa()
     tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
     json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)

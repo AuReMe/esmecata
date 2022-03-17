@@ -136,6 +136,7 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 
 ````
 usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [--beta] [-r RANK_LIMIT]
+                          [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -152,10 +153,12 @@ optional arguments:
                         Use sparql endpoint instead of REST queries on Uniprot.
   --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
   -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
-                        Choose themaximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
+                        Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
   --beta                Use uniprot beta REST query.
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
                         This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
+  --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
+                        Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
 ````
 
 For each taxon in each taxonomic affiliations EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated with these taxon ID in the Uniprot Proteomes database.
@@ -198,6 +201,12 @@ By default, esmecata will try to downlaod the reference proteomes associated wit
 * `-l/--limit-proteomes`: choose the number of proteomes that will lead to the used of the selection of a subset of proteomes
 
 To avoid working on too many proteomes, esmecata works on subset of proteomes when there is too many proteomes (by default this limit is set on 99 proteomes). Using this option the user can modify the limit.
+
+* `--minimal-nb-proteomes`: choose the minimal number of proteomes that taxon must have to be selected by esmecata (default 1).
+
+To avoid working on too little proteomes, it is possible to give an int to this option.
+With this int, esmecata will select only taxon associated to at least this number of proteomes.
+For example if you use `--minimal-nb-proteomes 10`, and the lowest taxon in the taxonomic affiliation is associated with 3 proteomes, it will be ignored and a taxon with a higer taxonomic rank will be used.
 
 * `-r/--rank-limit`: This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored.
 
@@ -360,7 +369,7 @@ With this option, esmecata will extract the [expression information](https://www
 
 ````
 usage: esmecata workflow [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [-c CPU] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS]
-                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--beta] [-r RANK_LIMIT]
+                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--beta] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -378,7 +387,7 @@ optional arguments:
                         Use sparql endpoint instead of REST queries on Uniprot.
   --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
   -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
-                        Choose themaximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
+                        Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
   -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
                         Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.
   -m MMSEQS_OPTIONS, --mmseqs MMSEQS_OPTIONS
@@ -392,6 +401,8 @@ optional arguments:
   --beta                Use uniprot beta REST query.
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
                         This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
+  --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
+                        Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
 ````
 
 EsMeCTa will perform the search for proteomes, the protein clustering and the annotation.
