@@ -4,8 +4,8 @@
 
 ## Add
 
-* `--minimal-nb-proteomes`: Choose the minimal number of proteomes to be selected by EsMeCaTa, f a taxon has less proteomes, it will be ignored (iisue #11).
-* add a jupyter notebook explaining EsMeCaTa workflow.
+* `--minimal-nb-proteomes`: Choose the minimal number of proteomes to be selected by EsMeCaTa, if a taxon has less proteomes, it will be ignored (issue #11).
+* add a jupyter notebook explaining EsMeCaTa method.
 
 ## Fix
 
