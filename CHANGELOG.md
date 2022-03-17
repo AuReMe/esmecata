@@ -1,5 +1,16 @@
 # Changelog
 
+# EsMeCaTa v0.2.1 (2022-03-17)
+
+## Add
+
+* `--minimal-nb-proteomes`: Choose the minimal number of proteomes to be selected by EsMeCaTa, f a taxon has less proteomes, it will be ignored (iisue #11).
+* add a jupyter notebook explaining EsMeCaTa workflow.
+
+## Fix
+
+* issue when parsing SPARQL query result. The filtering of proteomes with BUSCO score in SPARQL query was incorrect.
+
 # EsMeCaTa v0.2.0 (2022-03-15)
 
 Refactor the code in EsMeCaTa to make it clearer.
