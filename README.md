@@ -7,8 +7,6 @@ Warning:
 
 **A new version of UniProt is in development (see [UniProt beta](https://beta.uniprot.org/)), a compatible version of EsMeCaTa is in development (with the `--beta` option) but it may also been unstable.**
 
-**And there seems to be an issue with SPARQL queries, the named graph Taxonomy seems to be missing from UniProt SPARQL endpoint. So the `esmecata proteoems` is not working with sparql.**
-
 ![](esmecata.svg)
 
 ## Table of contents
