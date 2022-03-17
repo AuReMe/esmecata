@@ -599,6 +599,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
     proteomes_ids = {}
     single_proteomes = {}
     tax_id_not_founds = {}
+    tax_id_without_minimal_proteomes_number = {}
     tax_id_founds = {}
 
     for observation_name in json_taxonomic_affiliations:
@@ -614,7 +615,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
                 break
 
             # If tax_id has not been found with a request do not try a new request with the same tax_id.
-            if tax_id in tax_id_not_founds:
+            if tax_id in tax_id_not_founds or tax_id in tax_id_without_minimal_proteomes_number:
                 continue
 
             # If tax_id not found because the tax_name has no tax_id associated avoid it.
@@ -640,10 +641,10 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
             # Check if the number of proteomes is inferior to the minimal_number_proteomes.
             elif len(proteomes) < minimal_number_proteomes:
                 logger.info('|EsMeCaTa|proteomes| Less than {0} proteomes ({1}) are associated with the taxa {2} associated with {3}, esmecata will use a higher taxonomic rank to find proteomes.'.format(minimal_number_proteomes, len(proteomes), tax_name, observation_name))
-                if tax_id not in tax_id_not_founds:
-                    tax_id_not_founds[tax_id] = [tax_name]
+                if tax_id not in tax_id_without_minimal_proteomes_number:
+                    tax_id_without_minimal_proteomes_number[tax_id] = [tax_name]
                 else:
-                    tax_id_not_founds[tax_id].append(tax_name)
+                    tax_id_without_minimal_proteomes_number[tax_id].append(tax_name)
                 continue
 
             elif len(proteomes) >= minimal_number_proteomes and len(proteomes) <= limit_maximal_number_proteomes:
@@ -806,6 +807,10 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             return
         else:
             logger.info('|EsMeCaTa|proteomes| --ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
+
+    if minimal_number_proteomes >= limit_maximal_number_proteomes:
+        logger.critical('|EsMeCaTa|proteomes| Error minimal_number_proteomes ({0}) can not be superior or equal to limit_maximal_number_proteomes ({1}).'.format(minimal_number_proteomes, limit_maximal_number_proteomes))
+        sys.exit()
 
     is_valid_dir(output_folder)
 
