@@ -860,7 +860,7 @@ def write_pathologic_file(protein_annotations, pathologic_folder, base_filename,
         pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
         create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_file)
     elif len(annotated_protein_to_keeps) == 0:
-        logger.critical('|EsMeCaTa|annotation| No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
+        logger.critical('|EsMeCaTa|annotation| No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
 
 
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation, beta=None):
@@ -877,11 +877,11 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     starttime = time.time()
 
     if uniprot_sparql_endpoint is None and uniref_annotation is not None:
-        logger.critical('|EsMeCaTa|annotation| At this moment, --uniref option needs to be used with --sparql option.')
+        logger.critical('|EsMeCaTa|annotation| At this moment, --uniref option needs to be used with --sparql option.')
         sys.exit()
 
     if uniprot_sparql_endpoint is None and expression_annotation is not None:
-        logger.critical('|EsMeCaTa|annotation| At this moment, --expression option needs to be used with --sparql option.')
+        logger.critical('|EsMeCaTa|annotation| At this moment, --expression option needs to be used with --sparql option.')
         sys.exit()
 
     is_valid_dir(output_folder)
@@ -982,7 +982,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         unique_gos = set(gos)
         ecs = [ec for protein in protein_annotations for ec in protein_annotations[protein][2]]
         unique_ecs = set(ecs)
-        logger.info('|EsMeCaTa|annotation| {0} Go Terms (with {1} unique GO Terms) and {2} EC numbers (with {3} unique EC) associated with {4}.'.format(len(gos),
+        logger.info('|EsMeCaTa|annotation| {0} Go Terms (with {1} unique GO Terms) and {2} EC numbers (with {3} unique EC) associated with {4}.'.format(len(gos),
                                                                                                 len(unique_gos), len(ecs), len(unique_ecs), base_filename))
 
     # Create mpwt taxon ID file.
