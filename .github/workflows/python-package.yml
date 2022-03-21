@@ -15,6 +15,7 @@ on:
       - 'LICENSE'
       - 'recipes/**'
       - 'tutorials/**'
+      - 'pictures/**'
   pull_request:
     branches: [ master ]
     paths-ignore:
@@ -26,6 +27,7 @@ on:
       - 'LICENSE'
       - 'recipes/**'
       - 'tutorials/**'
+      - 'pictures/**'
 
 jobs:
   build:
