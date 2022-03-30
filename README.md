@@ -23,11 +23,13 @@ Warning:
     - [`esmecata proteomes`: Retrieve proteomes associated with taxonomic affiliation](#esmecata-proteomes-retrieve-proteomes-associated-with-taxonomic-affiliation)
     - [`esmecata clustering`: Proteins clustering](#esmecata-clustering-proteins-clustering)
     - [`esmecata annotation`: Retrieve protein annotations](#esmecata-annotation-retrieve-protein-annotations)
+    - [`esmecata kegg`: Draft reconstruction of metabolic networks using KEGG](#esmecata-kegg-draft-reconstruction-of-metabolic-networks-using-kegg)
     - [`esmecata workflow`: Consecutive runs of the three steps](#esmecata-workflow-consecutive-runs-of-the-three-steps)
   - [EsMeCaTa outputs](#esmecata-outputs)
     - [EsMeCaTa proteomes](#esmecata-proteomes)
     - [EsMeCaTa clustering](#esmecata-clustering)
     - [EsMeCaTa annotation](#esmecata-annotation)
+    - [EsMeCaTa kegg](#esmecata-kegg)
     - [EsMeCaTa workflow](#esmecata-workflow)
 
 ## Requirements
@@ -364,11 +366,44 @@ To add more annotations, esmecata can search the [UniRef](https://www.uniprot.or
 
 With this option, esmecata will extract the [expression information](https://www.uniprot.org/help/expression_section) associated with a protein. This contains 3 elements: Induction, Tissue specificity and Disruption Phenotype. At this moment, this option is only usable when using the `--sparql` option.
 
+### `esmecata kegg`: Draft reconstruction of metabolic networks using KEGG
+
+````
+usage: esmecata kegg [-h] -i INPUT_DIR -o OUPUT_DIR [--beta] [--map-ko]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT_DIR, --input INPUT_DIR
+                        This input folder of esmecata kegg is the output folder of annotation command.
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  --beta                Use uniprot beta REST query.
+  --map-ko              From UniProt protein ID, retrieve KEGG ortholgos to infer KEGG reaction from them.
+````
+
+**Warning:**
+
+- **this option will (maybe) be available with the version 0.3.0 of EsMeCaTa (depending on how the development goes). If you want to use it, you must use the github version of the code.**
+
+- **these is some issues with the metabolic networks created: as KEGG does not show the direction of the reaction, all reactions are reversible, some reactions with stoechiometry (such as n or (n+1) are not handled).**
+
+- **the metabolic networks are created using a simple matching between Enzyme Commission/Kegg Orthologs and KEGG reaction IDs so it is possible to have false positives.**
+
+The idea of this function is to create draft metabolic networks from the protein clusters and the annotations selected by the previous steps.
+
+First a reference SBML file is created from all the reactions present in the KEGG database. A mapping file between KO ID, EC number and KEGG reaction is also created. This step can be long and creates a lot of files (1 file per KEGG reaction).
+It is possible to avoid the creation of the `kegg_model.sbml` and the `kegg_mapping.tsv` by putting these two files in a sub-folder named `kegg_model` in the output folder of the command. these two files are available in the `kegg_model.zip` file in the test directory of the github.
+
+Then by default a mapping is performed between the EC number infered during the `esmecata annotation` step and the KEGG reaction. Then the KEEG reactions are extracted from the KEGG reference SBML to create a SBML associated with the taxon.
+
+If the option `--map-ko` has been used, a second mapping is performed. Using the UniProt protein ID and the UniProt mapper, EsMeCaTa retrieves the KEGG gene ID associated with each protein ID. Then these IDs are converted into KO IDs using KEGG mapper. Then the KO IDs are converted into KEGG reaction IDs and these reactions are added to the SBML file. Due to the numerous queries performed by this option, it will be much slower.
+
+
 ### `esmecata workflow`: Consecutive runs of the three steps
 
 ````
 usage: esmecata workflow [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [-c CPU] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS]
-                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--beta] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES]
+                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--beta] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES] [--kegg] [--map-ko]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -402,9 +437,11 @@ optional arguments:
                         This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
+  --kegg                Use KEGG to infer draft metabolic networks after annotaiton step.
+  --map-ko              From UniProt protein ID, retrieve KEGG ortholgos to infer KEGG reaction from them.
 ````
 
-EsMeCTa will perform the search for proteomes, the protein clustering and the annotation.
+EsMeCaTa will perform the search for proteomes, the protein clustering and the annotation.
 
 ## EsMeCaTa outputs
 
@@ -551,6 +588,29 @@ The `esmecata_metadata_annotation.json` serves the same purpose as the one used 
 The `uniref_annotation` contains the annotation from the representative protein of the UniRef cluster associated with the proteins of a taxon (if the `--uniref` option was used).
 
 `stat_number_clustering.tsv` is a tabulated file containing the number of GO Terms and EC numbers found for each observation name.
+
+### EsMeCaTa kegg
+
+````
+output_folder
+├── kegg_model
+│   └── kegg_compound_name.tsv
+│   └── kegg_mapping.tsv
+│   └── kegg_model.sbml
+│   └── reaction_folder
+│       └── R00001.keg
+│       └── ...
+├── sbml
+│   └── Cluster_1.sbml
+│   └── ...
+├── esmecata_kegg.log
+````
+
+`kegg_model` contains the kegg reference files (`kegg_model.sbml` used to construct the other SBML) and the tsv mapping file (`kegg_mapping.tsv` to map EC/KO to reaction ID). `kegg_compound_name.tsv` contains the KEGG compound IDs and names, it is used to create the `kegg_model.sbml`. The `reaction_folder` contained keg reaction file (1 per reaction) and they are used to create both the `kegg_model.sbml` and the `kegg_mapping.tsv` file.
+
+`sbml` is a folder containing all SBML files associated with each observation name.
+
+The file `esmecata_kegg.log` contains the log associated with the command.
 
 ### EsMeCaTa workflow
 

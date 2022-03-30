@@ -25,7 +25,7 @@ import urllib.request
 
 from SPARQLWrapper import __version__ as sparqlwrapper_version
 
-from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query, urllib_query
+from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query, urllib_query, chunks
 from esmecata import __version__ as esmecata_version
 
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
@@ -381,21 +381,6 @@ def sparql_query_uniprot_expression(proteomes, expression_output_dict, uniprot_s
     return expression_output_dict
 
 
-def chunks(elements, n):
-    """Yield successive n-sized chunks from list.
-    Form: https://stackoverflow.com/a/312464
-
-    Args:
-        elements (list): list of elements (proteins or proteomes) to be split in chunks of size n
-        n (int): size of the chunks
-
-    Returns:
-        list: list of elements of size n
-    """
-    for i in range(0, len(elements), n):
-        yield elements[i:i + n]
-
-
 def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_output_file):
     """Create pathologic files.
 
@@ -571,7 +556,7 @@ def query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict):
     Returns:
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
     """
-    # The limit of 10 000 proteins per query comes from the help of Uniprot (inferior to 20 000):
+    # The limit of 15 000 proteins per query comes from the help of Uniprot (inferior to 20 000):
     # https://www.uniprot.org/help/uploadlists
     if len(protein_to_search_on_uniprots) < 15000:
         protein_queries = ','.join(protein_to_search_on_uniprots)
@@ -899,7 +884,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
 
         if uniprot_sparql_endpoint:
             proteomes = input_proteomes[base_filename]
-            output_dict = query_uniprot_annotation_sparql(proteomes, base_filename, uniprot_sparql_endpoint, output_dict)
+            output_dict = query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_dict)
         else:
             output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict)
 

@@ -543,7 +543,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept
 
     Returns:
         proteomes_ids (dict): observation name (key) associated with proteome IDs
@@ -739,7 +739,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
         rank_limit (str): rank limit to remove from the data
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept
     """
     starttime = time.time()
 

@@ -16,11 +16,13 @@ import csv
 import json
 import logging
 import os
+import sys
 import time
 
 from esmecata.proteomes import retrieve_proteomes, compute_stat_proteomes
 from esmecata.clustering import make_clustering, compute_stat_clustering
 from esmecata.annotation import annotate_proteins, compute_stat_annotation
+from esmecata.kegg_metabolism import create_draft_networks
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +86,8 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         limit_maximal_number_proteomes=99, rank_limit=None,
                         nb_cpu=1, clust_threshold=1, mmseqs_options=None,
                         linclust=None, propagate_annotation=None, uniref_annotation=None,
-                        expression_annotation=None, minimal_number_proteomes=1):
+                        expression_annotation=None, minimal_number_proteomes=1,
+                        kegg_reconstruction=False, mapping_ko=False):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -104,10 +107,15 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         propagate_annotation (float): float between 0 and 1. It is the ratio of proteins in the cluster that should have the annotation to keep this annotation.
         uniref_annotation (bool): option to use uniref annotation to add annotation
         expression_annotation (bool): option to add expression annotation from uniprot
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept
+        kegg_reconstruction (bool): use kegg_metabolism to reconstruct draft metabolic networks
+        mapping_ko (bool): option to use KO ID to retrieve reactions
     """
     starttime = time.time()
     workflow_metadata = {}
+
+    if mapping_ko is True and kegg_reconstruction is not True:
+        sys.exit('mapping_ko option (--map-ko) must be used with kegg_reconstruciton option (--kegg).')
 
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
@@ -123,6 +131,10 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
     annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation)
+
+    if kegg_reconstruction:
+        kegg_metabolism_output_folder = os.path.join(output_folder, '3_kegg_metabolism')
+        create_draft_networks(kegg_metabolism_output_folder, mapping_ko)
 
     stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
     compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file)
