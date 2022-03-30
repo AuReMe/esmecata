@@ -243,3 +243,18 @@ def send_uniprot_sparql_query(sparql_query, uniprot_sparql_endpoint):
         csvreader = []
 
     return csvreader
+
+
+def chunks(elements, n):
+    """Yield successive n-sized chunks from list.
+    Form: https://stackoverflow.com/a/312464
+
+    Args:
+        elements (list): list of elements (proteins or proteomes) to be split in chunks of size n
+        n (int): size of the chunks
+
+    Returns:
+        list: list of elements of size n
+    """
+    for i in range(0, len(elements), n):
+        yield elements[i:i + n]

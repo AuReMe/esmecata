@@ -21,6 +21,7 @@ import time
 from esmecata.proteomes import retrieve_proteomes
 from esmecata.clustering import make_clustering
 from esmecata.annotation import annotate_proteins
+from esmecata.kegg_metabolism import create_draft_networks
 from esmecata.workflow import perform_workflow
 from esmecata.utils import limited_integer_type, range_limited_float_type, is_valid_dir
 from esmecata import __version__ as VERSION
@@ -73,6 +74,14 @@ def main():
         dest='input',
         required=True,
         help='This input folder of annotation is the output folder of clustering command.',
+        metavar='INPUT_DIR')
+    parent_parser_i_kegg_folder = argparse.ArgumentParser(add_help=False)
+    parent_parser_i_kegg_folder.add_argument(
+        '-i',
+        '--input',
+        dest='input',
+        required=True,
+        help='This input folder of esmecata kegg is the output folder of annotation command.',
         metavar='INPUT_DIR')
 
     parent_parser_o = argparse.ArgumentParser(add_help=False)
@@ -218,6 +227,22 @@ def main():
         type=limited_integer_type,
         help='Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.',
         default=1)
+    parent_parser_map_ko = argparse.ArgumentParser(add_help=False)
+    parent_parser_map_ko.add_argument(
+        '--map-ko',
+        dest='map_ko',
+        help='From UniProt protein ID, retrieve KEGG ortholgos to infer KEGG reaction from them.',
+        required=False,
+        action='store_true',
+        default=None)
+    parent_parser_kegg = argparse.ArgumentParser(add_help=False)
+    parent_parser_kegg.add_argument(
+        '--kegg',
+        dest='kegg',
+        help='Use KEGG to infer draft metabolic networks after annotaiton step.',
+        required=False,
+        action='store_true',
+        default=None)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -253,16 +278,25 @@ def main():
             parent_parser_beta
             ],
         allow_abbrev=False)
+    kegg_parser = subparsers.add_parser(
+        'kegg',
+        help='Create KEGG draft metabolic networks.',
+        parents=[
+            parent_parser_i_kegg_folder, parent_parser_o, parent_parser_beta,
+            parent_parser_map_ko
+            ],
+        allow_abbrev=False)
     workflow_parser = subparsers.add_parser(
         'workflow',
-        help='Run all esmecata steps (proteomes, clustering and annotation).',
+        help='Run all esmecata steps (proteomes, clustering and annotation). Optionnaly run esmecata kegg step with the option --kegg',
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_b, parent_parser_c,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
             parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
             parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
-            parent_parser_beta, parent_parser_rank_limit, parent_parser_minimal_number_proteomes
+            parent_parser_beta, parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
+            parent_parser_kegg, parent_parser_map_ko
             ],
         allow_abbrev=False)
 
@@ -308,13 +342,16 @@ def main():
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
         annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression, args.beta)
+    elif args.cmd == 'kegg':
+        create_draft_networks(args.input, args.output, args.map_ko, args.beta)
     elif args.cmd == 'workflow':
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
                             args.limit_maximal_number_proteomes, args.rank_limit,
                             args.cpu, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
-                            args.expression, args.beta, args.minimal_number_proteomes)
+                            args.expression, args.beta, args.minimal_number_proteomes,
+                            args.kegg, args.map_ko)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
