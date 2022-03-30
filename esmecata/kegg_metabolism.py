@@ -525,9 +525,13 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
 
         species_model.add_reactions(sbml_reactions)
 
-        # Create SBML file.
-        sbml_output_file_path = os.path.join(sbml_output_folder_path, base_filename+'.sbml')
-        write_sbml_model(species_model, sbml_output_file_path)
+        # Create file if there si at least 1 reaction.
+        if len(species_model.reactions) > 0:
+            # Create SBML file.
+            sbml_output_file_path = os.path.join(sbml_output_folder_path, base_filename+'.sbml')
+            write_sbml_model(species_model, sbml_output_file_path)
+        else:
+            logger.info('No reactions in model for {0}, no SBML file will be created.'.format(base_filename))
 
     endtime = time.time()
     duration = endtime - starttime
