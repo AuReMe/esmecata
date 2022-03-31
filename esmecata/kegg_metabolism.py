@@ -40,6 +40,7 @@ logging.getLogger("cobra.io.sbml").setLevel(logging.CRITICAL)
 kegg = KEGG()
 uniprot = UniProt(verbose=False)
 
+
 def rest_query_uniprot_to_retrieve_kegg_gene(protein_queries, beta=None):
     """REST query to get KEGG gene ID from proteins.
 
@@ -220,7 +221,7 @@ def extract_reaction(reaction_id, equation_text):
             try:
                 stoechiometry = int(stoechiometry)
             except:
-                print('Stochiometry is not an int for {0} ignore it.'.format(reaction_id))
+                logger.critical('Stochiometry is not an int for {0} ignore it.'.format(reaction_id))
                 return None, None
         compound = m.groupdict()['compound']
         symbol = m.groupdict()['symbol']
@@ -269,7 +270,63 @@ def get_compound_names(compound_file):
             csvwriter.writerow([cpd_id, compounds[cpd_id]])
 
 
-def create_sbml_model_from_kegg_file(reaction_folder, compound_file, output_sbml, output_tsv):
+def get_modules(module_file):
+    """Using bioservices.KEGG to find the module associated with reacitons.
+
+    Args:
+        module_file (str): output file which will contains module ID, name, formula and reactions
+    """
+    response_text = kegg.link('module', 'reaction')
+    if response_text != '':
+        csvreader = csv.reader(response_text.splitlines(), delimiter='\t')
+    else:
+        csvreader = []
+    module_reactions = {}
+    for line in csvreader:
+        reaction_id = line[0].split(':')[1]
+        module_id = line[1].split(':')[1]
+        if module_id not in module_reactions:
+            module_reactions[module_id] = [reaction_id]
+        else:
+            module_reactions[module_id].append(reaction_id)
+
+    response_text = kegg.list('module')
+    if response_text != '':
+        csvreader = csv.reader(response_text.splitlines(), delimiter='\t')
+    else:
+        csvreader = []
+
+    modules = {}
+    for line in csvreader:
+        module_id = line[0].split(':')[1]
+        module_data = line[1].split(', ')
+        if len(module_data) > 2:
+            module_name = module_data[0]
+            module_formula = module_data[-1]
+        else:
+            module_name = module_data[0]
+            module_formula = ''
+        modules[module_id] = (module_name, module_formula)
+
+    all_modules = set(list(modules.keys()) + list(module_reactions.keys()))
+    with open(module_file, 'w') as output_file:
+        csvwriter = csv.writer(output_file, delimiter='\t')
+        csvwriter.writerow(['module_id', 'module_name', 'module_formula', 'module_reactions'])
+        for module_id in all_modules:
+            if module_id in module_reactions:
+                module_reaction = ','.join(module_reactions[module_id])
+            else:
+                module_reaction = ''
+            if module_id in modules:
+                module_name = modules[module_id][0]
+                module_formula = modules[module_id][1]
+            else:
+                module_name = ''
+                module_formula = ''
+            csvwriter.writerow([module_id, module_name, module_formula, module_reaction])
+
+
+def create_sbml_model_from_kegg_file(reaction_folder, compound_file, output_sbml, output_tsv, pathways_tsv):
     """Using the reaction keg files (from retrieve_reactions), the compound file (from get_compound_names),
     create a SBML file (containing all reactions of KEGG) and a tsv file (used to map EC and/or KO to reaction ID)
 
@@ -278,6 +335,7 @@ def create_sbml_model_from_kegg_file(reaction_folder, compound_file, output_sbml
         compound_file (str): path to the tsv file containing compound ID and name
         output_sbml (str): path to the sbml output file
         output_tsv (str): path to an output tsv file mapping reaction ID, with KO and EC
+        pathways_tsv (str): path to an output tsv showing the pathway, pathway ID and the associated reactions
     """
     compounds = {}
     with open(compound_file, 'r') as output_file:
@@ -290,6 +348,7 @@ def create_sbml_model_from_kegg_file(reaction_folder, compound_file, output_sbml
     model = Model('KEGG')
     sbml_reactions = []
     reactions = {}
+    pathways = {}
     for reaction_file in os.listdir(reaction_folder):
         reaction_file_path = os.path.join(reaction_folder, reaction_file)
         with open(reaction_file_path) as open_reaction_file_path:
@@ -309,6 +368,15 @@ def create_sbml_model_from_kegg_file(reaction_folder, compound_file, output_sbml
             kegg_ecs = reaction_data['ENZYME']
         else:
             kegg_ecs = []
+        if 'PATHWAY' in reaction_data:
+            kegg_pathways = reaction_data['PATHWAY']
+            for pathway in kegg_pathways:
+                if pathway not in pathways:
+                    pathways[pathway] = {}
+                    pathways[pathway]['name'] = kegg_pathways[pathway]
+                    pathways[pathway]['reaction'] = [reaction_id]
+                else:
+                    pathways[pathway]['reaction'].append(reaction_id)
         reaction_ecs[reaction_id] = [kegg_orthologs, kegg_ecs]
         if left_compounds is None:
             continue
@@ -340,6 +408,14 @@ def create_sbml_model_from_kegg_file(reaction_folder, compound_file, output_sbml
         csvwriter.writerow(['reaction_id', 'kegg_orthologs', 'kegg_ec'])
         for reaction_id in reaction_ecs:
             csvwriter.writerow([reaction_id, ','.join(reaction_ecs[reaction_id][0]), ','.join(reaction_ecs[reaction_id][1])])
+
+    with open(pathways_tsv, 'w') as open_output_tsv:
+        csvwriter = csv.writer(open_output_tsv, delimiter='\t')
+        csvwriter.writerow(['pathway_id', 'pathway_name', 'pathway_reactions'])
+        for pathway_id in pathways:
+            pathway_name = pathways[pathway_id]['name']
+            pathway_reactions = ','.join(set(pathways[pathway_id]['reaction']))
+            csvwriter.writerow([pathway_id, pathway_name, pathway_reactions])
 
 
 def map_protein_to_KO_id(proteins_ids):
@@ -446,20 +522,40 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
     compound_file_path = os.path.join(kegg_model_path, 'kegg_compound_name.tsv')
     kegg_sbml_model_path = os.path.join(kegg_model_path, 'kegg_model.sbml')
     kegg_rxn_mapping_path = os.path.join(kegg_model_path, 'kegg_mapping.tsv')
+    kegg_pathways_path = os.path.join(kegg_model_path, 'kegg_pathways.tsv')
 
-    if not os.path.exists(kegg_sbml_model_path) and not os.path.exists(kegg_rxn_mapping_path):
+    missing_files = [not os.path.exists(kegg_sbml_model_path), not os.path.exists(kegg_rxn_mapping_path), not os.path.exists(kegg_pathways_path)]
+    if any(missing_files):
         if not os.path.exists(kegg_reactions_folder_path):
-            logger.info('|EsMeCaTa|kegg| Retrieve reactions from KEGG.')
+            logger.info('|EsMeCaTa|kegg| Retrieve reactions from KEGG to create SMBL model.')
             retrieve_reactions(kegg_reactions_folder_path)
         if not os.path.exists(compound_file_path):
-            logger.info('|EsMeCaTa|kegg| Retrieve compound IDs and names from KEGG.')
+            logger.info('|EsMeCaTa|kegg| Retrieve compound IDs and names from KEGG to create SMBL model.')
             get_compound_names(compound_file_path)
         logger.info('|EsMeCaTa|kegg| Create KEGG reference SBML and mapping tsv file.')
-        create_sbml_model_from_kegg_file(kegg_reactions_folder_path, compound_file_path, kegg_sbml_model_path, kegg_rxn_mapping_path)
+        create_sbml_model_from_kegg_file(kegg_reactions_folder_path, compound_file_path, kegg_sbml_model_path, kegg_rxn_mapping_path, kegg_pathways_path)
+
+    kegg_pathways = {}
+    with open(kegg_pathways_path, 'r') as open_kegg_pathways_path:
+        csvreader = csv.reader(open_kegg_pathways_path, delimiter='\t')
+        next(csvreader)
+        for line in csvreader:
+            pathway_id = line[0]
+            pathway_name = line[1]
+            pathway_reactions = line[2].split(',')
+            kegg_pathways[pathway_id] = (pathway_name, pathway_reactions)
 
     # Create SBML output folder.
     sbml_output_folder_path = os.path.join(output_folder, 'sbml')
     is_valid_dir(sbml_output_folder_path)
+
+    # Create KO output folder.
+    ko_output_folder_path = os.path.join(output_folder, 'ko')
+    is_valid_dir(ko_output_folder_path)
+
+    # Create pathways annotated output folder.
+    pathways_output_folder_path = os.path.join(output_folder, 'pathways')
+    is_valid_dir(pathways_output_folder_path)
 
     ko_to_reactions, ec_to_reactions = retrieve_mapping_dictonaries(kegg_rxn_mapping_path)
 
@@ -475,41 +571,88 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
 
         # Extract protein IDs and EC number from anntotation reference folder.
         protein_ec_numbers = {}
+        protein_clusters = {}
         with open(annot_file_path, 'r') as open_annot_file_path:
             csvreader = csv.reader(open_annot_file_path, delimiter='\t')
             next(csvreader)
             for line in csvreader:
                 protein_id = line[0]
-                ec_numbers = line[4].split(',')
+                protein_cluster = line[1].split(',')
+                ec_numbers = line[5].split(',')
                 protein_ec_numbers[protein_id] = ec_numbers
+                protein_clusters[protein_id] = protein_cluster
 
         taxon_reactions = {}
         # If mapping KO option is used, search for Ko terms associated to proteins.
         if mapping_ko is True:
-            reference_protein = protein_ec_numbers.keys()
-            protein_ko_mapping = map_protein_to_KO_id(reference_protein) 
+            protein_to_maps = set([protein_id for protein_cluster in protein_clusters for protein_id in protein_clusters[protein_cluster]])
+            protein_ko_mapping = map_protein_to_KO_id(protein_to_maps)
 
-            for protein in protein_ko_mapping:
-                ko_id = protein_ko_mapping[protein].replace('ko:', '')
-                if ko_id in ko_to_reactions:
-                    reaction_ids = ko_to_reactions[ko_id]
-                    for reaction_id in reaction_ids:
-                        if reaction_id not in taxon_reactions:
-                            taxon_reactions[reaction_id] = [protein]
+            ko_output_file_path = os.path.join(ko_output_folder_path, base_filename+'.tsv')
+            with open(ko_output_file_path, 'w') as output_file:
+                csvwriter = csv.writer(output_file, delimiter='\t')
+                csvwriter.writerow(['protein', 'KO'])
+                for protein_cluster in protein_clusters:
+                    for protein_id in protein_clusters[protein_cluster]:
+                        if protein_id in protein_ko_mapping:
+                            ko = protein_ko_mapping[protein_id]
                         else:
-                            taxon_reactions[reaction_id].append(protein)
+                            ko = ''
+                        csvwriter.writerow([protein_id, ko])
+
+            # Keep KO and propagate their reaction only if they appear in all protein of the cluster.
+            ko_added_reactions = []
+            all_kos = []
+            for protein_cluster in protein_clusters:
+                ko_ids = [[protein_ko_mapping[protein_id]] if protein_id in protein_ko_mapping else [] for protein_id in protein_clusters[protein_cluster]]
+                protein_all_ko_ids = set([ko_id for subko_ids in ko_ids for ko_id in subko_ids])
+                all_kos.extend(list(protein_all_ko_ids))
+                keep_kos = [ko_id for ko_id in protein_all_ko_ids if sum(subko_ids.count(ko_id) for subko_ids in ko_ids) >= 1 * len(protein_clusters[protein_cluster])]
+                for ko_id in keep_kos:
+                    ko_id = ko_id.replace('ko:', '')
+                    if ko_id in ko_to_reactions:
+                        reaction_ids = ko_to_reactions[ko_id]
+                        for reaction_id in reaction_ids:
+                            ko_added_reactions.append(reaction_id)
+                            if reaction_id not in taxon_reactions:
+                                taxon_reactions[reaction_id] = [protein_cluster]
+                            else:
+                                taxon_reactions[reaction_id].append(protein_cluster)
+            logger.info('|EsMeCaTa|kegg| Added {0} reactions from {1} KO for taxon {2}.'.format(len(set(ko_added_reactions)), len(set(all_kos)), base_filename))
 
         # Use EC found to be associated to reference protein to retrieve KEEG reaction.
+        ec_added_reactions = []
+        all_ecs = []
         for protein in protein_ec_numbers:
             ec_ids = protein_ec_numbers[protein]
+            all_ecs.extend(ec_ids)
             for ec_id in ec_ids:
                 if ec_id in ec_to_reactions:
                     reaction_ids = ec_to_reactions[ec_id]
                     for reaction_id in reaction_ids:
+                        ec_added_reactions.append(reaction_id)
                         if reaction_id not in taxon_reactions:
                             taxon_reactions[reaction_id] = [protein]
                         else:
                             taxon_reactions[reaction_id].append(protein)
+        logger.info('|EsMeCaTa|kegg| Added {0} reactions from {1} EC for taxon {2}.'.format(len(set(ec_added_reactions)), len(set(all_ecs)), base_filename))
+
+        total_added_reactions = list(taxon_reactions.keys())
+        if mapping_ko is True:
+            logger.info('|EsMeCaTa|kegg| A total of {0} unique reactions are added from EC and KO for taxon {1}.'.format(len(total_added_reactions), base_filename))
+
+        # Create pathway file contening pathway with reacitons in the taxon.
+        pathways_output_file_path = os.path.join(pathways_output_folder_path, base_filename+'.tsv')
+        with open(pathways_output_file_path, 'w') as open_pathways_output_file_path:
+            csvwriter = csv.writer(open_pathways_output_file_path, delimiter='\t')
+            csvwriter.writerow(['pathway_id', 'pathway_name', 'pathway_compeltion_ratio', 'pathway_reaction_in_taxon', 'pathway_reaction'])
+            for pathway in kegg_pathways:
+                pathway_reactions = kegg_pathways[pathway][1]
+                pathway_reaction_in_taxon = set(pathway_reactions).intersection(set(total_added_reactions))
+                if len(pathway_reaction_in_taxon) > 0:
+                    pathway_name = kegg_pathways[pathway][0]
+                    pathway_completion_ratio = len(pathway_reaction_in_taxon) / len(pathway_reactions)
+                    csvwriter.writerow([pathway, pathway_name, pathway_completion_ratio, ','.join(pathway_reaction_in_taxon), ','.join(pathway_reactions)])
 
         kegg_model = read_sbml_model(kegg_sbml_model_path)
 

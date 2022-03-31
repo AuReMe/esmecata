@@ -24,19 +24,34 @@ UP000119554_ANOTATIONS = {'O91464': ['Genome polyprotein', True,
 
 def compare_annotation_dict(expected_dict, result_dict, propagate_test=None):
     for protein in result_dict:
-        assert expected_dict[protein][0] == result_dict[protein][0]
-        # For propagation 1 is GO term where for other dict it is reviewed
         if propagate_test is None:
+            # 0: Protein name
+            # 1: Review status
+            # 2: GO Terms
+            # 3: EC numbers
+            # 4: Interpros
+            # 5: Rhea IDs
+            # 6: gene name
+            assert expected_dict[protein][0] == result_dict[protein][0]
             assert expected_dict[protein][1] == result_dict[protein][1]
-        else:
-            assert set(expected_dict[protein][1]) == set(result_dict[protein][1])
-        assert set(expected_dict[protein][2]) == set(result_dict[protein][2])
-        assert set(expected_dict[protein][3]) == set(result_dict[protein][3])
-        # No more annotations for protein_annotation dict from propagation
-        if propagate_test is None:
+            assert set(expected_dict[protein][2]) == set(result_dict[protein][2])
+            assert set(expected_dict[protein][3]) == set(result_dict[protein][3])
             assert set(expected_dict[protein][4]) == set(result_dict[protein][4])
             assert set(expected_dict[protein][5]) == set(result_dict[protein][5])
             assert expected_dict[protein][6] == result_dict[protein][6]
+        else:
+            # 0: Protein name
+            # 1: GO Terms
+            # 2: EC numbers
+            # 3: Interpros
+            # 4: Rhea IDs
+            # 5: gene name
+            assert expected_dict[protein][0] == result_dict[protein][0]
+            assert set(expected_dict[protein][1]) == set(result_dict[protein][1])
+            assert set(expected_dict[protein][2]) == set(result_dict[protein][2])
+            assert set(expected_dict[protein][3]) == set(result_dict[protein][3])
+            assert set(expected_dict[protein][4]) == set(result_dict[protein][4])
+            assert expected_dict[protein][5] == result_dict[protein][5]
 
 
 def test_extract_protein_cluster():
@@ -80,25 +95,25 @@ def test_propagate_annotation_in_cluster():
     # Default behaviour no propagation only annotation from representative proteins.
     propagate_annotation = None
     protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
-    expected_result_no_propagation = {'prot_1': ['function_1', ['GO:0031522', 'GO:0004765'], ['7.4.2.8'], 'gene_1']}
+    expected_result_no_propagation = {'prot_1': ['function_1', ['GO:0031522', 'GO:0004765'], ['7.4.2.8'], ['IPR027417'], [], 'gene_1']}
     compare_annotation_dict(expected_result_no_propagation, protein_annotations, True)
 
     # Propagation with threshold at 0, meaning all the annotations from all the protein in the cluster will be used (union of annotations).
     propagate_annotation = 0
     protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
-    expected_result_propagation_0_union = {'prot_1': ['function_1', ['GO:0004765', 'GO:0005737', 'GO:0031522'], ['2.7.1.71', '7.4.2.8'], 'gene_1']}
+    expected_result_propagation_0_union = {'prot_1': ['function_1', ['GO:0004765', 'GO:0005737', 'GO:0031522'], ['2.7.1.71', '7.4.2.8'], ['IPR027417'], [], 'gene_1']}
     compare_annotation_dict(expected_result_propagation_0_union, protein_annotations, True)
 
     # Propagation with threshold at 0.66, an annotation is kept if it appears at least in 2 proteins on the 3 of the test.
     propagate_annotation = 0.66
     protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
-    expected_result_propagation_0_66 = {'prot_1': ['function_1', ['GO:0005737', 'GO:0031522'], ['7.4.2.8'], 'gene_1']}
+    expected_result_propagation_0_66 = {'prot_1': ['function_1', ['GO:0005737', 'GO:0031522'], ['7.4.2.8'], ['IPR027417'], [], 'gene_1']}
     compare_annotation_dict(expected_result_propagation_0_66, protein_annotations, True)
 
     # Propagation with threshold at 1, an annotation is kept only if it occurs in all protein of the clsuter (intersection of annotation).
     propagate_annotation = 1
     protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
-    expected_result_propagation_1_intersection = {'prot_1': ['function_1', ['GO:0031522'], ['7.4.2.8'], 'gene_1']}
+    expected_result_propagation_1_intersection = {'prot_1': ['function_1', ['GO:0031522'], ['7.4.2.8'], [], [], 'gene_1']}
     compare_annotation_dict(expected_result_propagation_1_intersection, protein_annotations, True)
 
 
