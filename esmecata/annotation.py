@@ -395,8 +395,8 @@ def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_outp
         element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
         for protein in annotated_protein_to_keeps:
             element_file.write('ID\t' + protein + '\n')
-            if annotated_protein_to_keeps[protein][3] != '':
-                element_file.write('NAME\t' + annotated_protein_to_keeps[protein][3] + '\n')
+            if annotated_protein_to_keeps[protein][5] != '':
+                element_file.write('NAME\t' + annotated_protein_to_keeps[protein][5] + '\n')
             else:
                 element_file.write('NAME\t' + protein + '\n')
             if annotated_protein_to_keeps[protein][0] != '':
@@ -427,24 +427,32 @@ def compute_stat_annotation(annotation_reference_folder, stat_file=None):
             annotation_input_file_path = os.path.join(annotation_reference_folder, infile)
             infile_gos = []
             infile_ecs = []
+            infile_interpros = []
+            infile_rhea_ids = []
             with open(annotation_input_file_path, 'r') as open_annotation_input_file_path:
                 csvreader = csv.reader(open_annotation_input_file_path, delimiter='\t')
                 next(csvreader)
                 for line in csvreader:
-                    gos = line[3].split(',')
-                    ecs = line[4].split(',')
+                    gos = line[4].split(',')
+                    ecs = line[5].split(',')
+                    interpos = line[6].split(',')
+                    rheas_ids = line[7].split(',')
                     infile_gos.extend(gos)
                     infile_ecs.extend(ecs)
+                    infile_interpros.extend(interpos)
+                    infile_rhea_ids.extend(rheas_ids)
             infile_gos = set([go for go in infile_gos if go != ''])
             infile_ecs = set([ec for ec in infile_ecs if ec != ''])
-            annotation_numbers[infile.replace('.tsv','')] = (len(infile_gos), len(infile_ecs))
+            infile_interpros = set([interpro for interpro in infile_interpros if interpro != ''])
+            infile_rhea_ids = set([rhea_id for rhea_id in infile_rhea_ids if rhea_id != ''])
+            annotation_numbers[infile.replace('.tsv','')] = (len(infile_gos), len(infile_ecs), len(infile_interpros), len(infile_rhea_ids))
 
     if stat_file:
         with open(stat_file, 'w') as stat_file_open:
             csvwriter = csv.writer(stat_file_open, delimiter='\t')
-            csvwriter.writerow(['observation_name', 'Number_go_terms', 'Number_ecs'])
+            csvwriter.writerow(['observation_name', 'Number_go_terms', 'Number_ecs', 'Number_interpros', 'Number_rhea'])
             for observation_name in annotation_numbers:
-                csvwriter.writerow([observation_name, annotation_numbers[observation_name][0], annotation_numbers[observation_name][1]])
+                csvwriter.writerow([observation_name, annotation_numbers[observation_name][0], annotation_numbers[observation_name][1], annotation_numbers[observation_name][2], annotation_numbers[observation_name][3]])
 
     return annotation_numbers
 
@@ -695,6 +703,8 @@ def propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_a
         if propagate_annotation is not None:
             gos = []
             ecs = []
+            interpros = []
+            rhea_ids = []
             gene_names = []
             protein_names = []
             for protein in reference_proteins[reference_protein]:
@@ -705,11 +715,17 @@ def propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_a
                         gos.append(list(set(output_dict[protein][2])))
                     if output_dict[protein][3] != []:
                         ecs.append(list(set(output_dict[protein][3])))
+                    if output_dict[protein][4] != []:
+                        interpros.append(list(set(output_dict[protein][4])))
+                    if output_dict[protein][5] != []:
+                        rhea_ids.append(list(set(output_dict[protein][5])))
                     if output_dict[protein][6] != '':
                         gene_names.append(output_dict[protein][6])
 
             keep_gos = []
             keep_ecs = []
+            keep_interpros = []
+            keep_rheas = []
             keep_gene_names = ''
             keep_protein_names = ''
             # Propagate all the annotations (GO, EC) that have been found to occur in at least X proteins of the cluster. Where X is computed using the ratio given by the user and
@@ -720,20 +736,28 @@ def propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_a
             if len(ecs) > 0:
                 all_ecs = set([ec for subecs in ecs for ec in subecs])
                 keep_ecs = [ec for ec in all_ecs if sum(subecs.count(ec) for subecs in ecs) >= propagate_annotation * len(reference_proteins[reference_protein])]
+            if len(interpros) > 0:
+                all_interpros = set([interpro for subinterpros in interpros for interpro in subinterpros])
+                keep_interpros = [interpro for interpro in all_interpros if sum(subinterpros.count(interpro) for subinterpros in interpros) >= propagate_annotation * len(reference_proteins[reference_protein])]
+            if len(ecs) > 0:
+                all_rhea_ids = set([rhea_id for subrhea_ids in rhea_ids for rhea_id in subrhea_ids])
+                keep_rheas = [rhea_id for rhea_id in all_rhea_ids if sum(subrhea_ids.count(rhea_id) for subrhea_ids in rhea_ids) >= propagate_annotation * len(reference_proteins[reference_protein])]
             # Retrieve the gene and protein names by using the gene/protein name which the maximum occurrence in the proteins of the cluster.
             if len(gene_names) > 0:
                 keep_gene_names = max(gene_names,key=gene_names.count)
             if len(protein_names) > 0:
                 keep_protein_names = max(protein_names,key=protein_names.count)
 
-            protein_annotations[reference_protein] = [keep_protein_names, keep_gos, keep_ecs, keep_gene_names]
+            protein_annotations[reference_protein] = [keep_protein_names, keep_gos, keep_ecs, keep_interpros, keep_rheas, keep_gene_names]
         else:
             # Use only annotation from representative proteins.
             protein_name = output_dict[reference_protein][0]
             gos = output_dict[reference_protein][2]
             ecs = output_dict[reference_protein][3]
+            interpros = output_dict[reference_protein][4]
+            rhea_ids = output_dict[reference_protein][5]
             gene_name = output_dict[reference_protein][6]
-            protein_annotations[reference_protein] = [protein_name, gos, ecs, gene_name]
+            protein_annotations[reference_protein] = [protein_name, gos, ecs, interpros, rhea_ids, gene_name]
 
         # Propagate anntoations from Uniref
         if uniref_output_dict is not None:
@@ -749,32 +773,36 @@ def propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_a
     return protein_annotations
 
 
-def write_annotation_reference(protein_annotations, annotation_reference_file, expression_output_dict):
+def write_annotation_reference(protein_annotations, reference_proteins, annotation_reference_file, expression_output_dict):
     """Write the annotation associated with a cluster after propagation step.
 
     Args:
         protein_annotations (dict): annotation dict: protein as key and annotation as value ([function_name, [go_terms], [ec_numbers], gene_name])
+        reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
         annotation_reference_file (str): pathname to output tabulated file
         expression_output_dict (dict): expression dict: protein as key and expression as value
     """
     with open(annotation_reference_file, 'w') as output_tsv:
         csvwriter = csv.writer(output_tsv, delimiter='\t')
         if expression_output_dict:
-            csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC', 'Induction', 'Tissue_Specificity', 'Disruption_Phenotype'])
+            csvwriter.writerow(['protein_cluster', 'cluster_members', 'protein_name', 'gene_name', 'GO', 'EC', 'InterPro', 'Rhea', 'Induction', 'Tissue_Specificity', 'Disruption_Phenotype'])
         else:
-            csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC'])
+            csvwriter.writerow(['protein_cluster', 'cluster_members', 'protein_name', 'gene_name', 'GO', 'EC', 'InterPro', 'Rhea'])
         for protein in protein_annotations:
+            cluster_members = ','.join(reference_proteins[protein])
             protein_name = protein_annotations[protein][0]
-            gene_name = protein_annotations[protein][3]
+            gene_name = protein_annotations[protein][5]
             gos = ','.join(sorted(list(protein_annotations[protein][1])))
             ecs = ','.join(sorted(list(protein_annotations[protein][2])))
+            interpros = ','.join(sorted(list(protein_annotations[protein][3])))
+            rhea_ids = ','.join(sorted(list(protein_annotations[protein][4])))
             if expression_output_dict:
                 induction = expression_output_dict[protein][0]
                 tissue_specificity = expression_output_dict[protein][1]
                 disruption = expression_output_dict[protein][2]
-                csvwriter.writerow([protein, protein_name, gene_name, gos, ecs, induction, tissue_specificity, disruption])
+                csvwriter.writerow([protein, cluster_members, protein_name, gene_name, gos, ecs, interpros, rhea_ids, induction, tissue_specificity, disruption])
             else:
-                csvwriter.writerow([protein, protein_name, gene_name, gos, ecs])
+                csvwriter.writerow([protein, cluster_members, protein_name, gene_name, gos, ecs, interpros, rhea_ids])
 
 
 def write_pathologic_file(protein_annotations, pathologic_folder, base_filename, set_proteins):
@@ -908,7 +936,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             expression_output_dict = None
         protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
         annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
-        write_annotation_reference(protein_annotations, annotation_reference_file, expression_output_dict)
+        write_annotation_reference(protein_annotations, reference_proteins, annotation_reference_file, expression_output_dict)
         write_pathologic_file(protein_annotations, pathologic_folder, base_filename, set_proteins)
 
         gos = [go for protein in protein_annotations for go in protein_annotations[protein][1]]

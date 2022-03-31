@@ -575,7 +575,7 @@ output_folder
 
 The `annotation` folder contains a tabulated file for each `observation_name`. It contains the annotation retrieved with Uniprot (protein_name, review, GO Terms, EC numbers, Interpros, Rhea IDs and gene name) associated with all the proteins in a proteome or associated with an `observation_name`.
 
-The `annotation_reference` contains annotation only for the representative proteins, but the annotation of the other proteins of the same cluster can be propagated to the reference protein if the `-p` was used.
+The `annotation_reference` contains annotation associated with a protein cluster, by default the annotation shared by all proteins are propagated but it can be modified with the option `-p`.
 
 The `expression_annotation` contains expression annotation for the proteins of a taxon (if the `--expression` option was used).
 
