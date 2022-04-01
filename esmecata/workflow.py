@@ -22,12 +22,12 @@ import time
 from esmecata.proteomes import retrieve_proteomes, compute_stat_proteomes
 from esmecata.clustering import make_clustering, compute_stat_clustering
 from esmecata.annotation import annotate_proteins, compute_stat_annotation
-from esmecata.kegg_metabolism import create_draft_networks
+from esmecata.kegg_metabolism import create_draft_networks, compute_stat_kegg
 
 logger = logging.getLogger(__name__)
 
 
-def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file=None):
+def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file=None, kegg_metabolism_output_folder=None):
     """Compute stat associated with the number of proteome for each taxonomic affiliations.
 
     Args:
@@ -35,6 +35,7 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
         clustering_output_folder (str): pathname to the result folder containing mmseqs results
         annotation_output_folder (str): pathname to the annotation reference folder containing annotations for each cluster
         stat_file (str): pathname to the tsv stat file
+        kegg_metabolism_output_folder (str): pathname to the sbml folder containing draft metabolic network
 
     Returns:
         workflow_numbers (dict): dict containing observation names (as key) associated with proteomes, protein clusters, GO Terms and EC (as value)
@@ -50,7 +51,15 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
     annotation_reference_folder = os.path.join(annotation_output_folder, 'annotation_reference')
     annotation_numbers = compute_stat_annotation(annotation_reference_folder)
 
-    all_observation_names = {*proteome_numbers.keys(), *clustering_numbers.keys(), *annotation_numbers.keys()}
+    if kegg_metabolism_output_folder is not None:
+        sbml_kegg_folder = os.path.join(kegg_metabolism_output_folder, 'sbml')
+        kegg_numbers = compute_stat_kegg(sbml_kegg_folder)
+
+    if kegg_metabolism_output_folder is not None:
+        all_observation_names = {*proteome_numbers.keys(), *clustering_numbers.keys(), *annotation_numbers.keys(), *kegg_numbers.keys()}
+    else:
+        all_observation_names = {*proteome_numbers.keys(), *clustering_numbers.keys(), *annotation_numbers.keys()}
+
     for observation_name in all_observation_names:
         if observation_name in proteome_numbers:
             nb_proteomes = proteome_numbers[observation_name]
@@ -64,19 +73,30 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
             nb_gos = annotation_numbers[observation_name][0]
             nb_ecs = annotation_numbers[observation_name][1]
         else:
-            nb_proteomes = 'NA'
-        workflow_numbers[observation_name] = [nb_proteomes, nb_shared_proteins, nb_gos, nb_ecs]
+            nb_gos = 'NA'
+            nb_ecs = 'NA'
+        if kegg_metabolism_output_folder is not None:
+            if observation_name in kegg_numbers:
+                nb_reactions = kegg_numbers[observation_name][0]
+                nb_metabolites = kegg_numbers[observation_name][1]
+            else:
+                nb_reactions = 'NA'
+                nb_metabolites = 'NA'
+        if kegg_metabolism_output_folder is not None:
+            workflow_numbers[observation_name] = [nb_proteomes, nb_shared_proteins, nb_gos, nb_ecs, nb_reactions, nb_metabolites]
+        else:
+            workflow_numbers[observation_name] = [nb_proteomes, nb_shared_proteins, nb_gos, nb_ecs]
 
     if stat_file:
         with open(stat_file, 'w') as stat_file_open:
             csvwriter = csv.writer(stat_file_open, delimiter='\t')
-            csvwriter.writerow(['observation_name', 'Number_proteomes', 'Number_shared_proteins', 'Number_go_terms', 'Number_ecs'])
+            if kegg_metabolism_output_folder is not None:
+                file_headers = ['observation_name', 'Number_proteomes', 'Number_shared_proteins', 'Number_go_terms', 'Number_ecs', 'Number_reactions', 'Number_metabolites']
+            else:
+                file_headers = ['observation_name', 'Number_proteomes', 'Number_shared_proteins', 'Number_go_terms', 'Number_ecs']
+            csvwriter.writerow(file_headers)
             for observation_name in workflow_numbers:
-                nb_proteomes = workflow_numbers[observation_name][0]
-                nb_shared_proteins = workflow_numbers[observation_name][1]
-                nb_gos = workflow_numbers[observation_name][2]
-                nb_ecs = workflow_numbers[observation_name][3]
-                csvwriter.writerow([observation_name, nb_proteomes, nb_shared_proteins, nb_gos, nb_ecs])
+                csvwriter.writerow([observation_name, *workflow_numbers[observation_name]])
 
     return workflow_numbers
 
@@ -136,9 +156,11 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
     if kegg_reconstruction:
         kegg_metabolism_output_folder = os.path.join(output_folder, '3_kegg_metabolism')
         create_draft_networks(annotation_output_folder, kegg_metabolism_output_folder, mapping_ko, beta)
+    else:
+        kegg_metabolism_output_folder = None
 
     stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
-    compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file)
+    compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file, kegg_metabolism_output_folder)
 
     proteomes_metadata_file = os.path.join(proteomes_output_folder, 'esmecata_metadata_proteomes.json')
     with open(proteomes_metadata_file, 'r') as json_idata:
@@ -149,10 +171,16 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
     annotation_metadata_file = os.path.join(annotation_output_folder, 'esmecata_metadata_annotation.json')
     with open(annotation_metadata_file, 'r') as json_idata:
         annotation_metadata = json.load(json_idata)
+    if kegg_metabolism_output_folder is not None:
+        kegg_metadata_file = os.path.join(kegg_metabolism_output_folder, 'esmecata_metadata_kegg.json')
+        with open(kegg_metadata_file, 'r') as json_idata:
+            kegg_metadata = json.load(json_idata)
 
     workflow_metadata['proteomes_metadata'] = proteomes_metadata
     workflow_metadata['clustering_metadata'] = clustering_metadata
     workflow_metadata['annotation_metadata'] = annotation_metadata
+    if kegg_metabolism_output_folder is not None:
+        workflow_metadata['kegg_metadata'] = kegg_metadata
 
     endtime = time.time()
     duration = endtime - starttime

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 def compute_stat_clustering(result_folder, stat_file=None):
-    """Compute stat associated to the number of proteome for each taxonomic affiliations.
+    """Compute stat associated to the number of protein clusters for each taxonomic affiliations.
 
     Args:
         result_folder (str): pathname to the result folder containing mmseqs results
