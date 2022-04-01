@@ -412,7 +412,7 @@ def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_outp
 
 
 def compute_stat_annotation(annotation_reference_folder, stat_file=None):
-    """Compute stat associated with the number of proteome for each taxonomic affiliations.
+    """Compute stat associated with the number of annotations for each taxonomic affiliations.
 
     Args:
         annotation_reference_folder (str): pathname to the annotation reference folder containing annotations for each cluster

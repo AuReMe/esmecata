@@ -23,12 +23,13 @@ import sys
 import urllib.parse
 import urllib.request
 
-from SPARQLWrapper import __version__ as sparqlwrapper_version
+from bioservices import __version__ as bioservices_version
 from bioservices import KEGG, UniProt
+from cobra import __version__ as cobra_version
 from cobra import Model, Reaction, Metabolite
 from cobra.io import write_sbml_model, read_sbml_model
 
-from esmecata.utils import is_valid_dir, urllib_query, chunks
+from esmecata.utils import is_valid_dir, urllib_query, chunks, get_rest_uniprot_release
 from esmecata import __version__ as esmecata_version
 
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
@@ -499,6 +500,50 @@ def retrieve_mapping_dictonaries(kegg_rxn_mapping_path):
     return ko_to_reactions, ec_to_reactions
 
 
+def compute_stat_kegg(sbml_folder, stat_file=None):
+    """Compute stat associated with the number of reactions and metabolites for each taxonomic affiliations.
+
+    Args:
+        sbml_folder (str): pathname to the sbml folder containing draft metabolic networks for each cluster
+        stat_file (str): pathname to the tsv stat file
+
+    Returns:
+        kegg_numbers (dict): dict containing observation names (as key) associated with reaction and metabolites number (as value)
+    """
+    kegg_numbers = {}
+    for infile in os.listdir(sbml_folder):
+        if '.sbml' in infile:
+            sbml_input_file_path = os.path.join(sbml_folder, infile)
+            kegg_model = read_sbml_model(sbml_input_file_path)
+            infile_reactions = kegg_model.reactions
+            infile_metabolites = kegg_model.metabolites
+            kegg_numbers[infile.replace('.sbml','')] = (len(infile_reactions), len(infile_metabolites))
+
+    if stat_file:
+        with open(stat_file, 'w') as stat_file_open:
+            csvwriter = csv.writer(stat_file_open, delimiter='\t')
+            csvwriter.writerow(['observation_name', 'Number_reactions', 'Number_metabolites'])
+            for observation_name in kegg_numbers:
+                csvwriter.writerow([observation_name, kegg_numbers[observation_name][0], kegg_numbers[observation_name][1]])
+
+    return kegg_numbers
+
+
+def get_kegg_database_version():
+    """Retrieve the KEGG version release
+
+    Returns:
+        kegg_version (str): string containing KEGG release version
+    """
+    response_text = kegg.dbinfo()
+
+    for line in response_text.splitlines():
+        if 'Release ' in line:
+            kegg_version = line.split('Release ')[1].strip()
+
+    return kegg_version
+
+
 def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=None):
     """From the output folder of 'esmecata annotation' create KEGG SBML files using bioservices.KEGG.
     To retrieve KEGG reactions, a mapping is performed between EC number and KEGG reactions.
@@ -511,6 +556,21 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
         beta (bool): option to use the new API of UniProt (in beta can be unstable)
     """
     starttime = time.time()
+
+    # Download Uniprot metadata and create a json file containing them.
+    options = {'input_folder': input_folder, 'output_folder': output_folder, 'mapping_ko': mapping_ko,
+                'beta': beta}
+
+    options['tool_dependencies'] = {}
+    options['tool_dependencies']['python_package'] = {}
+    options['tool_dependencies']['python_package']['Python_version'] = sys.version
+    options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
+    options['tool_dependencies']['python_package']['bioservices'] = bioservices_version
+    options['tool_dependencies']['python_package']['urllib'] = urllib.request.__version__
+    options['tool_dependencies']['python_package']['cobra'] = cobra_version
+
+    esmecata_kegg_metadata = get_rest_uniprot_release(options)
+    esmecata_kegg_metadata['kegg_release_number'] = get_kegg_database_version()
 
     is_valid_dir(output_folder)
 
@@ -676,6 +736,14 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
         else:
             logger.info('No reactions in model for {0}, no SBML file will be created.'.format(base_filename))
 
+    stat_file = os.path.join(output_folder, 'stat_number_kegg.tsv')
+    compute_stat_kegg(sbml_output_folder_path, stat_file)
+
     endtime = time.time()
+
     duration = endtime - starttime
+    esmecata_kegg_metadata['esmecata_kegg_duration'] = duration
+    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_kegg.json')
+    with open(uniprot_metadata_file, 'w') as ouput_file:
+        json.dump(esmecata_kegg_metadata, ouput_file, indent=4)
     logger.info('|EsMeCaTa|kegg| Draft networks creation complete.')
