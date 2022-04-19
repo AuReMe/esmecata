@@ -248,10 +248,10 @@ def requests_query(http_str, nb_retry=5):
     if nb_retry == 0:
         sys.exit('5 retry attempts have been performed but were not successful, so esmecata has been stopped. You may try to relaunch it using the same command esmecata should resume.')
     try:
-        response = requests.get(http_str, REQUESTS_HEADERS, timeout=10)
+        response = requests.get(http_str, REQUESTS_HEADERS, timeout=60)
         passed = True
-    except requests.exceptions.Timeout:
-        logger.critical('|EsMeCaTa|proteomes| Timeout occurs for query to "{0}", try to relaunch query.'.format(http_str))
+    except requests.exceptions.ConnectionError as error:
+        logger.critical('|EsMeCaTa|proteomes| Error {0} occurs for query to "{1}", try to relaunch query.'.format(error, http_str))
         time.sleep(10)
         requests_query(http_str, nb_retry-1)
 
