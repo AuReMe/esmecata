@@ -254,6 +254,10 @@ def requests_query(http_str, nb_retry=5):
         logger.critical('|EsMeCaTa|proteomes| Error {0} occurs for query to "{1}", try to relaunch query.'.format(error, http_str))
         time.sleep(10)
         requests_query(http_str, nb_retry-1)
+    except requests.exceptions.Timeout as error:
+        logger.critical('|EsMeCaTa|proteomes| Error {0} occurs for query to "{1}", try to relaunch query.'.format(error, http_str))
+        time.sleep(10)
+        requests_query(http_str, nb_retry-1)
 
     if passed is True:
         return response

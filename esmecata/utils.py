@@ -15,6 +15,7 @@
 import argparse
 import csv
 import datetime
+import logging
 import os
 import urllib.request
 import sys
@@ -29,6 +30,8 @@ from esmecata import __version__ as esmecata_version
 MIN_VAL = 0
 MAX_VAL = 1
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
+
+logger = logging.getLogger(__name__)
 
 
 def range_limited_float_type(arg):
@@ -138,7 +141,7 @@ def urllib_query(request, nb_retry=5):
         response = urllib.request.urlopen(request)
         passed = True
     except timeout:
-        print('Timeout occurs for query, try to relaunch query.')
+        logger.critical('Timeout occurs for query, try to relaunch query.')
         time.sleep(10)
         urllib_query(request, nb_retry-1)
 
