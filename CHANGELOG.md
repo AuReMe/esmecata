@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.2.2 (2022-04-20)
+
+## Fix
+
+* issue with time out in `proteomes.py`.
+
 # EsMeCaTa v0.2.1 (2022-03-17)
 
 ## Add
