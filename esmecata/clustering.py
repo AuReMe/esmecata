@@ -404,13 +404,14 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_input_threshol
     
         for observation_name in observation_name_fasta_files:
             observation_name_reference_path = os.path.join(reference_proteins_clust_path, observation_name)
+            observation_name_proteomes = observation_name_fasta_files[observation_name]
             if not os.path.exists(observation_name_reference_path):
                 protein_cluster_to_keeps = filter_protein_cluster(observation_name, observation_name_proteomes, output_folder, clust_threshold)
 
                 logger.info('|EsMeCaTa|clustering| {0} protein clusters kept for {1} (threshold {2}).'.format(len(protein_cluster_to_keeps), observation_name, clust_threshold))
 
                 # Create Biopython records with the representative proteins kept.
-                new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
+                new_records = [record for record in SeqIO.parse(os.path.join(representative_fasta_path, observation_name+'.faa'), 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
 
                 # Create output proteome file for OTU.
                 representative_fasta_file = os.path.join(reference_proteins_representative_fasta_clust_threshold_path, observation_name+'.faa')
@@ -418,7 +419,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_input_threshol
                 del new_records
 
                 # Create BioPtyhon records with the consensus proteins kept.
-                consensus_new_records = [record for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
+                consensus_new_records = [record for record in SeqIO.parse(os.path.join(consensus_fasta_path, observation_name+'.faa'), 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
 
                 # Create output proteome file for OTU.
                 consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta_clust_threshold_path, observation_name+'.faa')
