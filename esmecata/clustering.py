@@ -376,7 +376,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_input_threshol
     # If this condition is not satisfied the cluster will be ignored.
     # Then a fasta file containing all the representative proteins for each OTU is written in representative_fasta folder.
     for observation_name in observation_name_fasta_files:
-        observation_name_cluster_founds_path = os.path.join(cluster_founds_path, observation_name)
+        observation_name_cluster_founds_path = os.path.join(cluster_founds_path, observation_name+'.tsv')
         if not os.path.exists(observation_name_cluster_founds_path):
             mmseqs_tmp_cluster = os.path.join(mmseqs_tmp_path, observation_name)
             observation_name_proteomes = observation_name_fasta_files[observation_name]
