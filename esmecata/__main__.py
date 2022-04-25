@@ -23,7 +23,7 @@ from esmecata.clustering import make_clustering
 from esmecata.annotation import annotate_proteins
 from esmecata.kegg_metabolism import create_draft_networks
 from esmecata.workflow import perform_workflow
-from esmecata.utils import limited_integer_type, range_limited_float_type, is_valid_dir
+from esmecata.utils import limited_integer_type, range_limited_float_type, range_threshold_argument, is_valid_dir
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''
@@ -142,9 +142,9 @@ def main():
         '-t',
         '--threshold',
         dest='threshold_clustering',
-        help='Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.',
+        help='Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly. It can also be a list of proportions separated by a comma: 0.95,0.5',
         required=False,
-        type=range_limited_float_type,
+        type=range_threshold_argument,
         default=0.95)
     parent_parser_mmseqs_options = argparse.ArgumentParser(add_help=False)
     parent_parser_mmseqs_options.add_argument(

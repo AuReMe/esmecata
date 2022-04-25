@@ -45,11 +45,9 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
     result_folder = os.path.join(proteomes_output_folder, 'result')
     proteome_numbers = compute_stat_proteomes(result_folder)
 
-    clustering_folder = os.path.join(clustering_output_folder, 'reference_proteins')
-    clustering_numbers = compute_stat_clustering(clustering_folder)
+    clustering_numbers = compute_stat_clustering(clustering_output_folder)
 
-    annotation_reference_folder = os.path.join(annotation_output_folder, 'annotation_reference')
-    annotation_numbers = compute_stat_annotation(annotation_reference_folder)
+    annotation_numbers = compute_stat_annotation(annotation_output_folder)
 
     if kegg_metabolism_output_folder is not None:
         sbml_kegg_folder = os.path.join(kegg_metabolism_output_folder, 'sbml')
@@ -159,8 +157,15 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
     else:
         kegg_metabolism_output_folder = None
 
-    stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
-    compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file, kegg_metabolism_output_folder)
+
+    clustering_folder = os.path.join(clustering_output_folder, 'reference_proteins')
+    annotation_reference_folder = os.path.join(annotation_output_folder, 'annotation_reference')
+
+    for clust_threshold in os.listdir(clustering_folder):
+        clust_threshold_clustering_folder = os.path.join(clustering_folder, clust_threshold)
+        clust_annotation_reference_folder = os.path.join(annotation_reference_folder, clust_threshold)
+        stat_file = os.path.join(output_folder, 'stat_number_workflow_{0}.tsv'.format(clust_threshold))
+        compute_stat_workflow(proteomes_output_folder, clust_threshold_clustering_folder, clust_annotation_reference_folder, stat_file, kegg_metabolism_output_folder)
 
     proteomes_metadata_file = os.path.join(proteomes_output_folder, 'esmecata_metadata_proteomes.json')
     with open(proteomes_metadata_file, 'r') as json_idata:
