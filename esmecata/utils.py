@@ -52,6 +52,28 @@ def range_limited_float_type(arg):
     return f
 
 
+def range_threshold_argument(arg):
+    """Type function for argparse - a float within some predefined bounds
+
+    Args:
+        arg: argparse argument
+
+    Returns:
+        arg: argparse argument
+    """
+    if isinstance(arg, float):
+        threshold_floats = [arg]
+    elif isinstance(arg, str):
+        threshold_floats = arg.split(',')
+    else:
+        raise argparse.ArgumentTypeError("Must be a floating point number or a string with multiple floating point number separed by a comma")
+    for f in threshold_floats:
+        f= float(f)
+        if f < MIN_VAL or f > MAX_VAL:
+            raise argparse.ArgumentTypeError("Argument must be < " + str(MAX_VAL) + " and > " + str(MIN_VAL))
+    return arg
+
+
 def limited_integer_type(arg):
     """Type function for argparse - an integer
 
