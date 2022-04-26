@@ -953,15 +953,17 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     # a second that use the annotation from the annotation files associated with the proteins.
     # It is slower as it reads the annotation file to retrieve the annotation, but I think it is less heavy on the memory.
     already_annotated_proteins_in_file = {}
+    annotation_file_exist = False
     for input_file in os.listdir(reference_protein_path):
         base_file = os.path.basename(input_file)
         base_filename = os.path.splitext(base_file)[0]
         annotation_reference_file = os.path.join(annotation_propagated_folder, base_filename+'.tsv')
+        annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
 
-        if not os.path.exists(annotation_reference_file):
+        reference_protein_pathname = os.path.join(reference_protein_path, input_file)
+        reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
+        if not os.path.exists(annotation_file):
             output_dict = {}
-            reference_protein_pathname = os.path.join(reference_protein_path, input_file)
-            reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
 
             # First method to handle protein already annotated
             #protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
@@ -980,8 +982,18 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             for protein in output_dict:
                 already_annotated_proteins_in_file[protein] = base_filename
 
-            annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
             write_annotation_file(output_dict, annotation_file)
+        else:
+            annotation_file_exist = True
+
+        if not os.path.exists(annotation_reference_file):
+            if annotation_file_exist is True:
+                output_dict = {}
+                with open(annotation_file, 'r') as input_annot_tsv:
+                    csvreader = csv.reader(input_annot_tsv, delimiter='\t')
+                    for line in csvreader:
+                        output_dict[line[0]] = [line[1], line[2], line[3].split(','), line[4].split(','), line[5].split(','), line[6].split(','), line[7]]
+
             if uniref_annotation and uniprot_sparql_endpoint:
                 uniref_annotation_file = os.path.join(uniref_protein_path, base_filename+'.tsv')
                 uniref_output_dict = retrieve_annotation_from_uniref(proteomes, uniprot_sparql_endpoint, uniref_annotation_file)
