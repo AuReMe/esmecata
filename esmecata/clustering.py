@@ -294,6 +294,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_input_threshol
         remove_tmp (bool): remove the tmp files
     """
     starttime = time.time()
+    logger.info('|EsMeCaTa|clustering| Begin clustering.')
 
     if isinstance(clust_input_threshold, str):
         clust_thresholds = [float(clust_threshold) for clust_threshold in clust_input_threshold.split(',')]

@@ -556,6 +556,7 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
         beta (bool): option to use the new API of UniProt (in beta can be unstable)
     """
     starttime = time.time()
+    logger.info('|EsMeCaTa|kegg| Begin KEGG metabolism mapping.')
 
     # Download Uniprot metadata and create a json file containing them.
     options = {'input_folder': input_folder, 'output_folder': output_folder, 'mapping_ko': mapping_ko,
@@ -623,121 +624,135 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
     #annotation_folder_path = os.path.join(input_folder, 'annotation')
     annotation_reference_folder_path = os.path.join(input_folder, 'annotation_reference')
 
-    for annot_file in os.listdir(annotation_reference_folder_path):
-        annot_file_path = os.path.join(annotation_reference_folder_path, annot_file)
+    for clust_threshold in os.listdir(annotation_reference_folder_path):
+        clust_annotation_reference_folder_path = os.path.join(annotation_reference_folder_path, clust_threshold)
 
-        base_file = os.path.basename(annot_file_path)
-        base_filename = os.path.splitext(base_file)[0]
-
-        # Extract protein IDs and EC number from anntotation reference folder.
-        protein_ec_numbers = {}
-        protein_clusters = {}
-        with open(annot_file_path, 'r') as open_annot_file_path:
-            csvreader = csv.reader(open_annot_file_path, delimiter='\t')
-            next(csvreader)
-            for line in csvreader:
-                protein_id = line[0]
-                protein_cluster = line[1].split(',')
-                ec_numbers = line[5].split(',')
-                protein_ec_numbers[protein_id] = ec_numbers
-                protein_clusters[protein_id] = protein_cluster
-
-        taxon_reactions = {}
-        # If mapping KO option is used, search for Ko terms associated to proteins.
         if mapping_ko is True:
-            protein_to_maps = set([protein_id for protein_cluster in protein_clusters for protein_id in protein_clusters[protein_cluster]])
-            protein_ko_mapping = map_protein_to_KO_id(protein_to_maps)
+            clust_ko_output_folder_path = os.path.join(ko_output_folder_path, clust_threshold)
+            is_valid_dir(clust_ko_output_folder_path)
 
-            ko_output_file_path = os.path.join(ko_output_folder_path, base_filename+'.tsv')
-            with open(ko_output_file_path, 'w') as output_file:
-                csvwriter = csv.writer(output_file, delimiter='\t')
-                csvwriter.writerow(['protein', 'KO'])
-                for protein_cluster in protein_clusters:
-                    for protein_id in protein_clusters[protein_cluster]:
-                        if protein_id in protein_ko_mapping:
-                            ko = protein_ko_mapping[protein_id]
-                        else:
-                            ko = ''
-                        csvwriter.writerow([protein_id, ko])
+        clust_pathways_output_folder_path = os.path.join(pathways_output_folder_path, clust_threshold)
+        is_valid_dir(clust_pathways_output_folder_path)
 
-            # Keep KO and propagate their reaction only if they appear in all protein of the cluster.
-            ko_added_reactions = []
-            all_kos = []
-            for protein_cluster in protein_clusters:
-                ko_ids = [[protein_ko_mapping[protein_id]] if protein_id in protein_ko_mapping else [] for protein_id in protein_clusters[protein_cluster]]
-                protein_all_ko_ids = set([ko_id for subko_ids in ko_ids for ko_id in subko_ids])
-                all_kos.extend(list(protein_all_ko_ids))
-                keep_kos = [ko_id for ko_id in protein_all_ko_ids if sum(subko_ids.count(ko_id) for subko_ids in ko_ids) >= 1 * len(protein_clusters[protein_cluster])]
-                for ko_id in keep_kos:
-                    ko_id = ko_id.replace('ko:', '')
-                    if ko_id in ko_to_reactions:
-                        reaction_ids = ko_to_reactions[ko_id]
-                        for reaction_id in reaction_ids:
-                            ko_added_reactions.append(reaction_id)
-                            if reaction_id not in taxon_reactions:
-                                taxon_reactions[reaction_id] = [protein_cluster]
+        clust_sbml_output_folder_path = os.path.join(sbml_output_folder_path, clust_threshold)
+        is_valid_dir(clust_sbml_output_folder_path)
+        for annot_file in os.listdir(clust_annotation_reference_folder_path):
+            annot_file_path = os.path.join(clust_annotation_reference_folder_path, annot_file)
+
+            base_file = os.path.basename(annot_file_path)
+            base_filename = os.path.splitext(base_file)[0]
+
+            # Extract protein IDs and EC number from anntotation reference folder.
+            protein_ec_numbers = {}
+            protein_clusters = {}
+            with open(annot_file_path, 'r') as open_annot_file_path:
+                csvreader = csv.reader(open_annot_file_path, delimiter='\t')
+                next(csvreader)
+                for line in csvreader:
+                    protein_id = line[0]
+                    protein_cluster = line[1].split(',')
+                    ec_numbers = line[5].split(',')
+                    protein_ec_numbers[protein_id] = ec_numbers
+                    protein_clusters[protein_id] = protein_cluster
+
+            taxon_reactions = {}
+            # If mapping KO option is used, search for KO terms associated to proteins.
+            if mapping_ko is True:
+                protein_to_maps = set([protein_id for protein_cluster in protein_clusters for protein_id in protein_clusters[protein_cluster]])
+                protein_ko_mapping = map_protein_to_KO_id(protein_to_maps)
+
+                ko_output_file_path = os.path.join(clust_ko_output_folder_path, base_filename+'.tsv')
+                with open(ko_output_file_path, 'w') as output_file:
+                    csvwriter = csv.writer(output_file, delimiter='\t')
+                    csvwriter.writerow(['protein', 'KO'])
+                    for protein_cluster in protein_clusters:
+                        for protein_id in protein_clusters[protein_cluster]:
+                            if protein_id in protein_ko_mapping:
+                                ko = protein_ko_mapping[protein_id]
                             else:
-                                taxon_reactions[reaction_id].append(protein_cluster)
-            logger.info('|EsMeCaTa|kegg| Added {0} reactions from {1} KO for taxon {2}.'.format(len(set(ko_added_reactions)), len(set(all_kos)), base_filename))
+                                ko = ''
+                            csvwriter.writerow([protein_id, ko])
 
-        # Use EC found to be associated to reference protein to retrieve KEEG reaction.
-        ec_added_reactions = []
-        all_ecs = []
-        for protein in protein_ec_numbers:
-            ec_ids = protein_ec_numbers[protein]
-            all_ecs.extend(ec_ids)
-            for ec_id in ec_ids:
-                if ec_id in ec_to_reactions:
-                    reaction_ids = ec_to_reactions[ec_id]
-                    for reaction_id in reaction_ids:
-                        ec_added_reactions.append(reaction_id)
-                        if reaction_id not in taxon_reactions:
-                            taxon_reactions[reaction_id] = [protein]
-                        else:
-                            taxon_reactions[reaction_id].append(protein)
-        logger.info('|EsMeCaTa|kegg| Added {0} reactions from {1} EC for taxon {2}.'.format(len(set(ec_added_reactions)), len(set(all_ecs)), base_filename))
+                # Keep KO and propagate their reaction only if they appear in all protein of the cluster.
+                ko_added_reactions = []
+                all_kos = []
+                for protein_cluster in protein_clusters:
+                    ko_ids = [[protein_ko_mapping[protein_id]] if protein_id in protein_ko_mapping else [] for protein_id in protein_clusters[protein_cluster]]
+                    protein_all_ko_ids = set([ko_id for subko_ids in ko_ids for ko_id in subko_ids])
+                    all_kos.extend(list(protein_all_ko_ids))
+                    keep_kos = [ko_id for ko_id in protein_all_ko_ids if sum(subko_ids.count(ko_id) for subko_ids in ko_ids) >= 1 * len(protein_clusters[protein_cluster])]
+                    for ko_id in keep_kos:
+                        ko_id = ko_id.replace('ko:', '')
+                        if ko_id in ko_to_reactions:
+                            reaction_ids = ko_to_reactions[ko_id]
+                            for reaction_id in reaction_ids:
+                                ko_added_reactions.append(reaction_id)
+                                if reaction_id not in taxon_reactions:
+                                    taxon_reactions[reaction_id] = [protein_cluster]
+                                else:
+                                    taxon_reactions[reaction_id].append(protein_cluster)
+                logger.info('|EsMeCaTa|kegg| Added {0} reactions from {1} KO for taxon {2} (with clustering threshold {3}).'.format(len(set(ko_added_reactions)), len(set(all_kos)), base_filename, clust_threshold))
 
-        total_added_reactions = list(taxon_reactions.keys())
-        if mapping_ko is True:
-            logger.info('|EsMeCaTa|kegg| A total of {0} unique reactions are added from EC and KO for taxon {1}.'.format(len(total_added_reactions), base_filename))
+            # Use EC found to be associated to reference protein to retrieve KEEG reaction.
+            ec_added_reactions = []
+            all_ecs = []
+            for protein in protein_ec_numbers:
+                ec_ids = protein_ec_numbers[protein]
+                all_ecs.extend(ec_ids)
+                for ec_id in ec_ids:
+                    if ec_id in ec_to_reactions:
+                        reaction_ids = ec_to_reactions[ec_id]
+                        for reaction_id in reaction_ids:
+                            ec_added_reactions.append(reaction_id)
+                            if reaction_id not in taxon_reactions:
+                                taxon_reactions[reaction_id] = [protein]
+                            else:
+                                taxon_reactions[reaction_id].append(protein)
+            logger.info('|EsMeCaTa|kegg| Added {0} reactions from {1} EC for taxon {2} (with clustering threshold {3}).'.format(len(set(ec_added_reactions)), len(set(all_ecs)), base_filename, clust_threshold))
 
-        # Create pathway file contening pathway with reacitons in the taxon.
-        pathways_output_file_path = os.path.join(pathways_output_folder_path, base_filename+'.tsv')
-        with open(pathways_output_file_path, 'w') as open_pathways_output_file_path:
-            csvwriter = csv.writer(open_pathways_output_file_path, delimiter='\t')
-            csvwriter.writerow(['pathway_id', 'pathway_name', 'pathway_compeltion_ratio', 'pathway_reaction_in_taxon', 'pathway_reaction'])
-            for pathway in kegg_pathways:
-                pathway_reactions = kegg_pathways[pathway][1]
-                pathway_reaction_in_taxon = set(pathway_reactions).intersection(set(total_added_reactions))
-                if len(pathway_reaction_in_taxon) > 0:
-                    pathway_name = kegg_pathways[pathway][0]
-                    pathway_completion_ratio = len(pathway_reaction_in_taxon) / len(pathway_reactions)
-                    csvwriter.writerow([pathway, pathway_name, pathway_completion_ratio, ','.join(pathway_reaction_in_taxon), ','.join(pathway_reactions)])
+            total_added_reactions = list(taxon_reactions.keys())
+            if mapping_ko is True:
+                logger.info('|EsMeCaTa|kegg| A total of {0} unique reactions are added from EC and KO for taxon {1} (with clustering threshold {2}).'.format(len(total_added_reactions), base_filename, clust_threshold))
 
-        kegg_model = read_sbml_model(kegg_sbml_model_path)
+            # Create pathway file contening pathway with reacitons in the taxon.
+            pathways_output_file_path = os.path.join(clust_pathways_output_folder_path, base_filename+'.tsv')
+            with open(pathways_output_file_path, 'w') as open_pathways_output_file_path:
+                csvwriter = csv.writer(open_pathways_output_file_path, delimiter='\t')
+                csvwriter.writerow(['pathway_id', 'pathway_name', 'pathway_compeltion_ratio', 'pathway_reaction_in_taxon', 'pathway_reaction'])
+                for pathway in kegg_pathways:
+                    pathway_reactions = kegg_pathways[pathway][1]
+                    pathway_reaction_in_taxon = set(pathway_reactions).intersection(set(total_added_reactions))
+                    if len(pathway_reaction_in_taxon) > 0:
+                        pathway_name = kegg_pathways[pathway][0]
+                        pathway_completion_ratio = len(pathway_reaction_in_taxon) / len(pathway_reactions)
+                        csvwriter.writerow([pathway, pathway_name, pathway_completion_ratio, ','.join(pathway_reaction_in_taxon), ','.join(pathway_reactions)])
 
-        species_model = Model(base_filename)
+            kegg_model = read_sbml_model(kegg_sbml_model_path)
 
-        # Map KEGG reaction from KEGG SBML model to taxon SBML.
-        sbml_reactions = []
-        for reaction in kegg_model.reactions:
-            reaction_id = reaction.id.replace('R_','')
-            if reaction_id in taxon_reactions:
-                reaction.gene_reaction_rule = '( ' + ' or '.join(taxon_reactions[reaction_id]) + ' )'
-                sbml_reactions.append(reaction)
+            species_model = Model(base_filename)
 
-        species_model.add_reactions(sbml_reactions)
+            # Map KEGG reaction from KEGG SBML model to taxon SBML.
+            sbml_reactions = []
+            for reaction in kegg_model.reactions:
+                reaction_id = reaction.id.replace('R_','')
+                if reaction_id in taxon_reactions:
+                    reaction.gene_reaction_rule = '( ' + ' or '.join(taxon_reactions[reaction_id]) + ' )'
+                    sbml_reactions.append(reaction)
 
-        # Create file if there si at least 1 reaction.
-        if len(species_model.reactions) > 0:
-            # Create SBML file.
-            sbml_output_file_path = os.path.join(sbml_output_folder_path, base_filename+'.sbml')
-            write_sbml_model(species_model, sbml_output_file_path)
-        else:
-            logger.info('No reactions in model for {0}, no SBML file will be created.'.format(base_filename))
+            species_model.add_reactions(sbml_reactions)
 
-    stat_file = os.path.join(output_folder, 'stat_number_kegg.tsv')
-    compute_stat_kegg(sbml_output_folder_path, stat_file)
+            # Create file if there si at least 1 reaction.
+            if len(species_model.reactions) > 0:
+                # Create SBML file.
+                sbml_output_file_path = os.path.join(clust_sbml_output_folder_path, base_filename+'.sbml')
+                write_sbml_model(species_model, sbml_output_file_path)
+            else:
+                logger.info('|EsMeCaTa|kegg| No reactions in model for {0}, no SBML file will be created.'.format(base_filename))
+
+    for clust_threshold in os.listdir(sbml_output_folder_path):
+        clust_sbml_output_folder_path = os.path.join(sbml_output_folder_path, clust_threshold)
+        clust_stat_file = os.path.join(output_folder, 'stat_number_kegg_{0}.tsv'.format(clust_threshold))
+        compute_stat_kegg(clust_sbml_output_folder_path, clust_stat_file)
 
     endtime = time.time()
 

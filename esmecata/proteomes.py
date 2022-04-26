@@ -742,6 +742,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept
     """
     starttime = time.time()
+    logger.info('|EsMeCaTa|proteomes| Begin proteomes.')
 
     if is_valid_file(input_file) is False:
         logger.critical('|EsMeCaTa|proteomes| The input {0} is not a valid file pathname.'.format(input_file))
