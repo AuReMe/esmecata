@@ -403,7 +403,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_input_threshol
         is_valid_dir(reference_proteins_clust_path)
     
         for observation_name in observation_name_fasta_files:
-            observation_name_reference_path = os.path.join(reference_proteins_clust_path, observation_name)
+            observation_name_reference_path = os.path.join(reference_proteins_clust_path, observation_name+'.tsv')
             observation_name_proteomes = observation_name_fasta_files[observation_name]
             if not os.path.exists(observation_name_reference_path):
                 protein_cluster_to_keeps = filter_protein_cluster(observation_name, observation_name_proteomes, output_folder, clust_threshold)
