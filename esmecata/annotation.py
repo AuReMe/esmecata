@@ -889,6 +889,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         beta (bool): option to use the new API of UniProt (in beta can be unstable)
     """
     starttime = time.time()
+    logger.info('|EsMeCaTa|annotation| Begin annotation.')
 
     if uniprot_sparql_endpoint is None and uniref_annotation is not None:
         logger.critical('|EsMeCaTa|annotation| At this moment, --uniref option needs to be used with --sparql option.')
@@ -1047,20 +1048,20 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             logger.info('|EsMeCaTa|annotation| {0} GO Terms (with {1} unique GO Terms) and {2} EC numbers (with {3} unique EC) associated with {4} (clustering threshold {5}).'.format(len(gos),
                                                                                                     len(unique_gos), len(ecs), len(unique_ecs), base_filename, clust_threshold))
 
-    # Create mpwt taxon ID file.
-    clustering_taxon_id = {}
-    with open(proteome_tax_id_file, 'r') as input_taxon_id_file:
-        taxon_id_csvreader = csv.reader(input_taxon_id_file, delimiter='\t')
-        next(taxon_id_csvreader)
-        for line in taxon_id_csvreader:
-            clustering_taxon_id[line[0]] = line[2]
+            # Create mpwt taxon ID file.
+            clustering_taxon_id = {}
+            with open(proteome_tax_id_file, 'r') as input_taxon_id_file:
+                taxon_id_csvreader = csv.reader(input_taxon_id_file, delimiter='\t')
+                next(taxon_id_csvreader)
+                for line in taxon_id_csvreader:
+                    clustering_taxon_id[line[0]] = line[2]
 
-    pathologic_taxon_id_file = os.path.join(pathologic_folder, 'taxon_id.tsv')
-    with open(pathologic_taxon_id_file, 'w') as taxon_id_file:
-        taxon_id_csvwriter = csv.writer(taxon_id_file, delimiter='\t')
-        taxon_id_csvwriter.writerow(['species', 'taxon_id'])
-        for species in clustering_taxon_id:
-            taxon_id_csvwriter.writerow([species, clustering_taxon_id[species]])
+            pathologic_taxon_id_file = os.path.join(clust_pathologic_folder, 'taxon_id.tsv')
+            with open(pathologic_taxon_id_file, 'w') as taxon_id_file:
+                taxon_id_csvwriter = csv.writer(taxon_id_file, delimiter='\t')
+                taxon_id_csvwriter.writerow(['species', 'taxon_id'])
+                for species in clustering_taxon_id:
+                    taxon_id_csvwriter.writerow([species, clustering_taxon_id[species]])
 
     for clust_threshold in os.listdir(annotation_reference_folder):
         stat_file = os.path.join(output_folder, 'stat_number_annotation_{0}.tsv'.format(clust_threshold))
