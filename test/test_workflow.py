@@ -11,7 +11,7 @@ RESULTS = {
 def test_workflow():
     subprocess.call(['esmecata', 'workflow', '-i', 'buchnera_workflow.tsv', '-o', 'test_output', '-p', '1'])
 
-    output_stat_file = os.path.join('test_output', 'stat_number_workflow.tsv')
+    output_stat_file = os.path.join('test_output', 'stat_number_workflow_0.95.tsv')
 
     expected_results = {}
     with open(output_stat_file, 'r') as stat_file_read:
