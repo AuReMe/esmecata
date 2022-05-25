@@ -88,7 +88,7 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
             results[line[0]] = [protein_name, review, gos, ec_numbers, interpros, rhea_ids, gene_name]
             output_dict.update(results)
     else:
-        url = 'http://rest.uniprot.org/beta/idmapping/run'
+        url = 'http://rest.uniprot.org/idmapping/run'
 
         # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
         # from and to are linked to mapping ID: https://www.uniprot.org/help/api%5Fidmapping
@@ -105,7 +105,7 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
         data_js = json.load(urllib_query(req))
         job_id = data_js['jobId']
 
-        http_check_status = 'http://rest.uniprot.org/beta/idmapping/status/{0}'.format(job_id)
+        http_check_status = 'http://rest.uniprot.org/idmapping/status/{0}'.format(job_id)
 
         check_status_response = requests.head(http_check_status)
         check_status_response.raise_for_status()
@@ -119,7 +119,7 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, beta=None):
             check_status_response = requests.head(http_check_status)
 
         if check_status_response.status_code == 303:
-            http_download = 'http://rest.uniprot.org/beta/idmapping/uniprotkb/results/stream/{0}'.format(job_id)
+            http_download = 'http://rest.uniprot.org/idmapping/uniprotkb/results/stream/{0}'.format(job_id)
             response = requests.get(http_download)
             response.raise_for_status()
             data = response.json()
