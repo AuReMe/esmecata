@@ -1,6 +1,5 @@
-from esmecata.annotation import rest_query_uniprot_to_retrieve_function, sparql_query_uniprot_to_retrieve_function, extract_protein_cluster, \
-                                search_already_annotated_protein, query_uniprot_annotation_rest, query_uniprot_annotation_sparql, \
-                                propagate_annotation_in_cluster
+from esmecata.annotation import  extract_protein_cluster, search_already_annotated_protein, query_uniprot_annotation_rest, \
+                                    query_uniprot_annotation_sparql, propagate_annotation_in_cluster
 
 ANOTATIONS = {'Q7CGB6': ['Protein translocase subunit SecA (EC 7.4.2.8)', True,
             ['GO:0031522','GO:0005829','GO:0005887','GO:0015462','GO:0005524','GO:0046872','GO:0065002','GO:0017038','GO:0006605','GO:0043952','GO:0008564'],
