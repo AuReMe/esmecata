@@ -812,7 +812,15 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         with open(json_log, 'w') as ouput_file:
             json.dump(json_taxonomic_affiliations, ouput_file, indent=4)
 
-    if not os.path.exists(proteome_tax_id_file):
+        lowest_taxonomic_ids = {}
+        for observation_name in json_taxonomic_affiliations:
+            for taxon_name in reversed(json_taxonomic_affiliations[observation_name]):
+                lowest_taxonomic_name = taxon_name
+                lowest_tax_id = json_taxonomic_affiliations[observation_name][lowest_taxonomic_name][0]
+                if lowest_tax_id != 'not_found':
+                    break
+            lowest_taxonomic_ids[observation_name] = (lowest_taxonomic_name, lowest_tax_id)
+
         proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                                                         busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, limit_maximal_number_proteomes, minimal_number_proteomes)
 
@@ -824,12 +832,15 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
         with open(proteome_tax_id_file, 'w') as out_file:
             csvwriter = csv.writer(out_file, delimiter='\t')
-            csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_rank', 'proteome'])
+            csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_rank', 'proteome', 'lowest_tax_name', 'lowest_tax_id', 'lowest_tax_rank'])
             for observation_name in proteomes_ids:
                 tax_id = int(proteomes_ids[observation_name][0])
                 tax_name = tax_id_names[tax_id]
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
-                csvwriter.writerow([observation_name, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[observation_name][1])])
+                lowest_tax_name = lowest_taxonomic_ids[observation_name][0]
+                lowest_tax_id = lowest_taxonomic_ids[observation_name][1]
+                lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
+                csvwriter.writerow([observation_name, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[observation_name][1]), lowest_tax_name, lowest_tax_id, lowest_tax_rank])
     else:
         proteome_to_download = []
         proteomes_ids = {}

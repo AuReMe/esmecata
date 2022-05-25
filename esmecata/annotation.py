@@ -1002,7 +1002,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
                 taxon_id_csvreader = csv.reader(input_taxon_id_file, delimiter='\t')
                 next(taxon_id_csvreader)
                 for line in taxon_id_csvreader:
-                    clustering_taxon_id[line[0]] = line[2]
+                    clustering_taxon_id[line[0]] = line[6]
 
             pathologic_taxon_id_file = os.path.join(clust_pathologic_folder, 'taxon_id.tsv')
             with open(pathologic_taxon_id_file, 'w') as taxon_id_file:
