@@ -781,6 +781,13 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     if '.csv' in input_file:
         df = pd.read_csv(input_file, sep=',')
 
+    # Check if observation_name does not contain space as it can lead to error with MMSeqs2.
+    space_in_observation_names = df[df['observation_name'].str.contains(' ')]['observation_name']
+    if len(space_in_observation_names) > 0:
+        logger.critical('|EsMeCaTa|proteomes| Error: space in the following observation_name:\n{0}'.format('\n'.join(space_in_observation_names)))
+        logger.critical('|EsMeCaTa|proteomes| Stop EsMeCaTa as this can lead to error with mmseqs2. Remvoe the space to avoid this issue')
+        sys.exit()
+
     # Set index on the column containing the OTU name.
     df.set_index('observation_name', inplace=True)
 
