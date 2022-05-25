@@ -17,7 +17,6 @@ import json
 import logging
 import os
 import re
-from tkinter import E
 import requests
 import time
 import sys
