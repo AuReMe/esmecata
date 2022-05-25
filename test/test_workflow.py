@@ -28,6 +28,13 @@ def test_workflow():
         for data in expected_results[observation_name]:
             assert expected_results[observation_name][data] == RESULTS[observation_name][data]
 
+    taxon_id_file = os.path.join('test_output', '2_annotation', 'pathologic', '0.95', 'taxon_id.tsv')
+    with open(taxon_id_file, 'r') as taxon_file_read:
+        csvreader = csv.reader(taxon_file_read, delimiter='\t')
+        next(csvreader)
+        for line in csvreader:
+            assert line[1] == '9'
+
     shutil.rmtree('test_output')
 
 if __name__ == "__main__":
