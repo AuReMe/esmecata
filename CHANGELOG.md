@@ -1,5 +1,12 @@
 # Changelog
 
+# EsMeCaTa v0.2.3 (2022-05-25)
+
+## Fix
+
+* issue with new URL for UniProt mapping.
+* issue in test with new UniProt release.
+
 # EsMeCaTa v0.2.2 (2022-04-20)
 
 ## Fix
