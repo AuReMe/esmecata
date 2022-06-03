@@ -235,6 +235,22 @@ def main():
         required=False,
         action='store_true',
         default=None)
+    parent_parser_recreate_kegg = argparse.ArgumentParser(add_help=False)
+    parent_parser_recreate_kegg.add_argument(
+        '--recreate-kegg',
+        dest='recreate_kegg',
+        help='Recreate KEGG model by downloading and extracting informations from KEGG files.',
+        required=False,
+        action='store_true',
+        default=None)
+    parent_parser_annot_uniprot = argparse.ArgumentParser(add_help=False)
+    parent_parser_annot_uniprot.add_argument(
+        '--annotate-uniprot',
+        dest='annotate_with_uniprot',
+        help='Retrieve annotations from UniProt.',
+        required=False,
+        action='store_true',
+        default=None)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -266,15 +282,16 @@ def main():
         help='Retrieve protein annotations from Uniprot.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
-            parent_parser_propagate, parent_parser_uniref, parent_parser_expression
+            parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
+            parent_parser_annot_uniprot
             ],
         allow_abbrev=False)
     kegg_parser = subparsers.add_parser(
         'kegg',
         help='Create KEGG draft metabolic networks.',
         parents=[
-            parent_parser_i_kegg_folder, parent_parser_o, parent_parser_beta,
-            parent_parser_map_ko
+            parent_parser_i_kegg_folder, parent_parser_o,
+            parent_parser_map_ko, parent_parser_recreate_kegg
             ],
         allow_abbrev=False)
     workflow_parser = subparsers.add_parser(
@@ -287,7 +304,8 @@ def main():
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
             parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
             parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
-            parent_parser_kegg, parent_parser_map_ko
+            parent_parser_kegg, parent_parser_map_ko, parent_parser_recreate_kegg,
+            parent_parser_annot_uniprot
             ],
         allow_abbrev=False)
 
@@ -332,17 +350,25 @@ def main():
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
-        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression)
+        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint,
+                            args.propagate_annotation, args.uniref, args.expression,
+                            args.annotate_with_uniprot)
     elif args.cmd == 'kegg':
-        create_draft_networks(args.input, args.output, args.map_ko)
+        create_draft_networks(args.input, args.output, args.map_ko, args.beta, args.recreate_kegg)
     elif args.cmd == 'workflow':
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
                             args.limit_maximal_number_proteomes, args.rank_limit,
                             args.cpu, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
+<<<<<<< HEAD
                             args.expression, args.minimal_number_proteomes,
                             args.kegg, args.map_ko)
+=======
+                            args.expression, args.beta, args.minimal_number_proteomes,
+                            args.kegg, args.map_ko, args.recreate_kegg,
+                            args.annotate_with_uniprot)
+>>>>>>> Add an annotation method using expasy.
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
