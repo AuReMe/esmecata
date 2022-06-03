@@ -22,6 +22,7 @@ import time
 import sys
 import urllib.parse
 import urllib.request
+import zipfile
 
 from bioservices import __version__ as bioservices_version
 from bioservices import KEGG, UniProt
@@ -41,6 +42,8 @@ logging.getLogger("cobra.io.sbml").setLevel(logging.CRITICAL)
 kegg = KEGG()
 uniprot = UniProt(verbose=False)
 
+root = os.path.dirname(__file__)
+kegg_archive = os.path.join(*[root, 'data', 'kegg_model.zip'])
 
 def rest_query_uniprot_to_retrieve_kegg_gene(protein_queries, beta=None):
     """REST query to get KEGG gene ID from proteins.
@@ -544,7 +547,7 @@ def get_kegg_database_version():
     return kegg_version
 
 
-def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=None):
+def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=None, recreate_kegg=None):
     """From the output folder of 'esmecata annotation' create KEGG SBML files using bioservices.KEGG.
     To retrieve KEGG reactions, a mapping is performed between EC number and KEGG reactions.
     And if the option mapping_ko is set to True, it will also map KO ID to KEGG reaction
@@ -554,6 +557,7 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
         output_folder (str): path to the output folder
         mapping_ko (bool): option to use KO ID to retrieve reactions
         beta (bool): option to use the new API of UniProt (in beta can be unstable)
+        recreate_kegg (bool): option to recreate KEGG model by guerying KEGG server
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|kegg| Begin KEGG metabolism mapping.')
@@ -578,6 +582,10 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
     # Check if KEGG model files exist if not create them.
     kegg_model_path = os.path.join(output_folder, 'kegg_model')
     is_valid_dir(kegg_model_path)
+
+    if not recreate_kegg:
+        with zipfile.ZipFile(kegg_archive, 'r') as zip_ref:
+            zip_ref.extractall(output_folder)
 
     kegg_reactions_folder_path = os.path.join(kegg_model_path, 'reaction_folder')
     compound_file_path = os.path.join(kegg_model_path, 'kegg_compound_name.tsv')

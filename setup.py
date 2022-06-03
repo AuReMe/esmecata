@@ -24,6 +24,7 @@ setup(
     author_email='gem-aureme@inria.fr',
     packages=['esmecata'],
     package_dir={'esmecata': 'esmecata'},
+    package_data = {'esmecata' : ['data/*']},
     entry_points={
         'console_scripts': [
             'esmecata = esmecata.__main__:main',

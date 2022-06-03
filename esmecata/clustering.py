@@ -31,6 +31,8 @@ from esmecata.utils import is_valid_path, is_valid_dir
 
 logger = logging.getLogger(__name__)
 
+root = os.path.dirname(__file__)
+expasy_consensus_path = os.path.join(*[root, 'data', 'expasy_consensus.fasta'])
 
 def compute_stat_clustering(result_folder, stat_file=None):
     """Compute stat associated to the number of protein clusters for each taxonomic affiliations.
@@ -150,6 +152,7 @@ def extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated):
     # Extract protein clusters in a dictionary.
     # The representative protein is the key and all the proteins in the cluster are the values.
     protein_clusters = {}
+    protein_cluster_ecs = {}
     with open(mmseqs_tmp_clustered_tabulated) as input_file:
         csvreader = csv.reader(input_file, delimiter='\t')
         for row in csvreader:
@@ -355,6 +358,12 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_input_threshol
     mmseqs_tmp_path = os.path.join(output_folder, 'mmseqs_tmp')
     is_valid_dir(mmseqs_tmp_path)
 
+    annot_mmseqs_tmp_path = os.path.join(output_folder, 'mmseqs_tmp_annot')
+    is_valid_dir(annot_mmseqs_tmp_path)
+
+    annot_cluster_path = os.path.join(output_folder, 'cluster_annotation')
+    is_valid_dir(annot_cluster_path)
+
     # Create output folder containing shared representative proteins.
     representative_fasta_path = os.path.join(output_folder, 'fasta_representative')
     is_valid_dir(representative_fasta_path)
@@ -425,6 +434,36 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_input_threshol
                 # Create output proteome file for OTU.
                 consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta_clust_threshold_path, observation_name+'.faa')
                 SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
+
+                # Make cluster between consensus and expasy file to retrieve EC numbers.
+                fasta_paths = [consensus_fasta_file, expasy_consensus_path]
+                mmseqs_options = '--min-seq-id 0.3 -c 0.8 -s 0.75'
+                annot_mmseqs_tmp_clustered_tabulated, _, _ = run_mmseqs(observation_name, fasta_paths, annot_mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust)
+                annot_protein_clusters = extrat_protein_cluster_from_mmseqs(annot_mmseqs_tmp_clustered_tabulated)
+                annotated_protein_clusters = {}
+                for protein_id in annot_protein_clusters:
+                    if 'EC_number' not in protein_id:
+                        ec_numbers = [prot.replace('EC_number_','').split('_')[0] for prot in annot_protein_clusters[protein_id] if 'EC_number' in prot]
+                        if len(ec_numbers) > 0:
+                            if protein_id not in annotated_protein_clusters:
+                                annotated_protein_clusters[protein_id] = []
+                            annotated_protein_clusters[protein_id].extend(ec_numbers)
+                    elif 'EC_number' in protein_id:
+                        consensus_prots = [prot for prot in annot_protein_clusters[protein_id] if 'EC_number' not in prot]
+                        for consensus_prot in consensus_prots:
+                            if consensus_prot not in annotated_protein_clusters:
+                                annotated_protein_clusters[consensus_prot] = []
+                            annotated_protein_clusters[consensus_prot].extend([protein_id.replace('EC_number_','').split('_')[0]])
+
+                # Create annotation file from clustering wiht expasy file.
+                annot_cluster_file_path = os.path.join(annot_cluster_path, observation_name+'.tsv')
+                with open(annot_cluster_file_path, 'w') as annot_output_file:
+                    annot_csvwriter = csv.writer(annot_output_file, delimiter='\t')
+                    annot_csvwriter.writerow(['cluster_id', 'EC_number'])
+                    for rep_protein in annotated_protein_clusters:
+                        annot_csvwriter.writerow([rep_protein, ','.join(set(annotated_protein_clusters[rep_protein]))])
+                shutil.rmtree(annot_mmseqs_tmp_path)
+
                 del consensus_new_records
 
     proteome_taxon_id_file = os.path.join(proteome_folder, 'proteome_tax_id.tsv')

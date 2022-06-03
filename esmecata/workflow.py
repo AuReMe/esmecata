@@ -105,7 +105,8 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         nb_cpu=1, clust_threshold=1, mmseqs_options=None,
                         linclust=None, propagate_annotation=None, uniref_annotation=None,
                         expression_annotation=None, beta=None, minimal_number_proteomes=1,
-                        kegg_reconstruction=False, mapping_ko=False):
+                        kegg_reconstruction=False, mapping_ko=False, recreate_kegg=None,
+                        annotate_with_uniprot=None):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -129,6 +130,8 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept
         kegg_reconstruction (bool): use kegg_metabolism to reconstruct draft metabolic networks
         mapping_ko (bool): option to use KO ID to retrieve reactions
+        recreate_kegg (bool): option to recreate KEGG model by guerying KEGG server
+        annotate_with_uniprot (bool): query UniProt to retrieve protein annotations
     """
     starttime = time.time()
     workflow_metadata = {}
@@ -146,17 +149,19 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         minimal_number_proteomes)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
-    make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)
+    make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu,
+                        clust_threshold, mmseqs_options, linclust, remove_tmp)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
-    annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation, beta)
+    annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint,
+                        propagate_annotation, uniref_annotation, expression_annotation,
+                        beta, annotate_with_uniprot)
 
     if kegg_reconstruction:
         kegg_metabolism_output_folder = os.path.join(output_folder, '3_kegg_metabolism')
-        create_draft_networks(annotation_output_folder, kegg_metabolism_output_folder, mapping_ko, beta)
+        create_draft_networks(annotation_output_folder, kegg_metabolism_output_folder, mapping_ko, beta, recreate_kegg)
     else:
         kegg_metabolism_output_folder = None
-
 
     clustering_folder = os.path.join(clustering_output_folder, 'reference_proteins')
     annotation_reference_folder = os.path.join(annotation_output_folder, 'annotation_reference')
