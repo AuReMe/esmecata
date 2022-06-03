@@ -411,7 +411,10 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_input_threshol
         reference_proteins_path = os.path.join(output_folder, 'reference_proteins')
         reference_proteins_clust_path = os.path.join(reference_proteins_path, str(clust_threshold))
         is_valid_dir(reference_proteins_clust_path)
-    
+
+        annot_cluster_thresh_paht = os.path.join(annot_cluster_path, str(clust_threshold))
+        is_valid_dir(annot_cluster_thresh_paht)
+
         for observation_name in observation_name_fasta_files:
             observation_name_reference_path = os.path.join(reference_proteins_clust_path, observation_name+'.tsv')
             observation_name_proteomes = observation_name_fasta_files[observation_name]
@@ -456,7 +459,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_input_threshol
                             annotated_protein_clusters[consensus_prot].extend([protein_id.replace('EC_number_','').split('_')[0]])
 
                 # Create annotation file from clustering wiht expasy file.
-                annot_cluster_file_path = os.path.join(annot_cluster_path, observation_name+'.tsv')
+                annot_cluster_file_path = os.path.join(annot_cluster_thresh_paht, observation_name+'.tsv')
                 with open(annot_cluster_file_path, 'w') as annot_output_file:
                     annot_csvwriter = csv.writer(annot_output_file, delimiter='\t')
                     annot_csvwriter.writerow(['cluster_id', 'EC_number'])

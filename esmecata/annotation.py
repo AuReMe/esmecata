@@ -918,18 +918,6 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         annotation_reference_file = os.path.join(annotation_propagated_folder, base_filename+'.tsv')
         annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
 
-        annotation_input_file = os.path.join(annotated_reference_protein_path, input_file)
-        annotated_cluster = {}
-        with open(annotation_input_file) as input_annotated_file:
-            csvreader = csv.reader(input_annotated_file, delimiter='\t')
-            next(csvreader)
-            for row in csvreader:
-                annotated_cluster[row[0]] = ['', [], row[1].split(','), [], [], '']
-        reference_protein_pathname = os.path.join(reference_protein_path, input_file)
-        reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
-        for protein_id in reference_proteins:
-            if protein_id not in annotated_cluster:
-                annotated_cluster[protein_id] = ['', [], [], [], [], '']
         if annotate_with_uniprot:
 
             if not os.path.exists(annotation_file):
@@ -976,8 +964,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
                     expression_output_dict = None
                 protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
                 write_annotation_reference(protein_annotations, reference_proteins, annotation_reference_file, expression_output_dict)
-        else:
-            write_annotation_reference(annotated_cluster, reference_proteins, annotation_reference_file, None)
+
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
     for clust_threshold in os.listdir(reference_protein_path):
@@ -994,15 +981,32 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
             base_filename = os.path.splitext(base_file)[0]
             clust_annotation_reference_file = os.path.join(clust_reference_protein_path, base_filename+'.tsv')
 
-            reference_proteins, set_proteins = extract_protein_cluster(clust_annotation_reference_file)
-            annotation_propagated_file = os.path.join(annotation_propagated_folder, base_filename+'.tsv')
-            protein_annotations = {}
-            with open(annotation_propagated_file, 'r') as input_tsv:
-                csvreader = csv.reader(input_tsv, delimiter='\t')
-                headers = next(csvreader)
-                for line in csvreader:
-                    if line[0] in reference_proteins:
-                        protein_annotations[line[0]] = line[1:]
+            if annotate_with_uniprot:
+                reference_proteins, set_proteins = extract_protein_cluster(clust_annotation_reference_file)
+                annotation_propagated_file = os.path.join(annotation_propagated_folder, base_filename+'.tsv')
+                protein_annotations = {}
+                with open(annotation_propagated_file, 'r') as input_tsv:
+                    csvreader = csv.reader(input_tsv, delimiter='\t')
+                    headers = next(csvreader)
+                    for line in csvreader:
+                        if line[0] in reference_proteins:
+                            protein_annotations[line[0]] = line[1:]
+            else:
+                headers = ['protein_cluster', 'cluster_members', 'protein_name', 'gene_name', 'GO', 'EC', 'InterPro', 'Rhea']
+                reference_proteins, set_proteins = extract_protein_cluster(clust_annotation_reference_file)
+                annotation_input_thresh_path = os.path.join(annotated_reference_protein_path, clust_threshold)
+                annotation_input_file = os.path.join(annotation_input_thresh_path, base_filename+'.tsv')
+                protein_annotations = {}
+                with open(annotation_input_file) as input_annotated_file:
+                    csvreader = csv.reader(input_annotated_file, delimiter='\t')
+                    next(csvreader)
+                    for row in csvreader:
+                        protein_annotations[row[0]] = [reference_proteins[row[0]], '', '', '', row[1], '', '']
+
+                for protein_id in reference_proteins:
+                    if protein_id not in protein_annotations:
+                        protein_annotations[row[0]] = [reference_proteins[row[0]], '', '', '', '', '', '']
+
             annotation_reference_file = os.path.join(clust_annotation_reference_protein_path, base_filename+'.tsv')
             with open(annotation_reference_file, 'w') as output_tsv:
                 csvwriter = csv.writer(output_tsv, delimiter='\t')
