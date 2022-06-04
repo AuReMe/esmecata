@@ -1005,7 +1005,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
 
                 for protein_id in reference_proteins:
                     if protein_id not in protein_annotations:
-                        protein_annotations[row[0]] = [reference_proteins[row[0]], '', '', '', '', '', '']
+                        protein_annotations[protein_id] = [reference_proteins[protein_id], '', '', '', '', '', '']
 
             annotation_reference_file = os.path.join(clust_annotation_reference_protein_path, base_filename+'.tsv')
             with open(annotation_reference_file, 'w') as output_tsv:
