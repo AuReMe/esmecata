@@ -971,7 +971,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
 
         if annotate_with_uniprot:
-            clust_annotation_reference_file = os.path.join(clust_reference_protein_path, base_filename+'.tsv')
+            clust_annotation_reference_file = os.path.join(reference_protein_path, base_filename+'.tsv')
             reference_proteins, set_proteins = extract_protein_cluster(clust_annotation_reference_file)
             if not os.path.exists(annotation_file):
                 output_dict = {}
