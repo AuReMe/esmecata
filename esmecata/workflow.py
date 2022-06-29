@@ -84,7 +84,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         limit_maximal_number_proteomes=99, rank_limit=None,
                         nb_cpu=1, clust_threshold=1, mmseqs_options=None,
                         linclust=None, propagate_annotation=None, uniref_annotation=None,
-                        expression_annotation=None, beta=None, minimal_number_proteomes=1):
+                        expression_annotation=None, minimal_number_proteomes=1):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -104,7 +104,6 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         propagate_annotation (float): float between 0 and 1. It is the ratio of proteins in the cluster that should have the annotation to keep this annotation.
         uniref_annotation (bool): option to use uniref annotation to add annotation
         expression_annotation (bool): option to add expression annotation from uniprot
-        beta (bool): option to use the new API of UniProt (in beta can be unstable)
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
     """
     starttime = time.time()
@@ -116,14 +115,14 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
     proteomes_output_folder = os.path.join(output_folder, '0_proteomes')
     retrieve_proteomes(input_file, proteomes_output_folder, busco_percentage_keep,
                         ignore_taxadb_update, all_proteomes, uniprot_sparql_endpoint,
-                        remove_tmp, limit_maximal_number_proteomes, beta, rank_limit,
+                        remove_tmp, limit_maximal_number_proteomes, rank_limit,
                         minimal_number_proteomes)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
     make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
-    annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation, beta)
+    annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation)
 
     stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
     compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file)

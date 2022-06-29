@@ -263,7 +263,7 @@ def requests_query(http_str, nb_retry=5):
         return response
 
 
-def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, beta=None):
+def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes):
     """REST query on UniProt to get the proteomes associated with a taxon.
 
     Args:
@@ -272,7 +272,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         tax_name (str): taxon name associated with the tax_id
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
-        beta (bool): option to use the new API of UniProt (in beta can be unstable)
+
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
         organism_ids (dict): organism ID (key) associated with each proteomes (values)
@@ -285,123 +285,64 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
     # Take reference proteomes with "reference:yes".
     # Avoid redundant and excluded proteomes with "redundant%3Ano+excluded%3Ano".
     # Use "format=tab" to easily handle the ouput.
-    http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+reference:yes+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
-    beta_httpt_str = 'https://rest.uniprot.org/beta/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A1)&format=json'.format(tax_id)
+    httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A1)&format=json'.format(tax_id)
 
     if all_proteomes:
-        http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
-        beta_httpt_str = 'https://rest.uniprot.org/beta/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json'.format(tax_id)
+        httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json'.format(tax_id)
 
     # If esmecata does not find proteomes with only reference, search for all poroteomes even if they are not reference.
-    all_http_str = 'https://www.uniprot.org/proteomes/?query=taxonomy:{0}+redundant%3Ano+excluded%3Ano&format=tab'.format(tax_id)
-    all_beta_httpt_str = 'https://rest.uniprot.org/beta/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json'.format(tax_id)
+    all_http_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json'.format(tax_id)
 
     response_proteome_status = False
 
-    if not beta:
-        proteome_response = requests_query(http_str)
-        # Raise error if we have a bad request.
+    proteome_response = requests_query(httpt_str)
+    proteome_response.raise_for_status()
+    check_code = proteome_response.status_code
+    data = proteome_response.json()
+    reference_proteome = True
+    if len(data['results']) == 0:
+        logger.info('|EsMeCaTa|proteomes| {0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
+        time.sleep(1)
+        proteome_response = requests_query(all_http_str)
         proteome_response.raise_for_status()
-        proteome_response_text = proteome_response.text
-        if proteome_response_text != '':
-            csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
-            response_proteome_status = True
-            # Avoid header.
-            next(csvreader)
-        else:
-            csvreader = []
-        reference_proteome = True
-
-        if response_proteome_status is False:
-            time.sleep(1)
-            logger.info('|EsMeCaTa|proteomes| {0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
-            proteome_response = requests_query(all_http_str)
-            proteome_response_text = proteome_response.text
-            if proteome_response_text != '':
-                csvreader = csv.reader(proteome_response_text.splitlines(), delimiter='\t')
-                response_proteome_status = True
-                # Avoid header.
-                next(csvreader)
-            else:
-                csvreader = []
-            reference_proteome = False
-
-        for line in csvreader:
-            proteome = line[0]
-            completness = line[6]
-            org_tax_id = line[2]
-
-            if line[4] != '':
-                busco_percentage = float(line[4].split(':')[1].split('%')[0])
-            else:
-                busco_percentage = None
-
-            # Check that proteome has busco score.
-            if busco_percentage_keep:
-                if busco_percentage and busco_percentage >= busco_percentage_keep and completness == 'full':
-                    proteomes.append(proteome)
-                    if org_tax_id not in organism_ids:
-                        organism_ids[org_tax_id] = [proteome]
-                    else:
-                        organism_ids[org_tax_id].append(proteome)
-            else:
-                if completness == 'full':
-                    proteomes.append(proteome)
-                    if org_tax_id not in organism_ids:
-                        organism_ids[org_tax_id] = [proteome]
-                    else:
-                        organism_ids[org_tax_id].append(proteome)
-
-            proteomes_data.append([proteome, busco_percentage, completness, org_tax_id, reference_proteome])
-    else:
-        proteome_response = requests_query(beta_httpt_str)
-        proteome_response.raise_for_status()
-        check_code = proteome_response.status_code
         data = proteome_response.json()
-        reference_proteome = True
-        if len(data['results']) == 0:
-            logger.info('|EsMeCaTa|proteomes| {0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
-            time.sleep(1)
-            proteome_response = requests_query(all_beta_httpt_str)
-            proteome_response.raise_for_status()
-            data = proteome_response.json()
-            reference_proteome = False
+        reference_proteome = False
 
-        for proteome_data in data['results']:
-            proteome_id = proteome_data['id']
-            if 'proteomeCompletenessReport' in proteome_data:
-                if 'buscoReport' in proteome_data['proteomeCompletenessReport']:
-                    proteome_busco = proteome_data['proteomeCompletenessReport']['buscoReport']
-                else:
-                    proteome_busco = None
-                if proteome_busco:
-                    busco_score = (proteome_busco['complete'] / proteome_busco['total']) * 100
-                else:
-                    busco_score = None
+    for proteome_data in data['results']:
+        proteome_id = proteome_data['id']
+        if 'proteomeCompletenessReport' in proteome_data:
+            if 'buscoReport' in proteome_data['proteomeCompletenessReport']:
+                proteome_busco = proteome_data['proteomeCompletenessReport']['buscoReport']
+            else:
+                proteome_busco = None
+            if proteome_busco:
+                busco_score = (proteome_busco['complete'] / proteome_busco['total']) * 100
             else:
                 busco_score = None
+        else:
+            busco_score = None
 
-            if 'level' in proteome_data['genomeAssembly']:
-                assembly_level = proteome_data['genomeAssembly']['level']
-            else:
-                assembly_level = ''
-            org_tax_id = proteome_data['taxonomy']['taxonId']
-            proteome_type = proteome_data['proteomeType']
-            if busco_percentage_keep:
-                if busco_score and busco_score >= busco_percentage_keep and assembly_level == 'full':
-                    proteomes.append(proteome_id)
-                    if org_tax_id not in organism_ids:
-                        organism_ids[org_tax_id] = [proteome_id]
-                    else:
-                        organism_ids[org_tax_id].append(proteome_id)
-            else:
-                if assembly_level == 'full':
-                    proteomes.append(proteome_id)
-                    if org_tax_id not in organism_ids:
-                        organism_ids[org_tax_id] = [proteome_id]
-                    else:
-                        organism_ids[org_tax_id].append(proteome_id)
-            proteomes_data.append([proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome])
+        if 'level' in proteome_data['genomeAssembly']:
+            assembly_level = proteome_data['genomeAssembly']['level']
+        else:
+            assembly_level = ''
+        org_tax_id = proteome_data['taxonomy']['taxonId']
+        proteome_type = proteome_data['proteomeType']
+        if busco_percentage_keep:
+            if busco_score and busco_score >= busco_percentage_keep and assembly_level == 'full':
+                proteomes.append(proteome_id)
+                if org_tax_id not in organism_ids:
+                    organism_ids[org_tax_id] = [proteome_id]
+                else:
+                    organism_ids[org_tax_id].append(proteome_id)
+        else:
+            if assembly_level == 'full':
+                proteomes.append(proteome_id)
+                if org_tax_id not in organism_ids:
+                    organism_ids[org_tax_id] = [proteome_id]
+                else:
+                    organism_ids[org_tax_id].append(proteome_id)
+        proteomes_data.append([proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome])
 
     return proteomes, organism_ids, proteomes_data
 
@@ -415,7 +356,6 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         tax_name (str): taxon name associated with the tax_id
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
-        beta (bool): option to use the new API of UniProt (in beta can be unstable)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
@@ -592,7 +532,7 @@ def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
 
 def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                         busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None,
-                        limit_maximal_number_proteomes=99, beta=None, minimal_number_proteomes=1):
+                        limit_maximal_number_proteomes=99, minimal_number_proteomes=1):
     """Find proteomes associated with taxonomic affiliations
 
     Args:
@@ -603,7 +543,6 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        beta (bool): option to use the new API of UniProt (in beta can be unstable)
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
 
     Returns:
@@ -643,7 +582,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
             if uniprot_sparql_endpoint:
                 proteomes, organism_ids, data_proteomes = sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
             else:
-                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, beta)
+                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes)
 
             for data_proteome in data_proteomes:
                 proteomes_descriptions.append([tax_id, tax_name, *data_proteome])
@@ -786,7 +725,7 @@ def compute_stat_proteomes(result_folder, stat_file=None):
 
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
-                        remove_tmp=None, limit_maximal_number_proteomes=99, beta=None, rank_limit=None,
+                        remove_tmp=None, limit_maximal_number_proteomes=99, rank_limit=None,
                         minimal_number_proteomes=1):
     """From a tsv file with taxonomic affiliations find the associated proteomes.
 
@@ -799,7 +738,6 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        beta (bool): option to use the new API of UniProt (in beta can be unstable)
         rank_limit (str): rank limit to remove from the data
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
     """
@@ -868,7 +806,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     if not os.path.exists(proteome_tax_id_file):
         proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
-                                                        busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, limit_maximal_number_proteomes, beta, minimal_number_proteomes)
+                                                        busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, limit_maximal_number_proteomes, minimal_number_proteomes)
 
         proteome_to_download = []
         for proteomes_id in proteomes_ids:
@@ -917,10 +855,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             if uniprot_sparql_endpoint is not None:
                 sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
             else:
-                if beta:
-                    http_str = 'https://rest.uniprot.org/beta/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
-                else:
-                    http_str = 'https://www.uniprot.org/uniprot/?query=proteome:{0}&format=fasta&compress=yes'.format(proteome)
+                http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
                 proteome_response = requests_query(http_str)
                 with open(output_proteome_file, 'wb') as f:
                     f.write(proteome_response.content)

@@ -82,12 +82,12 @@ def test_subsampling_proteomes():
 
 def test_rest_query_proteomes():
     expected_proteoems = ['UP000255169', 'UP000000815']
-    expected_organism_ids = {'632': ['UP000000815'], '29486': ['UP000255169']}
-    expected_proteome_data = [['UP000255169', 98.9, 'full', '29486', True], ['UP000000815', 99.8, 'full', '632', True]]
+    expected_organism_ids = {632: ['UP000000815'], 29486: ['UP000255169']}
+    expected_proteome_data = [['UP000255169', 98.86363636363636, 'full', 29486, True], ['UP000000815', 99.77272727272727, 'full', 632, True]]
 
-    proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 629, 'Yersinia', 0.8, all_proteomes=None, beta=None)
+    proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 629, 'Yersinia', 0.8, all_proteomes=None)
     time.sleep(1)
-
+    print(organism_ids)
     assert set(expected_proteoems) == set(proteomes)
     for organism in organism_ids:
         assert set(organism_ids[organism]) == set(expected_organism_ids[organism])
@@ -96,7 +96,7 @@ def test_rest_query_proteomes():
 
 
 def test_find_proteomes_tax_ids():
-    expected_proteomes_ids = {'id_1': (629, ['UP000255169', 'UP000000815'])}
+    expected_proteomes_ids = {'id_1': (629, ['UP000000815', 'UP000255169'])}
     ncbi = NCBITaxa()
     tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
     json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
@@ -112,7 +112,7 @@ def test_find_proteomes_tax_ids():
 
 
 def test_sparql_find_proteomes_tax_ids():
-    expected_proteomes_ids = {'id_1': (629, ['UP000000815'])}
+    expected_proteomes_ids = {'id_1': (629, ['UP000000815', 'UP000255169'])}
     ncbi = NCBITaxa()
     tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
     json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)

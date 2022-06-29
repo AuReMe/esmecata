@@ -194,14 +194,6 @@ def main():
         dest='sparql',
         help='Use sparql endpoint instead of REST queries on Uniprot.',
         required=False)
-    parent_parser_beta = argparse.ArgumentParser(add_help=False)
-    parent_parser_beta.add_argument(
-        '--beta',
-        dest='beta',
-        help='Use uniprot beta REST query.',
-        required=False,
-        action='store_true',
-        default=None)
     parent_parser_rank_limit = argparse.ArgumentParser(add_help=False)
     parent_parser_rank_limit.add_argument(
         '-r',
@@ -232,7 +224,7 @@ def main():
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
             parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
-            parent_parser_beta, parent_parser_rank_limit, parent_parser_minimal_number_proteomes
+            parent_parser_rank_limit, parent_parser_minimal_number_proteomes
             ],
         allow_abbrev=False)
     clustering_parser = subparsers.add_parser(
@@ -249,8 +241,7 @@ def main():
         help='Retrieve protein annotations from Uniprot.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
-            parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
-            parent_parser_beta
+            parent_parser_propagate, parent_parser_uniref, parent_parser_expression
             ],
         allow_abbrev=False)
     workflow_parser = subparsers.add_parser(
@@ -262,7 +253,7 @@ def main():
             parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
             parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
-            parent_parser_beta, parent_parser_rank_limit, parent_parser_minimal_number_proteomes
+            parent_parser_rank_limit, parent_parser_minimal_number_proteomes
             ],
         allow_abbrev=False)
 
@@ -303,18 +294,18 @@ def main():
     if args.cmd == 'proteomes':
         retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
-                            args.limit_maximal_number_proteomes, args.beta, args.rank_limit, args.minimal_number_proteomes)
+                            args.limit_maximal_number_proteomes, args.rank_limit, args.minimal_number_proteomes)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
-        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression, args.beta)
+        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression)
     elif args.cmd == 'workflow':
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
                             args.limit_maximal_number_proteomes, args.rank_limit,
                             args.cpu, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
-                            args.expression, args.beta, args.minimal_number_proteomes)
+                            args.expression, args.minimal_number_proteomes)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
