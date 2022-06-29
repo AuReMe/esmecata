@@ -1,5 +1,12 @@
 # Changelog
 
+# EsMeCaTa v0.2.4 (2022-06-29)
+
+## Modify
+
+* use new UniProt API.
+* remove beta option and old UniProt queries.
+
 # EsMeCaTa v0.2.3 (2022-05-25)
 
 ## Fix
