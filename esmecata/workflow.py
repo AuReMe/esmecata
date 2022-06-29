@@ -158,7 +158,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
 
     if kegg_reconstruction:
         kegg_metabolism_output_folder = os.path.join(output_folder, '3_kegg_metabolism')
-        create_draft_networks(annotation_output_folder, kegg_metabolism_output_folder, mapping_ko, beta, recreate_kegg)
+        create_draft_networks(annotation_output_folder, kegg_metabolism_output_folder, mapping_ko, recreate_kegg)
     else:
         kegg_metabolism_output_folder = None
 

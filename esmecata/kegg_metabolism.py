@@ -45,112 +45,104 @@ uniprot = UniProt(verbose=False)
 root = os.path.dirname(__file__)
 kegg_archive = os.path.join(*[root, 'data', 'kegg_model.zip'])
 
-def rest_query_uniprot_to_retrieve_kegg_gene(protein_queries, beta=None):
+def rest_query_uniprot_to_retrieve_kegg_gene(protein_queries):
     """REST query to get KEGG gene ID from proteins.
 
     Args:
         protein_queries (list): list of proteins
-        beta (bool): option to use the new API of UniProt (in beta can be unstable)
 
     Returns:
         output_dict (dict): annotation dict: protein as key and KEGG gene ID as value
     """
     output_dict = {}
 
+    url = 'http://rest.uniprot.org/idmapping/run'
+
     # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
     # from and to are linked to mapping ID: https://www.uniprot.org/help/api%5Fidmapping
-    if not beta:
-        results = uniprot.mapping("ACC", "KEGG_ID", query=protein_queries)
-        output_dict.update(results)
-    else:
-        url = 'http://rest.uniprot.org/beta/idmapping/run'
 
-        # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
-        # from and to are linked to mapping ID: https://www.uniprot.org/help/api%5Fidmapping
+    params = {
+        'from': 'UniProtKB_AC-ID',
+        'to': 'KEGG',
+        'ids': protein_queries
+    }
+    data = urllib.parse.urlencode(params)
+    data = data.encode('utf-8')
+    req = urllib.request.Request(url, data)
 
-        params = {
-            'from': 'UniProtKB_AC-ID',
-            'to': 'KEGG',
-            'ids': protein_queries
-        }
-        data = urllib.parse.urlencode(params)
-        data = data.encode('utf-8')
-        req = urllib.request.Request(url, data)
+    data_js = json.load(urllib_query(req))
+    job_id = data_js['jobId']
 
-        data_js = json.load(urllib_query(req))
-        job_id = data_js['jobId']
+    http_check_status = 'http://rest.uniprot.org/idmapping/status/{0}'.format(job_id)
 
-        http_check_status = 'http://rest.uniprot.org/beta/idmapping/status/{0}'.format(job_id)
+    check_status_response = requests.head(http_check_status)
+    check_status_response.raise_for_status()
 
+    # Not working because the code is 200 instead of 303...
+    # Issue with protein_queries formatting?
+    # Wait 5 secodns to check again return code.
+    # But is there no better way?
+    while check_status_response.status_code != 303:
+        time.sleep(5)
         check_status_response = requests.head(http_check_status)
-        check_status_response.raise_for_status()
 
-        # Not working because the code is 200 instead of 303...
-        # Issue with protein_queries formatting?
-        # Wait 5 secodns to check again return code.
-        # But is there no better way?
-        while check_status_response.status_code != 303:
-            time.sleep(5)
-            check_status_response = requests.head(http_check_status)
+    if check_status_response.status_code == 303:
+        http_download = 'http://rest.uniprot.org/idmapping/uniprotkb/results/stream/{0}'.format(job_id)
+        response = requests.get(http_download)
+        response.raise_for_status()
+        data = response.json()
 
-        if check_status_response.status_code == 303:
-            http_download = 'http://rest.uniprot.org/beta/idmapping/uniprotkb/results/stream/{0}'.format(job_id)
-            response = requests.get(http_download)
-            response.raise_for_status()
-            data = response.json()
-
-            results = {}
-            for result in data['results']:
-                protein_id = result['from']
-                protein_data = result['to']
-                reviewed = protein_data['entryType']
-                if 'reviewed' in reviewed:
-                    review = True
-                else:
-                    review = False
-                protein_description = protein_data['proteinDescription']
-                if 'recommendedName' in protein_description:
-                    if 'ecNumbers' in protein_description['recommendedName']:
-                        protein_ecs = list(set([ecnumber['value'] for ecnumber in protein_description['recommendedName']['ecNumbers']]))
-                    else:
-                        protein_ecs = []
-                    protein_fullname = protein_description['recommendedName']['fullName']['value']
+        results = {}
+        for result in data['results']:
+            protein_id = result['from']
+            protein_data = result['to']
+            reviewed = protein_data['entryType']
+            if 'reviewed' in reviewed:
+                review = True
+            else:
+                review = False
+            protein_description = protein_data['proteinDescription']
+            if 'recommendedName' in protein_description:
+                if 'ecNumbers' in protein_description['recommendedName']:
+                    protein_ecs = list(set([ecnumber['value'] for ecnumber in protein_description['recommendedName']['ecNumbers']]))
                 else:
                     protein_ecs = []
-                    protein_fullname = ''
+                protein_fullname = protein_description['recommendedName']['fullName']['value']
+            else:
+                protein_ecs = []
+                protein_fullname = ''
 
-                gene_names = [gene['geneName']['value'] for gene in protein_data['genes'] if 'geneName' in gene]
-                if len(gene_names) > 0:
-                    gene_name = gene_names[0]
-                else:
-                    gene_name = ''
-                protein_xrefs = protein_data['uniProtKBCrossReferences']
+            gene_names = [gene['geneName']['value'] for gene in protein_data['genes'] if 'geneName' in gene]
+            if len(gene_names) > 0:
+                gene_name = gene_names[0]
+            else:
+                gene_name = ''
+            protein_xrefs = protein_data['uniProtKBCrossReferences']
 
-                rhea_ids = []
-                if 'comments' in protein_data:
-                    protein_comments = protein_data['comments']
-                    protein_reactions = [comment['reaction'] for comment in protein_comments if comment['commentType'] == 'CATALYTIC ACTIVITY']
-                    for reaction in protein_reactions:
-                        if 'reactionCrossReferences' in reaction:
-                            rhea_ids.extend([dbxref['id'] for dbxref in reaction['reactionCrossReferences'] if dbxref['database'] == 'Rhea' and 'RHEA:' in dbxref['id']])
-                        if 'ecNumber' in reaction:
-                            protein_ecs.append(reaction['ecNumber'])
-                    rhea_ids = list(set(rhea_ids))
-                protein_ecs = list(set(protein_ecs))
-                gos = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'GO']))
-                interpros = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'InterPro']))
-                results[protein_id] = [protein_fullname, review, gos, protein_ecs, interpros, rhea_ids, gene_name]
-                output_dict.update(results)
+            rhea_ids = []
+            if 'comments' in protein_data:
+                protein_comments = protein_data['comments']
+                protein_reactions = [comment['reaction'] for comment in protein_comments if comment['commentType'] == 'CATALYTIC ACTIVITY']
+                for reaction in protein_reactions:
+                    if 'reactionCrossReferences' in reaction:
+                        rhea_ids.extend([dbxref['id'] for dbxref in reaction['reactionCrossReferences'] if dbxref['database'] == 'Rhea' and 'RHEA:' in dbxref['id']])
+                    if 'ecNumber' in reaction:
+                        protein_ecs.append(reaction['ecNumber'])
+                rhea_ids = list(set(rhea_ids))
+            protein_ecs = list(set(protein_ecs))
+            gos = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'GO']))
+            interpros = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'InterPro']))
+            results[protein_id] = [protein_fullname, review, gos, protein_ecs, interpros, rhea_ids, gene_name]
+            output_dict.update(results)
 
     return output_dict
 
 
-def query_uniprot_kegg_rest(protein_to_search_on_uniprots, beta, output_dict):
+def query_uniprot_kegg_rest(protein_to_search_on_uniprots, output_dict):
     """Query UniProt with REST to find KEGG gene ID
 
     Args:
         protein_to_search_on_uniprots (set): set of proteins not already annotated that will need UniProt queries
-        beta (bool): option to use the new API of UniProt (in beta can be unstable)
         output_dict (dict): annotation dict: protein as key and KEGG gene ID as value
 
     Returns:
@@ -159,21 +151,15 @@ def query_uniprot_kegg_rest(protein_to_search_on_uniprots, beta, output_dict):
     # The limit of 15 000 proteins per query comes from the help of Uniprot (inferior to 20 000):
     # https://www.uniprot.org/help/uploadlists
     if len(protein_to_search_on_uniprots) < 15000:
-        if not beta:
-            protein_queries = ' '.join(protein_to_search_on_uniprots)
-        else:
-            protein_queries = ','.join(protein_to_search_on_uniprots)
-        tmp_output_dict = rest_query_uniprot_to_retrieve_kegg_gene(protein_queries, beta)
+        protein_queries = ','.join(protein_to_search_on_uniprots)
+        tmp_output_dict = rest_query_uniprot_to_retrieve_kegg_gene(protein_queries)
         output_dict.update(tmp_output_dict)
         time.sleep(1)
     else:
         protein_chunks = chunks(list(protein_to_search_on_uniprots), 15000)
         for chunk in protein_chunks:
-            if not beta:
-                protein_queries = ' '.join(chunk)
-            else:
-                protein_queries = ','.join(chunk)
-            tmp_output_dict = rest_query_uniprot_to_retrieve_kegg_gene(protein_queries, beta)
+            protein_queries = ','.join(chunk)
+            tmp_output_dict = rest_query_uniprot_to_retrieve_kegg_gene(protein_queries)
             output_dict.update(tmp_output_dict)
             time.sleep(1)
 
@@ -432,8 +418,7 @@ def map_protein_to_KO_id(proteins_ids):
         protein_ko_mapping (dict): mapping between UniProt protein ID as key and KO ID as value
     """
     protein_mapping = {}
-    beta = None
-    protein_mapping = query_uniprot_kegg_rest(proteins_ids, beta, protein_mapping)
+    protein_mapping = query_uniprot_kegg_rest(proteins_ids, protein_mapping)
     kegg_genes = [gene for prot_id in protein_mapping for gene in protein_mapping[prot_id]]
 
     chunk_kegg_genes = chunks(kegg_genes, 99)
@@ -547,7 +532,7 @@ def get_kegg_database_version():
     return kegg_version
 
 
-def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=None, recreate_kegg=None):
+def create_draft_networks(input_folder, output_folder, mapping_ko=False, recreate_kegg=None):
     """From the output folder of 'esmecata annotation' create KEGG SBML files using bioservices.KEGG.
     To retrieve KEGG reactions, a mapping is performed between EC number and KEGG reactions.
     And if the option mapping_ko is set to True, it will also map KO ID to KEGG reaction
@@ -556,15 +541,13 @@ def create_draft_networks(input_folder, output_folder, mapping_ko=False, beta=No
         input_folder (str): path to the output folder of esmecata annotation
         output_folder (str): path to the output folder
         mapping_ko (bool): option to use KO ID to retrieve reactions
-        beta (bool): option to use the new API of UniProt (in beta can be unstable)
         recreate_kegg (bool): option to recreate KEGG model by guerying KEGG server
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|kegg| Begin KEGG metabolism mapping.')
 
     # Download Uniprot metadata and create a json file containing them.
-    options = {'input_folder': input_folder, 'output_folder': output_folder, 'mapping_ko': mapping_ko,
-                'beta': beta}
+    options = {'input_folder': input_folder, 'output_folder': output_folder, 'mapping_ko': mapping_ko}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}

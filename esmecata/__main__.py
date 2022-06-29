@@ -354,21 +354,16 @@ def main():
                             args.propagate_annotation, args.uniref, args.expression,
                             args.annotate_with_uniprot)
     elif args.cmd == 'kegg':
-        create_draft_networks(args.input, args.output, args.map_ko, args.beta, args.recreate_kegg)
+        create_draft_networks(args.input, args.output, args.map_ko, args.recreate_kegg)
     elif args.cmd == 'workflow':
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
                             args.limit_maximal_number_proteomes, args.rank_limit,
                             args.cpu, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
-<<<<<<< HEAD
                             args.expression, args.minimal_number_proteomes,
-                            args.kegg, args.map_ko)
-=======
-                            args.expression, args.beta, args.minimal_number_proteomes,
                             args.kegg, args.map_ko, args.recreate_kegg,
                             args.annotate_with_uniprot)
->>>>>>> Add an annotation method using expasy.
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
