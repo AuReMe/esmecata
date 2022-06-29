@@ -4,10 +4,6 @@
 
 EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomic affiliation (for example after analysis on 16S RNA sequencing). This is useful if no sequenced genomes or proteomes are available.
 
-Warning:
-
-**A new version of UniProt is in development (see [UniProt beta](https://beta.uniprot.org/)), a compatible version of EsMeCaTa is in development (with the `--beta` option) but it may also been unstable.**
-
 ![](esmecata.svg)
 
 ## Table of contents
@@ -136,8 +132,7 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 ### `esmecata proteomes`: Retrieve proteomes associated with taxonomic affiliation
 
 ````
-usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [--beta] [-r RANK_LIMIT]
-                          [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES]
+usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-r RANK_LIMIT]  [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -155,7 +150,6 @@ optional arguments:
   --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
   -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
                         Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
-  --beta                Use uniprot beta REST query.
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
                         This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
@@ -318,7 +312,7 @@ Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. I
 ### `esmecata annotation`: Retrieve protein annotations
 
 ````
-usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--beta]
+usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -333,7 +327,6 @@ optional arguments:
                         reference and 1 only the annotation occurring in all the proteins of the cluster (default).
   --uniref              Use uniref cluster to extract more annotations from the representative member of the cluster associated with the proteins. Needs the --sparql option.
   --expression          Extract expression information associated with the proteins. Needs the --sparql option.
-  --beta                Use uniprot beta REST query.
 ````
 
 For each of the protein clusters kept after the clustering, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
@@ -369,7 +362,7 @@ With this option, esmecata will extract the [expression information](https://www
 ### `esmecata kegg`: Draft reconstruction of metabolic networks using KEGG
 
 ````
-usage: esmecata kegg [-h] -i INPUT_DIR -o OUPUT_DIR [--beta] [--map-ko]
+usage: esmecata kegg [-h] -i INPUT_DIR -o OUPUT_DIR [--map-ko]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -377,7 +370,6 @@ optional arguments:
                         This input folder of esmecata kegg is the output folder of annotation command.
   -o OUPUT_DIR, --output OUPUT_DIR
                         Output directory path.
-  --beta                Use uniprot beta REST query.
   --map-ko              From UniProt protein ID, retrieve KEGG ortholgos to infer KEGG reaction from them.
 ````
 
@@ -403,7 +395,7 @@ If the option `--map-ko` has been used, a second mapping is performed. Using the
 
 ````
 usage: esmecata workflow [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [-c CPU] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS]
-                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--beta] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES] [--kegg] [--map-ko]
+                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES] [--kegg] [--map-ko]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -432,7 +424,6 @@ optional arguments:
                         reference and 1 only the annotation occurring in all the proteins of the cluster (default).
   --uniref              Use uniref cluster to extract more annotations from the representative member of the cluster associated with the proteins. Needs the --sparql option.
   --expression          Extract expression information associated with the proteins. Needs the --sparql option.
-  --beta                Use uniprot beta REST query.
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
                         This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
