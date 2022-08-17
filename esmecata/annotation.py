@@ -24,13 +24,94 @@ import urllib.parse
 import urllib.request
 
 from SPARQLWrapper import __version__ as sparqlwrapper_version
+from urllib.parse import urlparse, parse_qs, urlencode
+from requests.adapters import HTTPAdapter, Retry
 
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query, urllib_query
 from esmecata import __version__ as esmecata_version
 
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
 
+POLLING_INTERVAL = 3
+API_URL = "https://rest.uniprot.org"
+
 logger = logging.getLogger(__name__)
+
+
+# Set of Python functions from https://www.uniprot.org/help/id_mapping
+
+def check_response(response):
+    try:
+        response.raise_for_status()
+    except requests.HTTPError:
+        print(response.json())
+        raise
+
+
+def get_id_mapping_results_link(session, job_id):
+    url = f"{API_URL}/idmapping/details/{job_id}"
+    request = session.get(url)
+    check_response(request)
+    return request.json()["redirectURL"]
+
+def get_next_link(headers):
+    re_next_link = re.compile(r'<(.+)>; rel="next"')
+    if "Link" in headers:
+        match = re_next_link.match(headers["Link"])
+        if match:
+            return match.group(1)
+
+
+def get_batch(session, batch_response):
+    batch_url = get_next_link(batch_response.headers)
+    while batch_url:
+        batch_response = session.get(batch_url)
+        batch_response.raise_for_status()
+        yield batch_response.json()
+        batch_url = get_next_link(batch_response.headers)
+
+
+def combine_batches(all_results, batch_results, file_format):
+    if file_format == "json":
+        for key in ("results", "failedIds"):
+            if key in batch_results and batch_results[key]:
+                all_results[key] += batch_results[key]
+    elif file_format == "tsv":
+        return all_results + batch_results[1:]
+    else:
+        return all_results + batch_results
+    return all_results
+
+
+def print_progress_batches(batch_index, size, total):
+    n_fetched = min((batch_index + 1) * size, total)
+    print(f"|EsMeCaTa|annotation| Fetched: {n_fetched} / {total}")
+
+
+def get_id_mapping_results_search(session, url):
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query)
+    file_format = query["format"][0] if "format" in query else "json"
+    if "size" in query:
+        size = int(query["size"][0])
+    else:
+        size = 500
+        query["size"] = size
+    compressed = (
+        query["compressed"][0].lower() == "true" if "compressed" in query else False
+    )
+    parsed = parsed._replace(query=urlencode(query, doseq=True))
+    url = parsed.geturl()
+    request = session.get(url)
+    check_response(request)
+    results = request.json()
+    total = int(request.headers["x-total-results"])
+    print_progress_batches(0, size, total)
+    for i, batch in enumerate(get_batch(session, request), 1):
+        results = combine_batches(results, batch, file_format)
+        print_progress_batches(i, size, total)
+
+    return results
 
 
 def rest_query_uniprot_to_retrieve_function(protein_queries):
@@ -48,7 +129,9 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
 
     # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
     # from and to are linked to mapping ID: https://www.uniprot.org/help/api%5Fidmapping
-
+    retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=retries))
     params = {
         'from': 'UniProtKB_AC-ID',
         'to': 'UniProtKB',
@@ -75,10 +158,8 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
         check_status_response = requests.head(http_check_status)
 
     if check_status_response.status_code == 303:
-        http_download = 'http://rest.uniprot.org/idmapping/uniprotkb/results/stream/{0}'.format(job_id)
-        response = requests.get(http_download)
-        response.raise_for_status()
-        data = response.json()
+        link = get_id_mapping_results_link(session, job_id)
+        data = get_id_mapping_results_search(session, link)
 
         results = {}
         for result in data['results']:
@@ -740,7 +821,6 @@ def propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_a
                 keep_gene_names = max(gene_names,key=gene_names.count)
             if len(protein_names) > 0:
                 keep_protein_names = max(protein_names,key=protein_names.count)
-
             protein_annotations[reference_protein] = [keep_protein_names, keep_gos, keep_ecs, keep_gene_names]
         else:
             # Use only annotation from representative proteins.
@@ -896,7 +976,6 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         #protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
         # Second method to handle protein already annotated
         protein_to_search_on_uniprots, output_dict = search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict)
-
         if uniprot_sparql_endpoint:
             proteomes = input_proteomes[base_filename]
             output_dict = query_uniprot_annotation_sparql(proteomes, base_filename, uniprot_sparql_endpoint, output_dict)
