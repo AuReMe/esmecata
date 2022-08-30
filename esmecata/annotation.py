@@ -41,6 +41,12 @@ logger = logging.getLogger(__name__)
 # Set of Python functions from https://www.uniprot.org/help/id_mapping
 
 def check_response(response):
+    """ Check reponse status, if error raise it.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        response (requests Reponse object): response returns by request query.
+    """
     try:
         response.raise_for_status()
     except requests.HTTPError:
@@ -49,12 +55,32 @@ def check_response(response):
 
 
 def get_id_mapping_results_link(session, job_id):
+    """ Get URL containing results from mapping request to UniProt.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        session (requests Session object): session used to query UniProt.
+        job_id (str): Job ID corresponding to the request ID given by UniProt.
+
+    Returns:
+        str: redirect URL to the results of the mapping query.
+    """
     url = f"{API_URL}/idmapping/details/{job_id}"
     request = session.get(url)
     check_response(request)
     return request.json()["redirectURL"]
 
+
 def get_next_link(headers):
+    """ From batch queries, get the next link to request.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        headers (dict): headers of batch response.
+
+    Returns:
+        str: next link to query in the batch process.
+    """
     re_next_link = re.compile(r'<(.+)>; rel="next"')
     if "Link" in headers:
         match = re_next_link.match(headers["Link"])
@@ -63,6 +89,16 @@ def get_next_link(headers):
 
 
 def get_batch(session, batch_response):
+    """ Batch queries.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        session (requests Session object): session used to query UniProt.
+        batch_response (requests Response object): response to batch query.
+
+    Returns:
+        json: batch reponses in json.
+    """
     batch_url = get_next_link(batch_response.headers)
     while batch_url:
         batch_response = session.get(batch_url)
@@ -71,45 +107,67 @@ def get_batch(session, batch_response):
         batch_url = get_next_link(batch_response.headers)
 
 
-def combine_batches(all_results, batch_results, file_format):
-    if file_format == "json":
-        for key in ("results", "failedIds"):
-            if key in batch_results and batch_results[key]:
-                all_results[key] += batch_results[key]
-    elif file_format == "tsv":
-        return all_results + batch_results[1:]
-    else:
-        return all_results + batch_results
+def combine_batches(all_results, batch_results):
+    """ Combine the response of all batch queries.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        all_results (json): results from first query.
+        batch_results (json): batch results.
+
+    Returns:
+        all_results (json): combined batch reponses in json.
+    """
+    for key in ("results", "failedIds"):
+        if key in batch_results and batch_results[key]:
+            all_results[key] += batch_results[key]
+
     return all_results
 
 
 def print_progress_batches(batch_index, size, total):
+    """ print the progress of the download.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        batch_index (str): index of batch process in all batch results.
+        size (int): size of the results.
+        total (int):  total size of the batch results.
+    """
     n_fetched = min((batch_index + 1) * size, total)
-    print(f"|EsMeCaTa|annotation| Fetched: {n_fetched} / {total}")
+    logger.info(f"|EsMeCaTa|annotation| Fetched: {n_fetched} / {total}")
 
 
 def get_id_mapping_results_search(session, url):
+    """ Retrieve UniProt mapping results.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        session (requests Session object): session used to query UniProt.
+        url (str): Uniprot mapping URL containing the results.
+
+    Returns:
+        results (json): mapping results.
+    """
     parsed = urlparse(url)
     query = parse_qs(parsed.query)
-    file_format = query["format"][0] if "format" in query else "json"
+
     if "size" in query:
         size = int(query["size"][0])
     else:
         size = 500
         query["size"] = size
-    compressed = (
-        query["compressed"][0].lower() == "true" if "compressed" in query else False
-    )
+
     parsed = parsed._replace(query=urlencode(query, doseq=True))
     url = parsed.geturl()
     request = session.get(url)
     check_response(request)
     results = request.json()
-    total = int(request.headers["x-total-results"])
-    print_progress_batches(0, size, total)
+    #total = int(request.headers["x-total-results"])
+    #print_progress_batches(0, size, total)
     for i, batch in enumerate(get_batch(session, request), 1):
-        results = combine_batches(results, batch, file_format)
-        print_progress_batches(i, size, total)
+        results = combine_batches(results, batch)
+        #print_progress_batches(i, size, total)
 
     return results
 
@@ -903,6 +961,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         expression_annotation (bool): option to add expression annotation from uniprot
     """
     starttime = time.time()
+    logger.info('|EsMeCaTa|annotation| Begin annotation.')
 
     if uniprot_sparql_endpoint is None and uniref_annotation is not None:
         logger.critical('|EsMeCaTa|annotation| At this moment, --uniref option needs to be used with --sparql option.')
@@ -964,7 +1023,10 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     # a second that use the annotation from the annotation files associated with the proteins.
     # It is slower as it reads the annotation file to retrieve the annotation, but I think it is less heavy on the memory.
     already_annotated_proteins_in_file = {}
-    for input_file in os.listdir(reference_protein_path):
+
+    input_files = os.listdir(reference_protein_path)
+    for index, input_file in enumerate(input_files):
+        logger.info('|EsMeCaTa|annotation| Annotation of {0} ({1} on {2} data to annotate).'.format(input_file, index+1, len(input_files)))
         base_file = os.path.basename(input_file)
         base_filename = os.path.splitext(base_file)[0]
 

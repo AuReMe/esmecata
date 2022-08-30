@@ -48,18 +48,39 @@ logger = logging.getLogger(__name__)
 
 
 def get_next_link(headers):
+    """ From batch queries, get the next link to request.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        headers (dict): headers of batch response.
+
+    Returns:
+        str: next link to query in the batch process.
+    """
     re_next_link = re.compile(r'<(.+)>; rel="next"')
     if "Link" in headers:
         match = re_next_link.match(headers["Link"])
         if match:
             return match.group(1)
 
+
 def get_batch(session, batch_url):
+    """ Batch queries.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        session (requests Session object): session used to query UniProt.
+        batch_url (str): URL of batch queries.
+
+    Returns:
+        batch_response (requests Response object): response to batch query.
+    """
     while batch_url:
         response = session.get(batch_url)
         response.raise_for_status()
         yield response
         batch_url = get_next_link(response.headers)
+
 
 def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi=None):
     """ From a taxonomic affiliation (such as cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria) find corresponding taxon ID for each taxon.
@@ -877,7 +898,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     tmp_folder = os.path.join(output_folder, 'tmp_proteome')
     is_valid_dir(tmp_folder)
 
-    for proteome in proteome_to_download:
+    for index, proteome in enumerate(proteome_to_download):
+        logger.info('|EsMeCaTa|proteomes| Downloaded {0} on {1} proteomes'.format(index+1, len(proteome_to_download)))
         output_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
             if uniprot_sparql_endpoint is not None:
