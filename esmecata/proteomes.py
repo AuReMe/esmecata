@@ -95,7 +95,7 @@ def ete3_database_update(ignore_taxadb_update):
         # If database is not set up, set it up.
         ncbi = NCBITaxa()
         ete_taxadb_up_to_date = is_taxadb_up_to_date()
-    ete_taxadb_up_to_date = False
+
     if ete_taxadb_up_to_date is False:
         logger.warning('|EsMeCaTa|proteomes| WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. It will be updated')
         if ignore_taxadb_update is None:
