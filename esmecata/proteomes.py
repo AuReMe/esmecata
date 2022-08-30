@@ -82,6 +82,30 @@ def get_batch(session, batch_url):
         batch_url = get_next_link(response.headers)
 
 
+def ete3_database_update(ignore_taxadb_update):
+    """ Check if ete3 taxa database is up to date, if not update it.
+
+    Args:
+        ignore_taxadb_update (bool): if True, ignore the need to update database.
+        esmecata_step (str): esmecata step name
+    """
+    try:
+        ete_taxadb_up_to_date = is_taxadb_up_to_date()
+    except:
+        # If database is not set up, set it up.
+        ncbi = NCBITaxa()
+        ete_taxadb_up_to_date = is_taxadb_up_to_date()
+
+    if ete_taxadb_up_to_date is False:
+        logger.warning('|EsMeCaTa|proteomes| WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. It will be updated')
+        if ignore_taxadb_update is None:
+            logger.info('|EsMeCaTa|proteomes| Ete3 taxa database will be updated.')
+            ncbi = NCBITaxa()
+            ncbi.update_taxonomy_database()
+        else:
+            logger.info('|EsMeCaTa|proteomes| --ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
+
+
 def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi=None):
     """ From a taxonomic affiliation (such as cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria) find corresponding taxon ID for each taxon.
 
@@ -796,22 +820,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         logger.critical('|EsMeCaTa|proteomes| The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
 
-    try:
-        ete_taxadb_up_to_date = is_taxadb_up_to_date()
-    except:
-        ncbi = NCBITaxa()
-        ete_taxadb_up_to_date = is_taxadb_up_to_date()
-
-    if ete_taxadb_up_to_date is False:
-        logger.warning('''|EsMeCaTa|proteomes| WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. Update it using:
-        from ete3 import NCBITaxa
-        ncbi = NCBITaxa()
-        ncbi.update_taxonomy_database()''')
-        if ignore_taxadb_update is None:
-            logger.info('|EsMeCaTa|proteomes| If you want to stil use esmecata with the old taxonomy database use the option --ignore-taxadb-update/ignore_taxadb_update.')
-            return
-        else:
-            logger.info('|EsMeCaTa|proteomes| --ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
+    ete3_database_update(ignore_taxadb_update)
 
     if minimal_number_proteomes >= limit_maximal_number_proteomes:
         logger.critical('|EsMeCaTa|proteomes| Error minimal_number_proteomes ({0}) can not be superior or equal to limit_maximal_number_proteomes ({1}).'.format(minimal_number_proteomes, limit_maximal_number_proteomes))
