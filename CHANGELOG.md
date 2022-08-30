@@ -1,5 +1,15 @@
 # Changelog
 
+# EsMeCaTa v0.2.5 (2022-08-30)
+
+## Add
+
+* more logs for proteomes download and annotation.
+
+## Fix
+
+* issue with UniProt API, using UniProt functions.
+
 # EsMeCaTa v0.2.4 (2022-06-29)
 
 ## Modify
