@@ -4,7 +4,7 @@
 
 ## Add
 
-* more logs for proteomes download and annotaitons.
+* more logs for proteomes download and annotation.
 
 ## Fix
 
