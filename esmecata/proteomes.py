@@ -20,12 +20,14 @@ import math
 import os
 import pandas as pd
 import random
+import re
 import requests
 import shutil
 import sys
 import time
 
 from collections import OrderedDict
+from requests.adapters import HTTPAdapter, Retry
 
 from Bio import __version__ as biopython_version
 from Bio import SeqIO
@@ -44,6 +46,20 @@ REQUESTS_HEADERS = {'User-Agent': 'EsMeCaTa proteomes v' + esmecata_version + ',
 
 logger = logging.getLogger(__name__)
 
+
+def get_next_link(headers):
+    re_next_link = re.compile(r'<(.+)>; rel="next"')
+    if "Link" in headers:
+        match = re_next_link.match(headers["Link"])
+        if match:
+            return match.group(1)
+
+def get_batch(session, batch_url):
+    while batch_url:
+        response = session.get(batch_url)
+        response.raise_for_status()
+        yield response
+        batch_url = get_next_link(response.headers)
 
 def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi=None):
     """ From a taxonomic affiliation (such as cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria) find corresponding taxon ID for each taxon.
@@ -263,7 +279,7 @@ def requests_query(http_str, nb_retry=5):
         return response
 
 
-def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes):
+def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session=None):
     """REST query on UniProt to get the proteomes associated with a taxon.
 
     Args:
@@ -272,12 +288,18 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         tax_name (str): taxon name associated with the tax_id
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
+        session: request session object
 
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
         organism_ids (dict): organism ID (key) associated with each proteomes (values)
         proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome
     """
+    if not session:
+        retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
+        session = requests.Session()
+        session.mount("https://", HTTPAdapter(max_retries=retries))
+
     proteomes = []
     proteomes_data = []
     organism_ids = {}
@@ -285,27 +307,27 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
     # Take reference proteomes with "reference:yes".
     # Avoid redundant and excluded proteomes with "redundant%3Ano+excluded%3Ano".
     # Use "format=tab" to easily handle the ouput.
-    httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A1)&format=json'.format(tax_id)
+    httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A1)&format=json&size=500'.format(tax_id)
 
     if all_proteomes:
-        httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json'.format(tax_id)
+        httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json&size=500'.format(tax_id)
 
     # If esmecata does not find proteomes with only reference, search for all poroteomes even if they are not reference.
-    all_http_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json'.format(tax_id)
+    all_http_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json&size=500'.format(tax_id)
 
-    response_proteome_status = False
+    data = {}
+    data['results'] = []
+    for batch_reponse in get_batch(session, httpt_str):
+        batch_json = batch_reponse.json()
+        data['results'].extend(batch_json['results'])
 
-    proteome_response = requests_query(httpt_str)
-    proteome_response.raise_for_status()
-    check_code = proteome_response.status_code
-    data = proteome_response.json()
     reference_proteome = True
     if len(data['results']) == 0:
         logger.info('|EsMeCaTa|proteomes| {0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
         time.sleep(1)
-        proteome_response = requests_query(all_http_str)
-        proteome_response.raise_for_status()
-        data = proteome_response.json()
+        for batch_reponse in get_batch(session, all_http_str):
+            batch_json = batch_reponse.json()
+            data['results'].extend(batch_json['results'])
         reference_proteome = False
 
     for proteome_data in data['results']:
@@ -532,7 +554,7 @@ def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
 
 def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                         busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None,
-                        limit_maximal_number_proteomes=99, minimal_number_proteomes=1):
+                        limit_maximal_number_proteomes=99, minimal_number_proteomes=1, session=None):
     """Find proteomes associated with taxonomic affiliations
 
     Args:
@@ -543,7 +565,8 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
+        session: request session object
 
     Returns:
         proteomes_ids (dict): observation name (key) associated with proteome IDs
@@ -582,7 +605,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
             if uniprot_sparql_endpoint:
                 proteomes, organism_ids, data_proteomes = sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
             else:
-                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes)
+                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session)
 
             for data_proteome in data_proteomes:
                 proteomes_descriptions.append([tax_id, tax_name, *data_proteome])
@@ -744,6 +767,10 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     starttime = time.time()
     logger.info('|EsMeCaTa|proteomes| Begin proteomes.')
 
+    retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+
     if is_valid_file(input_file) is False:
         logger.critical('|EsMeCaTa|proteomes| The input {0} is not a valid file pathname.'.format(input_file))
         sys.exit()
@@ -822,7 +849,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             lowest_taxonomic_ids[observation_name] = (lowest_taxonomic_name, lowest_tax_id)
 
         proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
-                                                        busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, limit_maximal_number_proteomes, minimal_number_proteomes)
+                                                        busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint,
+                                                        limit_maximal_number_proteomes, minimal_number_proteomes, session)
 
         proteome_to_download = []
         for proteomes_id in proteomes_ids:
@@ -874,10 +902,10 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             if uniprot_sparql_endpoint is not None:
                 sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
             else:
-                http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
-                proteome_response = requests_query(http_str)
-                with open(output_proteome_file, 'wb') as f:
-                    f.write(proteome_response.content)
+                http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true&size=500'.format(proteome)
+                for batch_reponse in get_batch(session, http_str):
+                    with open(output_proteome_file, 'wb') as f:
+                        f.write(batch_reponse.content)
         time.sleep(1)
 
     # Download Uniprot metadata and create a json file containing them.
