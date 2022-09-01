@@ -32,7 +32,7 @@ from esmecata import __version__ as esmecata_version
 
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
 
-POLLING_INTERVAL = 3
+POLLING_INTERVAL = 5
 API_URL = "https://rest.uniprot.org"
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,26 @@ def check_response(response):
         raise
 
 
+def submit_id_mapping(from_db, to_db, ids):
+    """ Submit mapping rest query.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        from_db (str): Database used as input for the mapping.
+        to_db (str): Database used as output for the mapping.
+        ids (str): List of protein IDs to map separated by ','.
+
+    Returns:
+        str: job ID.
+    """
+    request = requests.post(
+        f'{API_URL}/idmapping/run',
+        data={'from': from_db, 'to': to_db, 'ids': ids},
+    )
+    check_response(request)
+    return request.json()["jobId"]
+
+
 def get_id_mapping_results_link(session, job_id):
     """ Get URL containing results from mapping request to UniProt.
     Function from: https://www.uniprot.org/help/id_mapping
@@ -65,10 +85,10 @@ def get_id_mapping_results_link(session, job_id):
     Returns:
         str: redirect URL to the results of the mapping query.
     """
-    url = f"{API_URL}/idmapping/details/{job_id}"
+    url = f'{API_URL}/idmapping/details/{job_id}'
     request = session.get(url)
     check_response(request)
-    return request.json()["redirectURL"]
+    return request.json()['redirectURL']
 
 
 def get_next_link(headers):
@@ -82,8 +102,8 @@ def get_next_link(headers):
         str: next link to query in the batch process.
     """
     re_next_link = re.compile(r'<(.+)>; rel="next"')
-    if "Link" in headers:
-        match = re_next_link.match(headers["Link"])
+    if 'Link' in headers:
+        match = re_next_link.match(headers['Link'])
         if match:
             return match.group(1)
 
@@ -118,7 +138,7 @@ def combine_batches(all_results, batch_results):
     Returns:
         all_results (json): combined batch reponses in json.
     """
-    for key in ("results", "failedIds"):
+    for key in ('results', 'failedIds'):
         if key in batch_results and batch_results[key]:
             all_results[key] += batch_results[key]
 
@@ -135,7 +155,7 @@ def print_progress_batches(batch_index, size, total):
         total (int):  total size of the batch results.
     """
     n_fetched = min((batch_index + 1) * size, total)
-    logger.info(f"|EsMeCaTa|annotation| Fetched: {n_fetched} / {total}")
+    logger.info(f'|EsMeCaTa|annotation| Fetched: {n_fetched} / {total}')
 
 
 def get_id_mapping_results_search(session, url):
@@ -153,10 +173,10 @@ def get_id_mapping_results_search(session, url):
     query = parse_qs(parsed.query)
 
     if "size" in query:
-        size = int(query["size"][0])
+        size = int(query['size'][0])
     else:
         size = 500
-        query["size"] = size
+        query['size'] = size
 
     parsed = parsed._replace(query=urlencode(query, doseq=True))
     url = parsed.geturl()
@@ -172,11 +192,36 @@ def get_id_mapping_results_search(session, url):
     return results
 
 
+def check_id_mapping_results_ready(session, job_id):
+    """ Check if the job has finished and wait for it.
+    Function from: https://www.uniprot.org/help/id_mapping
+
+    Args:
+        session (requests Session object): session used to query UniProt.
+        job_id (str): Job ID for the query.
+
+    Returns:
+        bool: True if job is finished.
+    """
+    while True:
+        request = session.get(f'{API_URL}/idmapping/status/{job_id}')
+        check_response(request)
+        json_response = request.json()
+        if 'jobStatus' in json_response:
+            if json_response['jobStatus'] == 'RUNNING':
+                logger.info(f'|EsMeCaTa|annotation| Retrying in {POLLING_INTERVAL}s')
+                time.sleep(POLLING_INTERVAL)
+            else:
+                raise Exception(request['jobStatus'])
+        else:
+            return bool(json_response['results'] or json_response['failedIds'])
+
+
 def rest_query_uniprot_to_retrieve_function(protein_queries):
     """REST query to get annotation from proteins.
 
     Args:
-        protein_queries (list): list of proteins
+        protein_queries (str): list of proteins sperated by ','.
 
     Returns:
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
@@ -190,32 +235,12 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
     retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
     session = requests.Session()
     session.mount("https://", HTTPAdapter(max_retries=retries))
-    params = {
-        'from': 'UniProtKB_AC-ID',
-        'to': 'UniProtKB',
-        'ids': protein_queries
-    }
-    data = urllib.parse.urlencode(params)
-    data = data.encode('utf-8')
-    req = urllib.request.Request(url, data)
 
-    data_js = json.load(urllib_query(req))
-    job_id = data_js['jobId']
+    job_id = submit_id_mapping(from_db="UniProtKB_AC-ID", to_db="UniProtKB", ids=protein_queries)
 
-    http_check_status = 'http://rest.uniprot.org/idmapping/status/{0}'.format(job_id)
+    check_status = check_id_mapping_results_ready(session, job_id)
 
-    check_status_response = requests.head(http_check_status)
-    check_status_response.raise_for_status()
-
-    # Not working because the code is 200 instead of 303...
-    # Issue with protein_queries formatting?
-    # Wait 5 secodns to check again return code.
-    # But is there no better way?
-    while check_status_response.status_code != 303:
-        time.sleep(5)
-        check_status_response = requests.head(http_check_status)
-
-    if check_status_response.status_code == 303:
+    if check_status:
         link = get_id_mapping_results_link(session, job_id)
         data = get_id_mapping_results_search(session, link)
 
