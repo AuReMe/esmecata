@@ -200,7 +200,7 @@ def get_sparql_uniprot_release(uniprot_sparql_endpoint, options):
     uniprot_sparql_query = """SELECT ?version
     WHERE
     {{
-        [] <http://purl.org/pav/2.0/version> ?version .
+        [] <http://www.w3.org/2002/07/owl#versionInfo> ?version .
     }}
     """
     csvreader = send_uniprot_sparql_query(uniprot_sparql_query, uniprot_sparql_endpoint)

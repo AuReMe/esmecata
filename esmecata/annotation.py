@@ -1065,7 +1065,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         protein_to_search_on_uniprots, output_dict = search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict)
         if uniprot_sparql_endpoint:
             proteomes = input_proteomes[base_filename]
-            output_dict = query_uniprot_annotation_sparql(proteomes, base_filename, uniprot_sparql_endpoint, output_dict)
+            output_dict = query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_dict)
         else:
             output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict)
 
