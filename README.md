@@ -38,7 +38,7 @@ EsMeCaTa needs the following python packages:
 
 Also esmecata requires mmseqs2 for protein clustering:
 
-- [mmseqs2](https://github.com/soedinglab/MMseqs2): To cluster proteins.
+- [mmseqs2](https://github.com/soedinglab/MMseqs2): To cluster proteins. Test have been made on version MMseqs2 Release 13-45111., especially with the version of the commi [f349118312919c4fcc448f4595ca3b3a387018e2](https://github.com/soedinglab/MMseqs2/tree/f349118312919c4fcc448f4595ca3b3a387018e2). But EsMeCaTa sgould be compatible with more recent version.
 
 
 ## Installation

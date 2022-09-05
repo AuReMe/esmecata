@@ -1,5 +1,5 @@
-biopython
-ete3
-pandas
-requests
-SPARQLWrapper
+biopython>=1.78
+ete3>=3.1.2
+pandas>=1.4.0
+requests>=2.26.0
+SPARQLWrapper>=1.8.5
