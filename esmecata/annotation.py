@@ -214,7 +214,10 @@ def check_id_mapping_results_ready(session, job_id):
             else:
                 raise Exception(request['jobStatus'])
         else:
-            return bool(json_response['results'] or json_response['failedIds'])
+            if 'failedIds' in json_response:
+                return bool(json_response['failedIds'])
+            if 'results' in json_response:
+                return bool(json_response['results'])
 
 
 def rest_query_uniprot_to_retrieve_function(protein_queries):
