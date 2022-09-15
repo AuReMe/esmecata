@@ -267,12 +267,19 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
                 protein_ecs = []
                 protein_fullname = ''
 
-            gene_names = [gene['geneName']['value'] for gene in protein_data['genes'] if 'geneName' in gene]
-            if len(gene_names) > 0:
-                gene_name = gene_names[0]
+            if 'genes' in protein_data:
+                gene_names = [gene['geneName']['value'] for gene in protein_data['genes'] if 'geneName' in gene]
+                if len(gene_names) > 0:
+                    gene_name = gene_names[0]
+                else:
+                    gene_name = ''
             else:
                 gene_name = ''
-            protein_xrefs = protein_data['uniProtKBCrossReferences']
+
+            if 'uniProtKBCrossReferences' in protein_data:
+                protein_xrefs = protein_data['uniProtKBCrossReferences']
+            else:
+                protein_xrefs = []
 
             rhea_ids = []
             if 'comments' in protein_data:
