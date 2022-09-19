@@ -2,6 +2,19 @@
 
 # EsMeCaTa v0.2.5 (2022-08-30)
 
+## Modify
+
+* use UniProt functions to wait for the query.
+* update ete3 taxaonomy database it it is possible.
+
+## Fix
+
+* multiple KeyError issues in annotation.
+* issue in SPARQL queriy for version number.
+* typos.
+
+# EsMeCaTa v0.2.5 (2022-08-30)
+
 ## Add
 
 * more logs for proteomes download and annotation.
