@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.2.5 (2022-08-30)
+# EsMeCaTa v0.2.6 (2022-09-19)
 
 ## Modify
 
