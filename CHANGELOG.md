@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.2.7 (2022-09-19)
+
+## Fix
+
+* issue in requirements.txt (that induces the failure of the 0.2.6 release).
+
 # EsMeCaTa v0.2.6 (2022-09-19)
 
 ## Modify
