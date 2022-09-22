@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.2.8 (2022-09-22)
+
+## Fix
+
+* issue in Uniprot mapping requests.
+
 # EsMeCaTa v0.2.7 (2022-09-19)
 
 ## Fix
