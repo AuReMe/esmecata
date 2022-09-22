@@ -209,7 +209,8 @@ def check_id_mapping_results_ready(session, job_id):
         json_response = request.json()
         if 'jobStatus' in json_response:
             if json_response['jobStatus'] == 'RUNNING':
-                logger.info(f'|EsMeCaTa|annotation| Retrying in {POLLING_INTERVAL}s')
+                time.sleep(POLLING_INTERVAL)
+            elif json_response['jobStatus'] == 'NEW':
                 time.sleep(POLLING_INTERVAL)
             else:
                 raise Exception(json_response['jobStatus'])
