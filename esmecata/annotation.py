@@ -212,7 +212,7 @@ def check_id_mapping_results_ready(session, job_id):
                 logger.info(f'|EsMeCaTa|annotation| Retrying in {POLLING_INTERVAL}s')
                 time.sleep(POLLING_INTERVAL)
             else:
-                raise Exception(request['jobStatus'])
+                raise Exception(json_response['jobStatus'])
         else:
             if 'failedIds' in json_response:
                 return bool(json_response['failedIds'])
