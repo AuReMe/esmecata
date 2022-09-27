@@ -393,7 +393,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
             assembly_level = proteome_data['genomeAssembly']['level']
         else:
             assembly_level = ''
-        org_tax_id = proteome_data['taxonomy']['taxonId']
+        org_tax_id = str(proteome_data['taxonomy']['taxonId'])
         proteome_type = proteome_data['proteomeType']
         if busco_percentage_keep:
             if busco_score and busco_score >= busco_percentage_keep and assembly_level == 'full':

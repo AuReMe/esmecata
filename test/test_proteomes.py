@@ -56,6 +56,15 @@ def test_filter_rank_limit():
         assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
 
 
+def test_organism_ids():
+    ncbi = NCBITaxa()
+    proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', '9', 'Buchnera aphidicola', 80, None, None)
+    selected_proteomes = subsampling_proteomes(organism_ids, 10, ncbi)
+    expected_organism_ids = {'224915': ['UP000000601'], '107806': ['UP000001806']}
+    for org_id in expected_organism_ids:
+        assert organism_ids[org_id] == expected_organism_ids[org_id]
+
+
 def test_subsampling_proteomes():
     ncbi = NCBITaxa()
     organism_ids = {'2562891': ['UP000477739'], '208962': ['UP000292187', 'UP000193938', 'UP000650750', 'UP000407502', 'UP000003042'],
@@ -82,12 +91,12 @@ def test_subsampling_proteomes():
 
 def test_rest_query_proteomes():
     expected_proteoems = ['UP000255169', 'UP000000815']
-    expected_organism_ids = {632: ['UP000000815'], 29486: ['UP000255169']}
-    expected_proteome_data = [['UP000255169', 98.86363636363636, 'full', 29486, True], ['UP000000815', 99.77272727272727, 'full', 632, True]]
+    expected_organism_ids = {'632': ['UP000000815'], '29486': ['UP000255169']}
+    expected_proteome_data = [['UP000255169', 98.86363636363636, 'full', '29486', True], ['UP000000815', 99.77272727272727, 'full', '632', True]]
 
     proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 629, 'Yersinia', 0.8, all_proteomes=None)
     time.sleep(1)
-    print(organism_ids)
+
     assert set(expected_proteoems) == set(proteomes)
     for organism in organism_ids:
         assert set(organism_ids[organism]) == set(expected_organism_ids[organism])
@@ -131,4 +140,5 @@ if __name__ == "__main__":
     test_disambiguate_taxon()
     test_find_proteomes_tax_ids()
     test_subsampling_proteomes()
+    test_organism_ids()
     #test_sparql_find_proteomes_tax_ids()
