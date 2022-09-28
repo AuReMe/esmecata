@@ -1,5 +1,12 @@
 # Changelog
 
+# EsMeCaTa v0.2.9 (2022-09-28)
+
+## Fix
+
+* issue with subsampling.
+* issue when checking job status.
+
 # EsMeCaTa v0.2.8 (2022-09-22)
 
 ## Fix
