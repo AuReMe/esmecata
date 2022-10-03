@@ -1054,13 +1054,19 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
     # There is 2 ways to handle already annotated proteins:
-    # one keeping all the proteins in a dicitonary during all the analysis (I fear an issue with the memory).
+    # one keeping all the proteins in a dictionary during all the analysis (I fear an issue with the memory).
     already_annotated_proteins = {}
     # a second that use the annotation from the annotation files associated with the proteins.
     # It is slower as it reads the annotation file to retrieve the annotation, but I think it is less heavy on the memory.
     already_annotated_proteins_in_file = {}
 
     input_files = os.listdir(reference_protein_path)
+
+    already_done_annotation = [folder for folder in os.listdir(pathologic_folder) if os.path.exists(os.path.join(pathologic_folder, folder, folder+'.pf'))]
+    for done_annotation in already_done_annotation:
+        logger.info('|EsMeCaTa|annotation| Annotation of {0} already in output folder, will not be redone.'.format(done_annotation))
+
+    input_files = sorted(list(set(input_files) - set(already_done_annotation)))
     for index, input_file in enumerate(input_files):
         logger.info('|EsMeCaTa|annotation| Annotation of {0} ({1} on {2} data to annotate).'.format(input_file, index+1, len(input_files)))
         base_file = os.path.basename(input_file)
