@@ -2,10 +2,15 @@
 
 # EsMeCaTa v0.2.10 (2022-10-19)
 
+## Modify
+
+* esmecata annotation should now avoid reannotating already annotated data.
+
 ## Fix
 
 * KeyError issues when retrieving annotation for proteins.
 * issue with uncorrect review information for proteins.
+* issue in tutorial.
 
 # EsMeCaTa v0.2.9 (2022-09-28)
 
