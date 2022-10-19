@@ -2,14 +2,14 @@ from esmecata.annotation import rest_query_uniprot_to_retrieve_function, sparql_
                                 search_already_annotated_protein, query_uniprot_annotation_rest, query_uniprot_annotation_sparql, \
                                 propagate_annotation_in_cluster
 
-ANOTATIONS = {'Q7CGB6': ['Protein translocase subunit SecA', True,
+ANOTATIONS = {'Q7CGB6': ['Protein translocase subunit SecA', 'UniProtKB reviewed (Swiss-Prot)',
             ['GO:0031522','GO:0005829','GO:0005887','GO:0015462','GO:0005524','GO:0046872','GO:0065002','GO:0017038','GO:0006605','GO:0043952','GO:0008564'],
             ['7.4.2.8'],
             ['IPR027417','IPR004027','IPR000185','IPR020937','IPR011115','IPR014018','IPR011130','IPR011116','IPR036266','IPR036670','IPR014001','IPR044722'],
             [],
             'secA']}
 
-UP000119554_ANOTATIONS = {'O91464': ['Genome polyprotein', True,
+UP000119554_ANOTATIONS = {'O91464': ['Genome polyprotein', 'UniProtKB reviewed (Swiss-Prot)',
                             ['GO:0003723', 'GO:0003724', 'GO:0003968', 'GO:0004197', 'GO:0005198',
                                 'GO:0005216', 'GO:0005524', 'GO:0006351', 'GO:0016021', 'GO:0016887',
                                 'GO:0018144', 'GO:0019028', 'GO:0019062', 'GO:0039522', 'GO:0039618',

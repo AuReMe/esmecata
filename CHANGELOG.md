@@ -1,5 +1,12 @@
 # Changelog
 
+# EsMeCaTa v0.2.10 (2022-10-19)
+
+## Fix
+
+* KeyError issues when retrieving annotation for proteins.
+* issue with uncorrect review information for proteins.
+
 # EsMeCaTa v0.2.9 (2022-09-28)
 
 ## Fix

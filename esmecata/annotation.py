@@ -252,24 +252,36 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
         for result in data['results']:
             protein_id = result['from']
             protein_data = result['to']
-            reviewed = protein_data['entryType']
-            if 'reviewed' in reviewed:
-                review = True
+
+            if 'entryType' in protein_data:
+                protein_review = protein_data['entryType']
+                if 'reviewed' in protein_review:
+                    review = protein_review
+                else:
+                    review = None
             else:
-                review = False
-            protein_description = protein_data['proteinDescription']
-            if 'recommendedName' in protein_description:
-                if 'ecNumbers' in protein_description['recommendedName']:
-                    protein_ecs = list(set([ecnumber['value'] for ecnumber in protein_description['recommendedName']['ecNumbers']]))
+                review = None
+
+            if 'proteinDescription' in protein_data:
+                protein_description = protein_data['proteinDescription']
+                if 'recommendedName' in protein_description:
+                    if 'ecNumbers' in protein_description['recommendedName']:
+                        protein_ecs = list(set([ecnumber['value'] for ecnumber in protein_description['recommendedName']['ecNumbers']]))
+                    else:
+                        protein_ecs = []
+                    if 'fullName' in protein_description['recommendedName'] and 'value' in protein_description['recommendedName']['fullName']:
+                        protein_fullname = protein_description['recommendedName']['fullName']['value']
+                    else:
+                        protein_fullname = ''
                 else:
                     protein_ecs = []
-                protein_fullname = protein_description['recommendedName']['fullName']['value']
+                    protein_fullname = ''
             else:
                 protein_ecs = []
                 protein_fullname = ''
 
             if 'genes' in protein_data:
-                gene_names = [gene['geneName']['value'] for gene in protein_data['genes'] if 'geneName' in gene]
+                gene_names = [gene['geneName']['value'] for gene in protein_data['genes'] if 'geneName' in gene and 'value' in gene['geneName']]
                 if len(gene_names) > 0:
                     gene_name = gene_names[0]
                 else:
@@ -285,13 +297,16 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
             rhea_ids = []
             if 'comments' in protein_data:
                 protein_comments = protein_data['comments']
-                protein_reactions = [comment['reaction'] for comment in protein_comments if comment['commentType'] == 'CATALYTIC ACTIVITY']
+                protein_reactions = [comment['reaction'] for comment in protein_comments
+                                                        if 'commentType' in comment and comment['commentType'] == 'CATALYTIC ACTIVITY' and 'reaction' in comment]
                 for reaction in protein_reactions:
                     if 'reactionCrossReferences' in reaction:
-                        rhea_ids.extend([dbxref['id'] for dbxref in reaction['reactionCrossReferences'] if dbxref['database'] == 'Rhea' and 'RHEA:' in dbxref['id']])
+                        rhea_ids.extend([dbxref['id'] for dbxref in reaction['reactionCrossReferences']
+                                                        if 'database' in dbxref and dbxref['database'] == 'Rhea' and 'id' in dbxref and 'RHEA:' in dbxref['id']])
                     if 'ecNumber' in reaction:
                         protein_ecs.append(reaction['ecNumber'])
                 rhea_ids = list(set(rhea_ids))
+
             protein_ecs = list(set(protein_ecs))
             gos = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'GO']))
             interpros = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'InterPro']))
@@ -388,9 +403,9 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint
         rhea_ids = [rhea_uri.split('rdf.rhea-db.org/')[1] for rhea_uri in line[6].split('^^')[0].split(';') if rhea_uri != '']
         review = line[7].split('^^')[0]
         if review == '0':
-            review = False
+            review = 'UniProtKB unreviewed (TrEMBL)'
         elif review == '1':
-            review = True
+            review = 'UniProtKB reviewed (Swiss-Prot)'
         gene_name = line[8].split('^^')[0]
 
         submitted_name = [submitted_name for submitted_name in line[9].split('^^')[0].split(';') if submitted_name != '']
