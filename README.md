@@ -130,7 +130,7 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 ### `esmecata proteomes`: Retrieve proteomes associated with taxonomic affiliation
 
 ````
-usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-r RANK_LIMIT]  [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES]
+usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -374,7 +374,7 @@ optional arguments:
   --all-proteomes       Download all proteomes associated with a taxon even if they are no reference proteomes.
   -s SPARQL, --sparql SPARQL
                         Use sparql endpoint instead of REST queries on Uniprot.
-  --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
+  --remove-tmp          Delete tmp files to limit the disk space used: files created by mmseqs (in mmseqs_tmp).
   -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
                         Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
   -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
