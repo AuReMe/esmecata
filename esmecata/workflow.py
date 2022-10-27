@@ -39,8 +39,8 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
     """
     workflow_numbers = {}
 
-    result_folder = os.path.join(proteomes_output_folder, 'result')
-    proteome_numbers = compute_stat_proteomes(result_folder)
+    proteome_tax_id_file = os.path.join(proteomes_output_folder, 'proteome_tax_id.tsv')
+    proteome_numbers = compute_stat_proteomes(proteome_tax_id_file)
 
     clustering_folder = os.path.join(clustering_output_folder, 'reference_proteins')
     clustering_numbers = compute_stat_clustering(clustering_folder)
@@ -115,8 +115,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
     proteomes_output_folder = os.path.join(output_folder, '0_proteomes')
     retrieve_proteomes(input_file, proteomes_output_folder, busco_percentage_keep,
                         ignore_taxadb_update, all_proteomes, uniprot_sparql_endpoint,
-                        remove_tmp, limit_maximal_number_proteomes, rank_limit,
-                        minimal_number_proteomes)
+                        limit_maximal_number_proteomes, rank_limit, minimal_number_proteomes)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
     make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)

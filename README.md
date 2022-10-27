@@ -145,7 +145,6 @@ optional arguments:
   --all-proteomes       Download all proteomes associated with a taxon even if they are no reference proteomes.
   -s SPARQL, --sparql SPARQL
                         Use sparql endpoint instead of REST queries on Uniprot.
-  --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
   -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
                         Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
@@ -188,8 +187,6 @@ If you have an old version of the ete3 NCBI taxonomy database, you can use this 
 * `--all-proteomes`: download all proteomes (reference and non-reference)
 
 By default, esmecata will try to downlaod the reference proteomes associated with a taxon. But if you want to download all the proteomes associated with a taxon (either if they are non reference proteome) you can use this option. Without this option non-reference proteoems can also be used if no reference proteomes are found.
-
-* `--remove-tmp`: remove proteomes stored in `tmp_proteomes` folder
 
 * `-l/--limit-proteomes`: choose the number of proteomes that will lead to the used of the selection of a subset of proteomes
 
@@ -280,7 +277,7 @@ optional arguments:
   -m MMSEQS_OPTIONS, --mmseqs MMSEQS_OPTIONS
                         String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"
   --linclust            Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.
-  --remove-tmp          Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).
+  --remove-tmp          Delete tmp files to limit the disk space used: files created by mmseqs (in mmseqs_tmp).
 ````
 
 For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the proteins (using an identity of 30% and a coverage of 80%, these values can be changed with the `--mmseqs`option). Then if a cluster contains at least one protein from each proteomes, it will be kept (this threshold can be changed using the `--threshold option`). The representative proteins from the cluster will be used. A fasta file of all the representative proteins will be created for each taxon.
@@ -407,15 +404,7 @@ output_folder
 ├── proteomes_description
 │   └── Cluster_1.tsv
 │   └── Cluster_1.tsv
-├── result
-│   └── Cluster_1
-│       └── Proteome_1.faa.gz
-│       └── Proteome_2.faa.gz
-│   └── Cluster_2
-│       └── Proteome_3.faa.gz
-│   └── Cluster_3
-│       └── ...
-├── tmp_proteome (can be cleaned to spare disk space using --remove-tmp option)
+├── proteomes
 │   └── Proteome_1.faa.gz
 │   └── Proteome_2.faa.gz
 │   └── Proteome_3.faa.gz
@@ -429,9 +418,7 @@ output_folder
 
 The `proteomes_description` contains list of proteomes find by esmecata on Uniprot associated with the taxonomic affiliation.
 
-The `result` folder contain one sub-folder for each `observation_name` from the input file. Each sub-folder contains the proteome associated with the `observation_name`.
-
-The `tmp_proteome` contains all the proteomes that have been found to be associated with one taxon.
+The `proteomes` contains all the proteomes that have been found to be associated with one taxon. It will be used for the clustering step.
 
 `association_taxon_taxID.json` contains for each `observation_name` the name of the taxon and the corresponding taxon_id found with `ete3`.
 
@@ -552,15 +539,7 @@ output_folder
   ├── proteomes_description
   │   └── Cluster_1.tsv
   │   └── Cluster_1.tsv
-  ├── result
-  │   └── Cluster_1
-  │       └── Proteome_1.faa.gz
-  │       └── Proteome_2.faa.gz
-  │   └── Cluster_2
-  │       └── Proteome_3.faa.gz
-  │   └── Cluster_3
-  │       └── ...
-  ├── tmp_proteome (can be cleaned to spare disk space using --remove-tmp option)
+  ├── proteomes
   │   └── Proteome_1.faa.gz
   │   └── Proteome_2.faa.gz
   │   └── Proteome_3.faa.gz

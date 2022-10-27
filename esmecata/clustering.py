@@ -256,11 +256,23 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         logger.critical(f"|EsMeCaTa|clustering| Input must be a folder {proteome_folder}.")
         sys.exit(1)
 
-    # Use the result folder created by retrieve_proteome.py.
-    result_folder = os.path.join(proteome_folder, 'result')
-    if not is_valid_path(result_folder):
-        logger.critical(f"|EsMeCaTa|clustering| Missing output from esmecata proteomes in {result_folder}.")
+    # Use the proteomes folder created by retrieve_proteome.py.
+    proteome_tax_id_pathname = os.path.join(proteome_folder, 'proteome_tax_id.tsv')
+
+    if not is_valid_path(proteome_tax_id_pathname):
+        logger.critical(f"|EsMeCaTa|clustering| Missing output from esmecata proteomes in {proteome_tax_id_pathname}.")
         sys.exit(1)
+
+    # Create a dictionary with observation_name as key and the pathname to the proteomes associated to this observation_name as value.
+    observation_name_fasta_files = {}
+    with open(proteome_tax_id_pathname, 'r') as proteome_tax_file:
+        csvreader = csv.reader(proteome_tax_file, delimiter='\t')
+        next(csvreader)
+        for line in csvreader:
+            observation_name = line[0]
+            proteomes = line[4].split(',')
+            proteomes_path = [os.path.join(proteome_folder, 'proteomes', proteome+'.faa.gz') for proteome in proteomes]
+            observation_name_fasta_files[observation_name] = proteomes_path
 
     is_valid_dir(output_folder)
 
@@ -279,22 +291,6 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     clustering_metadata['tool_dependencies']['python_package']['Python_version'] = sys.version
     clustering_metadata['tool_dependencies']['python_package']['biopython'] = biopython_version
     clustering_metadata['tool_dependencies']['python_package']['esmecata'] = esmecata_version
-
-    # Create a dictionary with observation_name as key and the pathname to the proteomes associated to this observation_name as value.
-    observation_name_fasta_files = {}
-    for observation_name in os.listdir(result_folder):
-        result_observation_name_folder = os.path.join(result_folder, observation_name)
-        if is_valid_dir(result_observation_name_folder):
-            for fasta_file in os.listdir(result_observation_name_folder):
-                fasta_filename, compressed_file_extension = os.path.splitext(fasta_file)
-                _, file_extension = os.path.splitext(fasta_filename)
-                complete_extension = file_extension + compressed_file_extension
-                if complete_extension == '.faa.gz':
-                    fasta_file_path = os.path.join(result_observation_name_folder, fasta_file)
-                    if observation_name not in observation_name_fasta_files:
-                        observation_name_fasta_files[observation_name] = [fasta_file_path]
-                    else:
-                        observation_name_fasta_files[observation_name].append(fasta_file_path)
 
     # Create tmp folder for mmseqs analysis.
     mmseqs_tmp_path = os.path.join(output_folder, 'mmseqs_tmp')

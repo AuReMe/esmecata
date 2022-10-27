@@ -14,7 +14,8 @@ def test_filter_protein_cluster():
     observation_name = 'Cluster_1'
     protein_clusters = {'Q89AE4': ['Q89AE4', 'P57473'],
                         'Q89AY7': ['Q89AY7']}
-    observation_name_proteomes = ['clustering_input/result/Cluster_1/UP000000601.faa.gz', 'clustering_input/result/Cluster_1/UP000001806.faa.gz']
+    observation_name_proteomes = [os.path.join('clustering_input', 'proteomes', 'UP000000601.faa.gz'),
+                                os.path.join('clustering_input', 'proteomes', 'UP000001806.faa.gz')]
     clust_threshold = 0.95
 
     expected_protein = {'Q89AE4'}

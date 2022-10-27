@@ -158,7 +158,7 @@ def main():
     parent_parser_remove_tmp.add_argument(
         '--remove-tmp',
         dest='remove_tmp',
-        help='Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).',
+        help='Delete tmp files to limit the disk space used: files created by mmseqs (in mmseqs_tmp).',
         required=False,
         action='store_true',
         default=None)
@@ -223,8 +223,8 @@ def main():
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
-            parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
-            parent_parser_rank_limit, parent_parser_minimal_number_proteomes
+            parent_parser_limit_maximal_number_proteomes, parent_parser_rank_limit,
+            parent_parser_minimal_number_proteomes
             ],
         allow_abbrev=False)
     clustering_parser = subparsers.add_parser(
@@ -293,8 +293,8 @@ def main():
 
     if args.cmd == 'proteomes':
         retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
-                            args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
-                            args.limit_maximal_number_proteomes, args.rank_limit, args.minimal_number_proteomes)
+                            args.all_proteomes, uniprot_sparql_endpoint, args.limit_maximal_number_proteomes,
+                            args.rank_limit, args.minimal_number_proteomes)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':

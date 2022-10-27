@@ -765,21 +765,24 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
-def compute_stat_proteomes(result_folder, stat_file=None):
+def compute_stat_proteomes(proteome_tax_id_file, stat_file=None):
     """Compute stat associated with the number of proteome for each taxonomic affiliations.
 
     Args:
-        result_folder (str): pathname to the result folder containing subfolder containing proteomes
+        proteome_tax_id_file (str): pathname to the proteome_tax_id file indicating the number of proteomes
         stat_file (str): pathname to the tsv stat file
 
     Returns:
         proteome_numbers (dict): dict containing observation names (as key) associated with the number of proteomes
     """
     proteome_numbers = {}
-    for folder in os.listdir(result_folder):
-        result_folder_path = os.path.join(result_folder, folder)
-        number_proteome = len([proteome for proteome in os.listdir(result_folder_path)])
-        proteome_numbers[folder] = number_proteome
+    with open(proteome_tax_id_file, 'r') as proteome_tax_file:
+        csvreader = csv.reader(proteome_tax_file, delimiter='\t')
+        next(csvreader)
+        for line in csvreader:
+            observation_name = line[0]
+            proteomes = line[4].split(',')
+            proteome_numbers[observation_name] = len(proteomes)
 
     if stat_file:
         with open(stat_file, 'w') as stat_file_open:
@@ -793,8 +796,7 @@ def compute_stat_proteomes(result_folder, stat_file=None):
 
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
-                        remove_tmp=None, limit_maximal_number_proteomes=99, rank_limit=None,
-                        minimal_number_proteomes=1):
+                        limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1):
     """From a tsv file with taxonomic affiliations find the associated proteomes.
 
     Args:
@@ -802,7 +804,6 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         output_folder (str): pathname to the output folder
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         ignore_taxadb_update (bool): option to ignore ete3 taxa database update
-        remove_tmp (bool): remove the tmp files
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
@@ -844,8 +845,6 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     taxonomies = df.to_dict()['taxonomic_affiliation']
 
     proteome_tax_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
-
-    result_folder = os.path.join(output_folder, 'result')
 
     if not os.path.exists(proteome_tax_id_file):
         ncbi = NCBITaxa()
@@ -904,12 +903,12 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     # Download all the proteomes in tmp folder.
     logger.info('|EsMeCaTa|proteomes| Downloading {0} proteomes'.format(str(len(proteome_to_download))))
-    tmp_folder = os.path.join(output_folder, 'tmp_proteome')
-    is_valid_dir(tmp_folder)
+    proteomes_folder = os.path.join(output_folder, 'proteomes')
+    is_valid_dir(proteomes_folder)
 
     for index, proteome in enumerate(proteome_to_download):
         logger.info('|EsMeCaTa|proteomes| Downloaded {0} on {1} proteomes'.format(index+1, len(proteome_to_download)))
-        output_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
+        output_proteome_file = os.path.join(proteomes_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
             if uniprot_sparql_endpoint is not None:
                 sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
@@ -923,7 +922,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     # Download Uniprot metadata and create a json file containing them.
     options = {'input_file': input_file, 'output_folder': output_folder, 'busco_percentage_keep': busco_percentage_keep,
                         'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
-                        'remove_tmp': remove_tmp, 'limit_maximal_number_proteomes': limit_maximal_number_proteomes}
+                        'limit_maximal_number_proteomes': limit_maximal_number_proteomes}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
@@ -940,23 +939,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     else:
         uniprot_releases = get_rest_uniprot_release(options)
 
-    # Create a result folder which contains one sub-folder per OTU.
-    # Each OTU sub-folder will contain the proteome found.
-    is_valid_dir(result_folder)
-
-    for observation_name in proteomes_ids:
-        output_observation_name = os.path.join(result_folder, observation_name)
-        is_valid_dir(output_observation_name)
-        for proteome in proteomes_ids[observation_name][1]:
-            input_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
-            output_proteome = os.path.join(output_observation_name, proteome+'.faa.gz')
-            shutil.copyfile(input_proteome_file, output_proteome)
-
-    if remove_tmp:
-        shutil.rmtree(tmp_folder)
-
     stat_file = os.path.join(output_folder, 'stat_number_proteome.tsv')
-    compute_stat_proteomes(result_folder, stat_file)
+    compute_stat_proteomes(proteome_tax_id_file, stat_file)
 
     endtime = time.time()
     duration = endtime - starttime
