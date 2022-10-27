@@ -177,7 +177,7 @@ Then the proteomes found will be downloaded. For protein with isoforms, the [can
 
 It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a sparql endpoint containing UniProt. If you want to use the [SPARQL endpoint of UniProt](https://sparql.uniprot.org/sparql), you can use the argument: `-s uniprot`.
 
-* `-b/--busco`: filter proteomes using BUSCO score (default is 0.9)
+* `-b/--busco`: filter proteomes using BUSCO score (default is 0.8)
 
 It is possible to filter proteomes according to to their BUSCO score (from Uniprot documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By default esmecata uses a BUSCO score of 0.80, it will only download proteomes with a BUSCO score of at least 80%.
 
