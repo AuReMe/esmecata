@@ -1,5 +1,15 @@
 # Changelog
 
+# EsMeCaTa v0.2.11 (2022-11-25)
+
+## Modify
+
+* remove already downloaded proteomes from the list of proteomes to download.
+
+## Fix
+
+* esmecata annotation should now avoid reannotating already annotated data (as it was not correctly done in previous version).
+
 # EsMeCaTa v0.2.10 (2022-10-19)
 
 ## Modify

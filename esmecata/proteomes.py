@@ -828,6 +828,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     is_valid_dir(output_folder)
 
+    proteomes_folder = os.path.join(output_folder, 'proteomes')
+    is_valid_dir(proteomes_folder)
+
     proteomes_description_folder = os.path.join(output_folder, 'proteomes_description')
     is_valid_dir(proteomes_description_folder)
 
@@ -891,7 +894,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 name = line[1]
                 tax_id = line[2]
                 proteomes = line[4].split(',')
-                taxon_result_folder = os.path.join(result_folder, observation_name)
+                taxon_result_folder = os.path.join(proteomes_folder, observation_name)
                 if not os.path.exists(taxon_result_folder):
                     proteome_to_download.extend(proteomes)
                     if len(proteomes) == 1:
@@ -902,12 +905,16 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         proteome_to_download = set(proteome_to_download)
 
     # Download all the proteomes in tmp folder.
-    logger.info('|EsMeCaTa|proteomes| Downloading {0} proteomes'.format(str(len(proteome_to_download))))
-    proteomes_folder = os.path.join(output_folder, 'proteomes')
-    is_valid_dir(proteomes_folder)
+
+    proteomes_already_downloaded = set([proteome_filename.replace('.faa.gz', '') for proteome_filename in os.listdir(proteomes_folder)])
+    proteome_to_download = proteome_to_download - proteomes_already_downloaded
+
+    if len(proteome_to_download) == 0:
+        logger.info('|EsMeCaTa|proteomes| All proteomes already downloaded')
+    else:
+        logger.info('|EsMeCaTa|proteomes| Downloading {0} proteomes'.format(str(len(proteome_to_download))))
 
     for index, proteome in enumerate(proteome_to_download):
-        logger.info('|EsMeCaTa|proteomes| Downloaded {0} on {1} proteomes'.format(index+1, len(proteome_to_download)))
         output_proteome_file = os.path.join(proteomes_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
             if uniprot_sparql_endpoint is not None:
@@ -917,6 +924,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 for batch_reponse in get_batch(session, http_str):
                     with open(output_proteome_file, 'wb') as f:
                         f.write(batch_reponse.content)
+            logger.info('|EsMeCaTa|proteomes| Downloaded {0} on {1} proteomes'.format(index+1, len(proteome_to_download)))
         time.sleep(1)
 
     # Download Uniprot metadata and create a json file containing them.
@@ -950,4 +958,4 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(uniprot_releases, ouput_file, indent=4)
 
-    logger.info('|EsMeCaTa|proteomes| Download complete.')
+    logger.info('|EsMeCaTa|proteomes| Proteome step complete.')

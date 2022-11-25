@@ -1075,7 +1075,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     # It is slower as it reads the annotation file to retrieve the annotation, but I think it is less heavy on the memory.
     already_annotated_proteins_in_file = {}
 
-    input_files = os.listdir(reference_protein_path)
+    input_files = [input_file.replace('.tsv', '') for input_file in os.listdir(reference_protein_path)]
 
     already_done_annotation = [folder for folder in os.listdir(pathologic_folder) if os.path.exists(os.path.join(pathologic_folder, folder, folder+'.pf'))]
     for done_annotation in already_done_annotation:
@@ -1088,7 +1088,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         base_filename = os.path.splitext(base_file)[0]
 
         output_dict = {}
-        reference_protein_pathname = os.path.join(reference_protein_path, input_file)
+        reference_protein_pathname = os.path.join(reference_protein_path, input_file+'.tsv')
         reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
 
         # First method to handle protein already annotated
