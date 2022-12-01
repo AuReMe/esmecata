@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.2.12 (2022-12-01)
+
+## Fix
+
+* esmecata clustering should now avoid reclustering already clustered data.
+
 # EsMeCaTa v0.2.11 (2022-11-25)
 
 ## Modify

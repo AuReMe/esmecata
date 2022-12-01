@@ -175,13 +175,9 @@ def filter_protein_cluster(observation_name, protein_clusters, observation_name_
         protein_cluster_to_keeps (list): list containing representative protein IDs associated with cluster that are kept
     """
     reference_proteins_path = os.path.join(output_folder, 'reference_proteins')
-    is_valid_dir(reference_proteins_path)
-
     cluster_founds_path = os.path.join(output_folder, 'cluster_founds')
-    is_valid_dir(cluster_founds_path)
-
     computed_threshold_path = os.path.join(output_folder, 'computed_threshold')
-    is_valid_dir(computed_threshold_path)
+
     # Retrieve protein ID and the corresponding proteome.
     organism_prots = {}
     for fasta_file in observation_name_proteomes:
@@ -245,6 +241,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         remove_tmp (bool): remove the tmp files
     """
     starttime = time.time()
+    logger.info('|EsMeCaTa|clustering| Begin clustering.')
 
     # Check if mmseqs is in path.
     mmseqs_path = which('mmseqs')
@@ -261,6 +258,15 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     if not is_valid_path(result_folder):
         logger.critical(f"|EsMeCaTa|clustering| Missing output from esmecata proteomes in {result_folder}.")
         sys.exit(1)
+
+    reference_proteins_path = os.path.join(output_folder, 'reference_proteins')
+    is_valid_dir(reference_proteins_path)
+
+    cluster_founds_path = os.path.join(output_folder, 'cluster_founds')
+    is_valid_dir(cluster_founds_path)
+
+    computed_threshold_path = os.path.join(output_folder, 'computed_threshold')
+    is_valid_dir(computed_threshold_path)
 
     is_valid_dir(output_folder)
 
@@ -280,21 +286,18 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     clustering_metadata['tool_dependencies']['python_package']['biopython'] = biopython_version
     clustering_metadata['tool_dependencies']['python_package']['esmecata'] = esmecata_version
 
+    already_performed_clustering = [reference_protein_file.replace('.tsv', '') for reference_protein_file in os.listdir(reference_proteins_path)]
+
     # Create a dictionary with observation_name as key and the pathname to the proteomes associated to this observation_name as value.
     observation_name_fasta_files = {}
     for observation_name in os.listdir(result_folder):
         result_observation_name_folder = os.path.join(result_folder, observation_name)
         if is_valid_dir(result_observation_name_folder):
-            for fasta_file in os.listdir(result_observation_name_folder):
-                fasta_filename, compressed_file_extension = os.path.splitext(fasta_file)
-                _, file_extension = os.path.splitext(fasta_filename)
-                complete_extension = file_extension + compressed_file_extension
-                if complete_extension == '.faa.gz':
-                    fasta_file_path = os.path.join(result_observation_name_folder, fasta_file)
-                    if observation_name not in observation_name_fasta_files:
-                        observation_name_fasta_files[observation_name] = [fasta_file_path]
-                    else:
-                        observation_name_fasta_files[observation_name].append(fasta_file_path)
+            proteomes_path = [os.path.join(result_observation_name_folder, fasta_file) for fasta_file in os.listdir(result_observation_name_folder)]
+            if observation_name not in already_performed_clustering:
+                observation_name_fasta_files[observation_name] = proteomes_path
+            else:
+                logger.info('|EsMeCaTa|clustering| Already performed clustering for %s.', observation_name)
 
     # Create tmp folder for mmseqs analysis.
     mmseqs_tmp_path = os.path.join(output_folder, 'mmseqs_tmp')
@@ -313,7 +316,6 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     reference_proteins_consensus_fasta_path = os.path.join(output_folder, 'reference_proteins_consensus_fasta')
     is_valid_dir(reference_proteins_consensus_fasta_path)
 
-    logger.info('|EsMeCaTa|clustering| Clustering proteins.')
     # For each OTU run mmseqs easy-cluster on them to found the clusters that have a protein in each proteome of the OTU.
     # We take the representative protein of a cluster if the cluster contains a protein from all the proteomes of the OTU.
     # If this condition is not satisfied the cluster will be ignored.
@@ -325,7 +327,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         protein_clusters = extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated)
         protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
 
-        logger.info('|EsMeCaTa|clustering| {0} protein clusters kept for {1}.'.format(len(protein_cluster_to_keeps), observation_name))
+        logger.info('|EsMeCaTa|clustering| %d protein clusters kept for %s.', len(protein_cluster_to_keeps), observation_name)
 
         # Copy representative and consensus fasta to subfolder in output_folder.
         shutil.copyfile(mmseqs_tmp_representative_fasta, os.path.join(representative_fasta_path, observation_name+'.faa'))

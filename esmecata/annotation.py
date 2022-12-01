@@ -998,7 +998,7 @@ def write_pathologic_file(protein_annotations, pathologic_folder, base_filename,
         pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
         create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_file)
     elif len(annotated_protein_to_keeps) == 0:
-        logger.critical('|EsMeCaTa|annotation| No reference proteins for {0}, esmecata will not create a pathologic folder for it.'.format(base_filename))
+        logger.critical('|EsMeCaTa|annotation| No reference proteins for %s, esmecata will not create a pathologic folder for it.', base_filename)
 
 
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation):
@@ -1079,11 +1079,11 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
 
     already_done_annotation = [folder for folder in os.listdir(pathologic_folder) if os.path.exists(os.path.join(pathologic_folder, folder, folder+'.pf'))]
     for done_annotation in already_done_annotation:
-        logger.info('|EsMeCaTa|annotation| Annotation of {0} already in output folder, will not be redone.'.format(done_annotation))
+        logger.info('|EsMeCaTa|annotation| Annotation of %s already in output folder, will not be redone.', done_annotation)
 
     input_files = sorted(list(set(input_files) - set(already_done_annotation)))
     for index, input_file in enumerate(input_files):
-        logger.info('|EsMeCaTa|annotation| Annotation of {0} ({1} on {2} data to annotate).'.format(input_file, index+1, len(input_files)))
+        logger.info('|EsMeCaTa|annotation| Annotation of %s (%d on %d data to annotate).', input_file, index+1, len(input_files))
         base_file = os.path.basename(input_file)
         base_filename = os.path.splitext(base_file)[0]
 
@@ -1128,8 +1128,8 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
         unique_gos = set(gos)
         ecs = [ec for protein in protein_annotations for ec in protein_annotations[protein][2]]
         unique_ecs = set(ecs)
-        logger.info('|EsMeCaTa|annotation| {0} Go Terms (with {1} unique GO Terms) and {2} EC numbers (with {3} unique EC) associated with {4}.'.format(len(gos),
-                                                                                                len(unique_gos), len(ecs), len(unique_ecs), base_filename))
+        logger.info('|EsMeCaTa|annotation| %d Go Terms (with %d unique GO Terms) and %d EC numbers (with %d unique EC) associated with %s.', len(gos),
+                                                                                                len(unique_gos), len(ecs), len(unique_ecs), base_filename)
 
     # Create mpwt taxon ID file.
     clustering_taxon_id = {}
