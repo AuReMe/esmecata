@@ -126,7 +126,7 @@ def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, n
     for taxon in taxons:
         taxon_translations = ncbi.get_name_translator([taxon])
         if taxon_translations == {}:
-            logger.critical('|EsMeCaTa|proteomes| For {0}, no taxon ID has been found associated with the taxon "{1}" in the NCBI taxonomy of ete3.'.format(observation_name, taxon))
+            logger.critical('|EsMeCaTa|proteomes| For %s, no taxon ID has been found associated with the taxon "%s" in the NCBI taxonomy of ete3.', observation_name, taxon)
             taxon_translations = {taxon: ['not_found']}
         taxon_ids.update(taxon_translations)
     tax_ids_to_names = {v: k for k, vs in tax_names_to_ids.items() for v in vs }
@@ -196,7 +196,7 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
                 # If there is no match with the lineage for all the multiple taxon ID, it is not possible to decipher, stop esmecata.
                 if all(shared_id==0 for shared_id in taxon_shared_ids.values()):
                     taxids = ','.join([str(taxid) for taxid in list(taxon_shared_ids.keys())])
-                    logger.critical('|EsMeCaTa|proteomes| It is not possible to find the taxon ID for the taxon named "{0}" (associated with "{1}") as there is multiple taxID possible ({2}), please add a more detailed taxonomic classification to help finding the correct one.'.format(taxon, observation_name, taxids))
+                    logger.critical('|EsMeCaTa|proteomes| It is not possible to find the taxon ID for the taxon named "%s" (associated with "%s") as there are multiple taxIDs possible (%s), please add a more detailed taxonomic classification to help finding the correct one.', taxon, observation_name, taxids)
                     sys.exit()
                 # If there is some matches, take the taxon ID with the most match and it will be the "correct one".
                 else:
@@ -312,11 +312,11 @@ def requests_query(http_str, nb_retry=5):
         response = requests.get(http_str, REQUESTS_HEADERS, timeout=60)
         passed = True
     except requests.exceptions.ConnectionError as error:
-        logger.critical('|EsMeCaTa|proteomes| Error {0} occurs for query to "{1}", try to relaunch query.'.format(error, http_str))
+        logger.critical('|EsMeCaTa|proteomes| Error %s occurs for query to "%s", try to relaunch query.', error, http_str)
         time.sleep(10)
         requests_query(http_str, nb_retry-1)
     except requests.exceptions.Timeout as error:
-        logger.critical('|EsMeCaTa|proteomes| Error {0} occurs for query to "{1}", try to relaunch query.'.format(error, http_str))
+        logger.critical('|EsMeCaTa|proteomes| Error %s occurs for query to "%s", try to relaunch query.', error, http_str)
         time.sleep(10)
         requests_query(http_str, nb_retry-1)
 
@@ -368,7 +368,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
 
     reference_proteome = True
     if len(data['results']) == 0:
-        logger.info('|EsMeCaTa|proteomes| {0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
+        logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
         time.sleep(1)
         for batch_reponse in get_batch(session, all_http_str):
             batch_json = batch_reponse.json()
@@ -530,7 +530,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         proteomes = other_proteomes
     else:
         if len(reference_proteomes) == 0:
-            logger.info('|EsMeCaTa|proteomes| {0}: No reference proteomes found for {1} ({2}) try non-reference proteomes.'.format(observation_name, tax_id, tax_name))
+            logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
             proteomes = other_proteomes
         else:
             proteomes = reference_proteomes
@@ -665,7 +665,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
 
             # Check if the number of proteomes is inferior to the minimal_number_proteomes.
             elif len(proteomes) < minimal_number_proteomes:
-                logger.info('|EsMeCaTa|proteomes| Less than {0} proteomes ({1}) are associated with the taxa {2} associated with {3}, esmecata will use a higher taxonomic rank to find proteomes.'.format(minimal_number_proteomes, len(proteomes), tax_name, observation_name))
+                logger.info('|EsMeCaTa|proteomes| Less than %d proteomes (%d) are associated with the taxa %s associated with %s, esmecata will use a higher taxonomic rank to find proteomes.', minimal_number_proteomes, len(proteomes), tax_name, observation_name)
                 if tax_id not in tax_id_without_minimal_proteomes_number:
                     tax_id_without_minimal_proteomes_number[tax_id] = [tax_name]
                 else:
@@ -673,7 +673,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
                 continue
 
             elif len(proteomes) >= minimal_number_proteomes and len(proteomes) <= limit_maximal_number_proteomes:
-                logger.info('|EsMeCaTa|proteomes| {0} will be associated with the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(proteomes)))
+                logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, tax_name, len(proteomes))
                 proteomes_ids[observation_name] = (tax_id, proteomes)
                 tax_id_founds[tax_id] = proteomes
                 if len(proteomes) == 1:
@@ -685,7 +685,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
                 selected_proteomes = subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi)
                 proteomes_ids[observation_name] = (tax_id, selected_proteomes)
                 tax_id_founds[tax_id] = selected_proteomes
-                logger.info('|EsMeCaTa|proteomes| {0} will be associated with the taxon "{1}" with {2} proteomes.'.format(observation_name, tax_name, len(selected_proteomes)))
+                logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, tax_name, len(selected_proteomes))
                 break
 
             time.sleep(1)
@@ -811,19 +811,20 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
     """
     starttime = time.time()
+    logger.info('|EsMeCaTa|clustering| Begin proteomes search.')
 
     retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
     session = requests.Session()
     session.mount("https://", HTTPAdapter(max_retries=retries))
 
     if is_valid_file(input_file) is False:
-        logger.critical('|EsMeCaTa|proteomes| The input {0} is not a valid file pathname.'.format(input_file))
+        logger.critical('|EsMeCaTa|proteomes| The input %s is not a valid file pathname.', input_file)
         sys.exit()
 
     ete3_database_update(ignore_taxadb_update)
 
     if minimal_number_proteomes >= limit_maximal_number_proteomes:
-        logger.critical('|EsMeCaTa|proteomes| Error minimal_number_proteomes ({0}) can not be superior or equal to limit_maximal_number_proteomes ({1}).'.format(minimal_number_proteomes, limit_maximal_number_proteomes))
+        logger.critical('|EsMeCaTa|proteomes| Error minimal_number_proteomes (%d) can not be superior or equal to limit_maximal_number_proteomes (%d).', minimal_number_proteomes, limit_maximal_number_proteomes)
         sys.exit()
 
     is_valid_dir(output_folder)
@@ -900,7 +901,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                     if len(proteomes) == 1:
                         single_proteomes[observation_name] = (tax_id, proteomes)
                     proteomes_ids[observation_name] = (tax_id, proteomes)
-                    logger.info('|EsMeCaTa|proteomes| {0} will be associated with the taxon "{1}" with {2} proteomes.'.format(observation_name, name, len(proteomes)))
+                    logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, name, len(proteomes))
 
         proteome_to_download = set(proteome_to_download)
 
@@ -910,9 +911,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     proteome_to_download = proteome_to_download - proteomes_already_downloaded
 
     if len(proteome_to_download) == 0:
-        logger.info('|EsMeCaTa|proteomes| All proteomes already downloaded')
+        logger.info('|EsMeCaTa|proteomes| All proteomes already downloaded.')
     else:
-        logger.info('|EsMeCaTa|proteomes| Downloading {0} proteomes'.format(str(len(proteome_to_download))))
+        logger.info('|EsMeCaTa|proteomes| Downloading %d proteomes', len(proteome_to_download))
 
     for index, proteome in enumerate(proteome_to_download):
         output_proteome_file = os.path.join(proteomes_folder, proteome+'.faa.gz')
@@ -924,7 +925,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 for batch_reponse in get_batch(session, http_str):
                     with open(output_proteome_file, 'wb') as f:
                         f.write(batch_reponse.content)
-            logger.info('|EsMeCaTa|proteomes| Downloaded {0} on {1} proteomes'.format(index+1, len(proteome_to_download)))
+            logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 
     # Download Uniprot metadata and create a json file containing them.
