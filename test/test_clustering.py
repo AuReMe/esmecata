@@ -11,6 +11,14 @@ RESULTS = {
 
 def test_filter_protein_cluster():
     output_folder = 'output'
+    remove_output_folder = False
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+        remove_output_folder = True
+        os.mkdir(os.path.join(output_folder, 'computed_threshold'))
+        os.mkdir(os.path.join(output_folder, 'reference_proteins'))
+        os.mkdir(os.path.join(output_folder, 'cluster_founds'))
+
     observation_name = 'Cluster_1'
     protein_clusters = {'Q89AE4': ['Q89AE4', 'P57473'],
                         'Q89AY7': ['Q89AY7']}
@@ -28,6 +36,9 @@ def test_filter_protein_cluster():
     protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
 
     assert expected_protein == protein_cluster_to_keeps
+
+    if remove_output_folder is True:
+        shutil.rmtree(output_folder)
 
 
 def test_make_clustering():
