@@ -346,9 +346,6 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint
         (GROUP_CONCAT(DISTINCT ?geneLabel; separator=";") AS ?geneName)
         (GROUP_CONCAT(DISTINCT ?subName; separator=";") AS ?submitName)
 
-    FROM <http://sparql.uniprot.org/uniprot>
-    FROM <http://sparql.uniprot.org/proteomes>
-
     WHERE {{
         ?protein a up:Protein ;
             up:proteome ?genomicComponent .
@@ -449,10 +446,6 @@ def sparql_query_uniprot_annotation_uniref(proteomes, uniref_output_dict, unipro
             (GROUP_CONCAT(DISTINCT ?cluster; separator=";") AS ?cl)
             (GROUP_CONCAT(DISTINCT ?member; separator=";") AS ?representativeMember)
 
-        FROM <http://sparql.uniprot.org/uniref>
-        FROM <http://sparql.uniprot.org/uniprot>
-        FROM <http://sparql.uniprot.org/proteomes>
-
         WHERE
         {{
             ?cluster up:member/up:sequenceFor ?protein ;
@@ -526,10 +519,6 @@ def sparql_query_uniprot_expression(proteomes, expression_output_dict, uniprot_s
             (GROUP_CONCAT(DISTINCT ?induct_comment; separator=";") AS ?induction)
             (GROUP_CONCAT(DISTINCT ?tissue_spec_comment; separator=";") AS ?tissue_specificity)
             (GROUP_CONCAT(DISTINCT ?disruption_comment; separator=";") AS ?disruption)
-
-        FROM <http://sparql.uniprot.org/uniprot>
-        FROM <http://sparql.uniprot.org/uniref>
-        FROM <http://sparql.uniprot.org/proteomes>
 
         WHERE {{
             ?protein a up:Protein ;

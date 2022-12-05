@@ -442,9 +442,6 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
 
     SELECT DISTINCT ?proteome ?score ?fragmented ?missing ?organism ?completion ?type
 
-    FROM <http://sparql.uniprot.org/proteomes>
-    FROM <http://sparql.uniprot.org/taxonomy>
-
     WHERE
     {{
         ?proteome rdf:type up:Proteome .
@@ -717,9 +714,6 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
     SELECT ?protein ?name ?isoform ?sequenceaa ?review
-
-    FROM <http://sparql.uniprot.org/uniprot>
-    FROM <http://sparql.uniprot.org/proteomes>
 
     WHERE
     {{
