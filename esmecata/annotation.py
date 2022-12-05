@@ -214,11 +214,10 @@ def check_id_mapping_results_ready(session, job_id):
                 time.sleep(POLLING_INTERVAL)
             else:
                 raise Exception(json_response['jobStatus'])
+        elif 'results' in json_response:
+            return bool(json_response['results'])
         else:
-            if 'failedIds' in json_response:
-                return bool(json_response['failedIds'])
-            if 'results' in json_response:
-                return bool(json_response['results'])
+            return False
 
 
 def rest_query_uniprot_to_retrieve_function(protein_queries):
@@ -231,8 +230,6 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
     """
     output_dict = {}
-
-    url = 'http://rest.uniprot.org/idmapping/run'
 
     # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
     # from and to are linked to mapping ID: https://www.uniprot.org/help/api%5Fidmapping
@@ -312,6 +309,10 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
             interpros = list(set([xref['id'] for xref in protein_xrefs if xref['database'] == 'InterPro']))
             results[protein_id] = [protein_fullname, review, gos, protein_ecs, interpros, rhea_ids, gene_name]
             output_dict.update(results)
+    else:
+        logger.critical('|EsMeCaTa|annotation| Issue when checking the mapping IDs.')
+        logger.critical('%s', data)
+        sys.exit()
 
     return output_dict
 
