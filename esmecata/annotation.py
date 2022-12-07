@@ -245,9 +245,11 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
         link = get_id_mapping_results_link(session, job_id)
         data = get_id_mapping_results_search(session, link)
 
+        if 'failedIds' in data:
+            failed_ids = set(data['failedIds'])
+            logger.critical('|EsMeCaTa|annotation| Mapping failed for %d proteins: %s.', len(failed_ids), failed_ids)
+
         results = {}
-        failed_ids = set(data['failedIds'])
-        logger.critical('|EsMeCaTa|annotation| Mapping failed for %d proteins: %s.', len(failed_ids), failed_ids)
         for result in data['results']:
             protein_id = result['from']
             protein_data = result['to']
