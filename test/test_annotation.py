@@ -55,7 +55,7 @@ def test_search_already_annotated_protein():
     assert len(set_proteins)-1 == len(protein_to_search_on_uniprots)
 
 def test_query_uniprot_annotation_rest():
-    protein_to_search_on_uniprots = ['Q7CGB6']
+    protein_to_search_on_uniprots = ['Q7CGB6', 'NOTAGOODIDEAOFPROTEIN']
     output_dict = {}
     output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict)
     compare_annotation_dict(ANOTATIONS, output_dict)

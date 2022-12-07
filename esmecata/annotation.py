@@ -214,8 +214,8 @@ def check_id_mapping_results_ready(session, job_id):
                 time.sleep(POLLING_INTERVAL)
             else:
                 raise Exception(json_response['jobStatus'])
-        elif 'results' in json_response:
-            return bool(json_response['results'])
+        elif 'results' in json_response or 'failedIds' in json_response:
+            return True
         else:
             return False
 
@@ -246,6 +246,8 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
         data = get_id_mapping_results_search(session, link)
 
         results = {}
+        failed_ids = set(data['failedIds'])
+        logger.critical('|EsMeCaTa|annotation| Mapping failed for %d proteins: %s.', len(failed_ids), failed_ids)
         for result in data['results']:
             protein_id = result['from']
             protein_data = result['to']
