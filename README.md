@@ -440,12 +440,6 @@ output_folder
 ├── computed_threshold
 │   └── Cluster_1.tsv
 │   └── ...
-├── fasta_consensus
-│   └── Cluster_1.faa
-│   └── ...
-├── fasta_representative
-│   └── Cluster_1.faa
-│   └── ...
 ├── mmseqs_tmp (can be cleaned to spare disk space using --remove-tmp option)
 │   └── Cluster_1
 │       └── mmseqs intermediary files
@@ -470,17 +464,13 @@ The `cluster_founds` contains one tsv file per `observation_name` and these file
 
 The `computed_threshold` folder contains the ratio of proteomes represented in a cluster compared to the total number of proteomes associated with a taxon. If the ratio is equal to 1, it means that all the proteomes are represented by a protein in the cluster, 0.5 means that half of the proteoems are represented in the cluster. This score is used when giving the `-t` argument.
 
-The `fasta_consensus` contains all the consensus proteins associated with an `observation_name`.
-
-The `fasta_representative` contains all the representative proteins associated with an `observation_name`.
-
 The `mmseqs_tmp` folder contains the intermediary files of mmseqs2 for each `observation_name`.
 
 The `reference_proteins` contains one tsv file per `observation_name` and these files contain the clustered proteins kept after clustering process. it is similar to `cluster_founds` but it contains only protein kept after clustering and threshold.
 
-The `reference_proteins_consensus_fasta` contains the consensus proteins associated with an `observation_name` for the cluster kept after clustering process. So compared to the fasta of `fasta_consensus` it is a sublist with only cluster passing the threshold.
+The `reference_proteins_consensus_fasta` contains the consensus proteins associated with an `observation_name` for the cluster kept after clustering process.
 
-The `reference_proteins_representative_fasta` contains the consensus proteins associated with an `observation_name` for the cluster kept after clustering process. So compared to the fasta of `fasta_representative` it is a sublist with only cluster passing the threshold.
+The `reference_proteins_representative_fasta` contains the consensus proteins associated with an `observation_name` for the cluster kept after clustering process.
 
 The `proteome_tax_id.tsv` file is the same than the one created in `esmecata proteomes`.
 
@@ -554,12 +544,6 @@ output_folder
   │   └── ...
   ├── computed_threshold
   │   └── Cluster_1.tsv
-  │   └── ...
-  ├── fasta_consensus
-  │   └── Cluster_1.faa
-  │   └── ...
-  ├── fasta_representative
-  │   └── Cluster_1.faa
   │   └── ...
   ├── mmseqs_tmp (can be cleaned to spare disk space using --remove-tmp option)
   │   └── Cluster_1

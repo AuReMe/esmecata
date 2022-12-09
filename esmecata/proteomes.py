@@ -771,11 +771,10 @@ def compute_stat_proteomes(proteome_tax_id_file, stat_file=None):
     """
     proteome_numbers = {}
     with open(proteome_tax_id_file, 'r') as proteome_tax_file:
-        csvreader = csv.reader(proteome_tax_file, delimiter='\t')
-        next(csvreader)
+        csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
         for line in csvreader:
-            observation_name = line[0]
-            proteomes = line[4].split(',')
+            observation_name = line['observation_name']
+            proteomes = line['proteome'].split(',')
             proteome_numbers[observation_name] = len(proteomes)
 
     if stat_file:
@@ -807,7 +806,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     starttime = time.time()
     logger.info('|EsMeCaTa|clustering| Begin proteomes search.')
 
-    retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
+    retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[429, 500, 502, 503, 504])
     session = requests.Session()
     session.mount("https://", HTTPAdapter(max_retries=retries))
 
@@ -882,13 +881,12 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         proteomes_ids = {}
         single_proteomes = {}
         with open(proteome_tax_id_file, 'r') as proteome_tax_file:
-            csvreader = csv.reader(proteome_tax_file, delimiter='\t')
-            next(csvreader)
+            csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
             for line in csvreader:
-                observation_name = line[0]
-                name = line[1]
-                tax_id = line[2]
-                proteomes = line[4].split(',')
+                observation_name = line['observation_name']
+                name = line['name']
+                tax_id = line['tax_id']
+                proteomes = line['proteome'].split(',')
                 taxon_result_folder = os.path.join(proteomes_folder, observation_name)
                 if not os.path.exists(taxon_result_folder):
                     proteome_to_download.extend(proteomes)
@@ -899,8 +897,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
         proteome_to_download = set(proteome_to_download)
 
-    # Download all the proteomes in tmp folder.
-
+    # Download all the proteomes in proteome folder.
     proteomes_already_downloaded = set([proteome_filename.replace('.faa.gz', '') for proteome_filename in os.listdir(proteomes_folder)])
     proteome_to_download = proteome_to_download - proteomes_already_downloaded
 
@@ -915,10 +912,10 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             if uniprot_sparql_endpoint is not None:
                 sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
             else:
-                http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true&size=500'.format(proteome)
-                for batch_reponse in get_batch(session, http_str):
-                    with open(output_proteome_file, 'wb') as f:
-                        f.write(batch_reponse.content)
+                http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
+                proteome_response = session.get(http_str)
+                with open(output_proteome_file, 'wb') as f:
+                    f.write(proteome_response.content)
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 
@@ -927,6 +924,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
                         'limit_maximal_number_proteomes': limit_maximal_number_proteomes}
 
+    # Collect dependencies metadata.
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
     options['tool_dependencies']['python_package']['Python_version'] = sys.version

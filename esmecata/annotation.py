@@ -580,36 +580,6 @@ def chunks(elements, n):
         yield elements[i:i + n]
 
 
-def create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_output_file):
-    """Create pathologic files.
-
-    Args:
-        base_filename (str): observation name associated with the taxonomic affiliations and the annotation
-        annotated_protein_to_keeps (dict): annotated protein associated with the annotation of their cluster.
-        pathologic_output_file (str): pathname to the pathologic write.
-    """
-    with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:
-        element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
-        element_file.write(';; ' + base_filename + '\n')
-        element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
-        for protein in annotated_protein_to_keeps:
-            element_file.write('ID\t' + protein + '\n')
-            if annotated_protein_to_keeps[protein][3] != '':
-                element_file.write('NAME\t' + annotated_protein_to_keeps[protein][3] + '\n')
-            else:
-                element_file.write('NAME\t' + protein + '\n')
-            if annotated_protein_to_keeps[protein][0] != '':
-                element_file.write('FUNCTION\t' + annotated_protein_to_keeps[protein][0] + '\n')
-            element_file.write('PRODUCT-TYPE\tP' + '\n')
-            element_file.write('PRODUCT-ID\tprot ' + protein + '\n')
-            element_file.write('DBLINK\tUNIPROT:' + protein + '\n')
-            for go in annotated_protein_to_keeps[protein][1]:
-                element_file.write('GO\t' + go + '\n')
-            for ec in annotated_protein_to_keeps[protein][2]:
-                element_file.write('EC\t' + ec + '\n')
-            element_file.write('//\n\n')
-
-
 def compute_stat_annotation(annotation_reference_folder, stat_file=None):
     """Compute stat associated with the number of proteome for each taxonomic affiliations.
 
@@ -627,11 +597,10 @@ def compute_stat_annotation(annotation_reference_folder, stat_file=None):
             infile_gos = []
             infile_ecs = []
             with open(annotation_input_file_path, 'r') as open_annotation_input_file_path:
-                csvreader = csv.reader(open_annotation_input_file_path, delimiter='\t')
-                next(csvreader)
+                csvreader = csv.DictReader(open_annotation_input_file_path, delimiter='\t')
                 for line in csvreader:
-                    gos = line[3].split(',')
-                    ecs = line[4].split(',')
+                    gos = line['GO'].split(',')
+                    ecs = line['EC'].split(',')
                     infile_gos.extend(gos)
                     infile_ecs.extend(ecs)
             infile_gos = set([go for go in infile_gos if go != ''])
@@ -675,7 +644,7 @@ def extract_protein_cluster(reference_protein_pathname):
 
 def search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict):
     """Use protein annotations already retrieved from UniProt to avoid new queries.
-    This option read annotation file to retrived annotation, it is slower thant the second one (search_already_annotated_protein)) but less heavy on memory.
+    This option read annotation file to retrieved annotation, it is slower thant the second one (search_already_annotated_protein)) but less heavy on memory.
 
     Args:
         set_proteins (set): set all of proteins present in the mmseqs tabulated file
@@ -702,18 +671,19 @@ def search_already_annotated_protein_in_file(set_proteins, already_annotated_pro
     for reference_file in reference_files:
         already_annotated_file = os.path.join(annotation_folder, reference_file+'.tsv')
         with open(already_annotated_file) as already_process_file:
-            csvreader = csv.reader(already_process_file, delimiter='\t')
+            csvreader = csv.DictReader(already_process_file, delimiter='\t')
             for line in csvreader:
-                if line[0] in set(reference_files[reference_file]):
-                    protein_name = line[1]
-                    review = line[2]
-                    gos = line[3].split(',')
-                    ecs = line[4].split(',')
-                    interpros = line[5].split(',')
-                    rhea_ids = line[6].split(',')
-                    gene_name = line[7]
-                    output_dict[line[0]] = [protein_name, review, gos, ecs, interpros, rhea_ids, gene_name]
-                    protein_to_remove.append(line[0])
+                protein_id = line['protein_id']
+                if protein_id in set(reference_files[reference_file]):
+                    protein_name = line['protein_name']
+                    review = line['review']
+                    gos = line['GO'].split(',')
+                    ecs = line['EC'].split(',')
+                    interpros = line['InterPro'].split(',')
+                    rhea_ids = line['Rhea'].split(',')
+                    gene_name = line['gene_name']
+                    output_dict[protein_id] = [protein_name, review, gos, ecs, interpros, rhea_ids, gene_name]
+                    protein_to_remove.append(protein_id)
 
     protein_to_search_on_uniprots = set_proteins.difference(set(protein_to_remove))
 
@@ -809,7 +779,7 @@ def write_annotation_file(output_dict, annotation_file):
     """
     with open(annotation_file, 'w') as output_tsv:
         csvwriter = csv.writer(output_tsv, delimiter='\t')
-        csvwriter.writerow(['protein_id', 'protein_name', 'review', 'gos', 'ecs', 'interpros', 'rhea_ids', 'gene_name'])
+        csvwriter.writerow(['protein_id', 'protein_name', 'review', 'GO', 'EC', 'InterPro', 'Rhea', 'gene_name'])
         for protein in output_dict:
             protein_name = output_dict[protein][0]
             protein_review_satus = str(output_dict[protein][1])
@@ -838,7 +808,7 @@ def retrieve_annotation_from_uniref(proteomes, uniprot_sparql_endpoint, uniref_a
 
     with open(uniref_annotation_file, 'w') as output_tsv:
         csvwriter = csv.writer(output_tsv, delimiter='\t')
-        csvwriter.writerow(['protein_id', 'gos', 'ecs', 'uniref_cluster', 'representative_member'])
+        csvwriter.writerow(['protein_id', 'GO', 'EC', 'uniref_cluster', 'representative_member'])
         for protein in uniref_output_dict:
             go_terms = ','.join(sorted(uniref_output_dict[protein][0]))
             ec_numbers = ','.join(sorted(uniref_output_dict[protein][1]))
@@ -947,7 +917,7 @@ def propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_a
     return protein_annotations
 
 
-def write_annotation_reference(protein_annotations, annotation_reference_file, expression_output_dict):
+def write_annotation_reference(protein_annotations, reference_proteins, annotation_reference_file, expression_output_dict):
     """Write the annotation associated with a cluster after propagation step.
 
     Args:
@@ -958,28 +928,62 @@ def write_annotation_reference(protein_annotations, annotation_reference_file, e
     with open(annotation_reference_file, 'w') as output_tsv:
         csvwriter = csv.writer(output_tsv, delimiter='\t')
         if expression_output_dict:
-            csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC', 'Induction', 'Tissue_Specificity', 'Disruption_Phenotype'])
+            csvwriter.writerow(['protein_cluster', 'cluster_members', 'protein_name', 'gene_name', 'GO', 'EC', 'Induction', 'Tissue_Specificity', 'Disruption_Phenotype'])
         else:
-            csvwriter.writerow(['protein', 'protein_name', 'gene_name', 'GO', 'EC'])
+            csvwriter.writerow(['protein_cluster', 'cluster_members', 'protein_name', 'gene_name', 'GO', 'EC'])
         for protein in protein_annotations:
             protein_name = protein_annotations[protein][0]
             gene_name = protein_annotations[protein][3]
+            cluster_members = ','.join(reference_proteins[protein])
             gos = ','.join(sorted(list(protein_annotations[protein][1])))
             ecs = ','.join(sorted(list(protein_annotations[protein][2])))
             if expression_output_dict:
                 induction = expression_output_dict[protein][0]
                 tissue_specificity = expression_output_dict[protein][1]
                 disruption = expression_output_dict[protein][2]
-                csvwriter.writerow([protein, protein_name, gene_name, gos, ecs, induction, tissue_specificity, disruption])
+                csvwriter.writerow([protein, cluster_members, protein_name, gene_name, gos, ecs, induction, tissue_specificity, disruption])
             else:
-                csvwriter.writerow([protein, protein_name, gene_name, gos, ecs])
+                csvwriter.writerow([protein, cluster_members, protein_name, gene_name, gos, ecs])
 
 
-def write_pathologic_file(protein_annotations, pathologic_folder, base_filename, set_proteins):
+def create_pathologic(base_filename, annotated_protein_to_keeps, reference_proteins, pathologic_output_file):
+    """Create pathologic files.
+
+    Args:
+        base_filename (str): observation name associated with the taxonomic affiliations and the annotation
+        annotated_protein_to_keeps (dict): annotated protein associated with the annotation of their cluster.
+        reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
+        pathologic_output_file (str): pathname to the pathologic write.
+    """
+    with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:
+        element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
+        element_file.write(';; ' + base_filename + '\n')
+        element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
+        for protein in annotated_protein_to_keeps:
+            element_file.write('ID\t' + protein + '\n')
+            if annotated_protein_to_keeps[protein][3] != '':
+                element_file.write('NAME\t' + annotated_protein_to_keeps[protein][3] + '\n')
+            else:
+                element_file.write('NAME\t' + protein + '\n')
+            if annotated_protein_to_keeps[protein][0] != '':
+                element_file.write('FUNCTION\t' + annotated_protein_to_keeps[protein][0] + '\n')
+            element_file.write('PRODUCT-TYPE\tP' + '\n')
+            element_file.write('PRODUCT-ID\tprot ' + protein + '\n')
+            for uniprot_protein in reference_proteins[protein]:
+                element_file.write('DBLINK\tUNIPROT:' + uniprot_protein + '\n')
+            for go in annotated_protein_to_keeps[protein][1]:
+                element_file.write('GO\t' + go + '\n')
+            for ec in annotated_protein_to_keeps[protein][2]:
+                element_file.write('EC\t' + ec + '\n')
+            element_file.write('//\n\n')
+
+
+def write_pathologic_file(protein_annotations, reference_proteins, pathologic_folder, base_filename, set_proteins):
     """Write the annotation associated with a cluster after propagation step into pathologic file for run on Pathway Tools.
 
     Args:
         protein_annotations (dict): annotation dict: protein as key and annotation as value ([function_name, [go_terms], [ec_numbers], gene_name])
+        reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
         pathologic_folder (str): pathname to output pathologic folder
         base_filename (str): observation name
         set_proteins (set): set of proteins in the mmseqs tabulated file
@@ -990,7 +994,7 @@ def write_pathologic_file(protein_annotations, pathologic_folder, base_filename,
         pathologic_organism_folder = os.path.join(pathologic_folder, base_filename)
         is_valid_dir(pathologic_organism_folder)
         pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
-        create_pathologic(base_filename, annotated_protein_to_keeps, pathologic_file)
+        create_pathologic(base_filename, annotated_protein_to_keeps, reference_proteins, pathologic_file)
     elif len(annotated_protein_to_keeps) == 0:
         logger.critical('|EsMeCaTa|annotation| No reference proteins for %s, esmecata will not create a pathologic folder for it.', base_filename)
 
@@ -1056,10 +1060,9 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     if uniprot_sparql_endpoint:
         input_proteomes = {}
         with open(proteome_tax_id_file, 'r') as tax_id_file:
-            csvreader = csv.reader(tax_id_file, delimiter='\t')
-            next(csvreader)
+            csvreader = csv.DictReader(tax_id_file, delimiter='\t')
             for line in csvreader:
-                input_proteomes[line[0]] = line[4].split(',')
+                input_proteomes[line['observation_name']] = line['proteome'].split(',')
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
     # There is 2 ways to handle already annotated proteins:
@@ -1115,8 +1118,8 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
             expression_output_dict = None
         protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
         annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
-        write_annotation_reference(protein_annotations, annotation_reference_file, expression_output_dict)
-        write_pathologic_file(protein_annotations, pathologic_folder, base_filename, set_proteins)
+        write_annotation_reference(protein_annotations, reference_proteins, annotation_reference_file, expression_output_dict)
+        write_pathologic_file(protein_annotations, reference_proteins, pathologic_folder, base_filename, set_proteins)
 
         gos = [go for protein in protein_annotations for go in protein_annotations[protein][1]]
         unique_gos = set(gos)
@@ -1128,10 +1131,9 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, prop
     # Create mpwt taxon ID file.
     clustering_taxon_id = {}
     with open(proteome_tax_id_file, 'r') as input_taxon_id_file:
-        taxon_id_csvreader = csv.reader(input_taxon_id_file, delimiter='\t')
-        next(taxon_id_csvreader)
+        taxon_id_csvreader = csv.DictReader(input_taxon_id_file, delimiter='\t')
         for line in taxon_id_csvreader:
-            clustering_taxon_id[line[0]] = line[2]
+            clustering_taxon_id[line['observation_name']] = line['tax_id']
 
     pathologic_taxon_id_file = os.path.join(pathologic_folder, 'taxon_id.tsv')
     with open(pathologic_taxon_id_file, 'w') as taxon_id_file:

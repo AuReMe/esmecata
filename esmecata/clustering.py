@@ -150,7 +150,7 @@ def extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated):
     # Extract protein clusters in a dictionary.
     # The representative protein is the key and all the proteins in the cluster are the values.
     protein_clusters = {}
-    with open(mmseqs_tmp_clustered_tabulated) as input_file:
+    with open(mmseqs_tmp_clustered_tabulated, 'r') as input_file:
         csvreader = csv.reader(input_file, delimiter='\t')
         for row in csvreader:
             if row[0] not in protein_clusters:
@@ -250,7 +250,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         sys.exit(1)
 
     if not is_valid_dir(proteome_folder):
-        logger.critical(f"|EsMeCaTa|clustering| Input must be a folder {proteome_folder}.")
+        logger.critical('|EsMeCaTa|clustering| Input must be a folder %s.', proteome_folder)
         sys.exit(1)
 
     # Use the proteomes folder created by retrieve_proteome.py.
@@ -274,11 +274,10 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     # Create a dictionary with observation_name as key and the pathname to the proteomes associated to this observation_name as value.
     observation_name_fasta_files = {}
     with open(proteome_tax_id_pathname, 'r') as proteome_tax_file:
-        csvreader = csv.reader(proteome_tax_file, delimiter='\t')
-        next(csvreader)
+        csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
         for line in csvreader:
-            observation_name = line[0]
-            proteomes = line[4].split(',')
+            observation_name = line['observation_name']
+            proteomes = line['proteome'].split(',')
             proteomes_path = [os.path.join(proteome_folder, 'proteomes', proteome+'.faa.gz') for proteome in proteomes]
             if observation_name not in already_performed_clustering:
                 observation_name_fasta_files[observation_name] = proteomes_path
@@ -308,12 +307,6 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     is_valid_dir(mmseqs_tmp_path)
 
     # Create output folder containing shared representative proteins.
-    representative_fasta_path = os.path.join(output_folder, 'fasta_representative')
-    is_valid_dir(representative_fasta_path)
-
-    consensus_fasta_path = os.path.join(output_folder, 'fasta_consensus')
-    is_valid_dir(consensus_fasta_path)
-
     reference_proteins_representative_fasta_path = os.path.join(output_folder, 'reference_proteins_representative_fasta')
     is_valid_dir(reference_proteins_representative_fasta_path)
 
@@ -335,10 +328,6 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
 
         logger.info('|EsMeCaTa|clustering| %d protein clusters kept for %s.', len(protein_cluster_to_keeps), observation_name)
-
-        # Copy representative and consensus fasta to subfolder in output_folder.
-        shutil.copyfile(mmseqs_tmp_representative_fasta, os.path.join(representative_fasta_path, observation_name+'.faa'))
-        shutil.copyfile(mmseqs_consensus_fasta, os.path.join(consensus_fasta_path, observation_name+'.faa'))
 
         # Create BioPtyhon records with the representative proteins kept.
         new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
