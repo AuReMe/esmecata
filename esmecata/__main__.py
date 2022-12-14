@@ -150,7 +150,7 @@ def main():
     parent_parser_linclust.add_argument(
         '--linclust',
         dest='linclust',
-        help='Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.',
+        help='Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.',
         required=False,
         action='store_true',
         default=None)
