@@ -999,15 +999,65 @@ def write_pathologic_file(protein_annotations, reference_proteins, pathologic_fo
         logger.critical('|EsMeCaTa|annotation| No reference proteins for %s, esmecata will not create a pathologic folder for it.', base_filename)
 
 
-def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation):
+def extract_protein_annotaiton_form_files(uniprot_protein_dat_files):
+    from Bio import SeqIO
+
+    # Pattern for Rhea ID
+    rhea_pattern = re.compile(r'Rhea:RHEA:\d{5}')
+
+    # Pattern for EC:
+    # - "EC=[\d]*": match any EC=Digit
+    # "(?:\.[-\w\s]*)?": (?:) non capture group, match any .Digit (with possible letter or - character)
+    ec_pattern = re.compile(r'EC=[\d]*(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?;')
+
+    uniprot_annotations = {}
+
+    for record in SeqIO.parse('uniprot_sprot.dat', "swiss"):
+        ecs = [dbxref.replace('BRENDA:', '') for dbxref in record.dbxrefs if 'BRENDA' in dbxref]
+        if 'comment' in record.annotations:
+            ecs_catalytics = [ec.replace('EC=', '').strip(';') for ec in ec_pattern.findall(record.annotations['comment'])]
+            rhea_ids = [rhea.replace('Rhea:', '') for rhea in rhea_pattern.findall(record.annotations['comment'])]
+        else:
+            ecs_catalytics = []
+            rhea_ids = []
+        ecs.extend(ecs_catalytics)
+        ecs = list(set(ecs))
+
+        gos = list(set([dbxref.replace('GO:GO:', 'GO:') for dbxref in record.dbxrefs if 'GO' in dbxref]))
+        interpros = list(set([dbxref.replace('InterPro:', '') for dbxref in record.dbxrefs if 'InterPro' in dbxref]))
+
+        if 'gene_name' in record.annotations:
+            gene_name = [data['Name'].strip(';') for data in record.annotations['gene_name'] if 'Name' in data]
+        else:
+            gene_name = []
+        if gene_name == []:
+            gene_name = ''
+        else:
+            gene_name = gene_name[0]
+
+        protein_name = [data.replace('RecName: Full=', '') for data in record.description.split('; ') if 'RecName: Full' in data]
+        if protein_name == []:
+            protein_name = ''
+        else:
+            protein_name = protein_name[0]
+
+        uniprot_annotations[record.id] = [protein_name, True, gos, ecs, interpros, rhea_ids, gene_name]
+
+    return uniprot_annotations
+
+
+def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
+                        propagate_annotation, uniref_annotation, expression_annotation,
+                        annotation_files=None):
     """Write the annotation associated with a cluster after propagation step into pathologic file for run on Pathway Tools.
 
     Args:
         input_folder (str): pathname to mmseqs clustering output folder as it is the input of annotation
         output_folder (str): pathname to the output folder
         propagate_annotation (float): float between 0 and 1. It is the ratio of proteins in the cluster that should have the annotation to keep this annotation.
-        uniref_annotation (bool): option to use uniref annotation to add annotation
-        expression_annotation (bool): option to add expression annotation from uniprot
+        uniref_annotation (bool): option to use uniref annotation to add annotation.
+        expression_annotation (bool): option to add expression annotation from UniProt.
+        annotation_files (str): pathnames to UniProt dat files.
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|annotation| Begin annotation.')

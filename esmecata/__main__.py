@@ -210,6 +210,13 @@ def main():
         type=limited_integer_type,
         help='Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.',
         default=1)
+    parent_parser_annotation_file = argparse.ArgumentParser(add_help=False)
+    parent_parser_annotation_file.add_argument(
+        '--annotation-files',
+        dest='annotation_files',
+        required=False,
+        help='Use UniProt annotaiton files (uniprot_trembl.dat and uniprot_sprot.dat) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".',
+        default=1)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -241,7 +248,8 @@ def main():
         help='Retrieve protein annotations from Uniprot.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
-            parent_parser_propagate, parent_parser_uniref, parent_parser_expression
+            parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
+            parent_parser_annotation_file
             ],
         allow_abbrev=False)
     workflow_parser = subparsers.add_parser(
@@ -253,7 +261,8 @@ def main():
             parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
             parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
-            parent_parser_rank_limit, parent_parser_minimal_number_proteomes
+            parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
+            parent_parser_annotation_file
             ],
         allow_abbrev=False)
 
@@ -298,14 +307,16 @@ def main():
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
-        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression)
+        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint,
+                        args.propagate_annotation, args.uniref, args.expression,
+                        args.annotation_files)
     elif args.cmd == 'workflow':
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
                             args.limit_maximal_number_proteomes, args.rank_limit,
                             args.cpu, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
-                            args.expression, args.minimal_number_proteomes)
+                            args.expression, args.minimal_number_proteomes, args.annotation_files)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
