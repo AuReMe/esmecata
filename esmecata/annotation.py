@@ -999,7 +999,7 @@ def write_pathologic_file(protein_annotations, reference_proteins, pathologic_fo
         logger.critical('|EsMeCaTa|annotation| No reference proteins for %s, esmecata will not create a pathologic folder for it.', base_filename)
 
 
-def extract_protein_annotaiton_form_files(uniprot_protein_dat_files):
+def extract_protein_annotation_from_files(uniprot_protein_dat_files):
     from Bio import SeqIO
 
     # Pattern for Rhea ID
