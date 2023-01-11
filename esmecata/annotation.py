@@ -999,7 +999,18 @@ def write_pathologic_file(protein_annotations, reference_proteins, pathologic_fo
         logger.critical('|EsMeCaTa|annotation| No reference proteins for %s, esmecata will not create a pathologic folder for it.', base_filename)
 
 
-def extract_protein_annotation_from_files(uniprot_protein_dat_files):
+def extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot_trembl_index, uniprot_sprot_index, output_dict):
+    """ From Biopython indexes of uniprot Swiss-Prot and TrEMBL, eaxtract protein annotations.
+
+    Args:
+        protein_to_search_on_uniprots (set): set of proteins not already annotated that will need UniProt queries
+        uniprot_trembl_index (dict): biopython dictionary containing indexed TrEMBL database
+        uniprot_sprot_index (dict): biopython dictionary containing indexed Swiss-Prot database
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+
+    Returns:
+        output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+    """
     from Bio import SeqIO
 
     # Pattern for Rhea ID
@@ -1010,40 +1021,45 @@ def extract_protein_annotation_from_files(uniprot_protein_dat_files):
     # "(?:\.[-\w\s]*)?": (?:) non capture group, match any .Digit (with possible letter or - character)
     ec_pattern = re.compile(r'EC=[\d]*(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?;')
 
-    uniprot_annotations = {}
-
-    for record in SeqIO.parse('uniprot_sprot.dat', "swiss"):
-        ecs = [dbxref.replace('BRENDA:', '') for dbxref in record.dbxrefs if 'BRENDA' in dbxref]
-        if 'comment' in record.annotations:
-            ecs_catalytics = [ec.replace('EC=', '').strip(';') for ec in ec_pattern.findall(record.annotations['comment'])]
-            rhea_ids = [rhea.replace('Rhea:', '') for rhea in rhea_pattern.findall(record.annotations['comment'])]
+    for protein_id in protein_to_search_on_uniprots:
+        if protein_id in uniprot_trembl_index:
+            record = uniprot_trembl_index[protein_id]
+        elif protein_id in uniprot_trembl_index:
+            record = uniprot_sprot_index[protein_id]
         else:
-            ecs_catalytics = []
-            rhea_ids = []
-        ecs.extend(ecs_catalytics)
-        ecs = list(set(ecs))
+            record = None
+        if record is not None:
+            ecs = [dbxref.replace('BRENDA:', '') for dbxref in record.dbxrefs if 'BRENDA' in dbxref]
+            if 'comment' in record.annotations:
+                ecs_catalytics = [ec.replace('EC=', '').strip(';') for ec in ec_pattern.findall(record.annotations['comment'])]
+                rhea_ids = [rhea.replace('Rhea:', '') for rhea in rhea_pattern.findall(record.annotations['comment'])]
+            else:
+                ecs_catalytics = []
+                rhea_ids = []
+            ecs.extend(ecs_catalytics)
+            ecs = list(set(ecs))
 
-        gos = list(set([dbxref.replace('GO:GO:', 'GO:') for dbxref in record.dbxrefs if 'GO' in dbxref]))
-        interpros = list(set([dbxref.replace('InterPro:', '') for dbxref in record.dbxrefs if 'InterPro' in dbxref]))
+            gos = list(set([dbxref.replace('GO:GO:', 'GO:') for dbxref in record.dbxrefs if 'GO' in dbxref]))
+            interpros = list(set([dbxref.replace('InterPro:', '') for dbxref in record.dbxrefs if 'InterPro' in dbxref]))
 
-        if 'gene_name' in record.annotations:
-            gene_name = [data['Name'].strip(';') for data in record.annotations['gene_name'] if 'Name' in data]
-        else:
-            gene_name = []
-        if gene_name == []:
-            gene_name = ''
-        else:
-            gene_name = gene_name[0]
+            if 'gene_name' in record.annotations:
+                gene_name = [data['Name'].strip(';') for data in record.annotations['gene_name'] if 'Name' in data]
+            else:
+                gene_name = []
+            if gene_name == []:
+                gene_name = ''
+            else:
+                gene_name = gene_name[0]
 
-        protein_name = [data.replace('RecName: Full=', '') for data in record.description.split('; ') if 'RecName: Full' in data]
-        if protein_name == []:
-            protein_name = ''
-        else:
-            protein_name = protein_name[0]
+            protein_name = [data.replace('RecName: Full=', '') for data in record.description.split('; ') if 'RecName: Full' in data]
+            if protein_name == []:
+                protein_name = ''
+            else:
+                protein_name = protein_name[0]
 
-        uniprot_annotations[record.id] = [protein_name, True, gos, ecs, interpros, rhea_ids, gene_name]
+            output_dict[record.id] = [protein_name, True, gos, ecs, interpros, rhea_ids, gene_name]
 
-    return uniprot_annotations
+    return output_dict
 
 
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
@@ -1129,6 +1145,15 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         logger.info('|EsMeCaTa|annotation| Annotation of %s already in output folder, will not be redone.', done_annotation)
 
     input_files = sorted(list(set(input_files) - set(already_done_annotation)))
+
+    if annotation_files is not None:
+        from Bio import SeqIO
+        for annotation_file in annotation_files.split(','):
+            if 'uniprot_trembl' in annotation_file:
+                uniprot_trembl_index = SeqIO.index(annotation_file, 'swiss')
+            elif 'uniprot_sprot' in annotation_file:
+                uniprot_sprot_index = SeqIO.index(annotation_file, 'swiss')
+
     for index, input_file in enumerate(input_files):
         logger.info('|EsMeCaTa|annotation| Annotation of %s (%d on %d data to annotate).', input_file, index+1, len(input_files))
         base_file = os.path.basename(input_file)
@@ -1142,12 +1167,14 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         #protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
         # Second method to handle protein already annotated
         protein_to_search_on_uniprots, output_dict = search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict)
-        if uniprot_sparql_endpoint:
-            proteomes = input_proteomes[base_filename]
-            output_dict = query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_dict)
+        if annotation_files is None:
+            if uniprot_sparql_endpoint:
+                proteomes = input_proteomes[base_filename]
+                output_dict = query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_dict)
+            else:
+                output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict)
         else:
-            output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict)
-
+            output_dict = extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot_trembl_index, uniprot_sprot_index, output_dict)
         # First method to handle protein already annotated
         #already_annotated_proteins.update({protein: output_dict[protein] for protein in output_dict if protein not in already_annotated_proteins})
         # Second method to handle protein already annotated
