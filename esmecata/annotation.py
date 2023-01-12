@@ -1150,8 +1150,10 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         from Bio import SeqIO
         for annotation_file in annotation_files.split(','):
             if 'uniprot_trembl' in annotation_file:
+                logger.info('|EsMeCaTa|annotation| Indexing Swiss-Prot file.')
                 uniprot_trembl_index = SeqIO.index(annotation_file, 'swiss')
             elif 'uniprot_sprot' in annotation_file:
+                logger.info('|EsMeCaTa|annotation| Indexing TrEMBL file.')
                 uniprot_sprot_index = SeqIO.index(annotation_file, 'swiss')
 
     for index, input_file in enumerate(input_files):
