@@ -1025,7 +1025,7 @@ def extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot
     for protein_id in protein_to_search_on_uniprots:
         if protein_id in uniprot_trembl_index:
             record = uniprot_trembl_index[protein_id]
-        elif protein_id in uniprot_trembl_index:
+        elif protein_id in uniprot_sprot_index:
             record = uniprot_sprot_index[protein_id]
         else:
             record = None
