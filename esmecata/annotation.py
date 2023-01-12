@@ -23,6 +23,7 @@ import sys
 import urllib.parse
 import urllib.request
 
+from Bio import SeqIO
 from SPARQLWrapper import __version__ as sparqlwrapper_version
 from urllib.parse import urlparse, parse_qs, urlencode
 from requests.adapters import HTTPAdapter, Retry
@@ -1147,13 +1148,12 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
     input_files = sorted(list(set(input_files) - set(already_done_annotation)))
 
     if annotation_files is not None:
-        from Bio import SeqIO
         for annotation_file in annotation_files.split(','):
             if 'uniprot_trembl' in annotation_file:
-                logger.info('|EsMeCaTa|annotation| Indexing Swiss-Prot file.')
+                logger.info('|EsMeCaTa|annotation| Indexing TrEMBL file.')
                 uniprot_trembl_index = SeqIO.index(annotation_file, 'swiss')
             elif 'uniprot_sprot' in annotation_file:
-                logger.info('|EsMeCaTa|annotation| Indexing TrEMBL file.')
+                logger.info('|EsMeCaTa|annotation| Indexing Swiss-Prot file.')
                 uniprot_sprot_index = SeqIO.index(annotation_file, 'swiss')
 
     for index, input_file in enumerate(input_files):

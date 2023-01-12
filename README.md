@@ -307,7 +307,7 @@ Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. I
 ### `esmecata annotation`: Retrieve protein annotations
 
 ````
-usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression]
+usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--annotation-files ANNOTATION_FILES]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -322,6 +322,8 @@ optional arguments:
                         reference and 1 only the annotation occurring in all the proteins of the cluster (default).
   --uniref              Use uniref cluster to extract more annotations from the representative member of the cluster associated with the proteins. Needs the --sparql option.
   --expression          Extract expression information associated with the proteins. Needs the --sparql option.
+  --annotation-files ANNOTATION_FILES
+                        Use UniProt annotation files (uniprot_trembl.txt and uniprot_sprot.txt) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".
 ````
 
 For each of the protein clusters kept after the clustering, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
@@ -354,11 +356,21 @@ To add more annotations, esmecata can search the [UniRef](https://www.uniprot.or
 
 With this option, esmecata will extract the [expression information](https://www.uniprot.org/help/expression_section) associated with a protein. This contains 3 elements: Induction, Tissue specificity and Disruption Phenotype. At this moment, this option is only usable when using the `--sparql` option.
 
+* `--annotation-files`: use UniProt txt fiels instead of queyring Uniprot servers.
+
+As this step can require a high numbers of queries to UniProt servers, it can failed due to issue with the query.
+A workaround (for example on a cluster), is to use the UniProt flat files containing the protein annotations.
+Warning, the TrEMBL file takes a lot of space (around 150G compressed for the version 2022_05).
+One of the downside of this option is that it needs lof of memory to handle indexing the TrEMBL file (around 32G) and it stakes around 11h to parse it with Biopython.
+But for dataset with thousands of taxonomic affiliations, this can be compensated by the fact that queyring an indexed file is more stable than querying a server.
+For this option, you should give the path to the two annotation files separated by `,`such as: `--annotation-files /db/uniprot/UniProt_2022_05/flat/uniprot_sprot.dat,/db/uniprot/UniProt_2022_05/flat/uniprot_trembl.dat`.
+The names of the fiels must contained: `uniprot_sprot` and `uniprot_trembl`.
+
 ### `esmecata workflow`: Consecutive runs of the three steps
 
 ````
 usage: esmecata workflow [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [-c CPU] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS]
-                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES]
+                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES] [--annotation-files ANNOTATION_FILES]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -381,7 +393,7 @@ optional arguments:
                         Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.
   -m MMSEQS_OPTIONS, --mmseqs MMSEQS_OPTIONS
                         String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"
-  --linclust            Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.
+  --linclust            Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.
   -p PROPAGATE_ANNOTATION, --propagate PROPAGATE_ANNOTATION
                         Proportion [0 to 1] of the occurrence of an annotation to be propagated from the protein of a cluster to the reference protein of the cluster. 0 mean the annotations from all proteins are propagated to the
                         reference and 1 only the annotation occurring in all the proteins of the cluster (default).
@@ -391,6 +403,8 @@ optional arguments:
                         This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
+  --annotation-files ANNOTATION_FILES
+                        Use UniProt annotation files (uniprot_trembl.txt and uniprot_sprot.txt) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".
 ````
 
 EsMeCTa will perform the search for proteomes, the protein clustering and the annotation.

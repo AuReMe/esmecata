@@ -215,7 +215,7 @@ def main():
         '--annotation-files',
         dest='annotation_files',
         required=False,
-        help='Use UniProt annotaiton files (uniprot_trembl.dat and uniprot_sprot.dat) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".',
+        help='Use UniProt annotation files (uniprot_trembl.txt and uniprot_sprot.txt) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".',
         default=None)
 
     # subparsers
