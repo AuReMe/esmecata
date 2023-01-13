@@ -1173,20 +1173,29 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         # First method to handle protein already annotated
         #protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
         # Second method to handle protein already annotated
-        protein_to_search_on_uniprots, output_dict = search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict)
+        if annotation_files is not None:
+            protein_to_search_on_uniprots, output_dict = search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict)
+
+        # Extract protein annotations.
         if annotation_files is None:
             if uniprot_sparql_endpoint:
                 proteomes = input_proteomes[base_filename]
+                # Using SPARQL queries on UniProt endpoint.
                 output_dict = query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_dict)
             else:
+                # Using REST query on UniProt servers.
                 output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict)
         else:
+            # Using annotation files.
             output_dict = extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot_trembl_index, uniprot_sprot_index, output_dict)
+
         # First method to handle protein already annotated
         #already_annotated_proteins.update({protein: output_dict[protein] for protein in output_dict if protein not in already_annotated_proteins})
+
         # Second method to handle protein already annotated
-        for protein in output_dict:
-            already_annotated_proteins_in_file[protein] = base_filename
+        if annotation_files is not None:
+            for protein in output_dict:
+                already_annotated_proteins_in_file[protein] = base_filename
 
         annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
         write_annotation_file(output_dict, annotation_file)
