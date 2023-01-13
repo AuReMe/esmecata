@@ -1012,32 +1012,37 @@ def extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot
     Returns:
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
     """
-    from Bio import SeqIO
-
     # Pattern for Rhea ID
     rhea_pattern = re.compile(r'Rhea:RHEA:\d{5}')
 
     # Pattern for EC:
     # - "EC=[\d]*": match any EC=Digit
     # "(?:\.[-\w\s]*)?": (?:) non capture group, match any .Digit (with possible letter or - character)
-    ec_pattern = re.compile(r'EC=[\d]*(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?;')
+    ec_pattern = re.compile(r'EC=[\d]*(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?[; ]')
 
     for protein_id in protein_to_search_on_uniprots:
         if protein_id in uniprot_trembl_index:
             record = uniprot_trembl_index[protein_id]
+            reviewed = False
         elif protein_id in uniprot_sprot_index:
             record = uniprot_sprot_index[protein_id]
+            reviewed = True
         else:
             record = None
         if record is not None:
             ecs = [dbxref.replace('BRENDA:', '') for dbxref in record.dbxrefs if 'BRENDA' in dbxref]
+
             if 'comment' in record.annotations:
-                ecs_catalytics = [ec.replace('EC=', '').strip(';') for ec in ec_pattern.findall(record.annotations['comment'])]
+                ecs_catalytics = [ec.replace('EC=', '').strip(';| ') for ec in ec_pattern.findall(record.annotations['comment'])]
                 rhea_ids = [rhea.replace('Rhea:', '') for rhea in rhea_pattern.findall(record.annotations['comment'])]
             else:
                 ecs_catalytics = []
                 rhea_ids = []
             ecs.extend(ecs_catalytics)
+
+            ecs_description = [ec.replace('EC=', '').strip(';| ') for ec in ec_pattern.findall(record.description)]
+            ecs.extend(ecs_description)
+
             ecs = list(set(ecs))
 
             gos = list(set([dbxref.replace('GO:GO:', 'GO:') for dbxref in record.dbxrefs if 'GO' in dbxref]))
@@ -1058,7 +1063,7 @@ def extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot
             else:
                 protein_name = protein_name[0]
 
-            output_dict[record.id] = [protein_name, True, gos, ecs, interpros, rhea_ids, gene_name]
+            output_dict[record.id] = [protein_name, reviewed, gos, ecs, interpros, rhea_ids, gene_name]
 
     return output_dict
 

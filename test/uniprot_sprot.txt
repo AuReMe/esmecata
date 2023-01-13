@@ -1,0 +1,249 @@
+ID   RSMD_BUCAI              Reviewed;         191 AA.
+AC   P57136;
+DT   01-DEC-2000, integrated into UniProtKB/Swiss-Prot.
+DT   01-DEC-2000, sequence version 1.
+DT   14-DEC-2022, entry version 99.
+DE   RecName: Full=Ribosomal RNA small subunit methyltransferase D;
+DE            EC=2.1.1.171;
+DE   AltName: Full=16S rRNA m2G966 methyltransferase;
+DE   AltName: Full=rRNA (guanine-N(2)-)-methyltransferase;
+GN   Name=rsmD; OrderedLocusNames=BU023;
+OS   Buchnera aphidicola subsp. Acyrthosiphon pisum (strain APS) (Acyrthosiphon
+OS   pisum symbiotic bacterium).
+OC   Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacterales;
+OC   Erwiniaceae; Buchnera.
+OX   NCBI_TaxID=107806;
+RN   [1]
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RC   STRAIN=APS;
+RX   PubMed=10993077; DOI=10.1038/35024074;
+RA   Shigenobu S., Watanabe H., Hattori M., Sakaki Y., Ishikawa H.;
+RT   "Genome sequence of the endocellular bacterial symbiont of aphids Buchnera
+RT   sp. APS.";
+RL   Nature 407:81-86(2000).
+CC   -!- FUNCTION: Specifically methylates the guanine in position 966 of 16S
+CC       rRNA in the assembled 30S particle. {ECO:0000250}.
+CC   -!- CATALYTIC ACTIVITY:
+CC       Reaction=guanosine(966) in 16S rRNA + S-adenosyl-L-methionine = H(+) +
+CC         N(2)-methylguanosine(966) in 16S rRNA + S-adenosyl-L-homocysteine;
+CC         Xref=Rhea:RHEA:23548, Rhea:RHEA-COMP:10211, Rhea:RHEA-COMP:10212,
+CC         ChEBI:CHEBI:15378, ChEBI:CHEBI:57856, ChEBI:CHEBI:59789,
+CC         ChEBI:CHEBI:74269, ChEBI:CHEBI:74481; EC=2.1.1.171;
+CC   -!- SIMILARITY: Belongs to the methyltransferase superfamily. RsmD family.
+CC       {ECO:0000305}.
+CC   ---------------------------------------------------------------------------
+CC   Copyrighted by the UniProt Consortium, see https://www.uniprot.org/terms
+CC   Distributed under the Creative Commons Attribution (CC BY 4.0) License
+CC   ---------------------------------------------------------------------------
+DR   EMBL; BA000003; BAB12750.1; -; Genomic_DNA.
+DR   RefSeq; NP_239864.1; NC_002528.1.
+DR   RefSeq; WP_009873984.1; NC_002528.1.
+DR   AlphaFoldDB; P57136; -.
+DR   SMR; P57136; -.
+DR   STRING; 107806.10038715; -.
+DR   EnsemblBacteria; BAB12750; BAB12750; BAB12750.
+DR   KEGG; buc:BU023; -.
+DR   PATRIC; fig|107806.10.peg.35; -.
+DR   eggNOG; COG0742; Bacteria.
+DR   HOGENOM; CLU_075826_2_2_6; -.
+DR   OMA; FNWLMPY; -.
+DR   Proteomes; UP000001806; Chromosome.
+DR   GO; GO:0052913; F:16S rRNA (guanine(966)-N(2))-methyltransferase activity; IEA:UniProtKB-EC.
+DR   GO; GO:0003676; F:nucleic acid binding; IEA:InterPro.
+DR   Gene3D; 3.40.50.150; -; 1.
+DR   InterPro; IPR002052; DNA_methylase_N6_adenine_CS.
+DR   InterPro; IPR004398; RNA_MeTrfase_RsmD.
+DR   InterPro; IPR029063; SAM-dependent_MTases_sf.
+DR   PIRSF; PIRSF004553; CHP00095; 1.
+DR   SUPFAM; SSF53335; S-adenosyl-L-methionine-dependent methyltransferases; 1.
+DR   TIGRFAMs; TIGR00095; 16S rRNA (guanine(966)-N(2))-methyltransferase RsmD; 1.
+DR   PROSITE; PS00092; N6_MTASE; 1.
+PE   3: Inferred from homology;
+KW   Methyltransferase; Reference proteome; rRNA processing;
+KW   S-adenosyl-L-methionine; Transferase.
+FT   CHAIN           1..191
+FT                   /note="Ribosomal RNA small subunit methyltransferase D"
+FT                   /id="PRO_0000216243"
+SQ   SEQUENCE   191 AA;  22651 MW;  436C5F084F13D420 CRC64;
+     MNNSFFRKNS KIYIISGNLK GRKISFKNIP NLRPTTNQIR ETLFEWLSKY IKNSRCLDCF
+     AGSGVLGIEA ISRYAAFSTL LEIEKKTFLT LKKNIKELNI YNVEIIRTNT LHWLKKTRNK
+     PYDIIFIDPP YHQGLVKKTI NLLENKKWIK KNSFIYIEQE KKQSIIVPKN WTLYKKKITN
+     QIQCYLYICS T
+//
+ID   MTLD_BUCAI              Reviewed;         385 AA.
+AC   P57634;
+DT   01-DEC-2000, integrated into UniProtKB/Swiss-Prot.
+DT   01-DEC-2000, sequence version 1.
+DT   14-DEC-2022, entry version 102.
+DE   RecName: Full=Mannitol-1-phosphate 5-dehydrogenase;
+DE            EC=1.1.1.17;
+GN   Name=mtlD; OrderedLocusNames=BU571;
+OS   Buchnera aphidicola subsp. Acyrthosiphon pisum (strain APS) (Acyrthosiphon
+OS   pisum symbiotic bacterium).
+OC   Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacterales;
+OC   Erwiniaceae; Buchnera.
+OX   NCBI_TaxID=107806;
+RN   [1]
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RC   STRAIN=APS;
+RX   PubMed=10993077; DOI=10.1038/35024074;
+RA   Shigenobu S., Watanabe H., Hattori M., Sakaki Y., Ishikawa H.;
+RT   "Genome sequence of the endocellular bacterial symbiont of aphids Buchnera
+RT   sp. APS.";
+RL   Nature 407:81-86(2000).
+CC   -!- CATALYTIC ACTIVITY:
+CC       Reaction=D-mannitol 1-phosphate + NAD(+) = beta-D-fructose 6-phosphate
+CC         + H(+) + NADH; Xref=Rhea:RHEA:19661, ChEBI:CHEBI:15378,
+CC         ChEBI:CHEBI:57540, ChEBI:CHEBI:57634, ChEBI:CHEBI:57945,
+CC         ChEBI:CHEBI:61381; EC=1.1.1.17;
+CC   -!- SIMILARITY: Belongs to the mannitol dehydrogenase family.
+CC       {ECO:0000305}.
+CC   ---------------------------------------------------------------------------
+CC   Copyrighted by the UniProt Consortium, see https://www.uniprot.org/terms
+CC   Distributed under the Creative Commons Attribution (CC BY 4.0) License
+CC   ---------------------------------------------------------------------------
+DR   EMBL; BA000003; BAB13261.1; -; Genomic_DNA.
+DR   RefSeq; NP_240375.1; NC_002528.1.
+DR   RefSeq; WP_010896168.1; NC_002528.1.
+DR   AlphaFoldDB; P57634; -.
+DR   SMR; P57634; -.
+DR   STRING; 107806.10039227; -.
+DR   EnsemblBacteria; BAB13261; BAB13261; BAB13261.
+DR   KEGG; buc:BU571; -.
+DR   PATRIC; fig|107806.10.peg.574; -.
+DR   eggNOG; COG0246; Bacteria.
+DR   HOGENOM; CLU_036089_2_0_6; -.
+DR   OMA; GKKAVHF; -.
+DR   Proteomes; UP000001806; Chromosome.
+DR   GO; GO:0008926; F:mannitol-1-phosphate 5-dehydrogenase activity; IEA:UniProtKB-UniRule.
+DR   GO; GO:0019594; P:mannitol metabolic process; IEA:InterPro.
+DR   Gene3D; 1.10.1040.10; -; 1.
+DR   HAMAP; MF_00196; Mannitol_dehydrog; 1.
+DR   InterPro; IPR008927; 6-PGluconate_DH-like_C_sf.
+DR   InterPro; IPR013328; 6PGD_dom2.
+DR   InterPro; IPR023028; Mannitol_1_phos_5_DH.
+DR   InterPro; IPR000669; Mannitol_DH.
+DR   InterPro; IPR013118; Mannitol_DH_C.
+DR   InterPro; IPR013131; Mannitol_DH_N.
+DR   InterPro; IPR036291; NAD(P)-bd_dom_sf.
+DR   Pfam; PF01232; Mannitol_dh; 1.
+DR   Pfam; PF08125; Mannitol_dh_C; 1.
+DR   PRINTS; PR00084; MTLDHDRGNASE.
+DR   SUPFAM; SSF48179; 6-phosphogluconate dehydrogenase C-terminal domain-like; 1.
+DR   SUPFAM; SSF51735; NAD(P)-binding Rossmann-fold domains; 1.
+PE   3: Inferred from homology;
+KW   NAD; Oxidoreductase; Reference proteome.
+FT   CHAIN           1..385
+FT                   /note="Mannitol-1-phosphate 5-dehydrogenase"
+FT                   /id="PRO_0000170699"
+FT   BINDING         3..14
+FT                   /ligand="NAD(+)"
+FT                   /ligand_id="ChEBI:CHEBI:57540"
+FT                   /evidence="ECO:0000250"
+SQ   SEQUENCE   385 AA;  43825 MW;  C8B2D91910E97E2F CRC64;
+     MKALQFGAGN IGRGFIGKTL SESGFSVIFS DVNQNIVDAI NYNREYFVKI IGSNQNKTVN
+     IKRVSAINSN DSNIKKIISS VDLITTAVGP TALEKIALII TQGIIFKIKN QFTKPLNIIA
+     CENKIKSSSF LKQVVLKNLP IKYHDYLNKY IGFIDCSIDT IIPAINNKDD LFLTVEEFKE
+     WIVNINQFKG AVPKIVDMKF SNNLDAFIER KLFTLNTGHA IAAYLGLIKN YKTIQDAISD
+     KKIRVIVRSA MEESGSVLIK RYNFNKNDHL DYIEKIFLRF ENPFLSDKLE RIGRNPLQKL
+     RREDRLIKPF LGAFEYNLPY SNLAKGIAAA FYYHNKNDLE SIELSSSIKK QGLESTIIKI
+     CDLPVNSKEV YSIILEYNLI KKIIR
+//
+ID   HTPX_BUCAI              Reviewed;         292 AA.
+AC   P57406;
+DT   01-DEC-2000, integrated into UniProtKB/Swiss-Prot.
+DT   01-DEC-2000, sequence version 1.
+DT   14-DEC-2022, entry version 118.
+DE   RecName: Full=Protease HtpX {ECO:0000255|HAMAP-Rule:MF_00188};
+DE            EC=3.4.24.- {ECO:0000255|HAMAP-Rule:MF_00188};
+DE   AltName: Full=Heat shock protein HtpX {ECO:0000255|HAMAP-Rule:MF_00188};
+GN   Name=htpX {ECO:0000255|HAMAP-Rule:MF_00188}; OrderedLocusNames=BU321;
+OS   Buchnera aphidicola subsp. Acyrthosiphon pisum (strain APS) (Acyrthosiphon
+OS   pisum symbiotic bacterium).
+OC   Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacterales;
+OC   Erwiniaceae; Buchnera.
+OX   NCBI_TaxID=107806;
+RN   [1]
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RC   STRAIN=APS;
+RX   PubMed=10993077; DOI=10.1038/35024074;
+RA   Shigenobu S., Watanabe H., Hattori M., Sakaki Y., Ishikawa H.;
+RT   "Genome sequence of the endocellular bacterial symbiont of aphids Buchnera
+RT   sp. APS.";
+RL   Nature 407:81-86(2000).
+CC   -!- COFACTOR:
+CC       Name=Zn(2+); Xref=ChEBI:CHEBI:29105; Evidence={ECO:0000255|HAMAP-
+CC         Rule:MF_00188};
+CC       Note=Binds 1 zinc ion per subunit. {ECO:0000255|HAMAP-Rule:MF_00188};
+CC   -!- SUBCELLULAR LOCATION: Cell membrane {ECO:0000255|HAMAP-Rule:MF_00188};
+CC       Multi-pass membrane protein {ECO:0000255|HAMAP-Rule:MF_00188}.
+CC   -!- SIMILARITY: Belongs to the peptidase M48B family. {ECO:0000255|HAMAP-
+CC       Rule:MF_00188}.
+CC   ---------------------------------------------------------------------------
+CC   Copyrighted by the UniProt Consortium, see https://www.uniprot.org/terms
+CC   Distributed under the Creative Commons Attribution (CC BY 4.0) License
+CC   ---------------------------------------------------------------------------
+DR   EMBL; BA000003; BAB13029.1; -; Genomic_DNA.
+DR   RefSeq; NP_240143.1; NC_002528.1.
+DR   RefSeq; WP_009874275.1; NC_002528.1.
+DR   AlphaFoldDB; P57406; -.
+DR   SMR; P57406; -.
+DR   STRING; 107806.10038995; -.
+DR   MEROPS; M48.002; -.
+DR   EnsemblBacteria; BAB13029; BAB13029; BAB13029.
+DR   KEGG; buc:BU321; -.
+DR   PATRIC; fig|107806.10.peg.333; -.
+DR   eggNOG; COG0501; Bacteria.
+DR   HOGENOM; CLU_042266_1_0_6; -.
+DR   OMA; SRYREYV; -.
+DR   Proteomes; UP000001806; Chromosome.
+DR   GO; GO:0005886; C:plasma membrane; IEA:UniProtKB-SubCell.
+DR   GO; GO:0004222; F:metalloendopeptidase activity; IEA:UniProtKB-UniRule.
+DR   GO; GO:0008270; F:zinc ion binding; IEA:UniProtKB-UniRule.
+DR   GO; GO:0006508; P:proteolysis; IEA:UniProtKB-KW.
+DR   HAMAP; MF_00188; Pept_M48_protease_HtpX; 1.
+DR   InterPro; IPR022919; Pept_M48_protease_HtpX.
+DR   InterPro; IPR001915; Peptidase_M48.
+DR   Pfam; PF01435; Peptidase_M48; 1.
+PE   3: Inferred from homology;
+KW   Cell membrane; Hydrolase; Membrane; Metal-binding; Metalloprotease;
+KW   Protease; Reference proteome; Transmembrane; Transmembrane helix; Zinc.
+FT   CHAIN           1..292
+FT                   /note="Protease HtpX"
+FT                   /id="PRO_0000138856"
+FT   TRANSMEM        4..24
+FT                   /note="Helical"
+FT                   /evidence="ECO:0000255|HAMAP-Rule:MF_00188"
+FT   TRANSMEM        32..52
+FT                   /note="Helical"
+FT                   /evidence="ECO:0000255|HAMAP-Rule:MF_00188"
+FT   TRANSMEM        147..167
+FT                   /note="Helical"
+FT                   /evidence="ECO:0000255|HAMAP-Rule:MF_00188"
+FT   TRANSMEM        193..213
+FT                   /note="Helical"
+FT                   /evidence="ECO:0000255|HAMAP-Rule:MF_00188"
+FT   ACT_SITE        140
+FT                   /evidence="ECO:0000255|HAMAP-Rule:MF_00188"
+FT   BINDING         139
+FT                   /ligand="Zn(2+)"
+FT                   /ligand_id="ChEBI:CHEBI:29105"
+FT                   /ligand_note="catalytic"
+FT                   /evidence="ECO:0000255|HAMAP-Rule:MF_00188"
+FT   BINDING         143
+FT                   /ligand="Zn(2+)"
+FT                   /ligand_id="ChEBI:CHEBI:29105"
+FT                   /ligand_note="catalytic"
+FT                   /evidence="ECO:0000255|HAMAP-Rule:MF_00188"
+FT   BINDING         222
+FT                   /ligand="Zn(2+)"
+FT                   /ligand_id="ChEBI:CHEBI:29105"
+FT                   /ligand_note="catalytic"
+FT                   /evidence="ECO:0000255|HAMAP-Rule:MF_00188"
+SQ   SEQUENCE   292 AA;  32762 MW;  DA0135106794BA30 CRC64;
+     MTRIVLFLLT NLAVMLIFSL ILFLTGIQSN TIYGLLIMSG LFGFSGSILS LILSKWIALR
+     SVNGEIITHP RNEVESWLIN TVRQQSIQKG IIMPQIAVYH ATDINAFATG ARRNSALIAV
+     STGLLENMTH HEAEAVIAHE ISHIANGDMI TMTLVQGVVN TFVIFISRFL SQIISNVMSS
+     NRNENNTEEK NSFVYFLVST FLELIFGILA SIITMWFSRH REFYADASSA KMVGREKMIA
+     ALNRLKTSHE PQESDSMIAF CINGKSKSFL KLFASHPSLE NRIEALYNQE YM
+//
