@@ -1055,13 +1055,13 @@ def extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot
             if gene_name == []:
                 gene_name = ''
             else:
-                gene_name = gene_name[0]
+                gene_name = gene_name[0].split(' {')[0]
 
             protein_name = [data.replace('RecName: Full=', '') for data in record.description.split('; ') if 'RecName: Full' in data]
             if protein_name == []:
                 protein_name = ''
             else:
-                protein_name = protein_name[0]
+                protein_name = protein_name[0].split(' {')[0]
 
             output_dict[record.id] = [protein_name, reviewed, gos, ecs, interpros, rhea_ids, gene_name]
 

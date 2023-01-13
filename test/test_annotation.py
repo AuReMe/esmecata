@@ -23,22 +23,22 @@ UP000119554_ANOTATIONS = {'O91464': ['Genome polyprotein', 'UniProtKB reviewed (
                             ['13065', '21248'],
                             '']}
 
-TREMBL_ANNOTATIONS = {'A0A1B2H8S9': ['Siroheme synthase {ECO:0000256|HAMAP-Rule:MF_01646}', False,
+TREMBL_ANNOTATIONS = {'A0A1B2H8S9': ['Siroheme synthase', False,
         ['GO:0009236', 'GO:0043115', 'GO:0032259', 'GO:0019354', 'GO:0004851', 'GO:0051266', 'GO:0051287'],
         ['2.1.1.107', '4.99.1.4', '1.3.1.76'],
         ['IPR019478', 'IPR000878', 'IPR037115', 'IPR014776', 'IPR036291', 'IPR012409', 'IPR006367', 'IPR006366', 'IPR014777', 'IPR035996', 'IPR003043'],
-        ['RHEA:32459', 'RHEA:15613', 'RHEA:24360'], 'cysG {ECO:0000256|HAMAP-Rule:MF_01646}'],
-        'A0A0M4HE72': ['Dual-specificity RNA methyltransferase RlmN {ECO:0000256|HAMAP-Rule:MF_01849}', False,
+        ['RHEA:32459', 'RHEA:15613', 'RHEA:24360'], 'cysG'],
+        'A0A0M4HE72': ['Dual-specificity RNA methyltransferase RlmN', False,
         ['GO:0070040', 'GO:0070475', 'GO:0005737', 'GO:0000049', 'GO:0002935', 'GO:0051539', 'GO:0046872', 'GO:0019843'],
-        ['2.1.1.192'], ['IPR004383', 'IPR027492', 'IPR007197', 'IPR013785', 'IPR040072'], ['RHEA:43332', 'RHEA:42916'], 'rlmN {ECO:0000256|HAMAP-Rule:MF_01849}'],
+        ['2.1.1.192'], ['IPR004383', 'IPR027492', 'IPR007197', 'IPR013785', 'IPR040072'], ['RHEA:43332', 'RHEA:42916'], 'rlmN'],
         'A0A5A7R956': ['', False, ['GO:0003682'], [], ['IPR039276', 'IPR032001', 'IPR009057'], [], '']}
 
 SWISSPROT_ANNOTATIONS = {'P57136': ['Ribosomal RNA small subunit methyltransferase D', True,
     ['GO:0052913', 'GO:0003676'], ['2.1.1.171'], ['IPR004398', 'IPR029063', 'IPR002052'], ['RHEA:23548'], 'rsmD'],
     'P57634': ['Mannitol-1-phosphate 5-dehydrogenase', True, ['GO:0019594', 'GO:0008926'], ['1.1.1.17'],
     ['IPR036291', 'IPR013328', 'IPR008927', 'IPR000669', 'IPR023028', 'IPR013118', 'IPR013131'], ['RHEA:19661'], 'mtlD'],
-    'P57406': ['Protease HtpX {ECO:0000255|HAMAP-Rule:MF_00188}', True, ['GO:0008270', 'GO:0004222', 'GO:0006508', 'GO:0005886'],
-    ['3.4.24.-'], ['IPR022919', 'IPR001915'], [], 'htpX {ECO:0000255|HAMAP-Rule:MF_00188}']
+    'P57406': ['Protease HtpX', True, ['GO:0008270', 'GO:0004222', 'GO:0006508', 'GO:0005886'],
+    ['3.4.24.-'], ['IPR022919', 'IPR001915'], [], 'htpX']
     }
 
 
