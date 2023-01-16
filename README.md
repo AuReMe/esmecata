@@ -356,15 +356,15 @@ To add more annotations, esmecata can search the [UniRef](https://www.uniprot.or
 
 With this option, esmecata will extract the [expression information](https://www.uniprot.org/help/expression_section) associated with a protein. This contains 3 elements: Induction, Tissue specificity and Disruption Phenotype. At this moment, this option is only usable when using the `--sparql` option.
 
-* `--annotation-files`: use UniProt txt fiels instead of queyring Uniprot servers.
+* `--annotation-files`: use UniProt txt files instead of queyring Uniprot servers.
 
-As this step can require a high numbers of queries to UniProt servers, it can failed due to issue with the query.
+As the `annotation step` needs a high numbers of queries to UniProt servers when working with hundreds or thousands of taxonomic affliations, it can failed due to issues with the query.
 A workaround (for example on a cluster), is to use the UniProt flat files containing the protein annotations.
-Warning, the TrEMBL file takes a lot of space (around 150G compressed for the version 2022_05).
-One of the downside of this option is that it needs lof of memory to handle indexing the TrEMBL file (around 32G) and it stakes around 11h to parse it with Biopython.
-But for dataset with thousands of taxonomic affiliations, this can be compensated by the fact that queyring an indexed file is more stable than querying a server.
-For this option, you should give the path to the two annotation files separated by `,`such as: `--annotation-files /db/uniprot/UniProt_2022_05/flat/uniprot_sprot.dat,/db/uniprot/UniProt_2022_05/flat/uniprot_trembl.dat`.
-The names of the fiels must contained: `uniprot_sprot` and `uniprot_trembl`.
+Warning, the TrEMBL file takes a lot of space (around 150G compressed for the version 2022_05 andd 700G uncompressed).
+One of the downside of this option is that it needs lof of memory to handle indexing the TrEMBL file (around 32G using Biopython indexing) and it takes several hours to parse it.
+But for dataset with thousands of taxonomic affiliations, this can be compensated by the fact that queyring the indexed files is more stable than querying a server.
+For this option, you should give the path to the two annotation files (both the Swiss-Prot and the TrEMBL files) separated by `,`such as: `--annotation-files /db/uniprot/UniProt_2022_05/flat/uniprot_sprot.dat,/db/uniprot/UniProt_2022_05/flat/uniprot_trembl.dat`.
+The names of the files must contained: `uniprot_sprot` and `uniprot_trembl` to be able to differentiate them.
 
 ### `esmecata workflow`: Consecutive runs of the three steps
 
