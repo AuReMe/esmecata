@@ -1021,14 +1021,18 @@ def extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot
     ec_pattern = re.compile(r'EC=[\d]*(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?(?:\.[-\w\s]*)?[; ]')
 
     for protein_id in protein_to_search_on_uniprots:
-        if protein_id in uniprot_trembl_index:
-            record = uniprot_trembl_index[protein_id]
-            reviewed = False
-        elif protein_id in uniprot_sprot_index:
+        # First, checks if protein is in Swiss-Prot as it is smaller.
+        if protein_id in uniprot_sprot_index:
             record = uniprot_sprot_index[protein_id]
             reviewed = True
         else:
-            record = None
+            # If not, checks if protein is in TrEMBL.
+            if protein_id in uniprot_trembl_index:
+                record = uniprot_trembl_index[protein_id]
+                reviewed = False
+            else:
+                record = None
+
         if record is not None:
             ecs = [dbxref.replace('BRENDA:', '') for dbxref in record.dbxrefs if 'BRENDA' in dbxref]
 
