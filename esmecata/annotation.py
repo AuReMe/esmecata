@@ -1156,7 +1156,8 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
 
     input_files = sorted(list(set(input_files) - set(already_done_annotation)))
 
-    if annotation_files is not None:
+    # Do not index UniProt files if all the inputs have been already processed.
+    if annotation_files is not None and input_files != []:
         for annotation_file in annotation_files.split(','):
             if 'uniprot_trembl' in annotation_file:
                 logger.info('|EsMeCaTa|annotation| Indexing TrEMBL file.')
