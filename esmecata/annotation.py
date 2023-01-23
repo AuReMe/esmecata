@@ -1178,8 +1178,11 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         # First method to handle protein already annotated
         #protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
         # Second method to handle protein already annotated
-        if annotation_files is not None:
+        if annotation_files is None:
             protein_to_search_on_uniprots, output_dict = search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict)
+        else:
+            # Do not use with annotation files.
+            protein_to_search_on_uniprots = set_proteins
 
         # Extract protein annotations.
         if annotation_files is None:
