@@ -739,9 +739,9 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
         prot_review = line[4].split('^^')[0]
         # Check protein review.
         # If review == Swissprot else Trembl.
-        if prot_review == 'true':
+        if prot_review == 'true' or prot_review == '1':
             prefix_record = 'sp'
-        elif prot_review == 'false':
+        elif prot_review == 'false' or prot_review == '0':
             prefix_record = 'tr'
 
         # Take only the canonical sequences (ending with -1):
