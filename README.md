@@ -30,7 +30,7 @@ EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomic affiliati
 
 EsMeCaTa needs the following python packages:
  
-- [biopython](https://pypi.org/project/biopython/): To create fasta files.
+- [biopython](https://pypi.org/project/biopython/): To create fasta files and used by the option `--annotation-files` to index UniProt flat files.
 - [pandas](https://pypi.org/project/pandas/): To read the input files.
 - [requests](https://pypi.org/project/requests/): For the REST queries on Uniprot.
 - [ete3](https://pypi.org/project/ete3/): To analyse the taxonomic affiliation and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.

@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2023 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISADyliss
+# Copyright (C) 2021-2023 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -81,15 +81,13 @@ def run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb
     mmseqs_tmp_clustered_tabulated = mmseqs_tmp_cluster_output+'_cluster.tsv'
     mmseqs_tmp_representative_fasta = mmseqs_tmp_cluster_output + '_rep_seq.fasta'
     mmseqs_consensus_fasta = mmseqs_tmp_cluster_output + '_con_seq.fasta'
-    # Run mmmseqs to find rapidly protein clusters.
+    # Run mmmseqs to find protein clusters.
 
     # Code using mmseqs database and mmseqs modules to cluster instead of easy-cluster.
     mmseqs_tmp_db = os.path.join(mmseqs_tmp_cluster, 'db')
-    #mmseqs_tmp_db_h = os.path.join(mmseqs_tmp_cluster, 'db_h')
     mmseqs_tmp_db_clustered = os.path.join(mmseqs_tmp_cluster, 'cluster_db')
     mmseqs_tmp_cluster_tmp = os.path.join(mmseqs_tmp_cluster, 'cluster_tmp')
     mmseqs_seq_db =  os.path.join(mmseqs_tmp_cluster, 'cluster_seq')
-    #mmseqs_seq_db_h =  os.path.join(mmseqs_tmp_cluster, 'cluster_seq_h')
     mmseqs_profile =  os.path.join(mmseqs_tmp_cluster, 'cluster_profile')
     mmseqs_consensus =  os.path.join(mmseqs_tmp_cluster, 'cluster_consensus')
 
@@ -115,8 +113,8 @@ def run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb
 
         subprocess.call(cluster_cmd)
 
+        # Create sequence database with representative from the clustered proteins.
         subprocess.call(['mmseqs', 'createsubdb', mmseqs_tmp_db_clustered, mmseqs_tmp_db, mmseqs_seq_db, '-v', '2'])
-        #subprocess.call(['mmseqs', 'createsubdb', mmseqs_tmp_db_clustered, mmseqs_tmp_db_h, mmseqs_seq_db_h, '-v', '2'])
         # Create the profile from the clustering.
         subprocess.call(['mmseqs', 'result2profile', mmseqs_seq_db, mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_profile, '--threads', str(nb_cpu), '-v', '2'])
         # Create the consensus from the profile.
