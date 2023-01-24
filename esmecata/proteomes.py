@@ -921,8 +921,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     # Download Uniprot metadata and create a json file containing them.
     options = {'input_file': input_file, 'output_folder': output_folder, 'busco_percentage_keep': busco_percentage_keep,
-                        'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
-                        'limit_maximal_number_proteomes': limit_maximal_number_proteomes}
+                    'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
+                    'limit_maximal_number_proteomes': limit_maximal_number_proteomes, 'rank_limit': rank_limit,
+                    'minimal_number_proteomes': minimal_number_proteomes}
 
     # Collect dependencies metadata.
     options['tool_dependencies'] = {}

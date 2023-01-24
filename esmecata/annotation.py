@@ -13,6 +13,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
 import csv
+import datetime
 import json
 import logging
 import os
@@ -1117,7 +1118,8 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
 
     # Download Uniprot metadata and create a json file containing them.
     options = {'input_folder': input_folder, 'output_folder': output_folder, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
-                'propagate_annotation': propagate_annotation, 'uniref_annotation': uniref_annotation, 'expression_annotation': expression_annotation}
+                'propagate_annotation': propagate_annotation, 'uniref_annotation': uniref_annotation, 'expression_annotation': expression_annotation,
+                'annotation_files': annotation_files}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
@@ -1126,10 +1128,18 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
     options['tool_dependencies']['python_package']['SPARQLWrapper'] = sparqlwrapper_version
     options['tool_dependencies']['python_package']['urllib'] = urllib.request.__version__
 
-    if uniprot_sparql_endpoint:
-        uniprot_releases = get_sparql_uniprot_release(uniprot_sparql_endpoint, options)
+    if annotation_files is None:
+        if uniprot_sparql_endpoint:
+            uniprot_releases = get_sparql_uniprot_release(uniprot_sparql_endpoint, options)
+        else:
+            uniprot_releases = get_rest_uniprot_release(options)
     else:
-        uniprot_releases = get_rest_uniprot_release(options)
+        uniprot_releases = {}
+        uniprot_releases['esmecata_query_system'] = 'UniProt flat files'
+        uniprot_releases['uniprot_flat_files_path'] = annotation_files.split(',')
+        date = datetime.datetime.now().strftime('%d-%B-%Y %H:%M:%S')
+        uniprot_releases['access_time'] = date
+        uniprot_releases['tool_options'] = options
 
     proteome_tax_id_file = os.path.join(input_folder, 'proteome_tax_id.tsv')
 
