@@ -619,6 +619,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
     # If there is more than limit_maximal_number_proteomes proteomes a method is applied to extract a subset of the data.
     logger.info('|EsMeCaTa|proteomes| Find proteome ID associated with taxonomic affiliation')
     proteomes_ids = {}
+    proteome_data = {}
     single_proteomes = {}
     tax_id_not_founds = {}
     tax_id_without_minimal_proteomes_number = {}
@@ -632,6 +633,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
             # If tax_id has already been found use the corresponding proteomes without new requests.
             if tax_id in tax_id_founds:
                 proteomes_ids[observation_name] = (tax_id, tax_id_founds[tax_id])
+                proteomes_descriptions.append(proteome_data[tax_id])
                 if len(tax_id_founds[tax_id]) == 1:
                     single_proteomes[observation_name] = (tax_id, tax_id_founds[tax_id])
                 break
@@ -651,6 +653,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
 
             for data_proteome in data_proteomes:
                 proteomes_descriptions.append([tax_id, tax_name, *data_proteome])
+            proteome_data[tax_id] = proteomes_descriptions
 
             # Answer is empty no corresponding proteomes to the tax_id.
             if len(proteomes) == 0:

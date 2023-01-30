@@ -1176,13 +1176,11 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
                 logger.info('|EsMeCaTa|annotation| Indexing Swiss-Prot file.')
                 uniprot_sprot_index = SeqIO.index(annotation_file, 'swiss')
 
-    for index, input_file in enumerate(input_files):
-        logger.info('|EsMeCaTa|annotation| Annotation of %s (%d on %d data to annotate).', input_file, index+1, len(input_files))
-        base_file = os.path.basename(input_file)
-        base_filename = os.path.splitext(base_file)[0]
+    for index, base_filename in enumerate(input_files):
+        logger.info('|EsMeCaTa|annotation| Annotation of %s (%d on %d data to annotate).', base_filename, index+1, len(input_files))
 
         output_dict = {}
-        reference_protein_pathname = os.path.join(reference_protein_path, input_file+'.tsv')
+        reference_protein_pathname = os.path.join(reference_protein_path, base_filename+'.tsv')
         reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
 
         # First method to handle protein already annotated
