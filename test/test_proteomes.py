@@ -59,7 +59,7 @@ def test_filter_rank_limit():
 def test_organism_ids():
     ncbi = NCBITaxa()
     proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', '9', 'Buchnera aphidicola', 80, None, None)
-    print(proteomes, organism_ids, proteomes_data)
+
     selected_proteomes = subsampling_proteomes(organism_ids, 10, ncbi)
     expected_organism_ids = {'224915': ['UP000000601'], '107806': ['UP000001806']}
     for org_id in expected_organism_ids:
