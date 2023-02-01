@@ -412,8 +412,10 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
                     organism_ids[org_tax_id].append(proteome_id)
         proteomes_data.append([proteome_id, busco_score, assembly_level, org_tax_id, representative_proteome])
 
+    # In REST queries, reference proteomes are not associated with non-reference proteome tag (compared to SPARQL query).
+    # So to have both of them with all_proteomes otpion, we need to add other_proteomes to representative_proteomes.
     if all_proteomes is not None:
-        proteomes = other_proteomes
+        proteomes = other_proteomes + representative_proteomes
     else:
         if len(representative_proteomes) == 0:
             logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
@@ -485,6 +487,8 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     organism_ids = {}
     reference_proteomes = []
     other_proteomes = []
+
+    # There can be multiple lines for a same proteomes (especially with reference proteomes being also associated with reference and non-reference proteomes).
     for line in csvreader:
         proteome_id = line[0].split('/')[-1]
         if line[1] != '':
@@ -513,9 +517,9 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         # Check that proteome has busco score.
         if busco_percentage_keep:
             if busco_percentage and busco_percentage >= busco_percentage_keep and completness == 'full':
-                if reference == True:
+                if reference is True:
                     reference_proteomes.append(proteome_id)
-                else:
+                elif reference is False:
                     other_proteomes.append(proteome_id)
                 if org_tax_id not in organism_ids:
                     organism_ids[org_tax_id] = [proteome_id]
@@ -525,7 +529,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
             if completness == 'full':
                 if reference == True:
                     reference_proteomes.append(proteome_id)
-                else:
+                elif reference is False:
                     other_proteomes.append(proteome_id)
                 if org_tax_id not in organism_ids:
                     organism_ids[org_tax_id] = [proteome_id]
@@ -533,12 +537,19 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
                     organism_ids[org_tax_id].append(proteome_id)
 
         proteomes_data.append([proteome_id, busco_percentage, completness, org_tax_id, reference])
+
+    # In SPARQL reference proteomes are also labelled as non-reference proteome (with 'http://purl.uniprot.org/core/Proteome').
+    # To use both reference and non-reference proteomes, use only other_proteomes.
+    # To use only non-reference proteomes, we need to remove reference proteomes from other_proteomes.
+    other_proteomes = set(other_proteomes)
+    reference_proteomes = set(reference_proteomes)
+
     if all_proteomes is not None:
         proteomes = other_proteomes
     else:
         if len(reference_proteomes) == 0:
             logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
-            proteomes = other_proteomes
+            proteomes = other_proteomes - set(reference_proteomes)
         else:
             proteomes = reference_proteomes
 
