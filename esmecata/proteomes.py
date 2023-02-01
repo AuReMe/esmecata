@@ -345,20 +345,10 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         session = requests.Session()
         session.mount("https://", HTTPAdapter(max_retries=retries))
 
-    proteomes = []
-    proteomes_data = []
-    organism_ids = {}
     # Find proteomes associated with taxon.
-    # Take reference proteomes with "reference:yes".
-    # Avoid redundant and excluded proteomes with "redundant%3Ano+excluded%3Ano".
-    # Use "format=tab" to easily handle the ouput.
-    httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A1)&format=json&size=500'.format(tax_id)
-
-    if all_proteomes:
-        httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json&size=500'.format(tax_id)
-
-    # If esmecata does not find proteomes with only reference, search for all poroteomes even if they are not reference.
-    all_http_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json&size=500'.format(tax_id)
+    # Search for both representative and non-representative proteomes (with proteome_type%3A2 for non-representative proteome (or Other proteome) and proteome_type%3A1) for representative proteome).
+    # Remove redundant and excluded proteomes.
+    httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND((proteome_type%3A2)OR(proteome_type%3A1))&format=json&size=500'.format(tax_id)
 
     data = {}
     data['results'] = []
@@ -366,15 +356,10 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         batch_json = batch_reponse.json()
         data['results'].extend(batch_json['results'])
 
-    reference_proteome = True
-    if len(data['results']) == 0:
-        logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
-        time.sleep(1)
-        for batch_reponse in get_batch(session, all_http_str):
-            batch_json = batch_reponse.json()
-            data['results'].extend(batch_json['results'])
-        reference_proteome = False
-
+    organism_ids = {}
+    proteomes_data = []
+    representative_proteomes = []
+    other_proteomes = []
     for proteome_data in data['results']:
         proteome_id = proteome_data['id']
         if 'proteomeCompletenessReport' in proteome_data:
@@ -394,22 +379,47 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         else:
             assembly_level = ''
         org_tax_id = str(proteome_data['taxonomy']['taxonId'])
+
+        # Check proteome type for representative or non-representative.
         proteome_type = proteome_data['proteomeType']
+
+        if proteome_type in ['Representative proteome', 'Reference and representative proteome', 'Reference proteome']:
+            representative_proteome = True
+        elif proteome_type == 'Other proteome':
+            representative_proteome = False
+
         if busco_percentage_keep:
             if busco_score and busco_score >= busco_percentage_keep and assembly_level == 'full':
-                proteomes.append(proteome_id)
+                if representative_proteome is True:
+                    representative_proteomes.append(proteome_id)
+                elif representative_proteome is False:
+                    other_proteomes.append(proteome_id)
+
                 if org_tax_id not in organism_ids:
                     organism_ids[org_tax_id] = [proteome_id]
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
         else:
             if assembly_level == 'full':
-                proteomes.append(proteome_id)
+                if representative_proteome is True:
+                    representative_proteomes.append(proteome_id)
+                elif representative_proteome is False:
+                    other_proteomes.append(proteome_id)
+
                 if org_tax_id not in organism_ids:
                     organism_ids[org_tax_id] = [proteome_id]
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
-        proteomes_data.append([proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome])
+        proteomes_data.append([proteome_id, busco_score, assembly_level, org_tax_id, representative_proteome])
+
+    if all_proteomes is not None:
+        proteomes = other_proteomes
+    else:
+        if len(representative_proteomes) == 0:
+            logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
+            proteomes = other_proteomes
+        else:
+            proteomes = representative_proteomes
 
     return proteomes, organism_ids, proteomes_data
 
@@ -491,7 +501,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
             missing = None
         org_tax_id = line[4].split('/')[-1]
         completness = line[5]
-        if 'Representative_Proteome' in line[6]:
+        if 'Representative_Proteome' in line[6] or 'Reference_Proteome' in line[6]:
             reference = True
         else:
             reference = False

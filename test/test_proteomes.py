@@ -59,6 +59,7 @@ def test_filter_rank_limit():
 def test_organism_ids():
     ncbi = NCBITaxa()
     proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', '9', 'Buchnera aphidicola', 80, None, None)
+    print(proteomes, organism_ids, proteomes_data)
     selected_proteomes = subsampling_proteomes(organism_ids, 10, ncbi)
     expected_organism_ids = {'224915': ['UP000000601'], '107806': ['UP000001806']}
     for org_id in expected_organism_ids:
@@ -98,10 +99,10 @@ def test_rest_query_proteomes():
     time.sleep(1)
 
     assert set(expected_proteoems) == set(proteomes)
-    for organism in organism_ids:
-        assert set(organism_ids[organism]) == set(expected_organism_ids[organism])
-    for index, data in enumerate(sorted(proteomes_data)):
-        assert sorted(expected_proteome_data)[index] == data
+    for organism in expected_organism_ids:
+        assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
+    for data in expected_proteome_data:
+        assert data in proteomes_data
 
 
 def test_find_proteomes_tax_ids():
@@ -136,9 +137,9 @@ def test_sparql_find_proteomes_tax_ids():
 
 
 if __name__ == "__main__":
-    test_find_proteomes_tax_ids()
-    test_disambiguate_taxon()
-    test_find_proteomes_tax_ids()
-    test_subsampling_proteomes()
-    test_organism_ids()
+    #test_find_proteomes_tax_ids()
+    #test_disambiguate_taxon()
+    #test_subsampling_proteomes()
+    #test_organism_ids()
     #test_sparql_find_proteomes_tax_ids()
+    test_rest_query_proteomes()
