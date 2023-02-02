@@ -200,7 +200,9 @@ def main():
         '--rank-limit',
         dest='rank_limit',
         required=False,
-        help='This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).',
+        help='''This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. \
+            For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. \
+            Look at the readme for more information (and a list of rank names).''',
         default=None)
     parent_parser_minimal_number_proteomes = argparse.ArgumentParser(add_help=False)
     parent_parser_minimal_number_proteomes.add_argument(

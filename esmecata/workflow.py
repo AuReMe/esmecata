@@ -96,7 +96,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         remove_tmp (bool): remove the tmp files
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        rank_limit (str): rank limit to remove from the data
+        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
         nb_cpu (int): number of CPUs to be used by mmseqs
         clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
         mmseqs_options (str): use alternative mmseqs option

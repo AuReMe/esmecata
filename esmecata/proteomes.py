@@ -12,6 +12,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
+import copy
 import csv
 import gzip
 import json
@@ -216,15 +217,15 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
 
 
 def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
-    """Using the rank_limit specificied, remove the taxon associated with this rank.
-    For example, if rank_limit == 'superkingdom', Bacteria will be removed.
+    """Using the rank_limit specificied, remove the taxon superior to this rank.
+    For example, if rank_limit == 'family', taxa associated to rank superior to family will be removed.
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
         ncbi (ete3.NCBITaxa()): ete3 NCBI database
-        rank_limit (str): rank limit to remove from the data
+        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
     Returns:
-        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
+        output_json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
     """
     # Rank level from Supplementary Table S3 of https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/
     rank_level = {'superkingdom': 1, 'kingdom': 2, 'subkingdom': 3, 'superphylum': 4,
@@ -240,10 +241,12 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
     non_hierarchical_ranks = ['clade', 'environmental samples', 'incertae sedis', 'no rank'] + unclassified_rank
 
     rank_limit_level = rank_level[rank_limit]
-    rank_to_keeps = [rank for rank in rank_level if rank_level[rank] > rank_limit_level]
+    rank_to_keeps = [rank for rank in rank_level if rank_level[rank] >= rank_limit_level]
 
-    for observation_name in json_taxonomic_affiliations:
-        observation_name_taxons = json_taxonomic_affiliations[observation_name]
+    # Create a deep copy of the input dictionary, as we will modified this dictionary.
+    output_json_taxonomic_affiliations = copy.deepcopy(json_taxonomic_affiliations)
+    for observation_name in output_json_taxonomic_affiliations:
+        observation_name_taxons = output_json_taxonomic_affiliations[observation_name]
         tax_keep = []
         tax_ranks = {}
         tax_names = {}
@@ -273,10 +276,10 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
             else:
                 tax_keep.append(False)
 
-        # If the rank to remove is in the tax_ranks, keep all the rank below this rank.
+        # If the rank limit is in the tax_ranks, keep all the rank below this rank and this rank.
         if rank_limit in tax_ranks:
             tax_rank_max_index = tax_rank_position[rank_limit]
-            keep_tax_ids = [tax_id[0] for tax_name, tax_id in list(observation_name_taxons.items())[tax_rank_max_index+1:]]
+            keep_tax_ids = [tax_id[0] for _, tax_id in list(observation_name_taxons.items())[tax_rank_max_index:]]
         # If not find all the rank below this rank (by using rank_level and rank_to_keeps) in the list and keep them.
         # Use the tax_keep to keep non_hierarchical_ranks below the rank to remove.
         # But they need to be below a hierarchical rank that has been checked as being below the rank to remove.
@@ -289,9 +292,9 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
         # Delete the remvoed rank and all its superior.
         for tax_id in tax_id_to_deletes:
             tax_name = tax_names[tax_id]
-            del json_taxonomic_affiliations[observation_name][tax_name]
+            del output_json_taxonomic_affiliations[observation_name][tax_name]
 
-    return json_taxonomic_affiliations
+    return output_json_taxonomic_affiliations
 
 
 def requests_query(http_str, nb_retry=5):
@@ -540,7 +543,6 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
 
     # In SPARQL reference proteomes are also labelled as non-reference proteome (with 'http://purl.uniprot.org/core/Proteome').
     # To use both reference and non-reference proteomes, use only other_proteomes.
-    # To use only non-reference proteomes, we need to remove reference proteomes from other_proteomes.
     other_proteomes = set(other_proteomes)
     reference_proteomes = set(reference_proteomes)
 
@@ -549,7 +551,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     else:
         if len(reference_proteomes) == 0:
             logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
-            proteomes = other_proteomes - set(reference_proteomes)
+            proteomes = other_proteomes
         else:
             proteomes = reference_proteomes
 
@@ -621,7 +623,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
     """Find proteomes associated with taxonomic affiliations
 
     Args:
-        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping between taxon name and taxon ID (with remove rank specified)
         ncbi (ete3.NCBITaxa()): ete3 NCBI database
         proteomes_description_folder (str): pathname to the proteomes_description_folder
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
@@ -824,7 +826,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        rank_limit (str): rank limit to remove from the data
+        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
     """
     starttime = time.time()

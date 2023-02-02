@@ -47,12 +47,49 @@ def test_disambiguate_taxon():
 
 def test_filter_rank_limit():
     ncbi = NCBITaxa()
-    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
-    json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
-    json_taxonomic_affiliations = filter_rank_limit(json_taxonomic_affiliations, ncbi, 'superkingdom')
+    tax_id_names, input_json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
+    input_json_taxonomic_affiliations = disambiguate_taxon(input_json_taxonomic_affiliations, ncbi)
     expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('Proteobacteria', [1224]), ('Gammaproteobacteria', [1236]), ('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]), ('Yersinia', [629]), ('species not found', ['not_found'])])}
 
-    for taxon in expected_json_taxonomic_affiliations['id_1']:
+    # Keep genus and inferior (here Yersinia).
+    json_taxonomic_affiliations = filter_rank_limit(input_json_taxonomic_affiliations, ncbi, 'genus')
+    expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('Yersinia', [629]), ('species not found', ['not_found'])])}
+    for taxon in json_taxonomic_affiliations['id_1']:
+        assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
+
+    # Keep family and inferior (here Yersiniaceae).
+    json_taxonomic_affiliations = filter_rank_limit(input_json_taxonomic_affiliations, ncbi, 'family')
+    expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('Yersiniaceae', [1903411]), ('Yersinia', [629]), ('species not found', ['not_found'])])}
+    for taxon in json_taxonomic_affiliations['id_1']:
+        assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
+
+    # Keep order and inferior (here Enterobacterales).
+    json_taxonomic_affiliations = filter_rank_limit(input_json_taxonomic_affiliations, ncbi, 'order')
+    expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]),
+                                                                ('Yersinia', [629]), ('species not found', ['not_found'])])}
+    for taxon in json_taxonomic_affiliations['id_1']:
+        assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
+
+    # Keep class and inferior (here Gammaproteobacteria).
+    json_taxonomic_affiliations = filter_rank_limit(input_json_taxonomic_affiliations, ncbi, 'class')
+    expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('Gammaproteobacteria', [1236]), ('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]),
+                                                                ('Yersinia', [629]), ('species not found', ['not_found'])])}
+    for taxon in json_taxonomic_affiliations['id_1']:
+        assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
+
+    # Keep infraphylum and inferior (here Gammaproteobacteria, as the phylum is superior to infraphylum).
+    json_taxonomic_affiliations = filter_rank_limit(input_json_taxonomic_affiliations, ncbi, 'infraphylum')
+    expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('Gammaproteobacteria', [1236]), ('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]),
+                                                                ('Yersinia', [629]), ('species not found', ['not_found'])])}
+    for taxon in json_taxonomic_affiliations['id_1']:
+        assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
+
+    # Keep superkingdom and inferior (here Bacteria).
+    json_taxonomic_affiliations = filter_rank_limit(input_json_taxonomic_affiliations, ncbi, 'superkingdom')
+    expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('Bacteria', [2]), ('Proteobacteria', [1224]),
+                                        ('Gammaproteobacteria', [1236]), ('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]),
+                                        ('Yersinia', [629]), ('species not found', ['not_found'])])}
+    for taxon in json_taxonomic_affiliations['id_1']:
         assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
 
 
@@ -212,5 +249,6 @@ if __name__ == "__main__":
     #test_sparql_find_proteomes_tax_ids()
     #test_rest_query_proteomes()
     #test_find_non_reference_proteome_rest()
-    test_find_proteome_rest_all_proteomes()
-    test_find_proteome_sparql_all_proteomes()
+    #test_find_proteome_rest_all_proteomes()
+    #test_find_proteome_sparql_all_proteomes()
+    test_filter_rank_limit()

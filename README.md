@@ -148,7 +148,7 @@ optional arguments:
   -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
                         Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
-                        This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
+                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more information (and a list of rank names).
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
 ````
@@ -198,11 +198,11 @@ To avoid working on too little proteomes, it is possible to give an int to this 
 With this int, esmecata will select only taxon associated to at least this number of proteomes.
 For example if you use `--minimal-nb-proteomes 10`, and the lowest taxon in the taxonomic affiliation is associated with 3 proteomes, it will be ignored and a taxon with a higer taxonomic rank will be used.
 
-* `-r/--rank-limit`: This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored.
+* `-r/--rank-limit`: This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept.
 
 To avoid working on rank with too much proteomes (which can have an heavy impact on the number of proteomes downloaded and then on the clustering) it is possible to select a limit on the taxonomic rank used by the tool.
 
-The selected rank will be used to find the ranks to keep. For example, if the rank 'phylum' is given, all the rank below (from subphylum to isolate) will be kept. And the ranks from phylum to superkingdom will be ignored when searching for proteomes.
+The selected rank will be used to find the ranks to keep. For example, if the rank 'phylum' is given, this rank and all the rank below (from phylum to isolate) will be kept. And the ranks from superphylum to superkingdom will be ignored when searching for proteomes.
 The following ranks can be given to this option (from Supplementary Table S3 of [PMC7408187](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/)):
 
 |Level           |Rank            |
@@ -249,7 +249,7 @@ The following ranks can be given to this option (from Supplementary Table S3 of 
 |40              |strain          |
 |41              |isolate         |
 
-Some ranks (which are not non-hierarchical) are not used for the moment when using this method (so some taxons can be removed whereas they are below a kept rank):
+Some ranks (which are not non-hierarchical) are not used for the moment when using this method (so some taxa can be removed whereas they are below a kept rank):
 
 |Level           |Rank                   |Note                                                                                              |
 |----------------|-----------------------|--------------------------------------------------------------------------------------------------|
@@ -400,7 +400,7 @@ optional arguments:
   --uniref              Use uniref cluster to extract more annotations from the representative member of the cluster associated with the proteins. Needs the --sparql option.
   --expression          Extract expression information associated with the proteins. Needs the --sparql option.
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
-                        This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).
+                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more information (and a list of rank names).
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
   --annotation-files ANNOTATION_FILES
