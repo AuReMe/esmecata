@@ -7,7 +7,7 @@ from ete3 import NCBITaxa
 
 from esmecata.proteomes import taxonomic_affiliation_to_taxon_id, associate_taxon_to_taxon_id, \
                                 disambiguate_taxon, find_proteomes_tax_ids, filter_rank_limit, \
-                                rest_query_proteomes, subsampling_proteomes
+                                rest_query_proteomes, sparql_query_proteomes, subsampling_proteomes
 
 TAXONOMIES = {'id_1': 'cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia;species not found'}
 
@@ -105,6 +105,74 @@ def test_rest_query_proteomes():
         assert data in proteomes_data
 
 
+def test_find_non_reference_proteome_rest():
+    expected_proteoems = ['UP000829720']
+    expected_organism_ids = {'1534307': ['UP000829720']}
+    expected_proteome_data = [['UP000824540', None, 'full', '121402', False], ['UP000829720', 85.71428571428571, 'full', '1534307', False]]
+
+    proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 54906, 'Albuliformes', 0.8, all_proteomes=None)
+
+    time.sleep(1)
+
+    assert set(expected_proteoems) == set(proteomes)
+    for organism in expected_organism_ids:
+        assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
+    for data in expected_proteome_data:
+        assert data in proteomes_data
+
+
+def test_find_proteome_rest_all_proteomes():
+    expected_proteoems = {'UP000036680', 'UP000267096', 'UP000036681', 'UP000267007', 'UP000050794', 'UP000031036'}
+    expected_organism_ids = {'6252': ['UP000036681'], '6265': ['UP000050794', 'UP000031036', 'UP000031036', 'UP000267007'], '6269': ['UP000267096', 'UP000267096', 'UP000036680']}
+    expected_proteome_data =  [['UP000031036', 87.70360907058448, 'full', '6265', True], ['UP000267096', 64.58000638773555, 'full', '6269', True],
+                            ['UP000036680', 64.58000638773555, 'full', '6269', False], ['UP000036681', 49.66464388374322, 'full', '6252', False],
+                            ['UP000050794', 77.96231236026829, 'full', '6265', False], ['UP000267007', 77.8984350047908, 'full', '6265', False]]
+
+    proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 33256, 'Ascaridoidea', 0.8, all_proteomes=True)
+    print(proteomes_data)
+    time.sleep(1)
+
+    assert set(expected_proteoems) == set(proteomes)
+    for organism in expected_organism_ids:
+        assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
+    for data in expected_proteome_data:
+        assert data in proteomes_data
+
+
+def test_find_non_reference_proteome_sparql():
+    expected_proteoems = ['UP000829720']
+    expected_organism_ids = {'1534307': ['UP000829720']}
+    expected_proteome_data = [['UP000824540', None, 'full', '121402', False], ['UP000829720', 85.71428571428571, 'full', '1534307', False]]
+
+    proteomes, organism_ids, proteomes_data = sparql_query_proteomes('test', 54906, 'Albuliformes', 0.8, all_proteomes=None)
+
+    time.sleep(1)
+
+    assert set(expected_proteoems) == set(proteomes)
+    for organism in expected_organism_ids:
+        assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
+    for data in expected_proteome_data:
+        assert data in proteomes_data
+
+
+def test_find_proteome_sparql_all_proteomes():
+    expected_proteoems = {'UP000036680', 'UP000267096', 'UP000036681', 'UP000267007', 'UP000050794', 'UP000031036'}
+    expected_organism_ids = {'6252': ['UP000036681'], '6265': ['UP000050794', 'UP000031036', 'UP000031036', 'UP000267007'], '6269': ['UP000267096', 'UP000267096', 'UP000036680']}
+    expected_proteome_data = [['UP000036681', 49.66464388374322, 'full', '6252', False], ['UP000050794', 77.96231236026829, 'full', '6265', False],
+                            ['UP000031036', 87.70360907058448, 'full', '6265', False], ['UP000031036', 87.70360907058448, 'full', '6265', True],
+                            ['UP000267007', 77.8984350047908, 'full', '6265', False], ['UP000267096', 64.58000638773555, 'full', '6269', False],
+                            ['UP000267096', 64.58000638773555, 'full', '6269', True], ['UP000036680', 64.58000638773555, 'full', '6269', False]]
+
+    proteomes, organism_ids, proteomes_data = sparql_query_proteomes('test', 33256, 'Ascaridoidea', 0.8, all_proteomes=True)
+    time.sleep(1)
+
+    assert set(expected_proteoems) == set(proteomes)
+    for organism in expected_organism_ids:
+        assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
+    for data in expected_proteome_data:
+        assert data in proteomes_data
+
+
 def test_find_proteomes_tax_ids():
     expected_proteomes_ids = {'id_1': (629, ['UP000000815', 'UP000255169'])}
     ncbi = NCBITaxa()
@@ -142,4 +210,7 @@ if __name__ == "__main__":
     #test_subsampling_proteomes()
     #test_organism_ids()
     #test_sparql_find_proteomes_tax_ids()
-    test_rest_query_proteomes()
+    #test_rest_query_proteomes()
+    #test_find_non_reference_proteome_rest()
+    test_find_proteome_rest_all_proteomes()
+    test_find_proteome_sparql_all_proteomes()
