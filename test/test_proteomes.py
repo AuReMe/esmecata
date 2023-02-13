@@ -179,7 +179,6 @@ def test_find_proteome_rest_all_proteomes():
                             ['UP000050794', 77.96231236026829, 'full', '6265', False], ['UP000267007', 77.8984350047908, 'full', '6265', False]]
 
     proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 33256, 'Ascaridoidea', 0.8, all_proteomes=True)
-    print(proteomes_data)
     time.sleep(1)
 
     assert set(expected_proteoems) == set(proteomes)

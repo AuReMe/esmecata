@@ -182,13 +182,15 @@ def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, n
     return tax_ids_to_names, taxon_ids
 
 
-def associate_taxon_to_taxon_id(taxonomic_affiliations, update_affiliations=None, ncbi=None):
+def associate_taxon_to_taxon_id(taxonomic_affiliations, update_affiliations=None, ncbi=None, output_folder=None):
     """ From a dictionary containing multiple taxonomic affiliations, find the taxon ID for each.
 
     Args:
         taxonomic_affiliations (dict): dictionary with observation name as key and taxonomic affiliation as value
         update_affiliations (str): option to update taxonomic affiliations.
         ncbi (ete3.NCBITaxa()): ete3 NCBI database.
+        output_folder (str): pathname to output folder.
+
     Returns:
         tax_id_names (dict): mapping between taxon ID and taxon name
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
@@ -200,15 +202,26 @@ def associate_taxon_to_taxon_id(taxonomic_affiliations, update_affiliations=None
         logger.critical('|EsMeCaTa|proteomes| Empty taxonomy dictionary.')
         return
 
+    new_taxonomic_affiliations = []
     # For each taxon find the taxon ID corresponding to each taxon.
     for observation_name in taxonomic_affiliations:
         taxonomic_affiliation = taxonomic_affiliations[observation_name]
         if isinstance(taxonomic_affiliation, str):
             if update_affiliations is not None:
                 taxonomic_affiliation = update_taxonomy(observation_name, taxonomic_affiliation, ncbi)
+                new_taxonomic_affiliations.append([observation_name, taxonomic_affiliation])
             tax_ids_to_names, taxon_ids = taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi)
             tax_id_names.update(tax_ids_to_names)
             json_taxonomic_affiliations[observation_name] = taxon_ids
+
+    if update_affiliations:
+        # Write new taxonomic file if update-affiliations.
+        new_taxon_file = os.path.join(output_folder, 'new_taxonomic_affiliation.tsv')
+        with open(new_taxon_file, 'w') as output_file:
+            csvwriter = csv.writer(output_file, delimiter='\t')
+            csvwriter.writerow(['observation_name', 'taxonomic_affiliation'])
+            for new_taxonomic_affiliation in new_taxonomic_affiliations:
+                csvwriter.writerow(new_taxonomic_affiliation)
 
     return tax_id_names, json_taxonomic_affiliations
 
@@ -924,7 +937,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     if not os.path.exists(proteome_tax_id_file):
         ncbi = NCBITaxa()
 
-        tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi)
+        tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi, output_folder)
 
         json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
 
