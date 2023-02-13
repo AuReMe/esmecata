@@ -7,7 +7,8 @@ from ete3 import NCBITaxa
 
 from esmecata.proteomes import taxonomic_affiliation_to_taxon_id, associate_taxon_to_taxon_id, \
                                 disambiguate_taxon, find_proteomes_tax_ids, filter_rank_limit, \
-                                rest_query_proteomes, sparql_query_proteomes, subsampling_proteomes
+                                rest_query_proteomes, sparql_query_proteomes, subsampling_proteomes, \
+                                update_taxonomy
 
 TAXONOMIES = {'id_1': 'cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia;species not found'}
 
@@ -25,7 +26,8 @@ def test_taxonomic_affiliation_to_taxon_id():
 
 def test_associate_taxon_to_taxon_id():
     ncbi = NCBITaxa()
-    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
+    update_affiliations = None
+    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, update_affiliations, ncbi)
     expected_tax_id_names = {2: 'Bacteria', 131567: 'cellular organisms', 91347: 'Enterobacterales', 1236: 'Gammaproteobacteria', 1224: 'Proteobacteria', 629: 'Yersinia', 444888: 'Yersinia', 1903411: 'Yersiniaceae'}
     expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('cellular organisms', [131567]), ('Bacteria', [2]), ('Proteobacteria', [1224]), ('Gammaproteobacteria', [1236]), ('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]), ('Yersinia', [629, 444888]), ('species not found', ['not_found'])])}
 
@@ -37,7 +39,8 @@ def test_associate_taxon_to_taxon_id():
 
 def test_disambiguate_taxon():
     ncbi = NCBITaxa()
-    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
+    update_affiliations = None
+    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, update_affiliations, ncbi)
     json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
     expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('cellular organisms', [131567]), ('Bacteria', [2]), ('Proteobacteria', [1224]), ('Gammaproteobacteria', [1236]), ('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]), ('Yersinia', [629]), ('species not found', ['not_found'])])}
 
@@ -47,7 +50,8 @@ def test_disambiguate_taxon():
 
 def test_filter_rank_limit():
     ncbi = NCBITaxa()
-    tax_id_names, input_json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
+    update_affiliations = None
+    tax_id_names, input_json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, update_affiliations, ncbi)
     input_json_taxonomic_affiliations = disambiguate_taxon(input_json_taxonomic_affiliations, ncbi)
     expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('Proteobacteria', [1224]), ('Gammaproteobacteria', [1236]), ('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]), ('Yersinia', [629]), ('species not found', ['not_found'])])}
 
@@ -125,6 +129,15 @@ def test_subsampling_proteomes():
     expected_proteomes_representation = {'562': 5, '2562891': 1, '208962': 3, '564': 2}
     for org_id in Counter(selected_organisms):
         assert Counter(selected_organisms)[org_id] == expected_proteomes_representation[org_id]
+
+
+def test_update_taxonomy():
+    outdated_taxonomic_affiliation = 'Firmicutes;Bacilli;Bacillales;Bacilliaceae;Bacillus'
+    new_taxonomic_affiliation = update_taxonomy('test', outdated_taxonomic_affiliation)
+
+    expected_taconomic_affiliation = 'root;cellular organisms;Bacteria;Terrabacteria group;Bacillota;Bacilli;Bacillales;Bacillaceae;Bacillus'
+
+    assert new_taxonomic_affiliation == expected_taconomic_affiliation
 
 
 def test_rest_query_proteomes():
@@ -213,7 +226,8 @@ def test_find_proteome_sparql_all_proteomes():
 def test_find_proteomes_tax_ids():
     expected_proteomes_ids = {'id_1': (629, ['UP000000815', 'UP000255169'])}
     ncbi = NCBITaxa()
-    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
+    update_affiliations = None
+    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, update_affiliations, ncbi)
     json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
     proteomes_description_folder = 'proteomes_description'
     os.mkdir(proteomes_description_folder)
@@ -229,7 +243,8 @@ def test_find_proteomes_tax_ids():
 def test_sparql_find_proteomes_tax_ids():
     expected_proteomes_ids = {'id_1': (629, ['UP000000815', 'UP000255169'])}
     ncbi = NCBITaxa()
-    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, ncbi)
+    update_affiliations = None
+    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, update_affiliations, ncbi)
     json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
     proteomes_description_folder = 'proteomes_description'
     os.mkdir(proteomes_description_folder)
@@ -251,4 +266,5 @@ if __name__ == "__main__":
     #test_find_non_reference_proteome_rest()
     #test_find_proteome_rest_all_proteomes()
     #test_find_proteome_sparql_all_proteomes()
-    test_filter_rank_limit()
+    #test_filter_rank_limit()
+    test_update_taxonomy()

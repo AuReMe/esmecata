@@ -107,6 +107,53 @@ def ete3_database_update(ignore_taxadb_update):
             logger.info('|EsMeCaTa|proteomes| --ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
 
 
+def update_taxonomy(observation_name, taxonomic_affiliation, ncbi=None):
+    """ Update the taoxnomic affiliation using ete3 and the lowest available taxonomic name.
+
+    Args:
+        observation_name (str): observation name associated with taxonomic affiliation
+        taxonomic_affiliation (str): str with taxon from highest taxon (such as kingdom) to lowest (such as species)
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+
+    Returns:
+        new_taxonomic_affiliations (str): str with taxon from highest taxon (such as kingdom) to lowest (such as species)
+    """
+    if ncbi is None:
+        ncbi = NCBITaxa()
+
+    taxons = [taxon for taxon in taxonomic_affiliation.split(';')]
+
+    for taxon in reversed(taxons):
+        taxon_translations = ncbi.get_name_translator([taxon])
+        tax_id_name = []
+
+        if taxon in taxon_translations:
+            if len(taxon_translations[taxon]) > 1:
+                best_lineage_match = 0
+                best_lineage_matches = []
+                for tax_id in taxon_translations[taxon]:
+                    tax_id_lineages = ncbi.get_lineage(tax_id)
+                    tax_id_translator = ncbi.get_taxid_translator(tax_id_lineages)
+                    tax_id_name = [tax_id_translator[tax_lineage] for tax_lineage in tax_id_lineages]
+                    if len(set(tax_id_name).intersection(set(taxons))) > best_lineage_match:
+                        best_lineage_match = len(set(tax_id_name).intersection(set(taxons)))
+                        best_lineage_matches = tax_id_name
+                tax_id_name = best_lineage_matches
+
+            if len(taxon_translations[taxon]) == 1:
+                tax_id = taxon_translations[taxon][0]
+                tax_id_lineages = ncbi.get_lineage(tax_id)
+                tax_id_translator = ncbi.get_taxid_translator(tax_id_lineages)
+                tax_id_name = [tax_id_translator[tax_lineage] for tax_lineage in tax_id_lineages]
+
+            if len(tax_id_name) > 0:
+                new_taxonomic_affiliations = ';'.join(tax_id_name)
+                logger.critical('|EsMeCaTa|proteomes| Taxonomy of %s ("%s") updated into "%s" .', observation_name, taxonomic_affiliation, new_taxonomic_affiliations)
+                break
+
+    return new_taxonomic_affiliations
+
+
 def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi=None):
     """ From a taxonomic affiliation (such as cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria) find corresponding taxon ID for each taxon.
 
@@ -135,12 +182,13 @@ def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, n
     return tax_ids_to_names, taxon_ids
 
 
-def associate_taxon_to_taxon_id(taxonomic_affiliations, ncbi=None):
+def associate_taxon_to_taxon_id(taxonomic_affiliations, update_affiliations=None, ncbi=None):
     """ From a dictionary containing multiple taxonomic affiliations, find the taxon ID for each.
 
     Args:
         taxonomic_affiliations (dict): dictionary with observation name as key and taxonomic affiliation as value
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        update_affiliations (str): option to update taxonomic affiliations.
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database.
     Returns:
         tax_id_names (dict): mapping between taxon ID and taxon name
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
@@ -156,6 +204,8 @@ def associate_taxon_to_taxon_id(taxonomic_affiliations, ncbi=None):
     for observation_name in taxonomic_affiliations:
         taxonomic_affiliation = taxonomic_affiliations[observation_name]
         if isinstance(taxonomic_affiliation, str):
+            if update_affiliations is not None:
+                taxonomic_affiliation = update_taxonomy(observation_name, taxonomic_affiliation, ncbi)
             tax_ids_to_names, taxon_ids = taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi)
             tax_id_names.update(tax_ids_to_names)
             json_taxonomic_affiliations[observation_name] = taxon_ids
@@ -815,7 +865,8 @@ def compute_stat_proteomes(proteome_tax_id_file, stat_file=None):
 
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
-                        limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1):
+                        limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1,
+                        update_affiliations=None):
     """From a tsv file with taxonomic affiliations find the associated proteomes.
 
     Args:
@@ -827,7 +878,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
         rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be keep.
+        update_affiliations (str): option to update taxonomic affiliations.
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|clustering| Begin proteomes search.')
@@ -872,7 +924,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     if not os.path.exists(proteome_tax_id_file):
         ncbi = NCBITaxa()
 
-        tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, ncbi)
+        tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi)
 
         json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
 

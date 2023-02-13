@@ -119,6 +119,15 @@ def main():
         type=limited_integer_type,
         help='Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).',
         default=99)
+    parent_parser_update_affiliation = argparse.ArgumentParser(add_help=False)
+    parent_parser_update_affiliation.add_argument(
+        '--update-affiliations',
+        dest='update_affiliations',
+        help='''If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. \
+            This option tries to udpate the taxonomic affiliations using the lowest taxon name.''',
+        required=False,
+        action='store_true',
+        default=None)
     parent_parser_c = argparse.ArgumentParser(add_help=False)
     parent_parser_c.add_argument(
         '-c',
@@ -233,7 +242,7 @@ def main():
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
             parent_parser_limit_maximal_number_proteomes, parent_parser_rank_limit,
-            parent_parser_minimal_number_proteomes
+            parent_parser_minimal_number_proteomes, parent_parser_update_affiliation
             ],
         allow_abbrev=False)
     clustering_parser = subparsers.add_parser(
@@ -264,7 +273,7 @@ def main():
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
             parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
             parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
-            parent_parser_annotation_file
+            parent_parser_annotation_file, parent_parser_update_affiliation
             ],
         allow_abbrev=False)
 
@@ -305,7 +314,7 @@ def main():
     if args.cmd == 'proteomes':
         retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.limit_maximal_number_proteomes,
-                            args.rank_limit, args.minimal_number_proteomes)
+                            args.rank_limit, args.minimal_number_proteomes, args.update_affiliations)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
@@ -318,7 +327,8 @@ def main():
                             args.limit_maximal_number_proteomes, args.rank_limit,
                             args.cpu, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
-                            args.expression, args.minimal_number_proteomes, args.annotation_files)
+                            args.expression, args.minimal_number_proteomes, args.annotation_files,
+                            args.update_affiliations)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

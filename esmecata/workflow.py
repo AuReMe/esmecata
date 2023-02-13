@@ -84,7 +84,8 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         limit_maximal_number_proteomes=99, rank_limit=None,
                         nb_cpu=1, clust_threshold=1, mmseqs_options=None,
                         linclust=None, propagate_annotation=None, uniref_annotation=None,
-                        expression_annotation=None, minimal_number_proteomes=1, annotation_files=None):
+                        expression_annotation=None, minimal_number_proteomes=1, annotation_files=None,
+                        update_affiliations=None):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -106,6 +107,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         expression_annotation (bool): option to add expression annotation from UniProt.
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept.
         annotation_files (str): pathnames to UniProt dat files.
+        update_affiliations (str): option to update taxonomic affiliations.
     """
     starttime = time.time()
     workflow_metadata = {}
