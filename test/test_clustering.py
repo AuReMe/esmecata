@@ -2,8 +2,7 @@ import csv
 import os
 import shutil
 
-from esmecata.clustering import make_clustering, filter_protein_cluster
-from esmecata.utils import is_valid_path, is_valid_dir
+from esmecata.clustering import make_clustering, filter_protein_cluster, compute_proteome_representativeness_ratio
 
 RESULTS = {
     'Cluster_1': {'Number_shared_proteins': 460}
@@ -27,14 +26,18 @@ def test_filter_protein_cluster():
     clust_threshold = 0.95
 
     expected_protein = {'Q89AE4'}
-    protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
 
+    number_proteomes, rep_prot_organims, computed_threshold_cluster = compute_proteome_representativeness_ratio(protein_clusters, observation_name_proteomes)
+    protein_cluster_to_keeps = filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims, computed_threshold_cluster,
+                            clust_threshold)
+    
     assert expected_protein == protein_cluster_to_keeps
 
     clust_threshold = 0
     expected_protein = {'Q89AE4', 'Q89AY7'}
-    protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
-
+    number_proteomes, rep_prot_organims, computed_threshold_cluster = compute_proteome_representativeness_ratio(protein_clusters, observation_name_proteomes)
+    protein_cluster_to_keeps = filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims, computed_threshold_cluster,
+                            clust_threshold)
     assert expected_protein == protein_cluster_to_keeps
 
     if remove_output_folder is True:
