@@ -995,7 +995,8 @@ def write_pathologic_file(protein_annotations, reference_proteins, pathologic_fo
     if len(annotated_protein_to_keeps) > 0:
         pathologic_organism_folder = os.path.join(pathologic_folder, base_filename)
         is_valid_dir(pathologic_organism_folder)
-        pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'.pf')
+        # Add _1 to pathologic file as genetic element cannot have the same name as the organism.
+        pathologic_file = os.path.join(pathologic_organism_folder, base_filename+'_1.pf')
         create_pathologic(base_filename, annotated_protein_to_keeps, reference_proteins, pathologic_file)
     elif len(annotated_protein_to_keeps) == 0:
         logger.critical('|EsMeCaTa|annotation| No reference proteins for %s, esmecata will not create a pathologic folder for it.', base_filename)
