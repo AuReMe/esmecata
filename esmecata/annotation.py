@@ -1161,7 +1161,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
 
     input_files = [input_file.replace('.tsv', '') for input_file in os.listdir(reference_protein_path)]
 
-    already_done_annotation = [folder for folder in os.listdir(pathologic_folder) if os.path.exists(os.path.join(pathologic_folder, folder, folder+'.pf'))]
+    already_done_annotation = [folder for folder in os.listdir(pathologic_folder) if os.path.exists(os.path.join(pathologic_folder, folder, folder+'_1.pf'))]
     for done_annotation in already_done_annotation:
         logger.info('|EsMeCaTa|annotation| Annotation of %s already in output folder, will not be redone.', done_annotation)
 
