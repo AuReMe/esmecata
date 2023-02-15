@@ -333,29 +333,21 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     # If this condition is not satisfied the cluster will be ignored.
     # Then a fasta file containing all the representative proteins for each OTU is written in representative_fasta folder.
     for observation_name in observation_name_fasta_files:
-        # Output files containing the ratio of proteome representativeness.
-        computed_threshold_file = os.path.join(computed_threshold_path, observation_name+'.tsv')
-
         # If the computed threshold file exists, mmseqs has already been run.
         mmseqs_tmp_cluster = os.path.join(mmseqs_tmp_path, observation_name)
         observation_name_proteomes = observation_name_fasta_files[observation_name]
-        if not os.path.exists(computed_threshold_file):
-            # Run mmseqs on organism.
-            # Delete previous mmseqs2 run if it exists to avoid overwritting issues.
-            if os.path.exists(mmseqs_tmp_cluster):
-                shutil.rmtree(mmseqs_tmp_cluster)
-            mmseqs_tmp_clustered_tabulated, mmseqs_tmp_representative_fasta, mmseqs_consensus_fasta = run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust)
-        else:
-            mmseqs_tmp_cluster_output = os.path.join(mmseqs_tmp_cluster, 'cluster')
-            mmseqs_tmp_clustered_tabulated = mmseqs_tmp_cluster_output+'_cluster.tsv'
-            mmseqs_tmp_representative_fasta = mmseqs_tmp_cluster_output + '_rep_seq.fasta'
-            mmseqs_consensus_fasta = mmseqs_tmp_cluster_output + '_con_seq.fasta'
+        # Run mmseqs on organism.
+        # Delete previous mmseqs2 run if it exists to avoid overwritting issues.
+        if os.path.exists(mmseqs_tmp_cluster):
+            shutil.rmtree(mmseqs_tmp_cluster)
+        mmseqs_tmp_clustered_tabulated, mmseqs_tmp_representative_fasta, mmseqs_consensus_fasta = run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust)
 
         # Extract protein clusters from mmseqs results.
         cluster_proteomes_output_file = os.path.join(cluster_founds_path, observation_name+'.tsv')
         protein_clusters = extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated, cluster_proteomes_output_file)
 
         # Compute proteome representativeness ratio.
+        computed_threshold_file = os.path.join(computed_threshold_path, observation_name+'.tsv')
         number_proteomes, rep_prot_organims, computed_threshold_cluster = compute_proteome_representativeness_ratio(protein_clusters,
                                                                                                                     observation_name_proteomes, computed_threshold_file)
 

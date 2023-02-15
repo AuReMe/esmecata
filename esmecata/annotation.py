@@ -1152,7 +1152,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
                 input_proteomes[line['observation_name']] = line['proteome'].split(',')
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
-    # There is 2 ways to handle already annotated proteins:
+    # There are 2 ways to handle already annotated proteins:
     # one keeping all the proteins in a dictionary during all the analysis (I fear an issue with the memory).
     already_annotated_proteins = {}
     # a second that use the annotation from the annotation files associated with the proteins.
