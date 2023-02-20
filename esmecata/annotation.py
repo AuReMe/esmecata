@@ -56,7 +56,7 @@ def check_response(response):
         raise
 
 
-def submit_id_mapping(from_db, to_db, ids):
+def submit_id_mapping(from_db, to_db, ids, session):
     """ Submit mapping rest query.
     Function from: https://www.uniprot.org/help/id_mapping
 
@@ -64,11 +64,12 @@ def submit_id_mapping(from_db, to_db, ids):
         from_db (str): Database used as input for the mapping.
         to_db (str): Database used as output for the mapping.
         ids (str): List of protein IDs to map separated by ','.
+        session (requests Session object): session used to query UniProt.
 
     Returns:
         str: job ID.
     """
-    request = requests.post(
+    request = session.post(
         f'{API_URL}/idmapping/run',
         data={'from': from_db, 'to': to_db, 'ids': ids},
     )
@@ -239,7 +240,7 @@ def rest_query_uniprot_to_retrieve_function(protein_queries):
     session = requests.Session()
     session.mount("https://", HTTPAdapter(max_retries=retries))
 
-    job_id = submit_id_mapping(from_db="UniProtKB_AC-ID", to_db="UniProtKB", ids=protein_queries)
+    job_id = submit_id_mapping(from_db="UniProtKB_AC-ID", to_db="UniProtKB", ids=protein_queries, session=session)
 
     check_status = check_id_mapping_results_ready(session, job_id)
 
