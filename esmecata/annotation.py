@@ -728,15 +728,15 @@ def query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict):
     Returns:
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
     """
-    # The limit of 10 000 proteins per query comes from the help of Uniprot (inferior to 20 000):
-    # https://www.uniprot.org/help/uploadlists
-    if len(protein_to_search_on_uniprots) < 15000:
+    # The limit of 10 000 proteins per query comes from the help of Uniprot:
+    # https://www.uniprot.org/help/id_mapping
+    if len(protein_to_search_on_uniprots) < 10000:
         protein_queries = ','.join(protein_to_search_on_uniprots)
         tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries)
         output_dict.update(tmp_output_dict)
         time.sleep(1)
     else:
-        protein_chunks = chunks(list(protein_to_search_on_uniprots), 15000)
+        protein_chunks = chunks(list(protein_to_search_on_uniprots), 10000)
         for chunk in protein_chunks:
             protein_queries = ','.join(chunk)
             tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries)
