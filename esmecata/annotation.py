@@ -223,34 +223,57 @@ def check_id_mapping_results_ready(session, job_id):
             return False
 
 
-def rest_query_uniprot_to_retrieve_function(protein_queries):
+def query_uniprot_bioservices(protein_queries):
     """REST query to get annotation from proteins.
 
     Args:
         protein_queries (str): list of proteins sperated by ','.
 
     Returns:
+        data (dict): dictionary returned by bioservices containing annotation
+    """
+    import bioservices
+    uniprot_bioservices = bioservices.UniProt(verbose=False)
+    data = uniprot_bioservices.mapping(fr='UniProtKB_AC-ID', to='UniProtKB', query=protein_queries.split(','))
+
+    return data
+
+
+def rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices):
+    """REST query to get annotation from proteins.
+
+    Args:
+        protein_queries (str): list of proteins sperated by ','.
+        option_bioservices (bool): use bioservices instead of manual queries.
+
+    Returns:
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
     """
     output_dict = {}
 
-    # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
-    # from and to are linked to mapping ID: https://www.uniprot.org/help/api%5Fidmapping
-    retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
-    session = requests.Session()
-    session.mount("https://", HTTPAdapter(max_retries=retries))
+    if option_bioservices is None:
+        # Column names can be found at: https://www.uniprot.org/help/uniprotkb_column_names
+        # from and to are linked to mapping ID: https://www.uniprot.org/help/api%5Fidmapping
+        retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
+        session = requests.Session()
+        session.mount("https://", HTTPAdapter(max_retries=retries))
 
-    job_id = submit_id_mapping(from_db="UniProtKB_AC-ID", to_db="UniProtKB", ids=protein_queries, session=session)
+        job_id = submit_id_mapping(from_db="UniProtKB_AC-ID", to_db="UniProtKB", ids=protein_queries, session=session)
 
-    check_status = check_id_mapping_results_ready(session, job_id)
+        check_status = check_id_mapping_results_ready(session, job_id)
+
+        if check_status:
+            link = get_id_mapping_results_link(session, job_id)
+            data = get_id_mapping_results_search(session, link)
+    else:
+        data = query_uniprot_bioservices(protein_queries)
+        check_status = True
 
     if check_status:
-        link = get_id_mapping_results_link(session, job_id)
-        data = get_id_mapping_results_search(session, link)
-
         if 'failedIds' in data:
             failed_ids = set(data['failedIds'])
-            logger.critical('|EsMeCaTa|annotation| Mapping failed for %d proteins: %s.', len(failed_ids), failed_ids)
+            if len(failed_ids) > 0:
+                logger.critical('|EsMeCaTa|annotation| Mapping failed for %d proteins: %s.', len(failed_ids), failed_ids)
 
         results = {}
         for result in data['results']:
@@ -718,12 +741,13 @@ def search_already_annotated_protein(set_proteins, already_annotated_proteins, o
     return protein_to_search_on_uniprots, output_dict
 
 
-def query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict):
+def query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict, option_bioservices=None):
     """Query UniProt with REST to find protein annotations
 
     Args:
         protein_to_search_on_uniprots (set): set of proteins not already annotated that will need UniProt queries
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
+        option_bioservices (bool): use bioservices instead of manual queries.
 
     Returns:
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
@@ -732,14 +756,14 @@ def query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict):
     # https://www.uniprot.org/help/id_mapping
     if len(protein_to_search_on_uniprots) < 10000:
         protein_queries = ','.join(protein_to_search_on_uniprots)
-        tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries)
+        tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices)
         output_dict.update(tmp_output_dict)
         time.sleep(1)
     else:
         protein_chunks = chunks(list(protein_to_search_on_uniprots), 10000)
         for chunk in protein_chunks:
             protein_queries = ','.join(chunk)
-            tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries)
+            tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices)
             output_dict.update(tmp_output_dict)
             time.sleep(1)
 
@@ -1077,7 +1101,7 @@ def extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot
 
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
                         propagate_annotation, uniref_annotation, expression_annotation,
-                        annotation_files=None):
+                        annotation_files=None, option_bioservices=None):
     """Write the annotation associated with a cluster after propagation step into pathologic file for run on Pathway Tools.
 
     Args:
@@ -1087,6 +1111,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         uniref_annotation (bool): option to use uniref annotation to add annotation.
         expression_annotation (bool): option to add expression annotation from UniProt.
         annotation_files (str): pathnames to UniProt dat files.
+        option_bioservices (bool): use bioservices instead of manual queries.
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|annotation| Begin annotation.')
@@ -1202,7 +1227,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
                 output_dict = query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_dict)
             else:
                 # Using REST query on UniProt servers.
-                output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict)
+                output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict, option_bioservices)
         else:
             # Using annotation files.
             output_dict = extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot_trembl_index, uniprot_sprot_index, output_dict)

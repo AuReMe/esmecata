@@ -81,6 +81,13 @@ def test_query_uniprot_annotation_rest():
     compare_annotation_dict(ANOTATIONS, output_dict)
 
 
+def test_query_uniprot_annotation_rest_bioservices():
+    protein_to_search_on_uniprots = ['Q7CGB6', 'NOTAGOODIDEAOFPROTEIN']
+    output_dict = {}
+    output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict, option_bioservices=True)
+    compare_annotation_dict(ANOTATIONS, output_dict)
+
+
 def test_query_uniprot_annotation_sparql():
     proteomes = ['UP000119554']
     uniprot_sparql_endpoint = 'https://sparql.uniprot.org/sparql'

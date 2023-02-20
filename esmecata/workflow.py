@@ -85,7 +85,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         nb_cpu=1, clust_threshold=1, mmseqs_options=None,
                         linclust=None, propagate_annotation=None, uniref_annotation=None,
                         expression_annotation=None, minimal_number_proteomes=1, annotation_files=None,
-                        update_affiliations=None):
+                        update_affiliations=None, option_bioservices=None):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -108,6 +108,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept.
         annotation_files (str): pathnames to UniProt dat files.
         update_affiliations (str): option to update taxonomic affiliations.
+        option_bioservices (bool): use bioservices instead of manual queries.
     """
     starttime = time.time()
     workflow_metadata = {}
@@ -125,7 +126,8 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
     make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
-    annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation, annotation_files)
+    annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint, propagate_annotation,
+                      uniref_annotation, expression_annotation, annotation_files, option_bioservices)
 
     stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
     compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file)

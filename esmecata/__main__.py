@@ -228,6 +228,14 @@ def main():
         required=False,
         help='Use UniProt annotation files (uniprot_trembl.txt and uniprot_sprot.txt) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".',
         default=None)
+    parent_parser_bioservices = argparse.ArgumentParser(add_help=False)
+    parent_parser_bioservices.add_argument(
+        '--bioservices',
+        dest='option_bioservices',
+        help='Use bioservices instead of esmecata functions for protein annotation.',
+        required=False,
+        action='store_true',
+        default=None)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -260,7 +268,7 @@ def main():
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
             parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
-            parent_parser_annotation_file
+            parent_parser_annotation_file, parent_parser_bioservices
             ],
         allow_abbrev=False)
     workflow_parser = subparsers.add_parser(
@@ -273,7 +281,8 @@ def main():
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
             parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
             parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
-            parent_parser_annotation_file, parent_parser_update_affiliation
+            parent_parser_annotation_file, parent_parser_update_affiliation,
+            parent_parser_bioservices
             ],
         allow_abbrev=False)
 
@@ -320,7 +329,7 @@ def main():
     elif args.cmd == 'annotation':
         annotate_proteins(args.input, args.output, uniprot_sparql_endpoint,
                         args.propagate_annotation, args.uniref, args.expression,
-                        args.annotation_files)
+                        args.annotation_files, args.option_bioservices)
     elif args.cmd == 'workflow':
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
@@ -328,7 +337,7 @@ def main():
                             args.cpu, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
                             args.expression, args.minimal_number_proteomes, args.annotation_files,
-                            args.update_affiliations)
+                            args.update_affiliations, args.option_bioservices)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
