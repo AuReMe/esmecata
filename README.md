@@ -130,7 +130,7 @@ Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, excep
 ### `esmecata proteomes`: Retrieve proteomes associated with taxonomic affiliation
 
 ````
-usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES]
+usage: esmecata proteomes [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES] [--update-affiliations] [--bioservices]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -148,9 +148,14 @@ optional arguments:
   -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
                         Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
-                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more information (and a list of rank names).
+                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be
+                        kept. Look at the readme for more information (and a list of rank names).
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
+  --update-affiliations
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon
+                        name.
+  --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
 For each taxon in each taxonomic affiliations EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated with these taxon ID in the Uniprot Proteomes database.
@@ -259,6 +264,8 @@ Some ranks (which are not non-hierarchical) are not used for the moment when usi
 |                |unclassified <name>    |no order below this rank is required, includes undefined or unspecified names                     |
 |                |no rank                |applied to nodes not categorized here yet, additional rank and groups names will be released      |
 
+* `--bioservices`: instead of using REST queries implemented in EsMeCaTa, relies on [bioservices](https://github.com/cokelaer/bioservices) API to query UniProt.
+This requires the bioservices package.
 
 ### `esmecata clustering`: Proteins clustering
 
@@ -307,7 +314,7 @@ Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. I
 ### `esmecata annotation`: Retrieve protein annotations
 
 ````
-usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--annotation-files ANNOTATION_FILES]
+usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--annotation-files ANNOTATION_FILES] [--bioservices]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -324,6 +331,7 @@ optional arguments:
   --expression          Extract expression information associated with the proteins. Needs the --sparql option.
   --annotation-files ANNOTATION_FILES
                         Use UniProt annotation files (uniprot_trembl.txt and uniprot_sprot.txt) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".
+  --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
 For each of the protein clusters kept after the clustering, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
@@ -366,11 +374,13 @@ But for dataset with thousands of taxonomic affiliations, this can be compensate
 For this option, you should give the path to the two annotation files (both the Swiss-Prot and the TrEMBL files) separated by `,`such as: `--annotation-files /db/uniprot/UniProt_2022_05/flat/uniprot_sprot.dat,/db/uniprot/UniProt_2022_05/flat/uniprot_trembl.dat`.
 The names of the files must contained: `uniprot_sprot` and `uniprot_trembl` to be able to differentiate them.
 
+* `--bioservices`: instead of using REST queries implemented in EsMeCaTa, relies on [bioservices](https://github.com/cokelaer/bioservices) API to query UniProt.
+This requires the bioservices package.
+
 ### `esmecata workflow`: Consecutive runs of the three steps
 
 ````
-usage: esmecata workflow [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [-c CPU] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS]
-                         [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES] [--annotation-files ANNOTATION_FILES]
+usage: esmecata workflow [-h] -i INPUT_FILE -o OUPUT_DIR [-b BUSCO] [-c CPU] [--ignore-taxadb-update] [--all-proteomes] [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS] [--linclust] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES] [--annotation-files ANNOTATION_FILES] [--update-affiliations] [--bioservices]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -400,11 +410,16 @@ optional arguments:
   --uniref              Use uniref cluster to extract more annotations from the representative member of the cluster associated with the proteins. Needs the --sparql option.
   --expression          Extract expression information associated with the proteins. Needs the --sparql option.
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
-                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more information (and a list of rank names).
+                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be
+                        kept. Look at the readme for more information (and a list of rank names).
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
   --annotation-files ANNOTATION_FILES
                         Use UniProt annotation files (uniprot_trembl.txt and uniprot_sprot.txt) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".
+  --update-affiliations
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon
+                        name.
+  --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
 EsMeCTa will perform the search for proteomes, the protein clustering and the annotation.
