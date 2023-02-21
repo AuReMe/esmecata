@@ -390,7 +390,7 @@ def requests_query(http_str, nb_retry=5):
         return response
 
 
-def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session=None):
+def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session=None, option_bioservices=None):
     """REST query on UniProt to get the proteomes associated with a taxon.
 
     Args:
@@ -400,6 +400,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         session: request session object
+        option_bioservices (bool): use bioservices instead of manual queries.
 
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
@@ -411,16 +412,21 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         session = requests.Session()
         session.mount("https://", HTTPAdapter(max_retries=retries))
 
-    # Find proteomes associated with taxon.
-    # Search for both representative and non-representative proteomes (with proteome_type%3A2 for non-representative proteome (or Other proteome) and proteome_type%3A1) for representative proteome).
-    # Remove redundant and excluded proteomes.
-    httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND((proteome_type%3A2)OR(proteome_type%3A1))&format=json&size=500'.format(tax_id)
+    if option_bioservices is None:
+        # Find proteomes associated with taxon.
+        # Search for both representative and non-representative proteomes (with proteome_type%3A2 for non-representative proteome (or Other proteome) and proteome_type%3A1) for representative proteome).
+        # Remove redundant and excluded proteomes.
+        httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND((proteome_type%3A2)OR(proteome_type%3A1))&format=json&size=500'.format(tax_id)
 
-    data = {}
-    data['results'] = []
-    for batch_reponse in get_batch(session, httpt_str):
-        batch_json = batch_reponse.json()
-        data['results'].extend(batch_json['results'])
+        data = {}
+        data['results'] = []
+        for batch_reponse in get_batch(session, httpt_str):
+            batch_json = batch_reponse.json()
+            data['results'].extend(batch_json['results'])
+    else:
+        import bioservices
+        uniprot_bioservices = bioservices.UniProt()
+        data = uniprot_bioservices.search(f'(taxonomy_id={tax_id})AND((proteome_type=2)OR(proteome_type=1))', database='proteomes', frmt='json')
 
     organism_ids = {}
     proteomes_data = []
@@ -682,7 +688,8 @@ def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
 
 def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                         busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None,
-                        limit_maximal_number_proteomes=99, minimal_number_proteomes=1, session=None):
+                        limit_maximal_number_proteomes=99, minimal_number_proteomes=1, session=None,
+                        option_bioservices=None):
     """Find proteomes associated with taxonomic affiliations
 
     Args:
@@ -693,8 +700,9 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept
         session: request session object
+        option_bioservices (bool): use bioservices instead of manual queries.
 
     Returns:
         proteomes_ids (dict): observation name (key) associated with proteome IDs
@@ -735,7 +743,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
             if uniprot_sparql_endpoint:
                 proteomes, organism_ids, data_proteomes = sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
             else:
-                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session)
+                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session, option_bioservices)
 
             for data_proteome in data_proteomes:
                 proteomes_descriptions.append([tax_id, tax_name, *data_proteome])
@@ -879,7 +887,7 @@ def compute_stat_proteomes(proteome_tax_id_file, stat_file=None):
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1,
-                        update_affiliations=None):
+                        update_affiliations=None, option_bioservices=None):
     """From a tsv file with taxonomic affiliations find the associated proteomes.
 
     Args:
@@ -891,8 +899,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
         rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be keep.
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be kept.
         update_affiliations (str): option to update taxonomic affiliations.
+        option_bioservices (bool): use bioservices instead of manual queries.
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|clustering| Begin proteomes search.')
@@ -951,7 +960,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     if not os.path.exists(proteome_tax_id_file):
         proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                                                         busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint,
-                                                        limit_maximal_number_proteomes, minimal_number_proteomes, session)
+                                                        limit_maximal_number_proteomes, minimal_number_proteomes, session, option_bioservices)
 
         proteome_to_download = []
         for proteomes_id in proteomes_ids:
@@ -1003,10 +1012,18 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             if uniprot_sparql_endpoint is not None:
                 sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
             else:
-                http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
-                proteome_response = session.get(http_str)
-                with open(output_proteome_file, 'wb') as f:
-                    f.write(proteome_response.content)
+                if option_bioservices is None:
+                    http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
+                    proteome_response = session.get(http_str)
+                    with open(output_proteome_file, 'wb') as f:
+                        f.write(proteome_response.content)
+                else:
+                    import bioservices
+                    uniprot_bioservices = bioservices.UniProt()
+                    data_fasta = uniprot_bioservices.search(f'(proteome:{proteome})', database='uniprot', frmt='fasta', compress=True)
+                    with open(output_proteome_file, 'wb') as f:
+                        f.write(data_fasta)
+
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 

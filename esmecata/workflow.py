@@ -120,7 +120,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
     retrieve_proteomes(input_file, proteomes_output_folder, busco_percentage_keep,
                         ignore_taxadb_update, all_proteomes, uniprot_sparql_endpoint,
                         limit_maximal_number_proteomes, rank_limit, minimal_number_proteomes,
-                        update_affiliations)
+                        update_affiliations, option_bioservices)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
     make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)

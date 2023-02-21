@@ -155,6 +155,21 @@ def test_rest_query_proteomes():
         assert data in proteomes_data
 
 
+def test_rest_query_proteomes_bioservices():
+    expected_proteoems = ['UP000255169', 'UP000000815']
+    expected_organism_ids = {'632': ['UP000000815'], '29486': ['UP000255169']}
+    expected_proteome_data = [['UP000255169', 98.86363636363636, 'full', '29486', True], ['UP000000815', 99.77272727272727, 'full', '632', True]]
+
+    proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 629, 'Yersinia', 0.8, all_proteomes=None, option_bioservices=True)
+    time.sleep(1)
+
+    assert set(expected_proteoems) == set(proteomes)
+    for organism in expected_organism_ids:
+        assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
+    for data in expected_proteome_data:
+        assert data in proteomes_data
+
+
 def test_find_non_reference_proteome_rest():
     expected_proteoems = ['UP000829720']
     expected_organism_ids = {'1534307': ['UP000829720']}

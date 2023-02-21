@@ -250,7 +250,8 @@ def main():
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
             parent_parser_limit_maximal_number_proteomes, parent_parser_rank_limit,
-            parent_parser_minimal_number_proteomes, parent_parser_update_affiliation
+            parent_parser_minimal_number_proteomes, parent_parser_update_affiliation,
+            parent_parser_bioservices
             ],
         allow_abbrev=False)
     clustering_parser = subparsers.add_parser(
@@ -323,7 +324,8 @@ def main():
     if args.cmd == 'proteomes':
         retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.limit_maximal_number_proteomes,
-                            args.rank_limit, args.minimal_number_proteomes, args.update_affiliations)
+                            args.rank_limit, args.minimal_number_proteomes, args.update_affiliations,
+                            args.bioservices)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
