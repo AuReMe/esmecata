@@ -234,7 +234,8 @@ def query_uniprot_bioservices(protein_queries):
     """
     import bioservices
     uniprot_bioservices = bioservices.UniProt(verbose=False)
-    data = uniprot_bioservices.mapping(fr='UniProtKB_AC-ID', to='UniProtKB', query=protein_queries.split(','), max_waiting_time=3600)
+    data = uniprot_bioservices.mapping(fr='UniProtKB_AC-ID', to='UniProtKB', query=protein_queries.split(','),
+                                       max_waiting_time=3600, progress=False)
 
     return data
 

@@ -426,7 +426,8 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
     else:
         import bioservices
         uniprot_bioservices = bioservices.UniProt()
-        data = uniprot_bioservices.search(f'(taxonomy_id={tax_id})AND((proteome_type=2)OR(proteome_type=1))', database='proteomes', frmt='json')
+        data = uniprot_bioservices.search(f'(taxonomy_id={tax_id})AND((proteome_type=2)OR(proteome_type=1))',
+                                            database='proteomes', frmt='json', progress=False)
 
     organism_ids = {}
     proteomes_data = []
@@ -1020,7 +1021,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 else:
                     import bioservices
                     uniprot_bioservices = bioservices.UniProt()
-                    data_fasta = uniprot_bioservices.search(f'(proteome:{proteome})', database='uniprot', frmt='fasta', compress=True)
+                    data_fasta = uniprot_bioservices.search(f'(proteome:{proteome})', database='uniprot',
+                                                            frmt='fasta', compress=True, progress=False)
                     with open(output_proteome_file, 'wb') as f:
                         f.write(data_fasta)
 
