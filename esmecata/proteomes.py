@@ -825,7 +825,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
 
         with open(proteomes_description_file, 'w') as proteome_output:
             csvwriter = csv.writer(proteome_output, delimiter='\t')
-            csvwriter.writerow(['tax_id', 'tax_name', 'proteome_id', 'busco_percentage', 'completness', 'org_tax_id', 'reference_proteome'])
+            csvwriter.writerow(['tax_id', 'tax_name', 'proteome_id', 'busco_percentage', 'completness', 'org_tax_id', 'reference_proteome', 'components'])
             for proteomes_description in proteomes_descriptions:
                 csvwriter.writerow(proteomes_description)
 
