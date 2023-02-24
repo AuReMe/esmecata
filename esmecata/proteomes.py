@@ -638,11 +638,11 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
             component_elements = [component_name, component_description]
 
         if proteome_id not in sparql_proteome_data:
-            sparql_proteome_data[proteome_id] = [proteome_id, busco_percentage, completness, org_tax_id, reference, component_elements]
+            sparql_proteome_data[proteome_id] = [proteome_id, busco_percentage, completness, org_tax_id, reference, [component_elements]]
         else:
             if sparql_proteome_data[proteome_id][4] is False and reference is True:
                 sparql_proteome_data[proteome_id][4] = True
-            sparql_proteome_data[proteome_id][5].extend(component_elements)
+            sparql_proteome_data[proteome_id][5].append(component_elements)
 
     for protein_id in sparql_proteome_data:
         proteomes_data.append(sparql_proteome_data[protein_id])
