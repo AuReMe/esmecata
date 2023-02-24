@@ -152,6 +152,11 @@ def update_taxonomy(observation_name, taxonomic_affiliation, ncbi=None):
                 new_taxonomic_affiliations = ';'.join(tax_id_name)
                 logger.critical('|EsMeCaTa|proteomes| Taxonomy of %s ("%s") updated into "%s" .', observation_name, taxonomic_affiliation, new_taxonomic_affiliations)
                 break
+            else:
+                new_taxonomic_affiliations = None
+
+    if new_taxonomic_affiliations is None:
+        new_taxonomic_affiliations = taxonomic_affiliation
 
     return new_taxonomic_affiliations
 
