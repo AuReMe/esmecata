@@ -274,7 +274,7 @@ def test_find_non_reference_proteome_sparql():
     proteomes, organism_ids, proteomes_data = sparql_query_proteomes('test', 54906, 'Albuliformes', 0.8, all_proteomes=None)
 
     time.sleep(1)
-    print(proteomes_data)
+
     assert set(expected_proteoems) == set(proteomes)
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
@@ -295,7 +295,7 @@ def test_find_proteome_sparql_all_proteomes():
 
     proteomes, organism_ids, proteomes_data = sparql_query_proteomes('test', 33256, 'Ascaridoidea', 0.8, all_proteomes=True)
     time.sleep(1)
-    print(proteomes_data)
+
     assert set(expected_proteoems) == set(proteomes)
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
