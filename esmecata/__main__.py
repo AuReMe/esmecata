@@ -325,7 +325,7 @@ def main():
         retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.limit_maximal_number_proteomes,
                             args.rank_limit, args.minimal_number_proteomes, args.update_affiliations,
-                            args.bioservices)
+                            args.option_bioservices)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':

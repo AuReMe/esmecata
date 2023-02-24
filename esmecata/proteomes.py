@@ -43,6 +43,8 @@ from SPARQLWrapper import __version__ as sparqlwrapper_version
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir, send_uniprot_sparql_query
 from esmecata import __version__ as esmecata_version
 
+from urllib.parse import unquote
+
 REQUESTS_HEADERS = {'User-Agent': 'EsMeCaTa proteomes v' + esmecata_version + ', request by requests package v' + requests.__version__ }
 
 logger = logging.getLogger(__name__)
@@ -405,7 +407,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
         organism_ids (dict): organism ID (key) associated with each proteomes (values)
-        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome
+        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome, component_elements
     """
     if not session:
         retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
@@ -461,6 +463,15 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         elif proteome_type == 'Other proteome':
             representative_proteome = False
 
+        if 'components' in proteome_data:
+            component_elements = []
+            for component in  proteome_data['components']:
+                component_name = component['name']
+                component_description = component['description']
+                component_elements.append([component_name, component_description])
+        else:
+            component_elements = None
+
         if busco_percentage_keep:
             if busco_score and busco_score >= busco_percentage_keep and assembly_level == 'full':
                 if representative_proteome is True:
@@ -483,7 +494,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
                     organism_ids[org_tax_id] = [proteome_id]
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
-        proteomes_data.append([proteome_id, busco_score, assembly_level, org_tax_id, representative_proteome])
+        proteomes_data.append([proteome_id, busco_score, assembly_level, org_tax_id, representative_proteome, component_elements])
 
     # In REST queries, reference proteomes are not associated with non-reference proteome tag (compared to SPARQL query).
     # So to have both of them with all_proteomes otpion, we need to add other_proteomes to representative_proteomes.
@@ -512,7 +523,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
         organism_ids (dict): organism ID (key) associated with each proteomes (values)
-        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome
+        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome, component_elements
     """
     # SPARQL query to retrieve proteome
     # First FILTER NOT EXISTS to avoid redundant proteomes.
@@ -525,7 +536,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     PREFIX busco: <http://busco.ezlab.org/schema#>
     PREFIX taxon: <http://purl.uniprot.org/taxonomy/>
 
-    SELECT DISTINCT ?proteome ?score ?fragmented ?missing ?organism ?completion ?type
+    SELECT DISTINCT ?proteome ?score ?fragmented ?missing ?organism ?completion ?type ?component ?componentName
 
     WHERE
     {{
@@ -551,6 +562,10 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         OPTIONAL {{
             ?proteome rdf:type ?type .
         }}
+        OPTIONAL {{
+            ?proteome skos:narrower ?component .
+            ?component rdfs:comment ?componentName .
+        }}
     }}""".format(tax_id)
 
     csvreader = send_uniprot_sparql_query(uniprot_sparql_query, uniprot_sparql_endpoint)
@@ -561,6 +576,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     reference_proteomes = []
     other_proteomes = []
 
+    sparql_proteome_data = {}
     # There can be multiple lines for a same proteomes (especially with reference proteomes being also associated with reference and non-reference proteomes).
     for line in csvreader:
         proteome_id = line[0].split('/')[-1]
@@ -609,7 +625,27 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
 
-        proteomes_data.append([proteome_id, busco_percentage, completness, org_tax_id, reference])
+        # Get the components contained in the proteomes (chromosomes, plasmids).
+        if line[7] != '':
+            component_name = unquote(line[7]).split('#')[1]
+        else:
+            component_name = None
+        if line[8] != '':
+            component_description = line[8]
+        else:
+            component_description = None
+        if component_description is not None or component_name is not None:
+            component_elements = [component_name, component_description]
+
+        if proteome_id not in sparql_proteome_data:
+            sparql_proteome_data[proteome_id] = [proteome_id, busco_percentage, completness, org_tax_id, reference, component_elements]
+        else:
+            if sparql_proteome_data[proteome_id][4] is False and reference is True:
+                sparql_proteome_data[proteome_id][4] = True
+            sparql_proteome_data[proteome_id][5].extend(component_elements)
+
+    for protein_id in sparql_proteome_data:
+        proteomes_data.append(sparql_proteome_data[protein_id])
 
     # In SPARQL reference proteomes are also labelled as non-reference proteome (with 'http://purl.uniprot.org/core/Proteome').
     # To use both reference and non-reference proteomes, use only other_proteomes.
