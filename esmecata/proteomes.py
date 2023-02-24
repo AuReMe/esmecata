@@ -154,6 +154,8 @@ def update_taxonomy(observation_name, taxonomic_affiliation, ncbi=None):
                 break
             else:
                 new_taxonomic_affiliations = None
+        else:
+            new_taxonomic_affiliations = None
 
     if new_taxonomic_affiliations is None:
         new_taxonomic_affiliations = taxonomic_affiliation
