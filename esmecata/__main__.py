@@ -289,6 +289,11 @@ def main():
 
     args = parser.parse_args()
 
+    # If no argument print the help.
+    if len(sys.argv) == 1 or len(sys.argv) == 0:
+        parser.print_help()
+        sys.exit(1)
+
     is_valid_dir(args.output)
 
     # add logger in file
@@ -303,11 +308,6 @@ def main():
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-
-    # If no argument print the help.
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)
 
     if args.cmd in ['proteomes', 'annotation', 'workflow']:
         if args.sparql is None:
