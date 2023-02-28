@@ -38,7 +38,7 @@ def get_eggnog_version():
         eggnog_version (str): version of eggnog-mapper.
     """
     try:
-        from eggnogmapper.version import __version as eggnog_version
+        from eggnogmapper.version import __VERSION__ as eggnog_version
         return eggnog_version
     except ModuleNotFoundError as e:
         logger.critical('eggnog-mapper seesm to not be installed in the environment.')
