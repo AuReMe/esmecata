@@ -799,7 +799,7 @@ def query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_d
 
 
 def write_annotation_file(output_dict, annotation_file):
-    """Write annotation file from annotated protein retrieverd from UniProt
+    """Write annotation file from annotated protein retrieved from UniProt
 
     Args:
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
@@ -950,6 +950,7 @@ def write_annotation_reference(protein_annotations, reference_proteins, annotati
 
     Args:
         protein_annotations (dict): annotation dict: protein as key and annotation as value ([function_name, [go_terms], [ec_numbers], gene_name])
+        reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
         annotation_reference_file (str): pathname to output tabulated file
         expression_output_dict (dict): expression dict: protein as key and expression as value
     """

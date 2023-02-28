@@ -21,7 +21,8 @@ import time
 from esmecata.proteomes import retrieve_proteomes
 from esmecata.clustering import make_clustering
 from esmecata.annotation import annotate_proteins
-from esmecata.workflow import perform_workflow
+from esmecata.workflow import perform_workflow, perform_workflow_eggnog
+from esmecata.eggnog import annotate_with_eggnog
 from esmecata.utils import limited_integer_type, range_limited_float_type, is_valid_dir
 from esmecata import __version__ as VERSION
 
@@ -236,6 +237,13 @@ def main():
         required=False,
         action='store_true',
         default=None)
+    parent_parser_eggnog_database = argparse.ArgumentParser(add_help=False)
+    parent_parser_eggnog_database.add_argument(
+        '-e',
+        '--eggnog',
+        dest='eggnog_database',
+        help='Path to eggnog database.',
+        required=True)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -272,6 +280,14 @@ def main():
             parent_parser_annotation_file, parent_parser_bioservices
             ],
         allow_abbrev=False)
+    annotation_eggnog_parser = subparsers.add_parser(
+        'annotation_eggnog',
+        help='Annotate protein clusters using eggnog-mapper.',
+        parents=[
+            parent_parser_i_annotation_folder, parent_parser_o, parent_parser_eggnog_database,
+            parent_parser_c
+            ],
+        allow_abbrev=False)
     workflow_parser = subparsers.add_parser(
         'workflow',
         help='Run all esmecata steps (proteomes, clustering and annotation).',
@@ -284,6 +300,18 @@ def main():
             parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
             parent_parser_annotation_file, parent_parser_update_affiliation,
             parent_parser_bioservices
+            ],
+        allow_abbrev=False)
+    workflow_eggnog_parser = subparsers.add_parser(
+        'workflow_eggnog',
+        help='Run all esmecata steps (proteomes, clustering and annotation).',
+        parents=[
+            parent_parser_i_taxon, parent_parser_o, parent_parser_b, parent_parser_c,
+            parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
+            parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
+            parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
+            parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
+            parent_parser_update_affiliation, parent_parser_bioservices
             ],
         allow_abbrev=False)
 
@@ -340,6 +368,15 @@ def main():
                             args.linclust, args.propagate_annotation, args.uniref,
                             args.expression, args.minimal_number_proteomes, args.annotation_files,
                             args.update_affiliations, args.option_bioservices)
+    elif args.cmd == 'annotation_eggnog':
+        annotate_with_eggnog(args.input, args.output, args.eggnog_database, args.cpu)
+    elif args.cmd == 'workflow_eggnog':
+        perform_workflow_eggnog(args.input, args.output, args.eggnog_database, busco_score,
+                                args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint,
+                                args.remove_tmp, args.limit_maximal_number_proteomes, args.rank_limit,
+                                args.cpu, args.threshold_clustering, args.mmseqs_options,
+                                args.linclust, args.minimal_number_proteomes,
+                                args.update_affiliations, args.option_bioservices)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
