@@ -37,12 +37,19 @@ def get_eggnog_version():
     Returns:
         eggnog_version (str): version of eggnog-mapper.
     """
-    try:
-        from eggnogmapper.version import __VERSION__ as eggnog_version
-        return eggnog_version
-    except ModuleNotFoundError as e:
-        logger.critical('eggnog-mapper seesm to not be installed in the environment.')
-        raise e
+    ptools_version = None
+    response = subprocess.Popen(['emapper.py', '-v'], stdout=subprocess.PIPE, start_new_session=True, universal_newlines="")
+    for ptools_line in response.stdout:
+        ptools_line_decoded = ptools_line.decode('utf-8')
+        if 'emapper-' in ptools_line_decoded:
+            ptools_version = ptools_line_decoded.split(' / ')[0].replace('emapper-', '')
+
+    if ptools_version is None:
+        logger.critical('esmecata could not find the version of eggnog-mapper.')
+        logger.critical('It is possibly an issue with the installation of eggnog-mapper (maybe it is not in the PATH). Or it can be due to a change in the output of emapper.py -v command.')
+        sys.exit()
+
+    return ptools_version
 
 
 def call_to_emapper(input_path, output_name, output_dir, eggnog_database_path, nb_cpu):
@@ -241,6 +248,8 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
 
+    # Convert CPU int into str.
+    nb_cpu = str(nb_cpu)
     # Download Uniprot metadata and create a json file containing them.
     options = {'input_folder': input_folder, 'output_folder': output_folder, 'nb_cpu': nb_cpu}
 
@@ -258,7 +267,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     proteome_tax_id_file = os.path.join(input_folder, 'proteome_tax_id.tsv')
 
     for observation_name in observation_names:
-        fasta_file_path = os.path.join(annotation_reference_folder, observation_name+'.faa')
+        fasta_file_path = os.path.join(reference_protein_fasta_path, observation_name+'.faa')
         call_to_emapper(fasta_file_path, observation_name, eggnog_output_folder, eggnog_database_path, nb_cpu)
 
         eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, observation_name+'.emapper.annotations')
@@ -267,7 +276,8 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
 
         annotated_proteins = read_annotation(eggnog_mapper_annotation_file)
         annotated_proteins = list(annotated_proteins)
-        write_annotation_reference(annotated_proteins, reference_proteins, reference_protein_pathname)
+        annotation_reference_file = os.path.join(annotation_reference_folder, observation_name+'.tsv')
+        write_annotation_reference(annotated_proteins, reference_proteins, annotation_reference_file)
 
         if len(annotated_proteins) > 0:
             pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
