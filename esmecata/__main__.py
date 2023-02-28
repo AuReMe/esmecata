@@ -306,11 +306,11 @@ def main():
         'workflow_eggnog',
         help='Run all esmecata steps (proteomes, clustering and annotation).',
         parents=[
-            parent_parser_i_taxon, parent_parser_o, parent_parser_b, parent_parser_c,
-            parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
-            parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
-            parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
-            parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
+            parent_parser_i_taxon, parent_parser_o, parent_parser_eggnog_database,
+            parent_parser_b, parent_parser_c, parent_parser_taxadb,
+            parent_parser_all_proteomes, parent_parser_sparql, parent_parser_remove_tmp,
+            parent_parser_limit_maximal_number_proteomes, parent_parser_thr, parent_parser_mmseqs_options,
+            parent_parser_linclust, parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
             parent_parser_update_affiliation, parent_parser_bioservices
             ],
         allow_abbrev=False)
