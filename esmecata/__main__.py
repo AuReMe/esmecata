@@ -337,7 +337,7 @@ def main():
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    if args.cmd in ['proteomes', 'annotation', 'workflow']:
+    if args.cmd in ['proteomes', 'annotation', 'workflow', 'workflow_eggnog']:
         if args.sparql is None:
             uniprot_sparql_endpoint = None
         elif args.sparql == 'uniprot':
@@ -345,7 +345,7 @@ def main():
         else:
             uniprot_sparql_endpoint = args.sparql
 
-    if args.cmd in ['proteomes', 'workflow']:
+    if args.cmd in ['proteomes', 'workflow', 'workflow_eggnog']:
         if args.busco is not None:
             busco_score = 100*args.busco
 
