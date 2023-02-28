@@ -106,7 +106,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         propagate_annotation (float): float between 0 and 1. It is the ratio of proteins in the cluster that should have the annotation to keep this annotation.
         uniref_annotation (bool): option to use uniref annotation to add annotation.
         expression_annotation (bool): option to add expression annotation from UniProt.
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept.
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be kept.
         annotation_files (str): pathnames to UniProt dat files.
         update_affiliations (str): option to update taxonomic affiliations.
         option_bioservices (bool): use bioservices instead of manual queries.
@@ -178,7 +178,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
         clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
         mmseqs_options (str): use alternative mmseqs option
         linclust (bool): use linclust
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept.
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be kept.
         update_affiliations (str): option to update taxonomic affiliations.
         option_bioservices (bool): use bioservices instead of manual queries.
     """

@@ -30,7 +30,13 @@ from esmecata.annotation import extract_protein_cluster
 
 logger = logging.getLogger(__name__)
 
+
 def get_eggnog_version():
+    """Returns version of eggnog-mapper.
+
+    Returns:
+        eggnog_version (str): version of eggnog-mapper.
+    """
     try:
         from eggnogmapper.version import __version as eggnog_version
         return eggnog_version
@@ -38,9 +44,20 @@ def get_eggnog_version():
         logger.critical('eggnog-mapper seesm to not be installed in the environment.')
         raise e
 
+
 def call_to_emapper(input_path, output_name, output_dir, eggnog_database_path, nb_cpu):
+    """ Calls eggnog-mapper on the protein clusters.
+
+    Args:
+        input_path (str): pathname to the fasta file containing consensus sequences for protein clusters.
+        output_name (str): observation name associated with the protein sequences.
+        output_dir (str)): path to the output folder.
+        eggnog_database_path (str): pathname to eggnog database folder.
+        nb_cpu (int): number of CPUs to use with eggnog-mapper.
+    """
     eggnog_cmds = ['emapper.py', '--cpu', nb_cpu, '-i', input_path, '--output', output_name,
-                   '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir]
+                   '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
+                   '--dbmem']
 
     subprocess.call(eggnog_cmds)
 
@@ -133,6 +150,14 @@ def read_annotation(eggnog_outfile:str):
 
 
 def write_pathologic(base_filename, annotated_proteins, pathologic_output_file, reference_proteins):
+    """Write the annotation associated with a cluster after propagation step into pathologic file for run on Pathway Tools.
+
+    Args:
+        base_filename (str): observation name
+        annotated_proteins (dict): annotation dict: protein as key and annotation as value
+        reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
+        pathologic_output_file (str): pathname to output pathologic file
+    """
     with open(pathologic_output_file, 'w', encoding='utf-8') as element_file:
         element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
         element_file.write(';; ' + base_filename + '\n')
