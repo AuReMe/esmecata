@@ -375,8 +375,8 @@ def main():
                                 args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint,
                                 args.remove_tmp, args.limit_maximal_number_proteomes, args.rank_limit,
                                 args.cpu, args.threshold_clustering, args.mmseqs_options,
-                                args.linclust, args.minimal_number_proteomes,
-                                args.update_affiliations, args.option_bioservices)
+                                args.linclust, args.minimal_number_proteomes, args.update_affiliations,
+                                args.option_bioservices)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

@@ -155,12 +155,12 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         json.dump(workflow_metadata, ouput_file, indent=4)
 
 
-def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, busco_percentage_keep=80, ignore_taxadb_update=None,
-                        all_proteomes=None, uniprot_sparql_endpoint=None, remove_tmp=None,
-                        limit_maximal_number_proteomes=99, rank_limit=None,
-                        nb_cpu=1, clust_threshold=1, mmseqs_options=None,
-                        linclust=None, propagate_annotation=None, minimal_number_proteomes=1,
-                        update_affiliations=None, option_bioservices=None):
+def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, busco_percentage_keep=80,
+                            ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
+                            remove_tmp=None, limit_maximal_number_proteomes=99, rank_limit=None,
+                            nb_cpu=1, clust_threshold=1, mmseqs_options=None,
+                            linclust=None, minimal_number_proteomes=1, update_affiliations=None,
+                            option_bioservices=None):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
