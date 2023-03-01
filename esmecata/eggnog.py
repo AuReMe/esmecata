@@ -161,7 +161,7 @@ def write_pathologic(base_filename, annotated_proteins, pathologic_output_file, 
 
     Args:
         base_filename (str): observation name
-        annotated_proteins (dict): annotation dict: protein as key and annotation as value
+        annotated_proteins (dict): dict of protein and their annotations as {protein:{EC:'..,..', GOs:'..,..,'}}
         reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
         pathologic_output_file (str): pathname to output pathologic file
     """
@@ -199,22 +199,24 @@ def write_annotation_reference(protein_annotations, reference_proteins, annotati
     """Write the annotation associated with a cluster after propagation step.
 
     Args:
-        protein_annotations (dict): annotation dict: protein as key and annotation as value ([function_name, [go_terms], [ec_numbers], gene_name])
+        protein_annotations (dict): dict of protein and their annotations as {protein:{EC:'..,..', GOs:'..,..,'}}
         reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
         annotation_reference_file (str): pathname to output tabulated file
     """
     with open(annotation_reference_file, 'w') as output_tsv:
         csvwriter = csv.writer(output_tsv, delimiter='\t')
         csvwriter.writerow(['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC'])
-        for protein in protein_annotations:
-            gene_name = protein_annotations[protein]['Preferred_name']
+        for protein_annot_tuples in protein_annotations:
+            protein = protein_annot_tuples[0].split('|')[1]
+            protein_annot = protein_annot_tuples[1]
+            gene_name = protein_annot['Preferred_name']
             cluster_members = ','.join(reference_proteins[protein])
-            if 'GOs' in protein_annotations[protein]:
-                gos = [go for go in protein_annotations[protein]['GOs'].split(',') if go not in ['', '-']]
+            if 'GOs' in protein_annot:
+                gos = [go for go in protein_annot['GOs'].split(',') if go not in ['', '-']]
                 gos = ','.join(sorted(gos))
 
-            if 'EC' in protein_annotations[protein]:
-                ecs = [ec for ec in protein_annotations[protein]['EC'].split(',') if ec not in ['', '-']]
+            if 'EC' in protein_annot:
+                ecs = [ec for ec in protein_annot['EC'].split(',') if ec not in ['', '-']]
                 ecs = ','.join(sorted(ecs))
 
             csvwriter.writerow([protein, cluster_members, gene_name, gos, ecs])
