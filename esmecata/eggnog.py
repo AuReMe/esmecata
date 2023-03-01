@@ -37,19 +37,19 @@ def get_eggnog_version():
     Returns:
         eggnog_version (str): version of eggnog-mapper.
     """
-    ptools_version = None
+    eggnog_version = None
     response = subprocess.Popen(['emapper.py', '-v'], stdout=subprocess.PIPE, start_new_session=True, universal_newlines="")
-    for ptools_line in response.stdout:
-        ptools_line_decoded = ptools_line.decode('utf-8')
-        if 'emapper-' in ptools_line_decoded:
-            ptools_version = ptools_line_decoded.split(' / ')[0].replace('emapper-', '')
+    for eggnog_line in response.stdout:
+        eggnog_line_decoded = eggnog_line.decode('utf-8')
+        if 'emapper-' in eggnog_line_decoded:
+            eggnog_version = eggnog_line_decoded.split(' / ')[0].replace('emapper-', '')
 
-    if ptools_version is None:
+    if eggnog_version is None:
         logger.critical('esmecata could not find the version of eggnog-mapper.')
         logger.critical('It is possibly an issue with the installation of eggnog-mapper (maybe it is not in the PATH). Or it can be due to a change in the output of emapper.py -v command.')
         sys.exit()
 
-    return ptools_version
+    return eggnog_version
 
 
 def call_to_emapper(input_path, output_name, output_dir, eggnog_database_path, nb_cpu):
