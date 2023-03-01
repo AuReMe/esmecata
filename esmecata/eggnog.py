@@ -282,6 +282,13 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
         annotation_reference_file = os.path.join(annotation_reference_folder, observation_name+'.tsv')
         write_annotation_reference(annotated_proteins, reference_proteins, annotation_reference_file)
 
+        gos = [go for protein_id, protein_annot in annotated_proteins for go in protein_annot['GOs'].split(',') if go not in ['', '-']]
+        unique_gos = set(gos)
+        ecs = [ec for protein_id, protein_annot in annotated_proteins for ec in protein_annot['EC'].split(',') if ec not in ['', '-']]
+        unique_ecs = set(ecs)
+        logger.info('|EsMeCaTa|annotation| %d Go Terms (with %d unique GO Terms) and %d EC numbers (with %d unique EC) associated with %s.', len(gos),
+                                                                                                len(unique_gos), len(ecs), len(unique_ecs), observation_name)
+
         if len(annotated_proteins) > 0:
             pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
             is_valid_dir(pathologic_organism_folder)
