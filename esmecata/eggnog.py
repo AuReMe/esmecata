@@ -271,7 +271,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
         call_to_emapper(fasta_file_path, observation_name, eggnog_output_folder, eggnog_database_path, nb_cpu)
 
         eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, observation_name+'.emapper.annotations')
-        reference_protein_pathname = os.path.join(reference_protein_path, fasta_file_path+'.tsv')
+        reference_protein_pathname = os.path.join(reference_protein_path, observation_name+'.tsv')
         reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
 
         annotated_proteins = read_annotation(eggnog_mapper_annotation_file)
