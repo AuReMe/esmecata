@@ -253,7 +253,8 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     # Convert CPU int into str.
     nb_cpu = str(nb_cpu)
     # Download Uniprot metadata and create a json file containing them.
-    options = {'input_folder': input_folder, 'output_folder': output_folder, 'nb_cpu': nb_cpu}
+    options = {'input_folder': input_folder, 'output_folder': output_folder, 'nb_cpu': nb_cpu,
+               'eggnog_database_path': eggnog_database_path}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
@@ -310,8 +311,9 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
 
     endtime = time.time()
     duration = endtime - starttime
+    esmecata_metadata['esmecata_annotation_method'] = 'eggnog-mapper'
     esmecata_metadata['esmecata_annotation_duration'] = duration
-    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation_eggnog.json')
+    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation.json')
     with open(uniprot_metadata_file, 'w') as ouput_file:
         json.dump(esmecata_metadata, ouput_file, indent=4)
 
