@@ -38,11 +38,17 @@ EsMeCaTa needs the following python packages:
 
 Also esmecata requires mmseqs2 for protein clustering:
 
-- [mmseqs2](https://github.com/soedinglab/MMseqs2): To cluster proteins. Test have been made on version MMseqs2 Release 13-45111., especially with the version of the commi [f349118312919c4fcc448f4595ca3b3a387018e2](https://github.com/soedinglab/MMseqs2/tree/f349118312919c4fcc448f4595ca3b3a387018e2). But EsMeCaTa should be compatible with more recent version.
+- [mmseqs2](https://github.com/soedinglab/MMseqs2): To cluster proteins. Test have been made on version MMseqs2 Release 13-45111., especially with the version of the commit [f349118312919c4fcc448f4595ca3b3a387018e2](https://github.com/soedinglab/MMseqs2/tree/f349118312919c4fcc448f4595ca3b3a387018e2). But EsMeCaTa should be compatible with more recent version.
 
 If you use the option `--bioservices`, EsMeCaTa will also need this package:
 
 - [bioservices](https://github.com/cokelaer/bioservices): To query Uniprot instead of using the query functions of EsMeCaTa (more robust overtime).
+
+If you use the subcommand `esmecata annotation_eggnog` or `esmecata workflow_eggnog`, esmecata also requires:
+
+- [eggnog-mapper](https://github.com/eggnogdb/eggnog-mapper): to annotate protein clusters.
+It needs a path to the eggnog database. Also according to the option used, it needs around 60 Gb of RAM.
+So it is recommended to use it in a cluster.
 
 ## Installation
 
@@ -108,7 +114,7 @@ A [jupyter notebook](https://github.com/AuReMe/esmecata/blob/master/tutorials/es
 ## EsMeCaTa commands
 
 ````
-usage: esmecata [-h] [--version] {proteomes,clustering,annotation,workflow} ...
+usage: esmecata [-h] [--version] {proteomes,clustering,annotation,annotation_eggnog,workflow,workflow_eggnog} ...
 
 From taxonomic affiliation to metabolism using Uniprot. For specific help on each subcommand use: esmecata {cmd} --help
 
@@ -119,16 +125,30 @@ optional arguments:
 subcommands:
   valid subcommands:
 
-  {proteomes,clustering,annotation,workflow}
+  {proteomes,clustering,annotation,annotation_eggnog,workflow,workflow_eggnog}
     proteomes           Download proteomes associated with taxon from Uniprot Proteomes.
-    clustering          Cluster the proteins of the different proteomes of a taxon into a single set of representative shared proteins.
+    clustering          Cluster the proteins of the different proteomes of a taxon into a single set of representative
+                        shared proteins.
     annotation          Retrieve protein annotations from Uniprot.
+    annotation_eggnog   Annotate protein clusters using eggnog-mapper.
     workflow            Run all esmecata steps (proteomes, clustering and annotation).
+    workflow_eggnog     Run all esmecata steps (proteomes, clustering and annotation_eggnog).
 
-Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
+Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL
+endpoint). Annotation can be performed with UniProt or eggnog-mapper (which is then a requirement if the option is
+selected).
 ````
 
 ## EsMeCaTa functions
+
+EsMeCaTa is in three steps:
+
+- proteomes: search for proteomes associated with the taxonomic affiliations on UniProt.
+- clustering: clusters the protein of the proteomes and filter them according to a threshold -option (`-t`).
+- annotation: annotate the protein cluster.
+
+The annotation step can be performed with two methods, either by retrieving annotation from UniProt or by using eggnog-mapper.
+The eggnog-mapper approach has been found to be the more accurate in association with a clustering threshold of 0.5 (`-t 0.5`).
 
 ### `esmecata proteomes`: Retrieve proteomes associated with taxonomic affiliation
 
@@ -294,7 +314,7 @@ For each taxon (a row in the table) EsMeCaTa will use mmseqs2 to cluster the pro
 
 `esmecata clustering` options:
 
-* `-t/--threshold`: threshold clustering
+* `-t/--threshold`: clustering threshold
 
 It is possible to modify the requirements of the presence of at least one protein from each proteomes in a cluster to keep it. Using the threshold option one can give a float between 0 and 1 to select the ratio of representation of proteomes in a cluster to keep.
 
@@ -314,7 +334,7 @@ Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. I
 
 * `--remove-tmp`: remove mmseqs files stored in `mmseqs_tmp` folder
 
-### `esmecata annotation`: Retrieve protein annotations
+### `esmecata annotation`: Retrieve protein annotations with UniProt
 
 ````
 usage: esmecata annotation [-h] -i INPUT_DIR -o OUPUT_DIR [-s SPARQL] [-p PROPAGATE_ANNOTATION] [--uniref] [--expression] [--annotation-files ANNOTATION_FILES] [--bioservices]
@@ -380,6 +400,37 @@ The names of the files must contained: `uniprot_sprot` and `uniprot_trembl` to b
 * `--bioservices`: instead of using REST queries implemented in EsMeCaTa, relies on [bioservices](https://github.com/cokelaer/bioservices) API to query UniProt.
 This requires the bioservices package.
 
+### `esmecata annotation_eggnog`: Retrieve protein annotations with eggnog-mapper
+
+````
+usage: esmecata annotation_eggnog [-h] -i INPUT_DIR -o OUPUT_DIR -e EGGNOG_DATABASE [-c CPU]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT_DIR, --input INPUT_DIR
+                        This input folder of annotation is the output folder of clustering command.
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  -e EGGNOG_DATABASE, --eggnog EGGNOG_DATABASE
+                        Path to eggnog database.
+  -c CPU, --cpu CPU     CPU number for multiprocessing.
+````
+
+Requires eggnog-mapper in the path and the path to the eggnog database.
+This command takes as input the folder created by `esmecata clustering` and uses especially the `reference_proteins_consensus_fasta` folder.
+This folder contains the consensus protein sequences associated with each protein clusters kept according to the clustering threshold.
+These sequences are given as input to eggnog-mapper.
+
+The number of CPU used by eggnog-mapper can be modified with `-c`.
+By default, EsMeCaTa uses the option `--dbmem` of eggnog-mapper to store the database in memory, this requires around 50G of RAM.
+
+`esmecata annotation_eggnog` options:
+
+* `-e`: path to the eggnog database (required).
+
+* `-c`: number of CPUs to be used by eggnog-mapper.
+
+
 ### `esmecata workflow`: Consecutive runs of the three steps
 
 ````
@@ -425,7 +476,58 @@ optional arguments:
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
-EsMeCTa will perform the search for proteomes, the protein clustering and the annotation.
+EsMeCTa will perform the search for proteomes, the protein clustering and the annotation using UniProt.
+
+### `esmecata workflow_eggnog`: Consecutive runs of the three steps by using eggnog-mapper for the annotation
+
+````
+usage: esmecata workflow_eggnog [-h] -i INPUT_FILE -o OUPUT_DIR -e EGGNOG_DATABASE [-b BUSCO] [-c CPU] [--ignore-taxadb-update] [--all-proteomes]
+                                [-s SPARQL] [--remove-tmp] [-l LIMIT_MAXIMAL_NUMBER_PROTEOMES] [-t THRESHOLD_CLUSTERING] [-m MMSEQS_OPTIONS] [--linclust]
+                                [-r RANK_LIMIT] [--minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES] [--update-affiliations] [--bioservices]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT_FILE, --input INPUT_FILE
+                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic affiliation (separated by ;).
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  -e EGGNOG_DATABASE, --eggnog EGGNOG_DATABASE
+                        Path to eggnog database.
+  -b BUSCO, --busco BUSCO
+                        BUSCO percentage between 0 and 1. This will remove all the proteomes without BUSCO score and the score before the selected ratio
+                        of completion.
+  -c CPU, --cpu CPU     CPU number for multiprocessing.
+  --ignore-taxadb-update
+                        If you have a not up-to-date version of the NCBI taxonomy database with ete3, use this option to bypass the warning message and
+                        use the old version.
+  --all-proteomes       Download all proteomes associated with a taxon even if they are no reference proteomes.
+  -s SPARQL, --sparql SPARQL
+                        Use sparql endpoint instead of REST queries on Uniprot.
+  --remove-tmp          Delete tmp files to limit the disk space used: files created by mmseqs (in mmseqs_tmp).
+  -l LIMIT_MAXIMAL_NUMBER_PROTEOMES, --limit-proteomes LIMIT_MAXIMAL_NUMBER_PROTEOMES
+                        Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available
+                        proteomes (default is 99).
+  -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
+                        Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.
+  -m MMSEQS_OPTIONS, --mmseqs MMSEQS_OPTIONS
+                        String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing
+                        is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"
+  --linclust            Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. It is faster than mmseqs cluster (default
+                        behaviour) but less sensitive.
+  -r RANK_LIMIT, --rank-limit RANK_LIMIT
+                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For
+                        example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more information
+                        (and a list of rank names).
+  --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
+                        Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher
+                        taxonomic rank will be used. Default is 1.
+  --update-affiliations
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3
+                        database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+  --bioservices         Use bioservices instead of esmecata functions for protein annotation.
+````
+
+EsMeCTa will perform the search for proteomes, the protein clustering and the annotation using eggnog-mapper.
 
 ## EsMeCaTa outputs
 
@@ -535,6 +637,7 @@ output_folder
 │   └── ...
 ├── esmecata_annotation.log
 ├── esmecata_metadata_annotation.json
+├── stat_number_annotation.tsv
 ````
 
 The `annotation` folder contains a tabulated file for each `observation_name`. It contains the annotation retrieved with Uniprot (protein_name, review, GO Terms, EC numbers, Interpros, Rhea IDs and gene name) associated with all the proteins in a proteome or associated with an `observation_name`.
@@ -551,7 +654,40 @@ The `esmecata_metadata_annotation.json` serves the same purpose as the one used 
 
 The `uniref_annotation` contains the annotation from the representative protein of the UniRef cluster associated with the proteins of a taxon (if the `--uniref` option was used).
 
-`stat_number_clustering.tsv` is a tabulated file containing the number of GO Terms and EC numbers found for each observation name.
+`stat_number_annotation.tsv` is a tabulated file containing the number of GO Terms and EC numbers found for each observation name.
+
+### EsMeCaTa annotation_eggnog
+
+````
+output_folder
+├── annotation_reference
+│   └── Cluster_1.tsv
+│   └── ...
+├── eggnog_output
+│   └── Cluster_1.emapper.annotations
+│   └── Cluster_1.emapper.hits
+│   └── Cluster_1.emapper.seed_orthologs
+│   └── ...
+├── pathologic
+│   └── Cluster_1
+│       └── Cluster_1.pf
+│   └── ...
+│   └── taxon_id.tsv
+├── esmecata_annotation.log
+├── esmecata_metadata_annotation.json
+├── stat_number_annotation.tsv
+````
+The `annotation_reference` contains annotation only for the representative proteins, but the annotation of the other proteins of the same cluster can be propagated to the reference protein if the `-p` was used.
+
+The `eggnog_output` contains the resulting files of the eggnog-mapper run, three files for each observation name.
+
+The `pathologic` contains one sub-folder for each `observation_name` in which there is one PathoLogic file. There is also a `taxon_id.tsv` file which corresponds to a modified version of `proteome_tax_id.tsv` with only the `observation_name` and the `taxon_id`. This folder can be used as input to [mpwt](https://github.com/AuReMe/mpwt) to reconstruct draft metabolic networks using Pathway Tools PathoLogic.
+
+The file `esmecata_annotation.log` contains the log associated with the command.
+
+The `esmecata_metadata_annotation.json` serves the same purpose as the one used in `esmecata proteomes` to retrieve metadata about Uniprot release at the time of the query. It also gets the metadata associated with the command used with esmecata and the dependencies.
+
+`stat_number_annotation.tsv` is a tabulated file containing the number of GO Terms and EC numbers found for each observation name.
 
 ### EsMeCaTa workflow
 
@@ -626,3 +762,5 @@ The file `esmecata_workflow.log` contains the log associated with the command.
 The `esmecata_metadata_workflow.json` retrieves metadata about Uniprot release at the time of the query, the command used and its duration.
 
 `stat_number_workflow.tsv` is a tabulated file containing the number of proteomes, shared proteins, GO Terms and EC numbers found for each observation name.
+
+`esmecata workflow_eggnog` has the same output files except that the outputs of the annotation step corresponds to the output of `esmecata annotation_eggnog`.

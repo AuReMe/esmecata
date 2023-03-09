@@ -31,6 +31,7 @@ From taxonomic affiliation to metabolism using Uniprot.
 '''
 REQUIRES = '''
 Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
+Annotation can be performed with UniProt or eggnog-mapper (which is then a requirement if the option is selected).
 '''
 
 logger = logging.getLogger()
@@ -304,7 +305,7 @@ def main():
         allow_abbrev=False)
     workflow_eggnog_parser = subparsers.add_parser(
         'workflow_eggnog',
-        help='Run all esmecata steps (proteomes, clustering and annotation).',
+        help='Run all esmecata steps (proteomes, clustering and annotation_eggnog).',
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_eggnog_database,
             parent_parser_b, parent_parser_c, parent_parser_taxadb,
