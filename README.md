@@ -18,12 +18,15 @@ EsMeCaTa is a tool to estimate metabolic capabilities from a taxonomic affiliati
   - [EsMeCaTa functions](#esmecata-functions)
     - [`esmecata proteomes`: Retrieve proteomes associated with taxonomic affiliation](#esmecata-proteomes-retrieve-proteomes-associated-with-taxonomic-affiliation)
     - [`esmecata clustering`: Proteins clustering](#esmecata-clustering-proteins-clustering)
-    - [`esmecata annotation`: Retrieve protein annotations](#esmecata-annotation-retrieve-protein-annotations)
+    - [`esmecata annotation`: Retrieve protein annotations with UniProt](#esmecata-annotation-retrieve-protein-annotations-with-uniprot)
+    - [`esmecata annotation_eggnog`: Retrieve protein annotations with eggnog-mapper](#esmecata-annotation_eggnog-retrieve-protein-annotations-with-eggnog-mapper)
     - [`esmecata workflow`: Consecutive runs of the three steps](#esmecata-workflow-consecutive-runs-of-the-three-steps)
+    - [`esmecata workflow_eggnog`: Consecutive runs of the three steps by using eggnog-mapper for the annotation](#esmecata-workflow_eggnog-consecutive-runs-of-the-three-steps-by-using-eggnog-mapper-for-the-annotation)
   - [EsMeCaTa outputs](#esmecata-outputs)
     - [EsMeCaTa proteomes](#esmecata-proteomes)
     - [EsMeCaTa clustering](#esmecata-clustering)
     - [EsMeCaTa annotation](#esmecata-annotation)
+    - [EsMeCaTa annotation\_eggnog](#esmecata-annotation_eggnog)
     - [EsMeCaTa workflow](#esmecata-workflow)
 
 ## Requirements
