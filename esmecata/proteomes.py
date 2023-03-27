@@ -399,7 +399,9 @@ def requests_query(http_str, nb_retry=5):
         return response
 
 
-def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session=None, option_bioservices=None):
+def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep,
+                         all_proteomes, session=None, option_bioservices=None,
+                         minimal_number_proteomes=1):
     """REST query on UniProt to get the proteomes associated with a taxon.
 
     Args:
@@ -410,6 +412,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         session: request session object
         option_bioservices (bool): use bioservices instead of manual queries.
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept.
 
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
@@ -511,13 +514,17 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         if len(representative_proteomes) == 0:
             logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
             proteomes = other_proteomes
+        elif len(representative_proteomes) < minimal_number_proteomes:
+            logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
+            proteomes = other_proteomes + representative_proteomes
         else:
             proteomes = representative_proteomes
 
     return proteomes, organism_ids, proteomes_data
 
 
-def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
+def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep,
+                           all_proteomes, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql', minimal_number_proteomes=1):
     """SPARQL query on UniProt to get the proteomes associated with a taxon.
 
     Args:
@@ -527,6 +534,8 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept.
+
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
         organism_ids (dict): organism ID (key) associated with each proteomes (values)
@@ -665,6 +674,9 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         if len(reference_proteomes) == 0:
             logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
             proteomes = other_proteomes
+        elif len(reference_proteomes) < minimal_number_proteomes:
+            logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
+            proteomes = other_proteomes
         else:
             proteomes = reference_proteomes
 
@@ -785,9 +797,9 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
                 continue
 
             if uniprot_sparql_endpoint:
-                proteomes, organism_ids, data_proteomes = sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
+                proteomes, organism_ids, data_proteomes = sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, minimal_number_proteomes)
             else:
-                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session, option_bioservices)
+                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session, option_bioservices, minimal_number_proteomes)
 
             for data_proteome in data_proteomes:
                 proteomes_descriptions.append([tax_id, tax_name, *data_proteome])
