@@ -144,10 +144,10 @@ def main():
         '-t',
         '--threshold',
         dest='threshold_clustering',
-        help='Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.',
+        help='Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly. Default is 0.5.',
         required=False,
         type=range_limited_float_type,
-        default=0.95)
+        default=0.5)
     parent_parser_mmseqs_options = argparse.ArgumentParser(add_help=False)
     parent_parser_mmseqs_options.add_argument(
         '-m',
@@ -221,8 +221,8 @@ def main():
         dest='minimal_number_proteomes',
         required=False,
         type=limited_integer_type,
-        help='Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.',
-        default=1)
+        help='Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 5.',
+        default=5)
     parent_parser_annotation_file = argparse.ArgumentParser(add_help=False)
     parent_parser_annotation_file.add_argument(
         '--annotation-files',
