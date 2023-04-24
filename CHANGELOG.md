@@ -1,5 +1,40 @@
 # Changelog
 
+# EsMeCaTa v0.3.0 (2022-03-15)
+
+Add a new way to annotate protein clusters using eggnog-mapper. From test on metagenomcis data, it is more accurate than the methods with UniProt.
+Also modify the default option of EsMeCaTa for option with better results on tested data (minimal number of proteomes from 1 to 5 and clustering threshold from 0.95 to 0.5).
+
+## Add
+
+* Add a new method to annotate protein clusters using eggnog-mapper: new script `eggnog.py`, new commands `annotation_eggnog` and `workflow_eggnog`.
+* Add option to query uniprot dat files during annotation (`--annotation-files`, needs `biopython`>=`1.81`).
+* Add an option to use bioservices for annotation queries (`--bioservices`, requires `bioservices`>=`1.11.2`).
+* Add more tests for proteomes selection.
+* Add an option to update taxonomic affiliations (`--update-affiliations`).
+* Show the failedIDs during mapping for annotation.
+
+## Fix
+
+* Do not use already annotated proteins when using annotation files.
+* Fix issue in esmecata proteomes, not using non-reference proteome.
+* Fix issue with missing reference proteome when parsing SPARQL results.
+* Fix issue in main with cli.
+* Fix an issue with minimal-nb-proteomes and non-reference proteomes.
+
+## Modify
+
+* Modify default options to `--minimal-nb-proteomes` of 5 (from 1 in previous version) and `-t` (clustering threshold from 0.95 to 0.5).
+* Modify rank_limit option to make it more understandable. Only taxon ranks inferior or equal to the one given will be kept.
+* Remove several output folders (proteomes `result`, clustering `fasta_consensus` and clustering `fasta_representative`) to reduce size of EsMeCaTa results.
+* Rename `tmp_proteome` into `proteomes`.
+* Remove FROM in SPARQL queries to speed up the queries (could speed up SPARQL queries).
+* Change header for annotation files, especially: 'gos', 'ecs', 'interpros', 'rhea_ids' into 'GO', 'EC', 'InterPro', 'Rhea'.
+* Add column `cluster_members` in annotation reference file and renamed column `protein` into `protein_cluster`.
+* Update license year.
+* Update esmecata worfklow picture.
+* Update the doc of esmecata.
+
 # EsMeCaTa v0.2.12 (2022-12-01)
 
 ## Fix
