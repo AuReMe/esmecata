@@ -220,7 +220,7 @@ def test_find_non_reference_proteome_rest():
 
 
 def test_find_proteome_rest_all_proteomes():
-    expected_proteoems = {'UP000036680', 'UP000267096', 'UP000036681', 'UP000267007', 'UP000050794', 'UP000031036'}
+    expected_proteoems = {'UP000036680', 'UP000267096', 'UP000036681', 'UP000267007', 'UP000050794', 'UP000031036', 'UP000887564', 'UP000887569'}
     expected_organism_ids = {'6252': ['UP000036681'], '6265': ['UP000050794', 'UP000031036', 'UP000267007'], '6269': ['UP000267096', 'UP000267096', 'UP000036680']}
     expected_proteome_data =  [['UP000031036', 87.70360907058448, 'full', '6265', True, [['Unassembled WGS sequence', 'Toxocara canis']]],
                              ['UP000267096', 64.58000638773555, 'full', '6269', True, [['Unassembled WGS sequence', 'Anisakis simplex']]],
