@@ -26,6 +26,8 @@ import requests
 import shutil
 import sys
 import time
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from collections import OrderedDict
 from requests.adapters import HTTPAdapter, Retry
@@ -48,6 +50,17 @@ from urllib.parse import unquote
 REQUESTS_HEADERS = {'User-Agent': 'EsMeCaTa proteomes v' + esmecata_version + ', request by requests package v' + requests.__version__ }
 
 logger = logging.getLogger(__name__)
+
+# Rank level from Supplementary Table S3 of https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/
+RANK_LEVEL = OrderedDict({'superkingdom': 1, 'kingdom': 2, 'subkingdom': 3, 'superphylum': 4,
+                'phylum': 5, 'subphylum': 6, 'infraphylum': 7, 'superclass': 8,
+                'class': 9, 'subclass': 10, 'infraclass': 11, 'cohort': 12, 'subcohort': 13,
+                'superorder': 14, 'order': 15, 'suborder': 16, 'infraorder': 17, 'parvorder': 18,
+                'superfamily': 19, 'family': 20, 'subfamily': 21, 'tribe': 22, 'subtribe': 23,
+                'genus': 24, 'subgenus': 25, 'section': 26, 'subsection': 27, 'series': 28,
+                'subseries': 29, 'species group': 30, 'species subgroup': 31, 'species': 32,
+                'forma specialis': 33, 'subspecies': 34, 'varietas': 35, 'subvariety': 36,
+                'forma': 37, 'serogroup': 38, 'serotype': 39, 'strain': 40, 'isolate': 41})
 
 
 def get_next_link(headers):
@@ -299,21 +312,11 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
     Returns:
         output_json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
     """
-    # Rank level from Supplementary Table S3 of https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/
-    rank_level = {'superkingdom': 1, 'kingdom': 2, 'subkingdom': 3, 'superphylum': 4,
-                    'phylum': 5, 'subphylum': 6, 'infraphylum': 7, 'superclass': 8,
-                    'class': 9, 'subclass': 10, 'infraclass': 11, 'cohort': 12, 'subcohort': 13,
-                    'superorder': 14, 'order': 15, 'suborder': 16, 'infraorder': 17, 'parvorder': 18,
-                    'superfamily': 19, 'family': 20, 'subfamily': 21, 'tribe': 22, 'subtribe': 23,
-                    'genus': 24, 'subgenus': 25, 'section': 26, 'subsection': 27, 'series': 28,
-                    'subseries': 29, 'species group': 30, 'species subgroup': 31, 'species': 32,
-                    'forma specialis': 33, 'subspecies': 34, 'varietas': 35, 'subvariety': 36,
-                    'forma': 37, 'serogroup': 38, 'serotype': 39, 'strain': 40, 'isolate': 41}
-    unclassified_rank = ['unclassified '+rank for rank in rank_level]
+    unclassified_rank = ['unclassified '+rank for rank in RANK_LEVEL]
     non_hierarchical_ranks = ['clade', 'environmental samples', 'incertae sedis', 'no rank'] + unclassified_rank
 
-    rank_limit_level = rank_level[rank_limit]
-    rank_to_keeps = [rank for rank in rank_level if rank_level[rank] >= rank_limit_level]
+    rank_limit_level = RANK_LEVEL[rank_limit]
+    rank_to_keeps = [rank for rank in RANK_LEVEL if RANK_LEVEL[rank] >= rank_limit_level]
 
     # Create a deep copy of the input dictionary, as we will modified this dictionary.
     output_json_taxonomic_affiliations = copy.deepcopy(json_taxonomic_affiliations)
@@ -1022,6 +1025,50 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         for proteomes_id in proteomes_ids:
             proteome_to_download.extend(proteomes_ids[proteomes_id][1])
         proteome_to_download = set(proteome_to_download)
+
+        # Create taxon comparison.
+        taxon_rank_comparison = {}
+        esmecata_found_ranks = []
+        for observation_name in json_taxonomic_affiliations:
+            for tax_name in reversed(json_taxonomic_affiliations[observation_name]):
+                if json_taxonomic_affiliations[observation_name][tax_name] != ['not_found'] and observation_name in proteomes_ids:
+                    lowest_tax_id = json_taxonomic_affiliations[observation_name][tax_name][0]
+                    lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
+                    esmecata_tax_id = int(proteomes_ids[observation_name][0])
+                    esmecata_tax_rank = ncbi.get_rank([esmecata_tax_id])[esmecata_tax_id]
+                    esmecata_found_ranks.append(esmecata_tax_rank)
+                    if lowest_tax_rank not in taxon_rank_comparison:
+                        taxon_rank_comparison[lowest_tax_rank] = {}
+                        taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] = 1
+                    else:
+                        if esmecata_tax_rank not in taxon_rank_comparison[lowest_tax_rank]:
+                            taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] = 1
+                        else:
+                            taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] += 1
+                    break
+
+        for esmecata_taxon_rank in esmecata_found_ranks:
+            if esmecata_taxon_rank not in taxon_rank_comparison:
+                taxon_rank_comparison[esmecata_taxon_rank] = {}
+        taxon_comparison_dataframe = pd.DataFrame.from_dict(taxon_rank_comparison)
+
+        # Reorder taxonomic ranks in dataframe.
+        ordered_ranks = []
+        for tax_rank in RANK_LEVEL:
+            if tax_rank in taxon_comparison_dataframe.columns:
+                ordered_ranks.append(tax_rank)
+        taxon_comparison_dataframe = taxon_comparison_dataframe.reindex(ordered_ranks)
+        ordered_ranks = reversed(ordered_ranks)
+        taxon_comparison_dataframe = taxon_comparison_dataframe[ordered_ranks]
+
+        sns.set_style("white")
+        sns.set('poster', rc={'figure.figsize':(30,20), 'lines.linewidth': 10})
+        # Create output figure.
+        tax_comparison_rank_fig = os.path.join(output_folder, 'tax_comparison_rank.png')
+        sns.heatmap(taxon_comparison_dataframe, annot=True)
+        plt.xlabel('Lowest taxonomic rank')
+        plt.ylabel('Taxonomic rank used by EsMeCaTa')
+        plt.savefig(tax_comparison_rank_fig)
 
         # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
         with open(proteome_tax_id_file, 'w') as out_file:
