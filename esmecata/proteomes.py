@@ -1061,11 +1061,11 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         ordered_ranks = reversed(ordered_ranks)
         taxon_comparison_dataframe = taxon_comparison_dataframe[ordered_ranks]
 
-        sns.set_style("white")
         sns.set('poster', rc={'figure.figsize':(30,20), 'lines.linewidth': 10})
+        sns.set_style("white")
         # Create output figure.
         tax_comparison_rank_fig = os.path.join(output_folder, 'tax_comparison_rank.png')
-        sns.heatmap(taxon_comparison_dataframe, annot=True, fmt='n')
+        sns.heatmap(taxon_comparison_dataframe, annot=True, fmt='.0f')
         plt.xlabel('Lowest taxonomic rank')
         plt.ylabel('Taxonomic rank used by EsMeCaTa')
         plt.savefig(tax_comparison_rank_fig)
