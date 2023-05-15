@@ -272,9 +272,9 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     clustering_taxon_id_file = os.path.join(input_folder, 'proteome_tax_id.tsv')
     annotation_taxon_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
 
-    if os.path.exists(clustering_taxon_id_file):
+    if os.path.exists(annotation_taxon_id_file):
         if not os.path.samefile(clustering_taxon_id_file, annotation_taxon_id_file):
-            os.remove(clustering_taxon_id_file)
+            os.remove(annotation_taxon_id_file)
             shutil.copyfile(clustering_taxon_id_file, annotation_taxon_id_file)
     else:
         shutil.copyfile(clustering_taxon_id_file, annotation_taxon_id_file)
@@ -307,8 +307,8 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
 
         # If the proteomes associated with the taxon ID have already been annotated, copy the results.
         if proteomes_tax_id in already_annotated_taxon:
-            logger.info('|EsMeCaTa|annotation| Annotation of taxon ID %s already performed for %s.', proteomes_tax_id, already_annotated_observation_name)
             already_annotated_observation_name = already_annotated_taxon[proteomes_tax_id]
+            logger.info('|EsMeCaTa|annotation| Annotation of taxon ID %s already performed with %s.', proteomes_tax_id, already_annotated_observation_name)
 
             already_eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, already_annotated_observation_name+'.emapper.annotations')
             eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, observation_name+'.emapper.annotations')
@@ -322,7 +322,8 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             if os.path.exists(already_pathologic_file):
                 pathologic_file = os.path.join(pathologic_organism_folder, observation_name+'_1.pf')
                 shutil.copyfile(already_pathologic_file, pathologic_file)
-            logger.info('|EsMeCaTa|annotation| Copy eggnog results from %s to .', already_annotated_observation_name, observation_name)
+
+            logger.info('|EsMeCaTa|annotation| Copy eggnog results from %s to %s.', already_annotated_observation_name, observation_name)
 
         # If not, perform the annotation by eggnog-mapper.
         else:
