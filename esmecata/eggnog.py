@@ -337,10 +337,11 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             pathologic_file = os.path.join(pathologic_organism_folder, observation_name+'_1.pf')
 
             # Check if the annotation has not been performed:
-            if not os.path.exists(pathologic_file)
-                call_to_emapper(fasta_file_path, observation_name, eggnog_output_folder, eggnog_database_path, nb_cpu)
-
+            if not os.path.exists(pathologic_file):
                 eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, observation_name+'.emapper.annotations')
+                if not os.path.exists(eggnog_mapper_annotation_file):
+                    call_to_emapper(fasta_file_path, observation_name, eggnog_output_folder, eggnog_database_path, nb_cpu)
+
                 reference_protein_pathname = os.path.join(reference_protein_path, observation_name+'.tsv')
                 reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
 
