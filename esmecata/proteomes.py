@@ -686,6 +686,99 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     return proteomes, organism_ids, proteomes_data
 
 
+def compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids, ncbi):
+    """Search the taxonomic affiliations found by ete3 to find the lowest tax rank associated with each observation_name.
+    Then look at esmecata to find the taxon rank used to find proteome.
+
+    Args:
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping between taxon name and taxon ID (with remove rank specified)
+        proteomes_ids (dict):  observation name (key) associated with proteome IDs
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+
+    Returns:
+        taxon_rank_comparison (dict): lowest taxon name in input affiliation (key) associated with dict containing associated taxon ranks found by esmecata and the corresponding occurrence
+    """
+    # Create taxon comparison.
+    taxon_rank_comparison = {}
+    esmecata_found_ranks = []
+    for observation_name in json_taxonomic_affiliations:
+        reversed_affiliation_taxa = list(reversed(json_taxonomic_affiliations[observation_name]))
+        lowest_tax_rank = None
+        for tax_name in reversed_affiliation_taxa:
+            if json_taxonomic_affiliations[observation_name][tax_name] != ['not_found']:
+                lowest_tax_id = json_taxonomic_affiliations[observation_name][tax_name][0]
+                lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
+
+                # If lowest_taxon_rank is not in RANK_LEVEL, classified it with the upper tax rank.
+                # This is the case for the unclassified taxa.
+                if lowest_tax_rank not in RANK_LEVEL:
+                    higher_tax_id = ncbi.get_lineage(lowest_tax_id)[-2]
+                    higher_tax_rank = ncbi.get_rank([higher_tax_id])[higher_tax_id]
+                    lowest_tax_rank = higher_tax_rank
+                break
+
+        # If no taxon identified by ete3 is found, classified it as not_found.
+        if lowest_tax_rank is None:
+            lowest_tax_rank = 'not_found'
+
+        if observation_name in proteomes_ids:
+            esmecata_tax_id = int(proteomes_ids[observation_name][0])
+            esmecata_tax_rank = ncbi.get_rank([esmecata_tax_id])[esmecata_tax_id]
+            if esmecata_tax_rank not in RANK_LEVEL:
+                esmecata_higher_tax_id = ncbi.get_lineage(esmecata_tax_id)[-2]
+                esmecata_higher_tax_rank = ncbi.get_rank([esmecata_higher_tax_id])[esmecata_higher_tax_id]
+                esmecata_tax_rank = esmecata_higher_tax_rank
+        else:
+            esmecata_tax_rank = 'not_found'
+
+        esmecata_found_ranks.append(esmecata_tax_rank)
+        if lowest_tax_rank not in taxon_rank_comparison:
+            taxon_rank_comparison[lowest_tax_rank] = {}
+            taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] = 1
+        else:
+            if esmecata_tax_rank not in taxon_rank_comparison[lowest_tax_rank]:
+                taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] = 1
+            else:
+                taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] += 1
+
+    for esmecata_taxon_rank in esmecata_found_ranks:
+        if esmecata_taxon_rank not in taxon_rank_comparison:
+            taxon_rank_comparison[esmecata_taxon_rank] = {}
+
+    return taxon_rank_comparison
+
+
+def create_taxon_heatmap(taxon_rank_comparison, output_folder):
+    """Create a heatmap showing the lowest taxonomic rank in the input compared to the ones used by esmecata.
+
+    Args:
+        taxon_rank_comparison (dict): lowest taxon name in input affiliation (key) associated with dict containing associated taxon ranks found by esmecata and the corresponding occurrence
+
+    """
+    taxon_comparison_dataframe = pd.DataFrame.from_dict(taxon_rank_comparison)
+
+    # Reorder taxonomic ranks in dataframe.
+    ordered_ranks = []
+    # Add rank not found.
+    RANK_LEVEL.update({'not_found':'not_found'})
+    RANK_LEVEL.move_to_end('not_found', last=False)
+    for tax_rank in RANK_LEVEL:
+        if tax_rank in taxon_comparison_dataframe.columns:
+            ordered_ranks.append(tax_rank)
+    taxon_comparison_dataframe = taxon_comparison_dataframe.reindex(ordered_ranks)
+    ordered_ranks = reversed(ordered_ranks)
+    taxon_comparison_dataframe = taxon_comparison_dataframe[ordered_ranks]
+
+    sns.set('poster', rc={'figure.figsize':(30,20), 'lines.linewidth': 10})
+    sns.set_style("white")
+    # Create output figure.
+    tax_comparison_rank_fig = os.path.join(output_folder, 'tax_comparison_rank.png')
+    sns.heatmap(taxon_comparison_dataframe, annot=True, fmt='.0f')
+    plt.xlabel('Lowest taxonomic rank')
+    plt.ylabel('Taxonomic rank used by EsMeCaTa')
+    plt.savefig(tax_comparison_rank_fig)
+
+
 def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
     """If the number of proteomes is superior to limit_maximal_number_proteomes, this funciton will perform a subsampling of the proteomes to select a number around the limit_maximal_number_proteomes.
     It will use the organism ID in organism_ids, to find the taxonomic diversity among the proteomes and keep this diversity.
@@ -789,6 +882,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
                 proteomes_descriptions.append(proteome_data[tax_id])
                 if len(tax_id_founds[tax_id]) == 1:
                     single_proteomes[observation_name] = (tax_id, tax_id_founds[tax_id])
+                logger.info('|EsMeCaTa|proteomes| "%s" already associated with proteomes, %s will be associated with the taxon "%s" with %d proteomes.', tax_name, observation_name, tax_name, len(tax_id_founds[tax_id]))
                 break
 
             # If tax_id has not been found with a request do not try a new request with the same tax_id.
@@ -1026,49 +1120,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             proteome_to_download.extend(proteomes_ids[proteomes_id][1])
         proteome_to_download = set(proteome_to_download)
 
-        # Create taxon comparison.
-        taxon_rank_comparison = {}
-        esmecata_found_ranks = []
-        for observation_name in json_taxonomic_affiliations:
-            for tax_name in reversed(json_taxonomic_affiliations[observation_name]):
-                if json_taxonomic_affiliations[observation_name][tax_name] != ['not_found'] and observation_name in proteomes_ids:
-                    lowest_tax_id = json_taxonomic_affiliations[observation_name][tax_name][0]
-                    lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
-                    esmecata_tax_id = int(proteomes_ids[observation_name][0])
-                    esmecata_tax_rank = ncbi.get_rank([esmecata_tax_id])[esmecata_tax_id]
-                    esmecata_found_ranks.append(esmecata_tax_rank)
-                    if lowest_tax_rank not in taxon_rank_comparison:
-                        taxon_rank_comparison[lowest_tax_rank] = {}
-                        taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] = 1
-                    else:
-                        if esmecata_tax_rank not in taxon_rank_comparison[lowest_tax_rank]:
-                            taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] = 1
-                        else:
-                            taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] += 1
-                    break
-
-        for esmecata_taxon_rank in esmecata_found_ranks:
-            if esmecata_taxon_rank not in taxon_rank_comparison:
-                taxon_rank_comparison[esmecata_taxon_rank] = {}
-        taxon_comparison_dataframe = pd.DataFrame.from_dict(taxon_rank_comparison)
-
-        # Reorder taxonomic ranks in dataframe.
-        ordered_ranks = []
-        for tax_rank in RANK_LEVEL:
-            if tax_rank in taxon_comparison_dataframe.columns:
-                ordered_ranks.append(tax_rank)
-        taxon_comparison_dataframe = taxon_comparison_dataframe.reindex(ordered_ranks)
-        ordered_ranks = reversed(ordered_ranks)
-        taxon_comparison_dataframe = taxon_comparison_dataframe[ordered_ranks]
-
-        sns.set('poster', rc={'figure.figsize':(30,20), 'lines.linewidth': 10})
-        sns.set_style("white")
-        # Create output figure.
-        tax_comparison_rank_fig = os.path.join(output_folder, 'tax_comparison_rank.png')
-        sns.heatmap(taxon_comparison_dataframe, annot=True, fmt='.0f')
-        plt.xlabel('Lowest taxonomic rank')
-        plt.ylabel('Taxonomic rank used by EsMeCaTa')
-        plt.savefig(tax_comparison_rank_fig)
+        # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
+        taxon_rank_comparison = compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids, ncbi)
+        create_taxon_heatmap(taxon_rank_comparison, output_folder)
 
         # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
         with open(proteome_tax_id_file, 'w') as out_file:
@@ -1090,13 +1144,14 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 name = line['name']
                 tax_id = line['tax_id']
                 proteomes = line['proteome'].split(',')
-                taxon_result_folder = os.path.join(proteomes_folder, observation_name)
-                if not os.path.exists(taxon_result_folder):
-                    proteome_to_download.extend(proteomes)
-                    if len(proteomes) == 1:
-                        single_proteomes[observation_name] = (tax_id, proteomes)
-                    proteomes_ids[observation_name] = (tax_id, proteomes)
-                    logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, name, len(proteomes))
+                for proteome in proteomes:
+                    if proteome not in os.listdir(proteomes_folder):
+                        proteome_to_download.append(proteome)
+
+                if len(proteomes) == 1:
+                    single_proteomes[observation_name] = (tax_id, proteomes)
+                proteomes_ids[observation_name] = (tax_id, proteomes)
+                logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, name, len(proteomes))
 
         proteome_to_download = set(proteome_to_download)
 
