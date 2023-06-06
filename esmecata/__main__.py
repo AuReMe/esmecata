@@ -24,6 +24,7 @@ from esmecata.annotation import annotate_proteins
 from esmecata.workflow import perform_workflow, perform_workflow_eggnog
 from esmecata.eggnog import annotate_with_eggnog
 from esmecata.utils import limited_integer_type, range_limited_float_type, is_valid_dir
+from esmecata.analysis import perform_analysis
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''
@@ -75,6 +76,15 @@ def main():
         dest='input',
         required=True,
         help='This input folder of annotation is the output folder of clustering command.',
+        metavar='INPUT_DIR')
+
+    parent_parser_i_analysis_folder = argparse.ArgumentParser(add_help=False)
+    parent_parser_i_analysis_folder.add_argument(
+        '-i',
+        '--input',
+        dest='input',
+        required=True,
+        help='This input folder of analysis is the output folder of annotation command.',
         metavar='INPUT_DIR')
 
     parent_parser_o = argparse.ArgumentParser(add_help=False)
@@ -245,6 +255,21 @@ def main():
         dest='eggnog_database',
         help='Path to eggnog database.',
         required=True)
+    parent_parser_nb_digit = argparse.ArgumentParser(add_help=False)
+    parent_parser_nb_digit.add_argument(
+        '--nb-digit',
+        dest='nb_digit',
+        required=False,
+        type=limited_integer_type,
+        help='Number of the digit to keep on the clustermap (1, 2, 3 or 4). Defualt 3.',
+        default=3)
+    parent_parser_taxon_rank = argparse.ArgumentParser(add_help=False)
+    parent_parser_taxon_rank.add_argument(
+        '--taxon-rank',
+        dest='taxon_rank',
+        required=False,
+        help='Taxon rank to merge organisms (default family).',
+        default=3)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -315,6 +340,14 @@ def main():
             parent_parser_update_affiliation, parent_parser_bioservices
             ],
         allow_abbrev=False)
+    analysis_parser = subparsers.add_parser(
+        'analysis',
+        help='Create clustermap for EC.',
+        parents=[
+            parent_parser_i_analysis_folder, parent_parser_o, parent_parser_nb_digit,
+            parent_parser_taxon_rank
+            ],
+        allow_abbrev=False)
 
     args = parser.parse_args()
 
@@ -378,6 +411,8 @@ def main():
                                 args.cpu, args.threshold_clustering, args.mmseqs_options,
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
                                 args.option_bioservices)
+    elif args.cmd == 'analysis':
+        perform_analysis(args.input, args.output, args.taxon_rank, args.nb_digit)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

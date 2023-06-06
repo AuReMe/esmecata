@@ -25,7 +25,7 @@ import shutil
 import subprocess
 import sys
 
-from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query, urllib_query
+from esmecata.utils import is_valid_dir
 from esmecata import __version__ as esmecata_version
 from esmecata.annotation import extract_protein_cluster
 
