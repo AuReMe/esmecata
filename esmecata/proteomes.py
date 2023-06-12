@@ -753,7 +753,7 @@ def create_taxon_heatmap(taxon_rank_comparison, output_folder):
 
     Args:
         taxon_rank_comparison (dict): lowest taxon name in input affiliation (key) associated with dict containing associated taxon ranks found by esmecata and the corresponding occurrence
-
+        output_folder (str): path to the output folder.
     """
     taxon_comparison_dataframe = pd.DataFrame.from_dict(taxon_rank_comparison)
 
@@ -769,6 +769,13 @@ def create_taxon_heatmap(taxon_rank_comparison, output_folder):
     ordered_ranks = reversed(ordered_ranks)
     taxon_comparison_dataframe = taxon_comparison_dataframe[ordered_ranks]
 
+    # Sum all the apparition
+    import numpy as np
+    #Flip matrix
+    #matrix_sup_to_diagonal = np.triu(np.fliplr(df), 1)
+    # Keep only number above diagonal showing differences betwen input taxon and esmecata taxon.
+    #am = np.fliplr( matrix_sup_to_diagonal)[:-1]
+    taxon_comparison_dataframe.to_csv(os.path.join(output_folder, 'tax_comparison_rank.tsv'), sep='\t', index=None)
     sns.set('poster', rc={'figure.figsize':(30,20), 'lines.linewidth': 10})
     sns.set_style("white")
     # Create output figure.
@@ -793,7 +800,11 @@ def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
     Returns:
         selected_proteomes (list): subsample proteomes selected by the methods
     """
-    tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
+    try:
+        tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
+    except KeyError:
+        logger.critical('|EsMeCaTa|proteomes| UniProt tax ID not in ete3 NCBI Taxonomy database. Try to update it with the following command: python3 -c "from ete3 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database()".')
+        raise KeyError()
 
     # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
     childs = {}
@@ -1120,10 +1131,6 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             proteome_to_download.extend(proteomes_ids[proteomes_id][1])
         proteome_to_download = set(proteome_to_download)
 
-        # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
-        taxon_rank_comparison = compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids, ncbi)
-        create_taxon_heatmap(taxon_rank_comparison, output_folder)
-
         # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
         with open(proteome_tax_id_file, 'w') as out_file:
             csvwriter = csv.writer(out_file, delimiter='\t')
@@ -1133,10 +1140,15 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 tax_name = tax_id_names[tax_id]
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
                 csvwriter.writerow([observation_name, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[observation_name][1])])
+
+        # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
+        taxon_rank_comparison = compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids, ncbi)
+        create_taxon_heatmap(taxon_rank_comparison, output_folder)
     else:
         proteome_to_download = []
         proteomes_ids = {}
         single_proteomes = {}
+        already_download_proteomes = os.listdir(proteomes_folder)
         with open(proteome_tax_id_file, 'r') as proteome_tax_file:
             csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
             for line in csvreader:
@@ -1145,7 +1157,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 tax_id = line['tax_id']
                 proteomes = line['proteome'].split(',')
                 for proteome in proteomes:
-                    if proteome not in os.listdir(proteomes_folder):
+                    if proteome not in already_download_proteomes:
                         proteome_to_download.append(proteome)
 
                 if len(proteomes) == 1:
