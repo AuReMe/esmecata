@@ -735,16 +735,17 @@ def compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids
         lowest_tax_rank = None
         for tax_name in reversed_affiliation_taxa:
             if json_taxonomic_affiliations[observation_name][tax_name] != ['not_found']:
-                lowest_tax_id = json_taxonomic_affiliations[observation_name][tax_name][0]
-                lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
+                if tax_name != 'unknown':
+                    lowest_tax_id = json_taxonomic_affiliations[observation_name][tax_name][0]
+                    lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
 
-                # If lowest_taxon_rank is not in RANK_LEVEL, classified it with the upper tax rank.
-                # This is the case for the unclassified taxa.
-                if lowest_tax_rank not in RANK_LEVEL:
-                    higher_tax_id = ncbi.get_lineage(lowest_tax_id)[-2]
-                    higher_tax_rank = ncbi.get_rank([higher_tax_id])[higher_tax_id]
-                    lowest_tax_rank = higher_tax_rank
-                break
+                    # If lowest_taxon_rank is not in RANK_LEVEL, classified it with the upper tax rank.
+                    # This is the case for the unclassified taxa.
+                    if lowest_tax_rank not in RANK_LEVEL:
+                        higher_tax_id = ncbi.get_lineage(lowest_tax_id)[-2]
+                        higher_tax_rank = ncbi.get_rank([higher_tax_id])[higher_tax_id]
+                        lowest_tax_rank = higher_tax_rank
+                    break
 
         # If no taxon identified by ete3 is found, classified it as not_found.
         if lowest_tax_rank is None:
@@ -799,11 +800,12 @@ def create_taxon_heatmap(taxon_rank_comparison, output_folder):
     taxon_comparison_dataframe = taxon_comparison_dataframe[ordered_ranks]
 
     # Sum all the apparition
-    import numpy as np
+    #import numpy as np
     #Flip matrix
     #matrix_sup_to_diagonal = np.triu(np.fliplr(df), 1)
     # Keep only number above diagonal showing differences betwen input taxon and esmecata taxon.
     #am = np.fliplr( matrix_sup_to_diagonal)[:-1]
+
     taxon_comparison_dataframe.to_csv(os.path.join(output_folder, 'tax_comparison_rank.tsv'), sep='\t', index=None)
     sns.set('poster', rc={'figure.figsize':(30,20), 'lines.linewidth': 10})
     sns.set_style("white")

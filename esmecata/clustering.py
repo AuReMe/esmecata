@@ -16,7 +16,11 @@ import csv
 import gzip
 import json
 import logging
+import matplotlib.pyplot as plt
+import numpy as np
 import os
+import pandas as pd
+import seaborn as sns
 import shutil
 import subprocess
 import sys
@@ -56,6 +60,76 @@ def compute_stat_clustering(result_folder, stat_file=None):
                 csvwriter.writerow([observation_name, clustering_numbers[observation_name]])
 
     return clustering_numbers
+
+
+def create_proteome_representativeness_lineplot(proteome_tax_id_file, computed_threshold_folder, output_figure_file):
+    """ From the computed threshold folder and the proteomes_tax_id file created a lineplot.
+    This figures show the representativeness ratio and the number of associated protein clusters according to the taxonomic rank.
+
+    Args:
+        proteomes_taxon_id_file (str): pathname to the proteomes_tax_id file.
+        computed_threshold_folder (str): pathname to computed threshold folder.
+        output_figure_file (str): pathname to the output figure file.
+    """
+    # From proteomes_tax_id file get the taxonomic rank for each observation name.
+    proteome_df = pd.read_csv(proteome_tax_id_file, sep='\t')
+    proteome_df.set_index('observation_name', inplace=True)
+    tax_rank = proteome_df['tax_rank'].to_dict()
+
+    data = []
+    for tsv_file in os.listdir(computed_threshold_folder):
+        obs_name = os.path.splitext(tsv_file)[0]
+        tsv_file_path = os.path.join(computed_threshold_folder, tsv_file)
+        tmp_df = pd.read_csv(tsv_file_path, sep='\t')
+        for tmp_threshold in np.arange(0, 1.01, 0.025):
+            # Compute the number of protein clusters associated with representativeness ratio of tmp_threshold.
+            nb_protein_cluster_ratio = len(tmp_df[tmp_df['cluster_ratio']>= tmp_threshold])
+            data.append([obs_name, tax_rank[obs_name], tmp_threshold, nb_protein_cluster_ratio])
+
+    df = pd.DataFrame(data, columns=['obs_name', 'rank', 'clust', 'count'])
+
+    fig, ax = plt.subplots(figsize=(9,5))
+    g_results =sns.lineplot(data=df, x="clust", y='count', hue="rank", errorbar='sd')
+    g_results.set(yscale='log')
+    # Use max + 0.25 quantile to set ylim.
+    g_results.set(ylim=[1, df['count'].max()+df['count'].quantile(0.25)])
+    plt.savefig(output_figure_file)
+
+
+def create_proteome_representativeness_lineplot_per_taxon_rank(proteome_tax_id_file, computed_threshold_folder, output_folder):
+    """ From the computed threshold folder and the proteomes_tax_id file created a lineplot.
+    This figures show the representativeness ratio and the number of associated protein clusters according to the taxonomic rank.
+
+    Args:
+        proteomes_taxon_id_file (str): pathname to the proteomes_tax_id file.
+        computed_threshold_folder (str): pathname to computed threshold folder.
+        output_folder (str): pathname to the output folder.
+    """
+    proteome_df = pd.read_csv(proteome_tax_id_file, sep='\t')
+    proteome_df.set_index('observation_name', inplace=True)
+    tax_rank = proteome_df['tax_rank'].to_dict()
+    tax_name = proteome_df['name'].to_dict()
+
+    data = []
+    for tsv_file in os.listdir(computed_threshold_folder):
+        obs_name = os.path.splitext(tsv_file)[0]
+        tsv_file_path = os.path.join(computed_threshold_folder, tsv_file)
+        tmp_df = pd.read_csv(tsv_file_path, sep='\t')
+        for tmp_threshold in np.arange(0, 1.01, 0.025):
+            nb_protein_cluster_ratio = len(tmp_df[tmp_df['cluster_ratio']>= tmp_threshold])
+            data.append([obs_name, tax_rank[obs_name], tax_name[obs_name], tmp_threshold, nb_protein_cluster_ratio])
+
+    df = pd.DataFrame(data, columns=['obs_name', 'tax_rank', 'tax_name', 'clust', 'count'])
+
+    for rank in df['tax_rank'].unique():
+        tmp_df = df[df['tax_rank']==rank]
+        fig, ax = plt.subplots(figsize=(9,5))
+        g_results =sns.lineplot(data=tmp_df, x="clust", y='count', hue="tax_name", errorbar='sd')
+        g_results.set(yscale='log')
+        g_results.set(ylim=[1, tmp_df['count'].max()+df['count'].quantile(0.25)])
+        output_figure = os.path.join(output_folder, 'representativeness_ratio_{0}.svg'.format(rank))
+        plt.savefig(output_figure)
+        plt.clf()
 
 
 def get_proteomes_tax_id(proteomes_taxon_id_file):
@@ -448,6 +522,12 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     # Compute number of protein clusters kept.
     stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
     compute_stat_clustering(reference_proteins_path, stat_file)
+    output_figure_file = os.path.join(output_folder, 'representativeness_clustering_ratio.svg')
+    create_proteome_representativeness_lineplot(clustering_taxon_id_file, computed_threshold_path, output_figure_file)
+
+    proteome_ratio_lineplots_path = os.path.join(output_folder, 'proteome_ratio_lineplots')
+    is_valid_dir(proteome_ratio_lineplots_path)
+    create_proteome_representativeness_lineplot_per_taxon_rank(clustering_taxon_id_file, computed_threshold_path, proteome_ratio_lineplots_path)
 
     endtime = time.time()
     duration = endtime - starttime
