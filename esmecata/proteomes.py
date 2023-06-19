@@ -123,7 +123,7 @@ def ete3_database_update(ignore_taxadb_update):
 
 
 def update_taxonomy(observation_name, taxonomic_affiliation, ncbi=None):
-    """ Update the taoxnomic affiliation using ete3 and the lowest available taxonomic name.
+    """ Update the taxonomic affiliation using ete3 and the lowest available taxonomic name.
 
     Args:
         observation_name (str): observation name associated with taxonomic affiliation
@@ -136,16 +136,25 @@ def update_taxonomy(observation_name, taxonomic_affiliation, ncbi=None):
     if ncbi is None:
         ncbi = NCBITaxa()
 
+    # For each taxon in the affiliation, search for the lineage associated in ete3.
+    lineage_all_taxa = []
     taxons = [taxon for taxon in taxonomic_affiliation.split(';')]
-
     for taxon in reversed(taxons):
+        # From taxon name to taxon ID.
         taxon_translations = ncbi.get_name_translator([taxon])
-        tax_id_name = []
 
         if taxon in taxon_translations:
             if len(taxon_translations[taxon]) > 1:
+                # If there are multiple taxon IDs for a taxon name.
                 best_lineage_match = 0
                 best_lineage_matches = []
+
+                # Need to have other taxon in affiliations to find the correct one, if not skip this affiliation.
+                if len(taxons) == 1:
+                    logger.critical('|EsMeCaTa|proteomes| Taxonomy of %s has an ambiguous taxon name but not enoug taxa in its affiliations, skip updating it.', observation_name)
+                    new_taxonomic_affiliations = None
+                    break
+                # Choose the ID matching the lineage of the other taxa in the affiliations.
                 for tax_id in taxon_translations[taxon]:
                     tax_id_lineages = ncbi.get_lineage(tax_id)
                     tax_id_translator = ncbi.get_taxid_translator(tax_id_lineages)
@@ -153,23 +162,43 @@ def update_taxonomy(observation_name, taxonomic_affiliation, ncbi=None):
                     if len(set(tax_id_name).intersection(set(taxons))) > best_lineage_match:
                         best_lineage_match = len(set(tax_id_name).intersection(set(taxons)))
                         best_lineage_matches = tax_id_name
-                tax_id_name = best_lineage_matches
+                lineage_all_taxa.append(best_lineage_matches)
 
+            # If there is only one taxon ID, get its lineage.
             if len(taxon_translations[taxon]) == 1:
                 tax_id = taxon_translations[taxon][0]
                 tax_id_lineages = ncbi.get_lineage(tax_id)
                 tax_id_translator = ncbi.get_taxid_translator(tax_id_lineages)
                 tax_id_name = [tax_id_translator[tax_lineage] for tax_lineage in tax_id_lineages]
+                lineage_all_taxa.append(tax_id_name)
 
-            if len(tax_id_name) > 0:
-                new_taxonomic_affiliations = ';'.join(tax_id_name)
-                logger.critical('|EsMeCaTa|proteomes| Taxonomy of %s ("%s") updated into "%s" .', observation_name, taxonomic_affiliation, new_taxonomic_affiliations)
-                break
+            # If no taxon found, no possibility to update
             else:
                 new_taxonomic_affiliations = None
         else:
             new_taxonomic_affiliations = None
 
+    if lineage_all_taxa != []:
+        # If it founds new affiliations, check that all lineages found are similar.
+        check_lineage = []
+        for index, lineage_taxon in enumerate(lineage_all_taxa):
+            tmp_check_lineage = []
+            for index_to_compare in range(index, len(lineage_all_taxa)):
+                # Look at the intersection between the current lineage and all the ones found for the other taxon in affiliations.
+                intersection_lineage = set(lineage_taxon).intersection(set(lineage_all_taxa[index_to_compare]))
+                # If this intersection equals to the lineage we use to compare?
+                intersection_lineage_bool = intersection_lineage == set(lineage_all_taxa[index_to_compare])
+                tmp_check_lineage.append(intersection_lineage_bool)
+            check_lineage.append(tmp_check_lineage)
+
+        for index, check_values in enumerate(check_lineage):
+            # If all comparison corresponds, keep the lowest affiliation.
+            if all(check_values) is True:
+                new_taxonomic_affiliations = ';'.join(lineage_all_taxa[index])
+                logger.critical('|EsMeCaTa|proteomes| Taxonomy of %s ("%s") updated into "%s" .', observation_name, taxonomic_affiliation, new_taxonomic_affiliations)
+                break
+
+    # If no new taxonomic affiliations, keep the old one. 
     if new_taxonomic_affiliations is None:
         new_taxonomic_affiliations = taxonomic_affiliation
 

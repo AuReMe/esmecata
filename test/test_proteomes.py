@@ -140,6 +140,15 @@ def test_update_taxonomy():
     assert new_taxonomic_affiliation == expected_taconomic_affiliation
 
 
+def test_update_taxonomy():
+    outdated_taxonomic_affiliation = 'Bacteria;Yersinia'
+    new_taxonomic_affiliation = update_taxonomy('test', outdated_taxonomic_affiliation)
+
+    expected_taconomic_affiliation = 'root;cellular organisms;Bacteria;Pseudomonadota;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia'
+
+    assert new_taxonomic_affiliation == expected_taconomic_affiliation
+
+
 def test_rest_query_proteomes():
     expected_proteoems = ['UP000255169', 'UP000000815']
     expected_organism_ids = {'632': ['UP000000815'], '29486': ['UP000255169']}
