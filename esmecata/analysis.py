@@ -16,6 +16,8 @@ import csv
 import os
 import pandas as pd
 import logging
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from collections import Counter
 from ete3 import NCBITaxa
@@ -156,10 +158,6 @@ def create_visualisation_ec(dataset_annotation_file_path, taxa_name, normalised_
 
     nb_obs_names = len(list(normalised_df.columns))
     if nb_obs_names > 1:
-        import numpy as np
-        import seaborn as sns
-        import matplotlib.pyplot as plt
-
         if nb_digit in [1, 2, 3]:
             fig_size = (20, 30)
             linewidth = 1

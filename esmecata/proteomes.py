@@ -810,11 +810,37 @@ def create_taxon_heatmap(taxon_rank_comparison, output_folder):
     sns.set('poster', rc={'figure.figsize':(30,20), 'lines.linewidth': 10})
     sns.set_style("white")
     # Create output figure.
-    tax_comparison_rank_fig = os.path.join(output_folder, 'tax_comparison_rank.png')
+    tax_comparison_rank_fig = os.path.join(output_folder, 'tax_comparison_rank.svg')
     sns.heatmap(taxon_comparison_dataframe, annot=True, fmt='.0f')
     plt.xlabel('Lowest taxonomic rank')
     plt.ylabel('Taxonomic rank used by EsMeCaTa')
     plt.savefig(tax_comparison_rank_fig)
+
+
+def create_taxon_heatmap_from_complete_run(esmecata_proteome_folder):
+    """ Create tax_comparison_rank picture file from esmecata proteome folder after complete run.
+
+    Args:
+        esmecata_proteome_folder (dict): path to esmecata proteome folder with all data
+    """
+    proteome_tax_id_file = os.path.join(esmecata_proteome_folder, 'proteome_tax_id.tsv')
+    proteomes_ids = {}
+    with open(proteome_tax_id_file, 'r') as proteome_tax_file:
+        csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
+        for line in csvreader:
+            observation_name = line['observation_name']
+            tax_id = line['tax_id']
+            proteomes = line['proteome'].split(',')
+            proteomes_ids[observation_name] = (tax_id, proteomes)
+
+    json_log = os.path.join(esmecata_proteome_folder, 'association_taxon_taxID.json')
+    with open(json_log, 'r') as input_json_file:
+        json_taxonomic_affiliations = json.load(input_json_file)
+
+    ncbi = NCBITaxa()
+    # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
+    taxon_rank_comparison = compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids, ncbi)
+    create_taxon_heatmap(taxon_rank_comparison, esmecata_proteome_folder)
 
 
 def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
@@ -1172,9 +1198,6 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
                 csvwriter.writerow([observation_name, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[observation_name][1])])
 
-        # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
-        taxon_rank_comparison = compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids, ncbi)
-        create_taxon_heatmap(taxon_rank_comparison, output_folder)
     else:
         proteome_to_download = []
         proteomes_ids = {}
@@ -1197,6 +1220,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, name, len(proteomes))
 
         proteome_to_download = set(proteome_to_download)
+
+    # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
+    create_taxon_heatmap_from_complete_run(output_folder)
 
     # Download all the proteomes in proteome folder.
     proteomes_already_downloaded = set([proteome_filename.replace('.faa.gz', '') for proteome_filename in os.listdir(proteomes_folder)])
