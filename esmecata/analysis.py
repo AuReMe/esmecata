@@ -143,6 +143,9 @@ def normalise_dataframe(input_dataframe, taxa_name, nb_digit):
         input_dataframe[taxon_name] = input_dataframe[taxa_name[taxon_name]].sum(axis=1)#.div(len(taxa_name[taxon_name]))
     input_dataframe = input_dataframe[list(taxa_name.keys())]
 
+    # Remove all rows equal to 0 (with the selection of taxonomic rank, it is possible to have EC associated with no selected ranks).
+    input_dataframe = input_dataframe.loc[~(input_dataframe==0).all(axis=1)]
+
     # Divide each value by the sum of the columns.
     # Here, the number of each EC for a taxon is divided by the number of EC in all the taxa.
     input_dataframe = input_dataframe.div(input_dataframe.sum(axis=1), axis=0)
