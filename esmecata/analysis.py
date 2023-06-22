@@ -66,34 +66,52 @@ def create_dataset_annotation_file(annotation_reference_folder, dataset_annotati
     return dataset_annotation
 
 
-def get_taxon_obs_name(proteome_tax_id_file, taxon_rank='family'):
+def get_taxon_obs_name(proteome_tax_id_file, selected_taxon_rank='family'):
     """ From proteome tax id file, reads it and extract the taxonomic name associated with the observation name.
 
     Args:
         proteome_tax_id_file (str): path to the proteome fax id file
-        taxon_rank (str): taxonomic rank selected
+        selected_taxon_rank (str): taxonomic rank selected
 
     Returns:
         taxa_name (dict): annotation dict: taxon_name as key and observation_name as value
     """
     ncbi = NCBITaxa()
     taxa_name = {}
+    total_obs_name = []
+    selected_obs_name = []
     with open(proteome_tax_id_file, 'r') as proteome_tax_file:
         csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
         for line in csvreader:
             observation_name = line['observation_name']
-            taxon_name = line['name']
-            tax_id = ncbi.get_name_translator([taxon_name])[taxon_name][0]
-            tax_rank = ncbi.get_rank([tax_id])[tax_id] 
+            total_obs_name.append(observation_name)
 
-            tax_id_lineages = ncbi.get_lineage(tax_id)
-            for tax_id in tax_id_lineages:
-                if ncbi.get_rank([tax_id])[tax_id] == taxon_rank:
-                    taxon_name = ncbi.get_taxid_translator([tax_id])[tax_id]
-            if taxon_name not in taxa_name:
-                taxa_name[taxon_name] = [observation_name]
+            taxon_name = line['name']
+            tax_id = line['tax_id']
+            tax_rank = line['tax_rank']
+
+            found_taxon_name = None
+
+            if tax_rank == selected_taxon_rank:
+                found_taxon_name = taxon_name
             else:
-                taxa_name[taxon_name].append(observation_name)
+                tax_id_lineages = ncbi.get_lineage(tax_id)
+                for tax_id in tax_id_lineages:
+                    if ncbi.get_rank([tax_id])[tax_id] == selected_taxon_rank:
+                        tmp_lineage_taxon_name = ncbi.get_taxid_translator([tax_id])[tax_id]
+                        found_taxon_name = tmp_lineage_taxon_name
+
+            if found_taxon_name is not None:
+                if found_taxon_name not in taxa_name:
+                    taxa_name[found_taxon_name] = [observation_name]
+                    selected_obs_name.append(observation_name)
+                else:
+                    taxa_name[found_taxon_name].append(observation_name)
+                    selected_obs_name.append(observation_name)
+
+    selected_obs_name = set(selected_obs_name)
+
+    logger.info('|EsMeCaTa|analysis| {0} of {1} could been associated with taxon rank {2}.'.format(len(selected_obs_name), len(total_obs_name), selected_taxon_rank))
 
     return taxa_name
 
@@ -146,7 +164,7 @@ def create_visualisation_ec(dataset_annotation_file_path, taxa_name, normalised_
         nb_digit (int): number of digits to keep for visualisation (by default 3)
     """
     if nb_digit not in [1, 2, 3, 4]:
-        logger.info('|EsMeCaTa|annotation| EC digit for visualisation must be 1, 2, 3 or 4, not {nb_digit}.')
+        logger.info('|EsMeCaTa|analysis| EC digit for visualisation must be 1, 2, 3 or 4, not {nb_digit}.')
 
     df = pd.read_csv(dataset_annotation_file_path, sep='\t')
 
@@ -173,7 +191,7 @@ def create_visualisation_ec(dataset_annotation_file_path, taxa_name, normalised_
 
         plt.savefig(output_figure)
     else:
-        logger.info('|EsMeCaTa|annotation| Not enough observation names for clustermap.')
+        logger.info('|EsMeCaTa|analysis| Not enough observation names for clustermap: {0}.'.format(','.join(list(normalised_df.columns))))
 
 
 def create_ec_clustermap(annotation_reference_folder, proteome_tax_id_file, output_folder, taxon_rank='family', nb_digit=3):

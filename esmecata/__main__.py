@@ -269,7 +269,7 @@ def main():
         dest='taxon_rank',
         required=False,
         help='Taxon rank to merge organisms (default family).',
-        default=3)
+        default='family')
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -344,8 +344,8 @@ def main():
         'analysis',
         help='Create clustermap for EC.',
         parents=[
-            parent_parser_i_analysis_folder, parent_parser_o, parent_parser_nb_digit,
-            parent_parser_taxon_rank
+            parent_parser_i_analysis_folder, parent_parser_o, parent_parser_taxon_rank,
+            parent_parser_nb_digit
             ],
         allow_abbrev=False)
 
