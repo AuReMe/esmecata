@@ -1105,6 +1105,50 @@ def compute_stat_proteomes(proteome_tax_id_file, stat_file=None):
     return proteome_numbers
 
 
+def create_comp_taxonomy_file(association_taxon_id_json, proteomes_ids, tax_id_names, output_dir):
+    """ Create taxonomy_diff.tsv file in proteome output folder. Compare Input taxa information to esmecata taxa
+    information (taxa name, taxa ID, taxa rank) + precise OTUs associated.
+
+    Args:
+        association_taxon_id_json (dict): observation name and dictionary with mapping between taxon name and taxon
+            ID (with remove rank specified)
+        proteomes_ids (dict): observation name (key) associated with proteome IDs
+        tax_id_names (dict): associate tax id to tax name
+        output_dir (str): pathname to the output folder
+    """
+    ncbi = NCBITaxa()
+
+    d_tax = dict()
+    for observation_name in proteomes_ids:
+        reversed_affiliation_taxa = list(reversed(association_taxon_id_json[observation_name]))
+        for tax_name in reversed_affiliation_taxa:
+            if tax_name != 'unknown' and association_taxon_id_json[observation_name][tax_name] != ['not_found']:
+                if tax_name not in d_tax.keys():
+                    tax_id = association_taxon_id_json[observation_name][tax_name][0]
+                    tax_rank = ncbi.get_rank([tax_id])
+                    if tax_id in tax_rank.keys():
+                        tax_rank = tax_rank[tax_id]
+                    else:
+                        tax_rank = ''
+                    esmecata_tax_id = int(proteomes_ids[observation_name][0])
+                    esmecata_tax_name = tax_id_names[esmecata_tax_id]
+                    esmecata_tax_rank = ncbi.get_rank([esmecata_tax_id])[esmecata_tax_id]
+                    d_tax[tax_name] = {'Esmecata ID': esmecata_tax_id, 'Esmecata Rank': esmecata_tax_rank,
+                                       'Esmecata Name': esmecata_tax_name, 'Input ID': tax_id, 'Input Rank': tax_rank}
+                if 'obs' not in d_tax[tax_name].keys():
+                    d_tax[tax_name]['obs'] = list()
+                d_tax[tax_name]['obs'].append(observation_name)
+                break
+
+    output = os.path.join(output_dir, 'taxonomy_diff.tsv')
+    with open(output, 'w') as f:
+        f.write('\t'.join(['Input Name', 'Esmecata Name', 'Input Rank', 'Esmecata Rank',
+                           'Input ID', 'Esmecata ID', 'Observation Names']))
+        for name, ref in d_tax.items():
+            f.write('\n' + '\t'.join([name, ref['Esmecata Name'], ref['Input Rank'], ref['Esmecata Rank'],
+                                      str(ref['Input ID']), str(ref['Esmecata ID']), ';'.join(ref['obs'])]))
+
+
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1,
@@ -1198,6 +1242,11 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
                 csvwriter.writerow([observation_name, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[observation_name][1])])
 
+        create_comp_taxonomy_file(association_taxon_id_json=json_taxonomic_affiliations,
+                                  proteomes_ids=proteomes_ids,
+                                  tax_id_names=tax_id_names,
+                                  output_dir=output_folder)
+
     else:
         proteome_to_download = []
         proteomes_ids = {}
@@ -1220,6 +1269,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, name, len(proteomes))
 
         proteome_to_download = set(proteome_to_download)
+
 
     # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
     create_taxon_heatmap_from_complete_run(output_folder)
