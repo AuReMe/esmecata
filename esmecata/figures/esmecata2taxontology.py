@@ -340,10 +340,3 @@ def esmecata2taxonomy(run_name: str, output: str):
     tax_comp_file = os.path.join(run_name, '0_proteomes', 'taxonomy_diff.tsv')
     data = get_fig_parameters(tax_comp_file)
     generate_sunburst_fig(data, output)
-
-
-# MAIN ==============================================================================================================
-
-RUN = 'fungi47'
-OUTPUT = 'sb'
-esmecata2taxonomy(RUN, OUTPUT)
