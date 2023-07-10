@@ -226,7 +226,7 @@ def write_annotation_reference(protein_annotations, reference_proteins, annotati
     """
     with open(annotation_reference_file, 'w') as output_tsv:
         csvwriter = csv.writer(output_tsv, delimiter='\t')
-        csvwriter.writerow(['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC'])
+        csvwriter.writerow(['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction'])
         for protein_annot_tuples in protein_annotations:
             protein = protein_annot_tuples[0].split('|')[1]
             protein_annot = protein_annot_tuples[1]
@@ -235,12 +235,22 @@ def write_annotation_reference(protein_annotations, reference_proteins, annotati
             if 'GOs' in protein_annot:
                 gos = [go for go in protein_annot['GOs'].split(',') if go not in ['', '-']]
                 gos = ','.join(sorted(gos))
+            else:
+                gos = ''
 
             if 'EC' in protein_annot:
                 ecs = [ec for ec in protein_annot['EC'].split(',') if ec not in ['', '-']]
                 ecs = ','.join(sorted(ecs))
+            else:
+                ecs = ''
 
-            csvwriter.writerow([protein, cluster_members, gene_name, gos, ecs])
+            if 'KEGG_Reaction' in protein_annot:
+                keggs = [kegg_rxn for kegg_rxn in protein_annot['KEGG_Reaction'].split(',') if kegg_rxn not in ['', '-']]
+                keggs = ','.join(sorted(keggs))
+            else:
+                keggs = ''
+
+            csvwriter.writerow([protein, cluster_members, gene_name, gos, ecs, keggs])
 
 
 def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_cpu):
