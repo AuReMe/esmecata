@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 import os
+import json
+import pandas as pd
+import matplotlib.pyplot as plt
+from ete3 import NCBITaxa
 
 __author__ = "Pauline Hamon-Giraud, Victor Mataigne"
 __email__ = "victor.mataigne@irisa.fr"
@@ -14,19 +16,36 @@ warnings.filterwarnings('ignore')
 # nb : Python 3.9.13 was used
 
 def post_analysis_config(input_table, results_path):
+    '''
+    Proceeds to format the inputs and outputs data in order to un all the others plotting functions efficiently
+
+        Parameters:
+            input_table (str): the path to the input table of taxa
+            results_path (str): the path of the esmecata run
+
+        Returns:
+            input_data (pandas) :
+            df_stats (pandas) : 
+            n_in (int) : 
+            n_out (int) : 
+            proteome_tax_id (pandas) :
+    '''
 
     # Load and concat summaries of results
     stats_nb_proteomes = pd.read_table(os.path.join(results_path,'0_proteomes/stat_number_proteome.tsv'),
         sep='\t',
-        index_col=0)
+        header=0,
+        index_col='observation_name')
     
     stats_nb_clustering = pd.read_table(os.path.join(results_path,'1_clustering/stat_number_clustering.tsv'),
         sep='\t',
-        index_col=0)
+        header=0,
+        index_col='observation_name')
     
     stats_nb_annotation = pd.read_table(os.path.join(results_path,'2_annotation/stat_number_annotation.tsv'),
         sep='\t',
-        index_col=0)
+        header=0,
+        index_col='observation_name')
     
     stats = stats_nb_proteomes.join([stats_nb_clustering, stats_nb_annotation])
     stats = stats.dropna()
@@ -35,23 +54,29 @@ def post_analysis_config(input_table, results_path):
     n_in = stats_nb_proteomes.shape[0]
     n_out = stats.shape[0]
 
-    # Load input (index col : 'observation_name')
+    # Load input
     input_data = pd.read_table(input_table,
         sep='\t',
-        index_col=0)
+        header=0,
+        index_col='observation_name')
     input_data = input_data[input_data.index.isin(stats.index)]
 
     df_stats = stats.join(input_data)
 
-    # Load tax ids
-    proteome_tax_id = pd.read_csv(os.path.join(results_path, 'proteome_tax_id.tsv'),
-                              index_col=0,
-                              sep='\t')
+    # Load tax ids (outputs)
+    proteome_tax_id = pd.read_csv(os.path.join(results_path, '0_proteomes/proteome_tax_id.tsv'),
+        header=0,
+        index_col='observation_name',
+        sep='\t')
     
     proteome_tax_id = proteome_tax_id[proteome_tax_id.index.isin(stats.index)]
     proteome_tax_id['n_proteomes'] = proteome_tax_id['proteome'].str.split(pat=',').str.len()
 
-    return input_data, df_stats, n_in, n_out, proteome_tax_id
+    # Association tax ids (inputs)
+    with open(os.path.join(results_path, '0_proteomes/association_taxon_taxID.json')) as f:
+        association_taxon_tax_id = json.load(f)
+
+    return input_data, df_stats, n_in, n_out, proteome_tax_id, association_taxon_tax_id
 
 def distributions_by_ranks(df_stats, n_in, n_out, outpath, rank='Phylum'):
     '''
@@ -136,13 +161,14 @@ def taxo_ranks_contribution(proteome_tax_id, n_in, n_out, outpath):
 
     plt.savefig(os.path.join(outpath, 'taxo_ranks_contribution.png'))
 
-def compare_ranks_in_out(input_data, proteome_tax_id, outpath):
+def compare_ranks_in_out(input_data, proteome_tax_id, association_taxon_tax_id, outpath):
     '''
     Plots a heatmap displaying how many input taxonomic ranks were assigned to the same rank by esmecata and how many were assigned to higher tanks.
 
         Parameters:
             input_data (pandas): a pandas df loaded with esmecata input data, output of post_analysis_config()
             proteome_tax_id (pandas): a pandas df loaded with esmecata 'proteome_tax_id.tsv' file, output of post_analysis_config()
+            association_taxon_tax_id (dict) : a dict of taxa loaded from json by post_analysis_config()
             outpath (str) : the path of the output figure
     '''
 
@@ -160,16 +186,26 @@ def compare_ranks_in_out(input_data, proteome_tax_id, outpath):
     rank_list = ['s', 'g', 'f', 'o', 'c', 'p', 'k', 'na']
 
     d_in = dict()
-    with open(input_data, 'r') as f:
-        rows = list(csv.reader(f, delimiter='\t'))
-        for row in rows[1:]:
-            tax = row[0]
-            ranks = list(reversed(row[1].split(';')))
-            for i in range(len(rank_list) - 1):
-                if ranks[i] != 'unknown':
-                    d_in[tax] = rank_list[i]
-                    break
+    ncbi = NCBITaxa()
 
+    for observation_name in association_taxon_tax_id.keys():
+        reversed_affiliation_taxa = list(reversed(list(association_taxon_tax_id[observation_name].keys()))) # That line is f**** up
+
+        i = 0
+        found = False
+
+        # loop until the lowest known taxa rank is found
+        # TODO : Discard taxa with only unknown
+        while not found and i < len(reversed_affiliation_taxa):
+            if association_taxon_tax_id[observation_name][reversed_affiliation_taxa[i]] != ['not_found']:
+                tax_id = association_taxon_tax_id[observation_name][reversed_affiliation_taxa[i]]
+                tax_rank = ncbi.get_rank(tax_id)
+                d_in[observation_name] = out_asso_rank[list(tax_rank.values())[0]]
+                found = True
+            else:
+                i += 1
+        
+    
     d_out = dict()
     for ASV in proteome_tax_id.index:
         rank = out_asso_rank[proteome_tax_id.loc[ASV, 'tax_rank']]
@@ -188,3 +224,87 @@ def compare_ranks_in_out(input_data, proteome_tax_id, outpath):
     plt.xlabel('Esmecata Rank')
     plt.ylabel('Input Rank')
     plt.savefig(os.path.join(outpath, "compare_ranks_in_out.png"))
+
+def esmecata2krona(run_name):
+
+    def _create_krona_input_in(association_taxon_id, name, output):
+        '''
+        TODO
+
+            Parameters:
+                association_taxon_tax_id (dict) : a dict of taxa loaded from json by post_analysis_config()
+                name (str) : ...
+                output (str) : the path of ...
+        '''
+        krona_input = os.path.join(output, f'{name}_krona_input.tsv')
+        with open(krona_input, 'w') as f:
+            f.write('#queryID\t#taxID')
+
+        with open(krona_input, 'a') as f:
+            for observation_name in association_taxon_id:
+                reversed_affiliation_taxa = list(reversed(association_taxon_id[observation_name]))
+                for tax_name in reversed_affiliation_taxa:
+                    if tax_name != 'unknown' and association_taxon_id[observation_name][tax_name] != ['not_found']:
+                        tax_id = association_taxon_id[observation_name][tax_name][0]
+                        f.write(f'\n{observation_name}\t{tax_id}')
+                        break
+
+        krona_output = os.path.join(output, f'{name}_krona_input.html')
+        os.system(f'ktImportTaxonomy {krona_input} -o {krona_output}')
+
+    def _create_krona_input_esmecata(proteome_tax_id_tsv, name, output):
+        krona_input = os.path.join(output, f'{name}_krona_esmecata.tsv')
+        with open(krona_input, 'w') as o_f:
+            o_f.write('#queryID\t#taxID')
+
+            with open(proteome_tax_id_tsv, 'r') as i_f:
+                lines = list(csv.reader(i_f, delimiter='\t'))
+                for l in lines[1:]:
+                    o_f.write(f'\n{l[0]}\t{l[2]}')
+
+        krona_output = os.path.join(output, f'{name}_krona_esmecata.html')
+        os.system(f'ktImportTaxonomy {krona_input} -o {krona_output}')
+
+
+    def _create_comp_taxonomy_file(association_taxon_id, proteome_tax_id_tsv, name, output):
+        d_tax = dict()
+        with open(proteome_tax_id_tsv, 'r') as f:
+            lines = list(csv.reader(f, delimiter='\t'))
+            for l in lines[1:]:
+                observation_name = l[0]
+                reversed_affiliation_taxa = list(reversed(association_taxon_id[observation_name]))
+                for tax_name in reversed_affiliation_taxa:
+                    if tax_name != 'unknown' and association_taxon_id[observation_name][tax_name] != ['not_found']:
+                        if tax_name not in d_tax.keys():
+                            tax_id = association_taxon_id[observation_name][tax_name][0]
+                            tax_rank = ncbi.get_rank([tax_id])
+                            if tax_id in tax_rank.keys():
+                                tax_rank = tax_rank[tax_id]
+                            else:
+                                tax_rank = ''
+                            d_tax[tax_name] = {'Esmecata ID': l[2], 'Esmecata Rank': l[3], 'Esmecata Name': l[1],
+                                            'Input ID': tax_id, 'Input Rank': tax_rank}
+                        if 'obs' not in d_tax[tax_name].keys():
+                            d_tax[tax_name]['obs'] = list()
+                        d_tax[tax_name]['obs'].append(observation_name)
+                        break
+
+        output = os.path.join(output, f'{name}_taxonomy_diff.tsv')
+        with open(output, 'w') as f:
+            f.write('\t'.join(['Input Name', 'Esmecata Name', 'Input Rank', 'Esmecata Rank',
+                            'Input ID', 'Esmecata ID', 'Observation Names']))
+            for name, ref in d_tax.items():
+                f.write('\n' + '\t'.join([name, ref['Esmecata Name'], ref['Input Rank'], ref['Esmecata Rank'],
+                                        str(ref['Input ID']), str(ref['Esmecata ID']), ';'.join(ref['obs'])]))
+                
+    INPUT_RANK_FILE = os.path.join(run_name, '0_proteomes', 'association_taxon_taxID.json')
+    ESMECATA_RANK_FILE = os.path.join(run_name, '0_proteomes', 'proteome_tax_id.tsv')
+    output = os.path.join(run_name, 'Krona')
+    
+    if not os.path.exists(output):
+        os.mkdir(output)
+
+    _create_krona_input_in(INPUT_RANK_FILE, run_name, output)
+    _create_krona_input_esmecata(ESMECATA_RANK_FILE, run_name, output)
+    _create_comp_taxonomy_file(INPUT_RANK_FILE, ESMECATA_RANK_FILE, run_name, output)
+
