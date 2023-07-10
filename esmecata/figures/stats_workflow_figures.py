@@ -8,6 +8,7 @@ import json
 import pandas as pd
 import matplotlib.pyplot as plt
 from ete3 import NCBITaxa
+import csv
 
 __author__ = "Pauline Hamon-Giraud, Victor Mataigne"
 __email__ = "victor.mataigne@irisa.fr"
@@ -267,6 +268,7 @@ def esmecata2krona(run_name):
 
 
     def _create_comp_taxonomy_file(association_taxon_id, proteome_tax_id_tsv, name, output):
+        ncbi = NCBITaxa()
         d_tax = dict()
         with open(proteome_tax_id_tsv, 'r') as f:
             lines = list(csv.reader(f, delimiter='\t'))
