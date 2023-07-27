@@ -5,6 +5,9 @@ import plotly.graph_objects as go
 from ete3 import NCBITaxa
 from typing import Dict, List, Set, Tuple
 
+__author__ = "Pauline Hamon-Giraud, Victor Mataigne"
+__email__ = "victor.mataigne@irisa.fr"
+
 
 # CONSTANTS ==========================================================================================================
 
@@ -322,8 +325,13 @@ def generate_sunburst_fig(data: Dict[str, List[str or int]], output: str):
                                     textangle=0, xanchor='left', xref="paper", yref="paper"))
 
     # Update html page layout
-    fig.update_layout(paper_bgcolor="#1b1b1b", font_color='#ffffff')
+    fig.update_layout(paper_bgcolor="#ffffff", #1b1b1b
+                      font_color='#ffffff',
+                      width=2000,
+                      height=1500) 
     fig.write_html(f'{output}.html')
+
+    return fig
 
 
 # MAIN FUNCTION =====================================================================================================
@@ -339,4 +347,6 @@ def esmecata2taxonomy(run_name: str, output: str):
     """
     tax_comp_file = os.path.join(run_name, '0_proteomes', 'taxonomy_diff.tsv')
     data = get_fig_parameters(tax_comp_file)
-    generate_sunburst_fig(data, output)
+    fig = generate_sunburst_fig(data, output)
+
+    return fig
