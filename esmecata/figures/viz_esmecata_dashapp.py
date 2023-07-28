@@ -47,8 +47,8 @@ def reproducibility_tokens(outdir):
     reprometa_annotation = json.load(open(path.join(outdir, '2_annotation', 'esmecata_metadata_annotation.json'), 'r'))
 
     metadata = {"proteomes": reprometa_proteomes,
-         "clustering": reprometa_clustering,
-         "annotation": reprometa_annotation}
+        "clustering": reprometa_clustering,
+        "annotation": reprometa_annotation}
     
     metadata = json.dumps(metadata, indent=4)
 
@@ -60,9 +60,9 @@ if __name__ == '__main__':
 
     # TODO : small texts explaining figures
 
-    fig1 = swf.distributions_by_ranks(DF_STATS, N_IN, N_OUT, args.outdir, RANK)
-    fig2 = swf.n_prot_ec_go_correlations(DF_STATS, N_IN, N_OUT, args.outdir)
-    fig3 = swf.taxo_ranks_contribution(PROTEOME_TAX_ID, N_IN, N_OUT, args.outdir)
+    fig1 = swf.distributions_by_ranks(DF_STATS, args.outdir, RANK)
+    fig2 = swf.n_prot_ec_go_correlations(DF_STATS, args.outdir)
+    fig3 = swf.taxo_ranks_contribution(PROTEOME_TAX_ID, args.outdir)
     fig4 = swf.compare_ranks_in_out(PROTEOME_TAX_ID, ASSOCIATION_TAXON_TAX_ID, args.outdir)
     fig5 = esmecata2taxonomy(args.outdir, path.join(args.outdir, 'esmecata2taxonomy'))
 

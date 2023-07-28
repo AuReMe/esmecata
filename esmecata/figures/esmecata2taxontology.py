@@ -321,14 +321,22 @@ def generate_sunburst_fig(data: Dict[str, List[str or int]], output: str):
     for rank, color in RANK2COL.items():
         if rank in data['Rank']:
             i += 1
-            fig.add_annotation(dict(font=dict(color=color, size=16), x=0, y=1 - (i / m), showarrow=False, text=rank,
-                                    textangle=0, xanchor='left', xref="paper", yref="paper"))
+            fig.add_annotation(dict(font=dict(color='#ffffff', size=16), x=0, y=1 - (i / m), showarrow=False, text=rank,
+                                    textangle=0, xanchor='left', xref="paper", yref="paper",
+                                    bgcolor=color,
+                                    opacity=0.8))
 
     # Update html page layout
     fig.update_layout(paper_bgcolor="#ffffff", #1b1b1b
                       font_color='#ffffff',
                       width=2000,
-                      height=1500) 
+                      height=1500,
+                      margin=go.layout.Margin(
+                        l=0, #left margin
+                        r=0, #right margin
+                        b=0, #bottom margin
+                        t=0) #top margin
+    )
     fig.write_html(f'{output}.html')
 
     return fig

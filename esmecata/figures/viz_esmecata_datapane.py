@@ -89,7 +89,7 @@ report = dp.Blocks(
             dp.HTML("<h2>Output stats</h2><p>Taxonomic ranks are NCBI ranks returned by ete3</p>"),
             dp.DataTable(DF_STATS, 
                         label="Data"),
-            dp.HTML("<h2>Discarded</h2>"),
+            dp.HTML("<h2>Discarded</h2><p>Taxonomic ranks were not inferred; only names are displayed</p>"),
             dp.DataTable(DISCARDED, 
                         label="Data")
         ]
@@ -97,5 +97,12 @@ report = dp.Blocks(
     dp.Page(title="Metadata", blocks=[dp.Code(code=metadata, language="json", label="Metadata")]),
 )
 
-dp.save_report(report, path=path.join(args.outdir, 'esmecata_summary.html'))
+dp.save_report(report, 
+    path=path.join(args.outdir, 'esmecata_summary.html'),
+    formatting=dp.Formatting(
+        accent_color="rgb(204, 255, 204)",
+        font=dp.FontChoice.MONOSPACE,
+        width=dp.Width.FULL
+    )
+)
 

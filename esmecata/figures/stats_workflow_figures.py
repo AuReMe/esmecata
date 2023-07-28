@@ -45,6 +45,7 @@ def _format_taxo(proteome_tax_id):
         ranks[index] = ncbi.get_rank(tmp)
         names[index] = ncbi.get_taxid_translator(tmp)
 
+
     # rank:name correspondance
     for k in ranks.keys():
         data[k] = {}
@@ -152,9 +153,13 @@ def distributions_by_ranks(df_stats, outpath, rank='phylum'):
         labels={"Number_proteomes": "Number of proteomes"},
         title=f"Distribution of the number of proteomes found by {rank}")
     
+    fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+   
     fig.write_html(os.path.join(outpath, "proteomes_distribution_by_ranks.html"))
 
-    return fig.update_layout(yaxis_title="Number of inputs") 
+    return fig.update_layout(yaxis_title="Number of inputs", plot_bgcolor='#e6ffe6') 
 
 def n_prot_ec_go_correlations(df_stats, outpath, rank="phylum"):
     '''
@@ -168,19 +173,26 @@ def n_prot_ec_go_correlations(df_stats, outpath, rank="phylum"):
     '''
 
     # TODO : add legend for markers size + colors ?
+    sizes = df_stats['Number_proteomes']**0.75+5
     fig = px.scatter(data_frame=df_stats, 
                      x="Number_ecs",
                      y="Number_go_terms",
-                     size="Number_proteomes",
+                     #size="Number_proteomes",
+                     size=sizes,
+                     hover_data=["Number_ecs", "Number_go_terms", "Number_proteomes"],
                      color=rank,
                      width=800,
                      height=600,
                      labels={"Number_ecs": "Number of ECs", "Number_go_terms": "Number of GO terms", "Number_proteomes": "Number of proteomes"},
                      title="Correlation between the number of EC, GO terms, and proteomes")
     
+    fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    
     fig.write_html(os.path.join(outpath, "correlation_ec_go_proteomes.html"))
 
-    return fig
+    return fig.update_layout(plot_bgcolor='#e6ffe6') 
 
 def taxo_ranks_contribution(proteome_tax_id, outpath):
     '''
@@ -203,7 +215,11 @@ def taxo_ranks_contribution(proteome_tax_id, outpath):
     
     fig.write_html(os.path.join(outpath, "taxonomic_ranks_contribution.html"))
 
-    return fig.update_layout(yaxis_title="Number of inputs") 
+    fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+
+    return fig.update_layout(yaxis_title="Number of inputs", plot_bgcolor='#e6ffe6') 
 
 def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, outpath):
     '''
@@ -240,6 +256,7 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, outpath):
 
         # loop until the lowest known taxa rank is found
         # TODO : Discard taxa with only unknown
+        # TODO : gérer les not found des clade (marche pas)
         while not found and i < len(reversed_affiliation_taxa):
             if association_taxon_tax_id[observation_name][reversed_affiliation_taxa[i]] != ['not_found']:
                 tax_id = association_taxon_tax_id[observation_name][reversed_affiliation_taxa[i]]
@@ -272,8 +289,19 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, outpath):
         height=500,
         width=500,
         labels=dict(x="EsMeCaTa rank", y="Input rank", color="Number of proteomes"),
-        title="Difference between input ranks and EsMeCaTa ranks")
+        title="Difference between input ranks and EsMeCaTa ranks",
+        color_continuous_scale='YlGn')
+    
+    for i in range(0, matrix.shape[1]-1):
+        fig.add_vline(x=i+0.5, line_width=2, line_color="DarkSlateGrey")
+    for i in range(0, matrix.shape[0]-1):
+        fig.add_hline(y=i+0.5, line_width=2, line_color="DarkSlateGrey")
 
+    # fig.add_vline(x=1+0.5, line_width=2, line_color="DarkSlateGrey")
+    
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True)
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True)
+    
     fig.write_html(os.path.join(outpath, "input_and_output_ranks.html"))
     
     return fig
