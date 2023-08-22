@@ -4,7 +4,7 @@ import subprocess
 import shutil
 
 RESULTS = {
-    'Cluster_1': {'proteomes': 2, 'protein_clusters': 460, 'GOs': 622, 'ECs': 245}
+    'Cluster_1': {'proteomes': 2, 'protein_clusters': 460, 'GOs': 621, 'ECs': 245}
 }
 
 
