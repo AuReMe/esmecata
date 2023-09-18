@@ -333,8 +333,10 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             if os.path.exists(already_pathologic_file):
                 pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
                 pathologic_file = os.path.join(pathologic_organism_folder, observation_name+'_1.pf')
-                os.mkdir(pathologic_organism_folder)
-                shutil.copyfile(already_pathologic_file, pathologic_file)
+                if not os.path.exists(pathologic_organism_folder):
+                    os.mkdir(pathologic_organism_folder)
+                if not os.path.exists(pathologic_file):
+                    shutil.copyfile(already_pathologic_file, pathologic_file)
 
             logger.info('|EsMeCaTa|annotation| Copy eggnog results from %s to %s.', already_annotated_observation_name, observation_name)
 
