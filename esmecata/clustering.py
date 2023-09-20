@@ -501,17 +501,25 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
             # Create BioPython records with the representative proteins kept.
             new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
 
-            # Create output proteome file for OTU.
-            representative_fasta_file = os.path.join(reference_proteins_representative_fasta_path, observation_name+'.faa')
-            SeqIO.write(new_records, representative_fasta_file, 'fasta')
+            # Do not create fasta file when 0 sequences were kept.
+            if len(new_records) > 0:
+                # Create output proteome file for OTU.
+                representative_fasta_file = os.path.join(reference_proteins_representative_fasta_path, observation_name+'.faa')
+                SeqIO.write(new_records, representative_fasta_file, 'fasta')
+            else:
+                logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no fasta created.', observation_name)
             del new_records
 
             # Create BioPython records with the consensus proteins kept.
             consensus_new_records = [record for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
 
-            # Create output proteome file for OTU.
-            consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta_path, observation_name+'.faa')
-            SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
+            # Do not create fasta file when 0 sequences were kept.
+            if len(consensus_new_records) > 0:
+                # Create output proteome file for OTU.
+                consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta_path, observation_name+'.faa')
+                SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
+            else:
+                logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no fasta created.', observation_name)
             del consensus_new_records
 
             if remove_tmp:
