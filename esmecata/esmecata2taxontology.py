@@ -310,7 +310,7 @@ def generate_sunburst_fig(data: Dict[str, List[str or int]], output: str):
     # Create Sunburst
     fig = go.Figure(go.Sunburst(labels=data['Name'], parents=data['Parent'], values=data['Count Input'], ids=data['ID'],
                                 branchvalues='total', hovertext=[f'Rank: {x}' for x in data['Rank']],
-                                hoverinfo='label+value+percent entry+text', maxdepth=15,
+                                hoverinfo='label+value+percent entry+text', maxdepth=10,
                                 insidetextfont=dict(color='#cccccc', size=14),
                                 marker=dict(colors=data['Color'],
                                             pattern=dict(shape=data['Shape']))))

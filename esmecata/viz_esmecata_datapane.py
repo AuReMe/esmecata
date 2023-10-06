@@ -6,6 +6,7 @@ import argparse
 import datapane as dp
 import stats_workflow_figures as swf
 from esmecata2taxontology import esmecata2taxonomy
+from analysis import create_dataset_annotation_file
 
 __author__ = "Pauline Hamon-Giraud, Victor Mataigne"
 __email__ = "victor.mataigne@irisa.fr"
@@ -44,7 +45,11 @@ def reproducibility_tokens(outdir):
 
     return metadata
 
-INPUT_DATA, DISCARDED, N_DISCARDED, DF_STATS, N_IN, N_OUT, PROTEOME_TAX_ID, ASSOCIATION_TAXON_TAX_ID = swf.post_analysis_config(args.input, args.outdir)
+# INPUT_DATA, DISCARDED, N_DISCARDED, DF_STATS, N_IN, N_OUT, PROTEOME_TAX_ID, ASSOCIATION_TAXON_TAX_ID, ECS_MATRIX = swf.post_analysis_config(args.input, args.outdir)
+
+DATA = swf.post_analysis_config(args.input, args.outdir)
+_ = create_dataset_annotation_file(path.join(args.outdir, "2_annotation/annotation_reference"), path.join(args.outdir, "3_analysis/dataset_annotation.tsv"))
+DATA2 = swf.create_ec_obs_df(path.join(args.outdir, "3_analysis/dataset_annotation.tsv"), args.outdir)
 RANK = 'phylum'
 
 CSS = {'main-title': {'textAlign': 'center', 'color': '#7FDBFF'},
@@ -53,11 +58,15 @@ CSS = {'main-title': {'textAlign': 'center', 'color': '#7FDBFF'},
 
 CONFIG = {'remove': ['select', 'zoomIn', 'zoomOut', 'autoScale', 'lasso2d']}
 
-fig1 = swf.distributions_by_ranks(DF_STATS, args.outdir, RANK)
-fig2 = swf.n_prot_ec_go_correlations(DF_STATS, args.outdir, RANK)
-fig3 = swf.taxo_ranks_contribution(PROTEOME_TAX_ID, args.outdir)
-fig4 = swf.compare_ranks_in_out(PROTEOME_TAX_ID, ASSOCIATION_TAXON_TAX_ID, args.outdir)
-fig5 = esmecata2taxonomy(args.outdir, path.join(args.outdir, 'esmecata2taxonomy'))
+fig1 = swf.distributions_by_ranks(DATA["DF_STATS"], args.outdir, RANK)
+fig2 = swf.n_prot_ec_go_correlations(DATA["DF_STATS"], args.outdir, RANK)
+fig3 = swf.taxo_ranks_contribution(DATA["PROTEOME_TAX_ID"], args.outdir)
+fig4 = swf.compare_ranks_in_out(DATA["PROTEOME_TAX_ID"], DATA["ASSOCIATION_PROTEOME_TAX_ID"], args.outdir)
+fig5 = swf.ecs_frequencies_in_obs(DATA2["df_ec_frequencies"], args.outdir)
+fig6 = swf.fraction_of_all_ec_in_obs(DATA2["df_fractionin_obs"], DATA["DF_STATS"], args.outdir)
+fig7 = swf.ecs_frequencies_in_obs_hist(DATA2["df_ec_frequencies"], args.outdir)
+fig8 = swf.fraction_of_all_ec_in_obs_hist(DATA2["df_fractionin_obs"], DATA["DF_STATS"], args.outdir)
+fig9 = esmecata2taxonomy(args.outdir, path.join(args.outdir, 'esmecata2taxonomy'))
 
 metadata = reproducibility_tokens(args.outdir)
 
@@ -75,22 +84,46 @@ report = dp.Blocks(
                 dp.Plot(fig4.update_layout(modebar=CONFIG), label='Input and output ranks difference'),
                 columns=2,
             ),
-            dp.Plot(fig5, label='Taxonomic diversity')
+            dp.Group(
+                dp.BigNumber(heading="EC with a frequency > 0.9", value=DATA2["n_9_ec"]),
+                dp.BigNumber(heading="EC with a frequency < 0.1", value=DATA2["n_1_ec"]),
+                dp.BigNumber(heading="EC with a frequency between 0.1 and 0.9", value=DATA2["n91_ec"]),
+                columns=3,
+            ),
+            dp.Group(
+                dp.Plot(fig5.update_layout(modebar=CONFIG), label='EC frequencies in observations'),
+                dp.Plot(fig7.update_layout(modebar=CONFIG), label='EC frequencies in observations (barplot)'),
+                columns=2,
+                #widths=[0.75, 0.25],
+            ),
+            dp.Group(
+                dp.BigNumber(heading="Observations with > 0.9 of ECs", value=DATA2["n_9_ob"]),
+                dp.BigNumber(heading="Observations with < 0.1 of ECs", value=DATA2["n_1_ob"]),
+                dp.BigNumber(heading="Observations having between 0.1 and O.9 of ECs", value=DATA2["n91_ob"]),
+                columns=3,
+            ),
+            dp.Group(
+                dp.Plot(fig6.update_layout(modebar=CONFIG), label="Observations' content in EC numbers"),
+                dp.Plot(fig8.update_layout(modebar=CONFIG), label="Observations' content in EC numbers (barplot)"),
+                columns=2,
+                #widths=[0.75, 0.25],                
+            ),
+            dp.Plot(fig9, label='Taxonomic diversity')
         ],
     ),
     dp.Page(
         title="Data", blocks=[
             dp.Group(
-                dp.BigNumber(heading="Number of inputs", value=N_IN),
-                dp.BigNumber(heading="Kept by EsMeCaTa", value=N_OUT),
-                dp.BigNumber(heading="Discarded", value=N_DISCARDED),
+                dp.BigNumber(heading="Number of inputs", value=DATA["N_IN"]),
+                dp.BigNumber(heading="Kept by EsMeCaTa", value=DATA["N_OUT"]),
+                dp.BigNumber(heading="Discarded", value=DATA["N_DISCARDED"]),
                 columns=3,
             ),
             dp.HTML("<h2>Output stats</h2><p>Taxonomic ranks are NCBI ranks returned by ete3</p>"),
-            dp.DataTable(DF_STATS, 
+            dp.DataTable(DATA["DF_STATS"], 
                         label="Data"),
             dp.HTML("<h2>Discarded</h2><p>Taxonomic ranks were not inferred; only names are displayed</p>"),
-            dp.DataTable(DISCARDED, 
+            dp.DataTable(DATA["DISCARDED"], 
                         label="Data")
         ]
     ),
