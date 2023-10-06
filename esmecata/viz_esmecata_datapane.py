@@ -66,7 +66,7 @@ fig5 = swf.ecs_frequencies_in_obs(DATA2["df_ec_frequencies"], args.outdir)
 fig6 = swf.fraction_of_all_ec_in_obs(DATA2["df_fractionin_obs"], DATA["DF_STATS"], args.outdir)
 fig7 = swf.ecs_frequencies_in_obs_hist(DATA2["df_ec_frequencies"], args.outdir)
 fig8 = swf.fraction_of_all_ec_in_obs_hist(DATA2["df_fractionin_obs"], DATA["DF_STATS"], args.outdir)
-fig9 = esmecata2taxonomy(args.outdir, path.join(args.outdir, 'esmecata2taxonomy'))
+fig9 = esmecata2taxonomy(args.outdir, path.join(args.outdir, '3_analysis/esmecata2taxonomy'))
 
 metadata = reproducibility_tokens(args.outdir)
 
