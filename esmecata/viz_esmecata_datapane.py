@@ -45,8 +45,6 @@ def reproducibility_tokens(outdir):
 
     return metadata
 
-# INPUT_DATA, DISCARDED, N_DISCARDED, DF_STATS, N_IN, N_OUT, PROTEOME_TAX_ID, ASSOCIATION_TAXON_TAX_ID, ECS_MATRIX = swf.post_analysis_config(args.input, args.outdir)
-
 DATA = swf.post_analysis_config(args.input, args.outdir)
 _ = create_dataset_annotation_file(path.join(args.outdir, "2_annotation/annotation_reference"), path.join(args.outdir, "3_analysis/dataset_annotation.tsv"))
 DATA2 = swf.create_ec_obs_df(path.join(args.outdir, "3_analysis/dataset_annotation.tsv"), args.outdir)
@@ -75,15 +73,21 @@ report = dp.Blocks(
         title="EsMeCaTa - Graphical summary",
         blocks=[
             dp.Group(
+                dp.HTML("<p>The barplot belows details how many proteomes were assigned to each observation (colored by phylum). The number of proteomes found for each observation can vary from only a few to dozens or hundreds, depending on the data available on UniProt.</p>"),
+                dp.HTML("<p>The barplot below is the same as the one on the left, but displays the taxonomic rank attributed to each proteome of each observation.</p>"),
                 dp.Plot(fig1.update_layout(modebar=CONFIG), label='Distribution of the number of proteomes found'),
-                dp.Plot(fig2.update_layout(modebar=CONFIG), label='Correlation between the number of EC, GO terms, and proteomes'),
+                dp.Plot(fig3.update_layout(modebar=CONFIG), label=f'Proteomes per taxonomic rank (up to the {RANK} limit).'),
                 columns=2,
             ),
             dp.Group(
-                dp.Plot(fig3.update_layout(modebar=CONFIG), label=f'Proteomes per taxonomic rank (up to the {RANK} limit).'),
+                dp.HTML("<p>When proteomes of the lowest taxonomic rank of an observation are not found, EsMeCaTa goes up in the taxonomic levels to found suited proteomes. In addition to figure 2, the heatmap belows details the input taxonomic rank of all observations (y-axis), and the rank given by EsMeCaTa to the output (x-axis).</p>"),
+                dp.HTML("<p>EC numbers and GO terms are likely to be correlated. Adding the number of proteomes allows to search for a potential clustering bias : if an observation have many proteomes, the interection of the clustering of proteins is likrly to be smaller compared to an observation with few proteomes. If this bias occurs, all observations with many proteomes will have less EC and GO terms than others.</p>"),
+                dp.Plot(fig2.update_layout(modebar=CONFIG), label='Correlation between the number of EC, GO terms, and proteomes'),
                 dp.Plot(fig4.update_layout(modebar=CONFIG), label='Input and output ranks difference'),
                 columns=2,
             ),
+            dp.HTML("<h2>EC numbers frequencies among observations</h2>"),
+            dp.HTML("<p>Numbers and figures below detail how ECs vary among observations, i.e. if an EC is found in many observations (a generic EC) or only in verfy few observations (a specific EC).</p>"),
             dp.Group(
                 dp.BigNumber(heading="EC with a frequency > 0.9", value=DATA2["n_9_ec"]),
                 dp.BigNumber(heading="EC with a frequency < 0.1", value=DATA2["n_1_ec"]),
@@ -92,10 +96,12 @@ report = dp.Blocks(
             ),
             dp.Group(
                 dp.Plot(fig5.update_layout(modebar=CONFIG), label='EC frequencies in observations'),
-                dp.Plot(fig7.update_layout(modebar=CONFIG), label='EC frequencies in observations (barplot)'),
+                dp.Plot(fig7.update_layout(modebar=CONFIG), label='EC frequencies in observations (barplot version)'),
                 columns=2,
                 #widths=[0.75, 0.25],
             ),
+            dp.HTML("<h2>Observations' content in EC numbers</h2>"),
+            dp.HTML("<p>Numbers and figures below detail which observations are annotated with most of the EC of the whole dataset or only a few EC. For instance, observations with many ECs could have bigger genomes or be generalist species.</p>"),
             dp.Group(
                 dp.BigNumber(heading="Observations with > 0.9 of ECs", value=DATA2["n_9_ob"]),
                 dp.BigNumber(heading="Observations with < 0.1 of ECs", value=DATA2["n_1_ob"]),
@@ -104,10 +110,12 @@ report = dp.Blocks(
             ),
             dp.Group(
                 dp.Plot(fig6.update_layout(modebar=CONFIG), label="Observations' content in EC numbers"),
-                dp.Plot(fig8.update_layout(modebar=CONFIG), label="Observations' content in EC numbers (barplot)"),
+                dp.Plot(fig8.update_layout(modebar=CONFIG), label="Observations' content in EC numbers (barplot version)"),
                 columns=2,
                 #widths=[0.75, 0.25],                
             ),
+            dp.HTML("<h2>Comparison of taxonomic diversity between the inputs and EsMeCaTa outputs</h2>"),
+            dp.HTML("<p>EsMeCaTa Also shown by the taxonomic rank matrix above, </p>"),
             dp.Plot(fig9, label='Taxonomic diversity')
         ],
     ),

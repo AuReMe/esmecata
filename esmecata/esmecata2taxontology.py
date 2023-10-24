@@ -284,7 +284,7 @@ def fill_parameters(tax_names: Dict[int, str], tax_ranks: Dict[int, str], parent
                 data['Shape'].append('')
             else:
                 data['Count Esmecata'].append(0)
-                data['Shape'].append('-')
+                data['Shape'].append('/')
     return data
 
 

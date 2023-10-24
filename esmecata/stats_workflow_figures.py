@@ -128,10 +128,10 @@ def post_analysis_config(input_table, results_path):
         association_taxon_tax_id = json.load(f)
 
     # Get ECs frequencies
-    ecs_matrix = pd.read_table(os.path.join(results_path,'3_analysis/dataset_annotation_normalised.tsv'),
-        sep='\t',
-        header=0,
-        index_col=0)
+    # ecs_matrix = pd.read_table(os.path.join(results_path,'3_analysis/dataset_annotation_normalised.tsv'),
+    #     sep='\t',
+    #     header=0,
+    #     index_col=0)
 
     data = {"INPUT_DATA": input_data,
             "DISCARDED": discarded, 
@@ -141,7 +141,8 @@ def post_analysis_config(input_table, results_path):
             "N_OUT": n_out, 
             "PROTEOME_TAX_ID": proteome_tax_id, 
             "ASSOCIATION_PROTEOME_TAX_ID": association_taxon_tax_id, 
-            "ECS_MATRIX": ecs_matrix}
+            #"ECS_MATRIX": ecs_matrix
+            }
     
     # return input_data, discarded, n_discarded, df_stats, n_in, n_out, proteome_tax_id, association_taxon_tax_id, ecs_matrix
     return data
@@ -226,7 +227,7 @@ def taxo_ranks_contribution(proteome_tax_id, results_path):
     fig = px.histogram(proteome_tax_id,
         x="n_proteomes",
         color="tax_rank",
-        height=500,
+        height=600,
         width=500,
         labels={"n_proteomes": "Number of proteomes"},
         title="Number of proteomes per taxonomic rank") 
@@ -308,8 +309,8 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
 
     fig = px.imshow(matrix,
         text_auto=True,
-        height=500,
-        width=500,
+        height=600,
+        width=800,
         labels=dict(x="EsMeCaTa rank", y="Input rank", color="Number of proteomes"),
         title="Difference between input ranks and EsMeCaTa ranks",
         color_continuous_scale='YlGn')
