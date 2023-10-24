@@ -455,6 +455,7 @@ def draw_sankey_fig(fig_data: Dict[str, List[Any]], output: str, show_fig: bool)
     fig.write_html(output)
     if show_fig:
         fig.show()
+    return fig
 
 
 # MAIN FUNCTION
@@ -476,7 +477,3 @@ def esmecata_compression(run_name: str, output: str, show_fig: bool = False):
     input_data = get_input_data(tax_diff_file)
     fig_data = get_fig_parameters(input_data)
     draw_sankey_fig(fig_data, f'{output}.html', show_fig)
-
-
-RUN = 'bacteria4051'
-esmecata_compression(RUN, RUN, True)
