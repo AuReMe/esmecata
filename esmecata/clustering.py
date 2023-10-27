@@ -89,7 +89,7 @@ def create_proteome_representativeness_lineplot(proteome_tax_id_file, computed_t
     df = pd.DataFrame(data, columns=['obs_name', 'rank', 'clust', 'count'])
 
     fig, ax = plt.subplots(figsize=(9,5))
-    g_results =sns.lineplot(data=df, x="clust", y='count', hue="rank", errorbar='se')
+    g_results =sns.lineplot(data=df, x="clust", y='count', hue="rank", errorbar='ci')
     g_results.set(yscale='log')
     # Use max + 0.25 quantile to set ylim.
     g_results.set(ylim=[1, df['count'].max()+df['count'].quantile(0.25)], xlim=[0,1])
@@ -124,7 +124,7 @@ def create_proteome_representativeness_lineplot_per_taxon_rank(proteome_tax_id_f
     for rank in df['tax_rank'].unique():
         tmp_df = df[df['tax_rank']==rank]
         fig, ax = plt.subplots(figsize=(9,5))
-        g_results =sns.lineplot(data=tmp_df, x="clust", y='count', hue="tax_name", errorbar='se')
+        g_results =sns.lineplot(data=tmp_df, x="clust", y='count', hue="tax_name", errorbar='ci')
         g_results.set(yscale='log')
         g_results.set(ylim=[1, tmp_df['count'].max()+df['count'].quantile(0.25)], xlim=[0,1])
         output_figure = os.path.join(output_folder, 'representativeness_ratio_{0}.svg'.format(rank))
