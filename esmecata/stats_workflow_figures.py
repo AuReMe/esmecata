@@ -7,11 +7,34 @@ import json
 import pandas as pd
 from ete3 import NCBITaxa
 import plotly.express as px
+from  ontosunburst.ontosunburst import ec_ontosunburst
 
 __author__ = "Pauline Hamon-Giraud, Victor Mataigne"
 __email__ = "victor.mataigne@irisa.fr"
 
 # warnings.filterwarnings('ignore')
+
+def reproducibility_tokens(outdir):
+    '''
+    Loads json metadata of all the EsmeCata workflow and converts it to a string.
+
+        Parameters:
+            outdir (str) : path to the results of an EsMeCaTa workflow
+
+        Returns:
+            metadata (str) : all metadata of the workflow
+    '''
+    reprometa_proteomes = json.load(open(os.path.join(outdir, '0_proteomes', 'esmecata_metadata_proteomes.json'), 'r'))
+    reprometa_clustering = json.load(open(os.path.join(outdir, '1_clustering', 'esmecata_metadata_clustering.json'), 'r'))
+    reprometa_annotation = json.load(open(os.path.join(outdir, '2_annotation', 'esmecata_metadata_annotation.json'), 'r'))
+
+    metadata = {"proteomes": reprometa_proteomes,
+         "clustering": reprometa_clustering,
+         "annotation": reprometa_annotation}
+    
+    metadata = json.dumps(metadata, indent=4)
+
+    return metadata
 
 def _format_taxo(proteome_tax_id):
     '''
@@ -171,7 +194,7 @@ def distributions_by_ranks(df_stats, results_path, rank='phylum'):
     fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
     fig.update_yaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
-    fig.update_layout(yaxis_title="Number of observations", plot_bgcolor='#e6ffe6')
+    fig.update_layout(yaxis_title="Number of taxa", plot_bgcolor='#e6ffe6')
    
     fig.write_html(os.path.join(results_path, "3_analysis/proteomes_distribution_by_ranks.html"))
 
@@ -271,8 +294,8 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
     d_in = dict()
     ncbi = NCBITaxa()
 
-    for observation_name in association_taxon_tax_id.keys():
-        reversed_affiliation_taxa = list(reversed(list(association_taxon_tax_id[observation_name].keys()))) # That line is f**** up
+    for taxa in association_taxon_tax_id.keys():
+        reversed_affiliation_taxa = list(reversed(list(association_taxon_tax_id[taxa].keys()))) # That line is f**** up
 
         i = 0
         found = False
@@ -281,11 +304,11 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
         # TODO : Discard taxa with only unknown
         # TODO : gérer les not found des clade (marche pas)
         while not found and i < len(reversed_affiliation_taxa):
-            if association_taxon_tax_id[observation_name][reversed_affiliation_taxa[i]] != ['not_found']:
-                tax_id = association_taxon_tax_id[observation_name][reversed_affiliation_taxa[i]]
+            if association_taxon_tax_id[taxa][reversed_affiliation_taxa[i]] != ['not_found']:
+                tax_id = association_taxon_tax_id[taxa][reversed_affiliation_taxa[i]]
                 tax_rank = ncbi.get_rank(tax_id)
-                # d_in[observation_name] = out_asso_rank[list(tax_rank.values())[0]]
-                d_in[observation_name] = list(tax_rank.values())[0]
+                # d_in[taxa] = out_asso_rank[list(tax_rank.values())[0]]
+                d_in[taxa] = list(tax_rank.values())[0]
                 found = True
             else:
                 i += 1        
@@ -334,10 +357,10 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
 # ===============================
 
 def create_ec_obs_df(dataset_annotation_file, results_path):
-    """ Prepare data of 'frequences of EC numbers in observations' and 'fraction of all EC numbers in observations'
+    """ Prepare data of 'frequences of EC numbers in taxa' and 'fraction of all EC numbers in taxa'
 
     Args:
-        dataset_annotation_file (str) : path to an EC*Observations matrix, computed by create_dataset_annotation_file()
+        dataset_annotation_file (str) : path to an EC*taxa matrix, computed by create_dataset_annotation_file()
         results_path (str) : the path of the esmecata run
 
     Returns:
@@ -349,14 +372,14 @@ def create_ec_obs_df(dataset_annotation_file, results_path):
         header=0,
         index_col=0)
 
-    # Frequences of ECs in observations
-    # ---------------------------------
+    # Frequences of ECs in taxa
+    # -------------------------
 
     # Used for color code
     ec_class = {"1": "Oxidoreductases", "2": "Transferases", "3": "Hydrolases", 
                 "4": "Lyases", "5": "Isomerases", "6": "Ligases", "7": "Translocases"}
 
-    # ECs*observations matrix rather than observations*ECs
+    # ECs*taxa matrix rather than taxa*ECs
     dfT = df.T
 
     # Get data
@@ -385,15 +408,15 @@ def create_ec_obs_df(dataset_annotation_file, results_path):
     #     for idx in n91_df.index:
     #         f.write(f"{idx}\n")
 
-    # Fraction of all ECs per observation
-    # -----------------------------------
+    # Fraction of all ECs per taxa
+    # ----------------------------
 
     df["fraction"] = df.ne(0).sum(axis=1)/df.shape[1]
-    df["observation"] = df.index
+    df["taxa"] = df.index
     df.sort_values(by="fraction", ascending=False, inplace=True)
-    df = df[["observation", "fraction"]]
+    df = df[["taxa", "fraction"]]
 
-    # Get number of observations in each category
+    # Get number of taxa in each category
     n_9_df = df[df["fraction"] > 0.9]
     n_1_df = df[df["fraction"] < 0.1]
     n91_df = df[df["fraction"].between(0.1,0.9)]
@@ -418,7 +441,7 @@ def create_ec_obs_df(dataset_annotation_file, results_path):
 
 def ecs_frequencies_in_obs(df, results_path):
     '''
-    Plots the frequency of each EC in the observations (i.e. which EC are in many observations, and which EC are in few observations)
+    Plots the frequency of each EC in the taxa (i.e. which EC are in many taxa, and which EC are in few taxa)
 
         Parameters:
             df (pandas): a pandas df with ECs names, frequencies, and classes as columns (key 'df_ec_frequencies' in the output of create_ec_obs_df())
@@ -435,8 +458,8 @@ def ecs_frequencies_in_obs(df, results_path):
         color="EC_class",
         height=500,
         category_orders={"EC_name": df.index},
-        labels={"EC_name": "ECs", "frequency": "Frequence in observations"},
-        title="ECs ordered by their frequency in observations")   
+        labels={"EC_name": "ECs", "frequency": "Frequence in taxa"},
+        title="ECs ordered by their frequency in taxa")   
 
     # fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
@@ -445,18 +468,18 @@ def ecs_frequencies_in_obs(df, results_path):
     fig.add_hline(y=0.1, line_dash="dash", line_width=1, line_color="red")
     fig.add_hrect(y0=0.9, y1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
-    fig.update_layout(yaxis_title="Proportion of observations containing the EC", plot_bgcolor='#e6ffe6', yaxis_range=[-0.1,1.1])
-    fig.write_html(os.path.join(results_path, "3_analysis/ecs_frequencies_in_observations.html"))
+    fig.update_layout(yaxis_title="Proportion of taxa containing the EC", plot_bgcolor='#e6ffe6', yaxis_range=[-0.1,1.1])
+    fig.write_html(os.path.join(results_path, "3_analysis/ecs_frequencies_in_taxa.html"))
 
     return fig
 
 def fraction_of_all_ec_in_obs(df, df_taxo, results_path, rank="phylum"):
     '''
-    Plots the fraction of all EC of the dataset in each observation (i.e. which observations have many ECs, and which observations have few ECs)
+    Plots the fraction of all EC of the dataset in each taxa (i.e. which taxa have many ECs, and which taxa have few ECs)
 
         Parameters:
-            df (pandas) : a pandas df with observations names, and its fraction of EC as columns (key 'df_ec_fraction' in the output of create_ec_obs_df())
-            df_taxo (pandas) : a pandas dataframe containing the taxonomy of observations (key 'DF_STATS' in the output of swf.post_analysis_config())
+            df (pandas) : a pandas df with taxa names, and its fraction of EC as columns (key 'df_ec_fraction' in the output of create_ec_obs_df())
+            df_taxo (pandas) : a pandas dataframe containing the taxonomy of taxa (key 'DF_STATS' in the output of swf.post_analysis_config())
             results_path (str) : the path of the esmecata run
 
         Returns:
@@ -467,13 +490,13 @@ def fraction_of_all_ec_in_obs(df, df_taxo, results_path, rank="phylum"):
 
     # Plots
     fig = px.scatter(df,
-        x = "observation",
+        x = "taxa",
         y = "fraction",
         color=rank,
         height=500,
-        category_orders={"observation": df.index},
-        labels={"observation": "Observation", "fraction": "Frequence in observations"},
-        title="Observations ordered by the proportion (Number of EC numbers in an observation) / (Total number of EC numbers in the dataset)")
+        category_orders={"taxa": df.index},
+        labels={"taxa": "Taxa", "fraction": "Frequence in taxa"},
+        title="Taxa ordered by the proportion (Number of EC numbers in an taxa) / (Total number of EC numbers in the dataset)")
 
     # fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
@@ -482,17 +505,17 @@ def fraction_of_all_ec_in_obs(df, df_taxo, results_path, rank="phylum"):
     fig.add_hline(y=0.1, line_dash="dash", line_width=1, line_color="red")
     fig.add_hrect(y0=0.9, y1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
-    fig.update_layout(yaxis_title="Proportion of present Ecs/total ECs", plot_bgcolor='#e6ffe6', yaxis_range=[-0.1,1.1])
-    fig.write_html(os.path.join(results_path, "3_analysis/ec_fraction_per_observation.html"))
+    fig.update_layout(yaxis_title="Proportion of present ECs/total ECs", plot_bgcolor='#e6ffe6', yaxis_range=[-0.1,1.1])
+    fig.write_html(os.path.join(results_path, "3_analysis/ec_fraction_per_taxa.html"))
 
     return fig
 
 def ecs_frequencies_in_obs_hist(df, results_path):
     '''
-    For the given rank, plots stacked barplots of how many proteomes / GO terms / EC numbers belongs to each taxa of this rank.
+    For the given rank, plots stacked barplots of how many EC numbers belongs to each taxa of this rank (i.e. which EC are in many taxa, and which EC are in few taxa).
 
         Parameters:
-            df (pandas): a pandas df with ECs as rows, observations as column, filled with the frequencies of ECs in the observation's clusters
+            df (pandas): a pandas df with ECs as rows, taxa as column, filled with the frequencies of ECs in the taxa's clusters
             results_path (str) : the path of the esmecata run
 
         Returns:
@@ -507,8 +530,8 @@ def ecs_frequencies_in_obs_hist(df, results_path):
         width=500,
         nbins=20,
         # hover_data=[normalized_dataset_annotation.index],
-        labels={"EC_name": "ECs", "frequency": "Proportion of observations containing the EC"},
-        title="Histogram of the frequencies of EC numbers in observations")   
+        labels={"EC_name": "ECs", "frequency": "Proportion of taxa containing the EC"},
+        title="Histogram of the frequencies of EC numbers in taxa")   
 
     # fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
@@ -518,17 +541,17 @@ def ecs_frequencies_in_obs_hist(df, results_path):
     fig.add_vrect(x0=0.9, x1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
     fig.update_layout(yaxis_title="Number of ECs", plot_bgcolor='#e6ffe6', xaxis_range=[-0.1,1.1])
-    fig.write_html(os.path.join(results_path, "3_analysis/ecs_frequencies_in_observations_hist.html"))
+    fig.write_html(os.path.join(results_path, "3_analysis/ecs_frequencies_in_taxa_hist.html"))
 
     return fig
 
 def fraction_of_all_ec_in_obs_hist(df, df_taxo, results_path, rank="phylum"):
     '''
-    plots the frequencies of each OTU in each EC
+    Plots the histogram of the fraction of all EC of the dataset in each taxa (i.e. which taxa have many ECs, and which taxa have few ECs)
 
         Parameters:
-            df (pandas): a pandas df with ECs as rows, observations as column, filled with the frequencies of ECs in the observation's clusters
-            df_taxo (pandas) : a pandas dataframe containing the taxonomy of observations (key 'DF_STATS' in the output of swf.post_analysis_config())
+            df (pandas): a pandas df with ECs as rows, taxa as column, filled with the frequencies of ECs in the taxa's clusters
+            df_taxo (pandas) : a pandas dataframe containing the taxonomy of taxa (key 'DF_STATS' in the output of swf.post_analysis_config())
             results_path (str) : the path of the esmecata run
 
         Returns:
@@ -545,8 +568,8 @@ def fraction_of_all_ec_in_obs_hist(df, df_taxo, results_path, rank="phylum"):
         width=500,
         nbins=10,
         # hover_data=[normalized_dataset_annotation.index],
-        labels={"observation": "Observation", "fraction": "Proportion = (ECs in observation) / (All ECs)"},
-        title="Histogram of the proportion (Number of EC numbers in an observation) / (Total number of EC numbers in the dataset)")
+        labels={"taxa": "Taxa", "fraction": "Proportion = (ECs in taxa) / (All ECs)"},
+        title="Histogram of the proportion (Number of EC numbers in a taxa) / (Total number of EC numbers in the dataset)")
 
     # fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
@@ -555,7 +578,224 @@ def fraction_of_all_ec_in_obs_hist(df, df_taxo, results_path, rank="phylum"):
     fig.add_vline(x=0.1, line_dash="dash", line_width=1, line_color="red")
     fig.add_vrect(x0=0.9, x1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
-    fig.update_layout(yaxis_title="Number of observations", plot_bgcolor='#e6ffe6', xaxis_range=[-0.1,1.1])
-    fig.write_html(os.path.join(results_path, "3_analysis/ec_fraction_per_observation_hist.html"))
+    fig.update_layout(yaxis_title="Number of taxa", plot_bgcolor='#e6ffe6', xaxis_range=[-0.1,1.1])
+    fig.write_html(os.path.join(results_path, "3_analysis/ec_fraction_per_taxa_hist.html"))
+
+    return fig
+
+# ============================================
+
+# ===============================
+# EC numbers distribution figures
+# ===============================
+
+def create_go_obs_df(dataset_annotation_file, results_path):
+    """ Prepare data of 'frequences of GO numbers in taxa' and 'fraction of all GO numbers in taxa'
+
+    Args:
+        dataset_annotation_file (str) : path to a GO*taxa matrix, computed by create_dataset_annotation_file()
+        results_path (str) : the path of the esmecata run
+
+    Returns:
+        data (dict) : stores two dataframes corresponding to each data, as well as summary numbers
+    """
+
+    df = pd.read_csv(dataset_annotation_file,
+        sep='\t',
+        header=0,
+        index_col=0)
+
+    # Frequences of GOs in taxa
+    # ---------------------------------
+
+    # GOs*taxa matrix rather than taxa*Gos
+    dfT = df.T
+
+    # Get data
+    dfT["frequency"] = dfT.ne(0).sum(axis=1)/dfT.shape[1]
+    dfT["GO_name"] = dfT.index
+    dfT.sort_values(by=["frequency", "GO_name"], ascending=False, inplace=True)
+    dfT = dfT[["GO_name", "frequency"]]
+
+    # Count number of ECs in each category (left queue, middle, right queue)
+    n_9_df = dfT[dfT["frequency"] > 0.9]
+    n_1_df = dfT[dfT["frequency"] < 0.1]
+    n91_df = dfT[dfT["frequency"].between(0.1,0.9)]
+    n_9_go = n_9_df.shape[0]
+    n_1_go = n_1_df.shape[0]
+    n91_go = n91_df.shape[0]
+
+    # Fraction of all GOs per taxa
+    # -----------------------------------
+
+    df["fraction"] = df.ne(0).sum(axis=1)/df.shape[1]
+    df["taxa"] = df.index
+    df.sort_values(by="fraction", ascending=False, inplace=True)
+    df = df[["taxa", "fraction"]]
+
+    # Get number of taxa in each category
+    n_9_df = df[df["fraction"] > 0.9]
+    n_1_df = df[df["fraction"] < 0.1]
+    n91_df = df[df["fraction"].between(0.1,0.9)]
+    n_9_ob = n_9_df.shape[0]
+    n_1_ob = n_1_df.shape[0]
+    n91_ob = n91_df.shape[0]
+
+    data = {"df_fractionin_obs": df, "df_go_frequencies": dfT, "n_9_go": n_9_go, "n_1_go": n_1_go, "n91_go": n91_go, "n_9_ob": n_9_ob, "n_1_ob": n_1_ob, "n91_ob": n91_ob}
+
+    return data
+
+def gos_frequencies_in_obs(df, results_path):
+    '''
+    Plots the frequency of each GO in the taxa (i.e. which GO are in many taxa, and which GO are in few taxa)
+
+        Parameters:
+            df (pandas): a pandas df with GOs names, frequencies, and classes as columns (key 'df_go_frequencies' in the output of create_go_obs_df())
+            results_path (str) : the path of the esmecata run
+
+        Returns:
+            fig : a plotly html figure
+    '''
+
+    # Plots
+    fig = px.scatter(df,
+        x = "GO_name",
+        y = "frequency",
+        height=500,
+        category_orders={"GO_name": df.index},
+        labels={"GO_name": "GO terms", "frequency": "Frequence in taxa"},
+        title="Go terms ordered by their frequency in taxa")   
+
+    # fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.add_hline(y=0.9, line_dash="dash", line_width=1, line_color="red")
+    fig.add_hline(y=0.1, line_dash="dash", line_width=1, line_color="red")
+    fig.add_hrect(y0=0.9, y1=0.1, line_width=0, fillcolor="red", opacity=0.15)
+
+    fig.update_layout(yaxis_title="Proportion of taxa containing the GO terms", plot_bgcolor='#e6ffe6', yaxis_range=[-0.1,1.1])
+    fig.write_html(os.path.join(results_path, "3_analysis/gos_frequencies_in_taxa.html"))
+
+    return fig
+
+def fraction_of_all_go_in_obs(df, df_taxo, results_path, rank="phylum"):
+    '''
+    Plots the fraction of all EC of the dataset in each taxa (i.e. which taxa have many GOs, and which taxa have few GOs)
+
+        Parameters:
+            df (pandas) : a pandas df with taxa names, and its fraction of GO as columns (key 'df_ec_fraction' in the output of create_ec_obs_df())
+            df_taxo (pandas) : a pandas dataframe containing the taxonomy of taxa (key 'DF_STATS' in the output of swf.post_analysis_config())
+            results_path (str) : the path of the esmecata run
+
+        Returns:
+            fig : a plotly html figure
+    '''
+
+    df = df.join(df_taxo)
+
+    # Plots
+    fig = px.scatter(df,
+        x = "taxa",
+        y = "fraction",
+        color=rank,
+        height=500,
+        category_orders={"taxa": df.index},
+        labels={"taxa": "Taxa", "fraction": "Frequence in taxa"},
+        title="Taxa ordered by the proportion (Number of GO terms in a taxa) / (Total number of GO terms in the dataset)")
+
+    # fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.add_hline(y=0.9, line_dash="dash", line_width=1, line_color="red")
+    fig.add_hline(y=0.1, line_dash="dash", line_width=1, line_color="red")
+    fig.add_hrect(y0=0.9, y1=0.1, line_width=0, fillcolor="red", opacity=0.15)
+
+    fig.update_layout(yaxis_title="Proportion of present GOs/total GOs", plot_bgcolor='#e6ffe6', yaxis_range=[-0.1,1.1])
+    fig.write_html(os.path.join(results_path, "3_analysis/go_fraction_per_taxa.html"))
+
+    return fig
+
+def gos_frequencies_in_obs_hist(df, results_path):
+    '''
+    For the given rank, plots stacked barplots of how many GO terms belongs to each taxa of this rank.
+
+        Parameters:
+            df (pandas): a pandas df with GOs as rows, taxa as column, filled with the frequencies of GOs in the taxa's clusters
+            results_path (str) : the path of the esmecata run
+
+        Returns:
+            fig : a plotly html figure
+    '''
+
+    # Plots
+    fig = px.histogram(df,
+        x = "frequency",
+        height=500,
+        width=500,
+        nbins=20,
+        # hover_data=[normalized_dataset_annotation.index],
+        labels={"GO_name": "GO terms", "frequency": "Proportion of taxa containing the GO term"},
+        title="Histogram of the frequencies of GO terms numbers in taxa")   
+
+    # fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.add_vline(x=0.9, line_dash="dash", line_width=1, line_color="red")
+    fig.add_vline(x=0.1, line_dash="dash", line_width=1, line_color="red")
+    fig.add_vrect(x0=0.9, x1=0.1, line_width=0, fillcolor="red", opacity=0.15)
+
+    fig.update_layout(yaxis_title="Number of GO terms", plot_bgcolor='#e6ffe6', xaxis_range=[-0.1,1.1])
+    fig.write_html(os.path.join(results_path, "3_analysis/gos_frequencies_in_taxa_hist.html"))
+
+    return fig
+
+def fraction_of_all_go_in_obs_hist(df, df_taxo, results_path, rank="phylum"):
+    '''
+    plots the frequencies of each OTU in each GO
+
+        Parameters:
+            df (pandas): a pandas df with GOs as rows, taxa as column, filled with the frequencies of GOs in the taxa's clusters
+            df_taxo (pandas) : a pandas dataframe containing the taxonomy of taxa (key 'DF_STATS' in the output of swf.post_analysis_config())
+            results_path (str) : the path of the esmecata run
+
+        Returns:
+            fig : a plotly html figure
+    '''
+
+    df = df.join(df_taxo)
+    
+    # Plots
+    fig = px.histogram(df,
+        x = "fraction",
+        color=rank,
+        height=500,
+        width=500,
+        nbins=10,
+        # hover_data=[normalized_dataset_annotation.index],
+        labels={"taxa": "Taxa", "fraction": "Proportion = (GO terms in taxa) / (All GO terms)"},
+        title="Histogram of the proportion (Number of GO terms in a taxa) / (Total number of GO terms in the dataset)")
+
+    # fig.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='DarkSlateGrey', mirror=True, showgrid=True, gridwidth=2)
+    fig.add_vline(x=0.9, line_dash="dash", line_width=1, line_color="red")
+    fig.add_vline(x=0.1, line_dash="dash", line_width=1, line_color="red")
+    fig.add_vrect(x0=0.9, x1=0.1, line_width=0, fillcolor="red", opacity=0.15)
+
+    fig.update_layout(yaxis_title="Number of taxa", plot_bgcolor='#e6ffe6', xaxis_range=[-0.1,1.1])
+    fig.write_html(os.path.join(results_path, "3_analysis/go_fraction_per_taxa_hist.html"))
+
+    return fig
+
+def ec_sunburst(ec_classes, results_path):
+    fig = ec_ontosunburst(ec_set=ec_classes, 
+                          output=os.path.join(results_path, "3_analysis/taxonomic_ranks_contribution.html"))
+    fig.update_layout(title="EC numbers categories, counts and proportions", 
+                      height=1000,
+                      paper_bgcolor="#ffffff", 
+                      font_color='#111111', 
+                      font_size=20)
+    fig.update_traces(marker=dict(colorscale=px.colors.sequential.YlGn, line_color="DarkSlateGrey"))
+    fig.write_html(os.path.join(results_path, "3_analysis/ec_classes_sunburst.html"))
 
     return fig

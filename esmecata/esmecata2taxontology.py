@@ -329,8 +329,8 @@ def generate_sunburst_fig(data: Dict[str, List[str or int]], output: str):
     # Update html page layout
     fig.update_layout(paper_bgcolor="#ffffff", #1b1b1b
                       font_color='#ffffff',
-                      width=2000,
-                      height=1500,
+                      # width=2000,
+                      height=1300,
                       margin=go.layout.Margin(
                         l=0, #left margin
                         r=0, #right margin
@@ -356,5 +356,5 @@ def esmecata2taxonomy(run_name: str, output: str):
     tax_comp_file = os.path.join(run_name, '0_proteomes', 'taxonomy_diff.tsv')
     data = get_fig_parameters(tax_comp_file)
     fig = generate_sunburst_fig(data, output)
-
+    
     return fig

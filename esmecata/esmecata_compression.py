@@ -425,13 +425,18 @@ def draw_sankey_fig(fig_data: Dict[str, List[Any]], output: str, show_fig: bool)
     """
     line_width = 1
     if len(fig_data[LABELS]) > 1000:
-        line_width = 0
+        line_width = 0    
+
+    # opacity = 0.4
+    # fig_data[""][0]["link"] = [data['data'][0]['node']['color'][src].replace("0.8", str(opacity))
+    #                                 for src in data['data'][0]['link']['source']]
+
     fig = go.Figure(go.Sankey(
         arrangement='snap',
-        node={'line': dict(color='white', width=line_width),
+        node={'line': dict(color='black', width=line_width),
               'label': fig_data[LABELS],
               'thickness': 40,
-              'pad': 0,
+              'pad': 2,
               'color': fig_data[NODE_COLORS],
               'customdata': fig_data[RANKS],
               'hovertemplate': '<b>Name :</b> %{label}<br>'
@@ -452,7 +457,8 @@ def draw_sankey_fig(fig_data: Dict[str, List[Any]], output: str, show_fig: bool)
         fig.add_annotation(dict(font=dict(color='darkslategrey', size=18), x=text_pos[i], y=1.05,
                                 showarrow=False, text=fig_data[TEXT_ANNOT][i], textangle=0,
                                 xanchor='left', xref='paper', yref='paper'))
-    fig.write_html(output)
+    # fig.update_layout(height=fig_height)
+    # fig.write_html(output)
     if show_fig:
         fig.show()
     return fig
@@ -476,4 +482,8 @@ def esmecata_compression(run_name: str, output: str, show_fig: bool = False):
     tax_diff_file = os.path.join(run_name, '0_proteomes', 'taxonomy_diff.tsv')
     input_data = get_input_data(tax_diff_file)
     fig_data = get_fig_parameters(input_data)
-    draw_sankey_fig(fig_data, f'{output}.html', show_fig)
+    fig_height = 10*len(fig_data[LABELS]) # bug report : Datapane does not uses height correctly if coded inside draw_sankey_fig. Code here instead works (why ?)
+    fig = draw_sankey_fig(fig_data, f'{output}.html', show_fig)
+    fig.update_layout(height=fig_height)
+    fig.write_html(f'{output}.html')
+    return fig
