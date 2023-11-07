@@ -73,19 +73,20 @@ def get_proteomes_tax_id(annotation_taxon_id_file):
     return proteomes_taxa_ids
 
 
-def call_to_emapper(input_path, output_name, output_dir, eggnog_database_path, nb_cpu):
+def call_to_emapper(input_path, output_name, output_dir, temporary_dir, eggnog_database_path, nb_cpu):
     """ Calls eggnog-mapper on the protein clusters.
 
     Args:
         input_path (str): pathname to the fasta file containing consensus sequences for protein clusters.
         output_name (str): observation name associated with the protein sequences.
         output_dir (str)): path to the output folder.
+        temporayyr_dir (str): path to temporary folder.
         eggnog_database_path (str): pathname to eggnog database folder.
         nb_cpu (int): number of CPUs to use with eggnog-mapper.
     """
     eggnog_cmds = ['emapper.py', '--cpu', nb_cpu, '-i', input_path, '--output', output_name,
                    '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
-                   '--dbmem']
+                   '--dbmem', '--temp_dir', temporary_dir]
 
     subprocess.call(eggnog_cmds)
 
@@ -342,6 +343,10 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
 
         # If not, perform the annotation by eggnog-mapper.
         else:
+            # Create temporary folder for eggnog-mapper.
+            eggnog_temporary_dir = os.path.join(output_folder, 'eggnog_temporary')
+            is_valid_dir(eggnog_temporary_dir)
+
             fasta_file_path = os.path.join(reference_protein_fasta_path, observation_name+'.faa')
 
             pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
@@ -351,7 +356,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             # Check if the annotation by eggnog-mapper has not been performed.
             eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, observation_name+'.emapper.annotations')
             if not os.path.exists(eggnog_mapper_annotation_file):
-                call_to_emapper(fasta_file_path, observation_name, eggnog_output_folder, eggnog_database_path, nb_cpu)
+                call_to_emapper(fasta_file_path, observation_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_cpu)
 
             reference_protein_pathname = os.path.join(reference_protein_path, observation_name+'.tsv')
             reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
@@ -380,6 +385,9 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
                 logger.critical('|EsMeCaTa|annotation-eggnog| Annotation already performed for %s.', observation_name)
 
             already_annotated_taxon[proteomes_tax_id] = observation_name
+            # If temporary folder exists, remove it.
+            if os.path.exists(eggnog_temporary_dir):
+                shutil.rmtree(eggnog_temporary_dir)
 
     # Create mpwt taxon ID file.
     clustering_taxon_id = {}
