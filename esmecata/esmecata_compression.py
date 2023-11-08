@@ -482,8 +482,13 @@ def esmecata_compression(run_name: str, output: str, show_fig: bool = False):
     tax_diff_file = os.path.join(run_name, '0_proteomes', 'taxonomy_diff.tsv')
     input_data = get_input_data(tax_diff_file)
     fig_data = get_fig_parameters(input_data)
+    
     fig_height = 10*len(fig_data[LABELS]) # bug report : Datapane does not uses height correctly if coded inside draw_sankey_fig. Code here instead works (why ?)
+    if fig_height < 600:
+        fig_height = 600
+    
     fig = draw_sankey_fig(fig_data, f'{output}.html', show_fig)
     fig.update_layout(height=fig_height)
     fig.write_html(f'{output}.html')
+
     return fig
