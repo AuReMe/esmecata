@@ -254,7 +254,7 @@ def write_annotation_reference(protein_annotations, reference_proteins, annotati
             csvwriter.writerow([protein, cluster_members, gene_name, gos, ecs, keggs])
 
 
-def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_cpu):
+def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_cpu, eggnog_tmp_dir=None):
     """Write the annotation associated with a cluster after propagation step into pathologic file for run on Pathway Tools.
 
     Args:
@@ -262,6 +262,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
         output_folder (str): pathname to the output folder.
         eggnog_database_path (str): pathname to eggnog database folder.
         nb_cpu (int): number of CPUs to be used by eggnog-mapper.
+        eggnog_tmp_dir (str): pathname to eggnog-mapper temporary folder.
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|annotation-eggnog| Begin annotation.')
@@ -344,7 +345,10 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
         # If not, perform the annotation by eggnog-mapper.
         else:
             # Create temporary folder for eggnog-mapper.
-            eggnog_temporary_dir = os.path.join(output_folder, 'eggnog_temporary')
+            if eggnog_tmp_dir is None:
+                eggnog_temporary_dir = os.path.join(output_folder, 'eggnog_temporary')
+            else:
+                eggnog_temporary_dir = os.path.join(eggnog_tmp_dir)
             is_valid_dir(eggnog_temporary_dir)
 
             fasta_file_path = os.path.join(reference_protein_fasta_path, observation_name+'.faa')
