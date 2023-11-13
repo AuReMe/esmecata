@@ -160,7 +160,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
                             remove_tmp=None, limit_maximal_number_proteomes=99, rank_limit=None,
                             nb_cpu=1, clust_threshold=0.5, mmseqs_options=None,
                             linclust=None, minimal_number_proteomes=5, update_affiliations=None,
-                            option_bioservices=None):
+                            option_bioservices=None, eggnog_tmp_dir=None):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -181,6 +181,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be kept.
         update_affiliations (str): option to update taxonomic affiliations.
         option_bioservices (bool): use bioservices instead of manual queries.
+        eggnog_tmp_dir (str): pathname to eggnog-mapper temporary folder.
     """
     starttime = time.time()
     workflow_metadata = {}
@@ -198,7 +199,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
     make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
-    annotate_with_eggnog(clustering_output_folder, annotation_output_folder, eggnog_database_path, nb_cpu)
+    annotate_with_eggnog(clustering_output_folder, annotation_output_folder, eggnog_database_path, nb_cpu, eggnog_tmp_dir)
 
     stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
     compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file)

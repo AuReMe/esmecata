@@ -298,7 +298,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     nb_cpu = str(nb_cpu)
     # Download Uniprot metadata and create a json file containing them.
     options = {'input_folder': input_folder, 'output_folder': output_folder, 'nb_cpu': nb_cpu,
-               'eggnog_database_path': eggnog_database_path}
+               'eggnog_database_path': eggnog_database_path, 'eggnog_tmp_dir': eggnog_tmp_dir}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
@@ -348,7 +348,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             if eggnog_tmp_dir is None:
                 eggnog_temporary_dir = os.path.join(output_folder, 'eggnog_temporary')
             else:
-                eggnog_temporary_dir = os.path.join(eggnog_tmp_dir)
+                eggnog_temporary_dir = os.path.join(eggnog_tmp_dir, 'eggnog_temporary')
             is_valid_dir(eggnog_temporary_dir)
 
             fasta_file_path = os.path.join(reference_protein_fasta_path, observation_name+'.faa')
