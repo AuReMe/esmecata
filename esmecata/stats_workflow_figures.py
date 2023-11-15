@@ -9,6 +9,8 @@ import pandas as pd
 from ete3 import NCBITaxa
 import plotly.express as px
 import plotly.graph_objects as go
+# from plotly.io import from_json
+from plotly.subplots import make_subplots
 from  ontosunburst.ontosunburst import ec_ontosunburst
 from esmecata_compression import RANK2COL
 
@@ -31,6 +33,7 @@ __email__ = "victor.mataigne@irisa.fr"
 
 PLOT_BGCOLOR='#e6ffe6'
 LINECOLOR = 'DarkSlateGrey'
+COLORSCALE = px.colors.qualitative.Dark24
 EC_CLASSES_COLORS = {"Ligases": "#636EFA",
                     "Oxidoreductases": "#EF553B",
                      "Transferases": "#00CC96",
@@ -205,7 +208,7 @@ def post_analysis_config(input_table, results_path):
 
 def distributions_by_ranks(df_stats, results_path, rank='phylum'):
     '''
-    For the given rank, plots stacked barplots of how many proteomes / GO terms / EC numbers belongs to each taxa of this rank.
+    For the given rank, plots stacked barplots of how many proteomes belongs to each taxa of this rank.
 
         Parameters:
             df_stats (pandas): a pandas df, output of post_analysis_config()
@@ -216,11 +219,14 @@ def distributions_by_ranks(df_stats, results_path, rank='phylum'):
             fig : a plotly html figure
     '''
 
+    df_stats.sort_values(by=rank, ascending=False, inplace=True)
+
     fig = px.histogram(df_stats,
         x="Number_proteomes",
         color=rank,
         height=600,
         width=500,
+        color_discrete_sequence=COLORSCALE,
         labels={"Number_proteomes": "Number of proteomes"},
         title=f"Distribution of the number of proteomes found by {rank}")
     
@@ -250,6 +256,7 @@ def n_prot_ec_go_correlations(df_stats, results_path, rank="phylum"):
                      size=sizes,
                      hover_data=["Number_ecs", "Number_go_terms", "Number_proteomes"],
                      color=rank,
+                     #color_discrete_sequence=COLORSCALE,
                      width=800,
                      height=600,
                      labels={"Number_ecs": "Number of ECs", "Number_go_terms": "Number of GO terms", "Number_proteomes": "Number of proteomes"},
@@ -265,7 +272,7 @@ def n_prot_ec_go_correlations(df_stats, results_path, rank="phylum"):
 
 def taxo_ranks_contribution(proteome_tax_id, results_path):
     '''
-    For the given rank, plots stacked barplots of how many proteomes / GO terms / EC numbers belongs to each taxa of this rank.
+    For the given rank, plots stacked barplots of how many proteomes belongs to each taxa of this rank.
 
         Parameters:
             proteome_tax_id (pandas): a pandas df, output of post_analysis_config()
@@ -318,7 +325,7 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
     #              'no rank': 'na'}
 
     # rank_list = ['s', 'g', 'f', 'o', 'c', 'p', 'k', 'na']
-    rank_list = ['species', 'genus', 'clade', 'family', 'order', 'class', 'phylum', 'kingdom', 'no rank']
+    rank_list = ['species', 'genus', 'clade', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom', 'no rank']
 
     d_in = dict()
     ncbi = NCBITaxa()
@@ -541,6 +548,7 @@ def fraction_of_all_annot_in_obs(df, df_taxo, results_path, content, rank="phylu
         raise ValueError("param `content` must either be 'GO terms' or 'EC numbers'")
 
     df = df.join(df_taxo)
+    #df.sort_values(by=rank, ascending=False, inplace=True)
 
     fig = px.scatter(df,
         x = "taxa",
@@ -628,10 +636,12 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, rank="
         raise ValueError("param `content` must either be 'GO terms' or 'EC numbers'")
 
     df = df.join(df_taxo)
+    df.sort_values(by=rank, ascending=False, inplace=True)
     
     fig = px.histogram(df,
         x = "fraction",
         color=rank,
+        color_discrete_sequence=COLORSCALE,
         height=500,
         width=500,
         nbins=10,
@@ -658,6 +668,34 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, rank="
 def ec_sunburst(ec_classes, results_path):
     fig = ec_ontosunburst(ec_set=ec_classes, 
                           output=os.path.join(results_path, "3_analysis/taxonomic_ranks_contribution.html"))
+    
+    # Ugly while a better way to do is found : remove the root node afterwards
+    # ------------------------------------------------------------------------
+    # fig_json = fig.to_plotly_json()
+
+    # # Remove/modify the root marker/parent
+    # fig_json["data"][0]["hovertext"] = fig_json["data"][0]["hovertext"][1:]
+    # fig_json["data"][0]["ids"] = fig_json["data"][0]["ids"][1:]
+    # fig_json["data"][0]["labels"] = fig_json["data"][0]["labels"][1:]
+    # fig_json["data"][0]["marker"]["colors"] = fig_json["data"][0]["marker"]["colors"][1:]
+    # fig_json["data"][0]["parents"] = fig_json["data"][0]["parents"][1:]
+    # fig_json["data"][0]["parents"] = ["" if e == "Enzyme" else e for e in fig_json["data"][0]["parents"]]
+    # fig_json["data"][0]["values"] = fig_json["data"][0]["values"][1:]
+
+    # # Readapt colorscale    
+    # maxprop, minprop = fig_json["data"][0]["values"][0], fig_json["data"][0]["values"][-1]
+    # new_scale = np.linspace(minprop, maxprop, num=12)
+    # colorscale_b = fig_json["data"][0]["marker"]["colorscale"]
+    
+    # for i in range(0, len(new_scale)):
+    #     colorscale_b[i][0] = new_scale[i]
+
+    # fig_json["data"][0]["marker"]["colorscale"] = colorscale_b
+
+    # fig = from_json(json.dumps(fig_json))
+    
+    # ---------------------    
+
     fig.update_layout(title="EC numbers categories, counts and proportions", 
                       height=1000,
                       paper_bgcolor="#ffffff", 
@@ -665,6 +703,7 @@ def ec_sunburst(ec_classes, results_path):
                       font_size=20)
 
     fig.update_traces(marker=dict(colorscale=px.colors.diverging.RdYlGn, line_color=LINECOLOR, reversescale=True))
+
     fig.write_html(os.path.join(results_path, "3_analysis/ec_classes_sunburst.html"))
 
     return fig
@@ -692,18 +731,16 @@ def _hex_to_rgb(hex, opacity):
 
     return rgba
 
-def create_proteome_representativeness_lineplot_px(proteome_tax_id, computed_threshold_folder, results_path):
+def data_proteome_representativeness(proteome_tax_id, computed_threshold_folder):
     ''' 
-    From the computed threshold folder and the proteomes_tax_id file created a lineplot.
-    This figures show the representativeness ratio and the number of associated protein clusters according to the taxonomic rank.
+    Prepare data for plotting summary of the clustering step (i.e. representativeness ratio), from the computed threshold folder and the proteomes_tax_id file.
 
         Parameters:
             proteomes_taxon_id (pandas): pandas dataframe of proteomes taxa id (key "PROTEOME_TAX_ID" of post_analysis_config() output)
             computed_threshold_folder (str): pathname to computed threshold folder.
-            results_path (str): pathname to the output figure file.
 
         Returns:
-            fig : a plotly html figure
+            statsdf (pandas) : a pandas dataframe summarizing the mean, max, and min number of protein clusters for each clustering trhesholdand each input taxa
     '''
     # From proteomes_tax_id get the taxonomic rank for each observation name.
     tax_rank = proteome_tax_id['tax_rank'].to_dict()
@@ -720,7 +757,22 @@ def create_proteome_representativeness_lineplot_px(proteome_tax_id, computed_thr
 
     df = pd.DataFrame(data, columns=['obs_name', 'rank', 'clust', 'count'])
 
-    statsdf = df.groupby(['rank'])['count'].agg(['mean', 'count', 'std'])
+    return df
+
+def create_proteome_representativeness_lineplot_px(df, clust_threshold, results_path):
+    '''     
+    This figure shows the representativeness ratio and the number of associated protein clusters according to the taxonomic rank.
+
+        Parameters:
+            df (pandas) : a dataframe summarizing proteomes by cluster and by threshold, output of data_proteome_representativeness()
+            clust_threshold (float) : the threshold between 0 and 1 fixed by the user for the clustering process of EsMeCaTa
+            results_path (str): pathname to the output figure file.
+
+        Returns:
+            fig : a plotly html figure
+    '''
+    #statsdf = df.groupby(['rank'])['count'].agg(['mean', 'count', 'std'])
+    #statsdfs_detail = df.groupby(['obs_name'])
 
     # Compute confidence interval
     # h = []
@@ -734,7 +786,7 @@ def create_proteome_representativeness_lineplot_px(proteome_tax_id, computed_thr
 
     fig = go.Figure()
 
-    for rank in statsdf.index:
+    for rank in df["rank"].unique(): # df["rank"].unique() or statsdf.index
         rank_df = df.loc[df["rank"] == rank]
         rank_df = rank_df.groupby(["clust"])["count"].agg(["mean", "min", "max"])
 
@@ -745,12 +797,12 @@ def create_proteome_representativeness_lineplot_px(proteome_tax_id, computed_thr
                        x=rank_df.index,
                        y=rank_df["mean"],
                        mode="lines+markers",
-                       line=dict(color=RANK2COL[rank])),                       
+                       line=dict(color=RANK2COL[rank])),
             go.Scatter(name=f"{rank} min",
                        x=rank_df.index,
                        y=rank_df["min"],
                        mode="lines",
-                       line=dict(width=0),
+                       line=dict(width=0, color=RANK2COL[rank]),
                        showlegend=False),
             go.Scatter(name=f"{rank} max",
                        x=rank_df.index,
@@ -758,20 +810,98 @@ def create_proteome_representativeness_lineplot_px(proteome_tax_id, computed_thr
                        mode="lines",
                        fill='tonexty',
                        fillcolor=_hex_to_rgb(RANK2COL[rank], 0.2),
-                       line=dict(width=0),
+                       line=dict(width=0, color=RANK2COL[rank]),
                        showlegend=False)
         ])
 
-    _format_axes(fig)    
+    fig.add_vline(x=clust_threshold, 
+        line_dash="dash", 
+        line_width=1, 
+        line_color="red", 
+        annotation_text="EsMeCaTa's clustering threshold")
+
+    _format_axes(fig)
+    fig.update_xaxes(range=[0, 1])  
     fig.update_yaxes(type="log")    
 
     fig.update_layout(title="Count of retained clusters of proteins (split by by taxonomic rank) according to the clustering threshold",
                       xaxis_title="Clustering threshold (0 : pan-proteome, 1 : core-proteome)", 
                       yaxis_title="Number of clusters of proteomes retained", 
                       height=800, 
-                      plot_bgcolor=PLOT_BGCOLOR) 
+                      plot_bgcolor=PLOT_BGCOLOR,
+                      legend=dict(x=1, y=1, xanchor='right', yanchor='top')) 
 
     fig.write_html(os.path.join(results_path, "3_analysis/proteome_representativeness.html"))
+
+    return fig
+
+def proteomes_representativeness_details(df, clust_threshold, results_path):
+    '''
+    This figure shows details of the representativeness ratio and the number of associated protein clusters according to each cluster. There is one sub-pnale by taxonomic rank.
+
+        Parameters:
+            df (pandas) : a dataframe summarizing proteomes by cluster and by threshold, output of data_proteome_representativeness()
+            clust_threshold (float) : the threshold between 0 and 1 fixed by the user for the clustering process of EsMeCaTa
+            results_path (str): pathname to the output figure file.
+
+        Returns:
+            fig : a plotly html figure
+    '''
+
+    titles=[f"Details for {rank}" for rank in df["rank"].unique()]
+    #figs = []
+    n = df["rank"].nunique()
+    fig = make_subplots(rows=n, 
+                        cols=1,
+                        shared_xaxes=False,
+                        vertical_spacing=0.075,
+                        subplot_titles=titles)
+
+    i = 1
+    for rank in df["rank"].unique():
+
+        rank_df = df.loc[df["rank"] == rank]
+
+        for input_taxa in rank_df["obs_name"].unique():
+            rank_df_taxa = rank_df.loc[df["obs_name"] == input_taxa]
+
+            fig.add_trace(
+                go.Scatter(name=input_taxa,
+                    x=rank_df_taxa["clust"],
+                    y=rank_df_taxa["count"],
+                    mode="lines+markers",
+                    line=dict(color=RANK2COL[rank]),
+                    showlegend=False
+                ),
+                row=i,
+                col=1
+            )
+        i += 1
+
+    fig.add_vline(x=clust_threshold, 
+        line_dash="dash", 
+        line_width=1, 
+        line_color="red", 
+        annotation_text="EsMeCaTa's clustering threshold")
+        
+    _format_axes(fig)    
+    fig.update_yaxes(type="log")
+    fig.update_xaxes(range=[0, 1])
+        
+    fig.update_layout(#title=f"Details for {rank} clusters",
+        xaxis_title="Clustering threshold (0 : pan-proteome, 1 : core-proteome)", 
+        yaxis_title="Number of clusters of proteomes retained", 
+        height=n*400,
+        width=500,
+        plot_bgcolor=PLOT_BGCOLOR)
+        
+    i = 1
+    for rank in df["rank"].unique():
+        fig.update_xaxes(title_text="Clustering threshold (0 : pan-proteome, 1 : core-proteome)", row=i, col=1)
+        fig.update_yaxes(title_text="Number of clusters of proteomes retained", row=i, col=1)
+        i += 1
+        
+    fig.write_html(os.path.join(results_path, "3_analysis/proteome_representativeness_details.html"))
 
     return fig
 
@@ -797,7 +927,7 @@ def reproducibility_tokens(outdir):
          "clustering": reprometa_clustering,
          "annotation": reprometa_annotation}
     
-    metadata = json.dumps(metadata, indent=4)
+    # metadata = json.dumps(metadata, indent=4)
 
     return metadata
 

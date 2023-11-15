@@ -310,13 +310,15 @@ def fill_parameters(tax_names: Dict[int, str], tax_ranks: Dict[int, str], parent
             data['Rank'].append(tax_ranks[tax_id])
             data['Parent'].append(parent[tax_id])
             data['Count Input'].append(count_input[tax_id])
-            data['Color'].append(RANK2COL[tax_ranks[tax_id]])
+            # data['Color'].append(RANK2COL[tax_ranks[tax_id]])
             if tax_id in count_esmecata.keys():
                 data['Count Esmecata'].append(count_esmecata[tax_id])
-                data['Shape'].append('')
+                data['Color'].append(RANK2COL[tax_ranks[tax_id]])
+                #data['Shape'].append('')
             else:
                 data['Count Esmecata'].append(0)
-                data['Shape'].append('/')
+                data['Color'].append('#ffffff')
+                #data['Shape'].append('/')
     return data
 
 
@@ -341,11 +343,15 @@ def generate_sunburst_fig(data: Dict[str, List[str or int]], output: str):
     """
     # Create Sunburst
     fig = go.Figure(go.Sunburst(labels=data['Name'], parents=data['Parent'], values=data['Count Input'], ids=data['ID'],
-                                branchvalues='total', hovertext=[f'Rank: {x}' for x in data['Rank']],
+                                branchvalues='total', hovertext=[f'Rank: {x}' for x in data['Rank']], opacity = 0.8,
                                 hoverinfo='label+value+percent entry+text', maxdepth=10,
-                                insidetextfont=dict(color='#cccccc', size=14),
+                                insidetextfont=dict(color='#000000', size=16), #cccccc
                                 marker=dict(colors=data['Color'],
-                                            pattern=dict(shape=data['Shape']))))
+                                            line=dict(color='#000000'),
+                                            pattern=dict(shape=data['Shape'])
+                                            )
+                                )
+                    )
 
     # Add ranks color annotation
     m = len(set(data['Rank']))

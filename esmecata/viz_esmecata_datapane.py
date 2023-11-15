@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from os import path
+from os import path, mkdir
 import json
 import argparse
 import datapane as dp
@@ -28,11 +28,16 @@ args = parser.parse_args()
 # CONFIG
 # ======
 
+if not path.exists(path.join(args.outdir, "3_analysis")):
+    mkdir(path.join(args.outdir, "3_analysis"))
+
+print("Getting data")
 DATA = swf.post_analysis_config(args.input, args.outdir)
 _ = create_dataset_annotation_file(path.join(args.outdir, "2_annotation/annotation_reference"), path.join(args.outdir, "3_analysis/dataset_annotation_ec.tsv"), "EC")
 _ = create_dataset_annotation_file(path.join(args.outdir, "2_annotation/annotation_reference"), path.join(args.outdir, "3_analysis/dataset_annotation_go.tsv"), "GO")
 DATA2 = swf.create_annot_obs_df(path.join(args.outdir, "3_analysis/dataset_annotation_ec.tsv"), args.outdir, "EC numbers")
 DATA3 = swf.create_annot_obs_df(path.join(args.outdir, "3_analysis/dataset_annotation_go.tsv"), args.outdir, "GO terms")
+DF_CLUSTERING = swf.data_proteome_representativeness(DATA["PROTEOME_TAX_ID"], path.join(args.outdir, '1_clustering/computed_threshold'))
 
 RANK = 'phylum'
 
@@ -44,15 +49,32 @@ CSS = {'main-title': {'textAlign': 'center',
                       'display': 'inline-block'}}
 CONFIG = {'remove': ['select', 'zoomIn', 'zoomOut', 'autoScale', 'lasso2d']}
 
+metadata = swf.reproducibility_tokens(args.outdir)
+
 # =======
 # Figures
 # =======
 
+print("Building Inputs summary figures")
+fig9 = esmecata2taxonomy(args.outdir, path.join(args.outdir, '3_analysis/esmecata2taxonomy'))
+fig10 = esmecata_compression(args.outdir, path.join(args.outdir, '3_analysis/esmecata_compression'), False)
+
+print("Building proteomes summary figures")
 fig1 = swf.distributions_by_ranks(DATA["DF_STATS"], args.outdir, RANK)
-fig2 = swf.n_prot_ec_go_correlations(DATA["DF_STATS"], args.outdir, RANK)
-fig3 = swf.taxo_ranks_contribution(DATA["PROTEOME_TAX_ID"], args.outdir)
+# fig2 = swf.n_prot_ec_go_correlations(DATA["DF_STATS"], args.outdir, RANK)
+# fig3 = swf.taxo_ranks_contribution(DATA["PROTEOME_TAX_ID"], args.outdir)
 fig4 = swf.compare_ranks_in_out(DATA["PROTEOME_TAX_ID"], DATA["ASSOCIATION_PROTEOME_TAX_ID"], args.outdir)
 
+print("Building clustering summary figures")
+fig12 = swf.create_proteome_representativeness_lineplot_px(DF_CLUSTERING,
+    metadata["clustering"]["tool_options"]["clust_threshold"],
+    args.outdir)
+
+fig12_details = swf.proteomes_representativeness_details(DF_CLUSTERING,
+    metadata["clustering"]["tool_options"]["clust_threshold"],
+    args.outdir)
+
+print("Building annotation summary figures")
 fig5 = swf.annot_frequencies_in_obs(DATA2["df_annot_frequencies"], args.outdir, "EC numbers")
 fig6 = swf.fraction_of_all_annot_in_obs(DATA2["df_fractionin_obs"], DATA["DF_STATS"], args.outdir, "EC numbers")
 fig7 = swf.annot_frequencies_in_obs_hist(DATA2["df_annot_frequencies"], args.outdir, "EC numbers")
@@ -63,19 +85,16 @@ fig6b = swf.fraction_of_all_annot_in_obs(DATA3["df_fractionin_obs"], DATA["DF_ST
 fig7b = swf.annot_frequencies_in_obs_hist(DATA3["df_annot_frequencies"], args.outdir, "GO terms")
 fig8b = swf.fraction_of_all_annot_in_obs_hist(DATA3["df_fractionin_obs"], DATA["DF_STATS"], args.outdir, "GO terms")
 
-fig9 = esmecata2taxonomy(args.outdir, path.join(args.outdir, '3_analysis/esmecata2taxonomy'))
-fig10 = esmecata_compression(args.outdir, path.join(args.outdir, '3_analysis/esmecata_compression'), False)
-
 fig11 = swf.ec_sunburst(DATA2["df_annot_frequencies"].index, args.outdir)
-fig12 = swf.create_proteome_representativeness_lineplot_px(DATA["PROTEOME_TAX_ID"], path.join(args.outdir, '1_clustering/computed_threshold'), args.outdir)
 
-
+print("Formatting summary dataframes")
 if not DATA["DISCARDED"].empty:    
-    panel_content = dp.DataTable(DATA["DISCARDED"],label="Data")
+    df_discarded_panel_content = dp.DataTable(DATA["DISCARDED"],label="Data")
 else:
-    panel_content = dp.HTML("<p>None of input the taxonomic observations were discarded</p>")
+    df_discarded_panel_content = dp.HTML("<p>None of input the taxonomic observations were discarded</p>")
 
-metadata = swf.reproducibility_tokens(args.outdir)
+print("Formatting metadata")
+metadata = json.dumps(metadata, indent=4)
 
 # ======
 # Report
@@ -87,9 +106,11 @@ report = dp.Blocks(
     dp.Page(
         title="Inputs and outputs ranks comparison",
         blocks=[
-            dp.HTML("<h2>Reduction of taxonomic diversity between EsMeCaTa's inputs and outputs</h2>"),            
+            dp.HTML("<h2>Reduction of taxonomic diversity between EsMeCaTa's inputs and outputs</h2>"),
+            dp.HTML("<p>The sunburst below displays the taxonomic diversity of inputs. White taxa indicates inputs that were not retained by EsMeCaTa, which went up to the superior taxonomic rank to find proteomes.</p>"),           
             dp.Plot(fig9), #.update_traces(marker=dict(pattern=dict(shape=tmp_data['Shape'])))),
             dp.HTML("<h2>\"Compression\" of taxonomic diversity between inputs and outputs</h2>"),
+            dp.HTML("<p>The sankey diagram below also displays the intial taxonomic diversity of EsMeCaTa inputs. Then, it displays which of them were 'compressed' because of an identical taxonomy, and finally displays the ranks EsMeCaTa attributed to each of them.</p>"),
             dp.Plot(fig10, label='Taxonomic compression')
         ],
     ),
@@ -113,13 +134,15 @@ report = dp.Blocks(
         title="Clustering summary",
         blocks=[
             dp.HTML("<p>In the clustering step, for each set of proteomes associated to an input, EsMeCaTa searchs for clusters of similar proteic sequences among these proteomes. This step is supervised by a threshold between 0 and 1, 1 meaning that a cluster contains sequences from each proteomes, 0.5 meaning that a cluster contains sequences from at least a half of the proteomes (etc). This threshold can then be an approximation of the pan-proteome (0) and the core-proteome (1). Clusters below the threshold are discarded. The figure below displays how many clusters were retained at each threshold value.</p>"),
-            dp.Plot(fig12.update_layout(modebar=CONFIG), label='proteomes representativeness')
+            dp.Plot(fig12.update_layout(modebar=CONFIG), label='proteomes representativeness'),
+            dp.Plot(fig12_details.update_layout(modebar=CONFIG), label="proteomes representativeness details")
         ]
     ),
 
     # Step 3 (Page 4): EsMeCaTa annotation
     dp.Page(
-        title="Annotation summary", blocks=[
+        title="Annotation summary", 
+        blocks=[
 
             # EC numbers figures
             dp.HTML("<h2>EC numbers frequencies among taxa</h2>"),
@@ -190,7 +213,8 @@ report = dp.Blocks(
 
     # Page 4 : dataframes of default summary statistics
     dp.Page(
-        title="Data summary", blocks=[
+        title="Data summary", 
+        blocks=[
             dp.Group(
                 dp.BigNumber(heading="Number of inputs", value=DATA["N_IN"]),
                 dp.BigNumber(heading="Kept by EsMeCaTa", value=DATA["N_OUT"]),
@@ -201,7 +225,7 @@ report = dp.Blocks(
             dp.HTML("<h2>Output stats</h2><p>Taxonomic ranks are NCBI ranks returned by ete3</p>"),
             dp.DataTable(DATA["DF_STATS"], label="Data"),
             dp.HTML("<h2>Discarded</h2><p>Taxonomic ranks were not inferred; only names are displayed</p>"),
-            panel_content
+            df_discarded_panel_content
         ]
     ),
 
