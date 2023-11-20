@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from os import path, mkdir
+from os import path, mkdir, makedirs
 import json
 import argparse
 import datapane as dp
@@ -28,8 +28,13 @@ args = parser.parse_args()
 # CONFIG
 # ======
 
-if not path.exists(path.join(args.outdir, "3_analysis")):
-    mkdir(path.join(args.outdir, "3_analysis"))
+# if not path.exists(path.join(args.outdir, "3_analysis")):
+#     mkdir(path.join(args.outdir, "3_analysis"))
+
+dirs = ["inputs_outputs_figures", "proteomes_figures", "clustering_figures", "annotation_figures"]
+for dir in dirs:
+    try: makedirs(path.join(args.outdir, "3_analysis", dir))
+    except OSError: pass
 
 print("Getting data")
 DATA = swf.post_analysis_config(args.input, args.outdir)
@@ -56,11 +61,11 @@ metadata = swf.reproducibility_tokens(args.outdir)
 # =======
 
 print("Building Inputs summary figures")
-fig9 = esmecata2taxonomy(args.outdir, path.join(args.outdir, '3_analysis/esmecata2taxonomy'))
-fig10 = esmecata_compression(args.outdir, path.join(args.outdir, '3_analysis/esmecata_compression'), False)
+fig9 = esmecata2taxonomy(args.outdir, path.join(args.outdir, '3_analysis/inputs_outputs_figures/esmecata2taxonomy'))
+fig10 = esmecata_compression(args.outdir, path.join(args.outdir, '3_analysis/inputs_outputs_figures/esmecata_compression'), False)
 
 print("Building proteomes summary figures")
-fig1 = swf.distributions_by_ranks(DATA["DF_STATS"], args.outdir, RANK)
+fig1 = swf.distributions_by_ranks(DATA["DF_STATS"], args.outdir, 15, RANK)
 # fig2 = swf.n_prot_ec_go_correlations(DATA["DF_STATS"], args.outdir, RANK)
 # fig3 = swf.taxo_ranks_contribution(DATA["PROTEOME_TAX_ID"], args.outdir)
 fig4 = swf.compare_ranks_in_out(DATA["PROTEOME_TAX_ID"], DATA["ASSOCIATION_PROTEOME_TAX_ID"], args.outdir)

@@ -41,6 +41,7 @@ EC_CLASSES_COLORS = {"Ligases": "#636EFA",
                      "Lyases": "#FFA15A",
                      "Isomerases": "#19D3F3",
                      "Translocases": "#FF6692"} # 'Plotly' default color map
+DOWNLOAD_FMT = "svg"
 
 # ========================
 # Code factoring functions
@@ -71,6 +72,14 @@ def _format_axes(fig):
                      mirror=True, 
                      showgrid=True, 
                      gridwidth=2)
+    
+# def _create_config(format, filename):
+#     config = {'remove': ['select', 'zoomIn', 'zoomOut', 'autoScale', 'lasso2d'],
+#               'toImageButtonOptions': {'format': 'svg', # one of png, svg, jpeg, webp
+#                                        'filename': 'custom_image'
+#                 }
+#             }
+#     return config
     
 # =============================
 # Data gathering and formatting
@@ -206,7 +215,7 @@ def post_analysis_config(input_table, results_path):
 # Proteomes summary page figures
 # ==============================
 
-def distributions_by_ranks(df_stats, results_path, rank='phylum'):
+def distributions_by_ranks(df_stats, results_path, n_bins=15, rank='phylum', savefig=True):
     '''
     For the given rank, plots stacked barplots of how many proteomes belongs to each taxa of this rank.
 
@@ -226,19 +235,22 @@ def distributions_by_ranks(df_stats, results_path, rank='phylum'):
         color=rank,
         height=600,
         width=500,
+        nbins=n_bins,
         color_discrete_sequence=COLORSCALE,
         labels={"Number_proteomes": "Number of proteomes"},
         title=f"Distribution of the number of proteomes found by {rank}")
     
     _format_trace(fig)
     _format_axes(fig)
-    fig.update_layout(yaxis_title="Number of taxa", plot_bgcolor=PLOT_BGCOLOR)
+    fig.update_layout(yaxis_title="Number of taxa", 
+                      plot_bgcolor=PLOT_BGCOLOR)
    
-    fig.write_html(os.path.join(results_path, "3_analysis/proteomes_distribution_by_ranks.html"))
+    if savefig:
+        fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/proteomes_distribution_by_ranks.pdf"))
 
     return fig
 
-def n_prot_ec_go_correlations(df_stats, results_path, rank="phylum"):
+def n_prot_ec_go_correlations(df_stats, results_path, rank="phylum", savefig=True):
     '''
     Plots the correlation between the number of GO terms and the number of EC numbers. Each dot is a taxa. Dot sizes are linked to the number of proteomes found.
 
@@ -266,11 +278,12 @@ def n_prot_ec_go_correlations(df_stats, results_path, rank="phylum"):
     _format_axes(fig)
     fig.update_layout(plot_bgcolor=PLOT_BGCOLOR) 
     
-    fig.write_html(os.path.join(results_path, "3_analysis/correlation_ec_go_proteomes.html"))
+    if savefig:
+        fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/correlation_ec_go_proteomes.pdf"))
 
     return fig
 
-def taxo_ranks_contribution(proteome_tax_id, results_path):
+def taxo_ranks_contribution(proteome_tax_id, results_path, n_bins=10, savefig=True):
     '''
     For the given rank, plots stacked barplots of how many proteomes belongs to each taxa of this rank.
 
@@ -289,6 +302,7 @@ def taxo_ranks_contribution(proteome_tax_id, results_path):
         color="tax_rank",
         height=600,
         width=500,
+        nbins=n_bins,
         labels={"n_proteomes": "Number of proteomes"},
         title="Number of proteomes per taxonomic rank") 
 
@@ -296,11 +310,12 @@ def taxo_ranks_contribution(proteome_tax_id, results_path):
     _format_axes(fig)
     fig.update_layout(yaxis_title="Number of inputs", plot_bgcolor=PLOT_BGCOLOR) 
 
-    fig.write_html(os.path.join(results_path, "3_analysis/taxonomic_ranks_contribution.html"))
+    if savefig:
+        fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/taxonomic_ranks_contribution.pdf"))
 
     return fig
 
-def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path):
+def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path, savefig=True):
     '''
     Plots a heatmap displaying how many input taxonomic ranks were assigned to the same rank by esmecata and how many were assigned to higher tanks.
 
@@ -383,7 +398,8 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
     _format_axes(fig)
     #fig.update_layout(xaxis={"side": "top"}, title=dict(automargin=True, yref='container'))
     
-    fig.write_html(os.path.join(results_path, "3_analysis/input_and_output_ranks.html"))
+    if savefig:
+        fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/input_and_output_ranks.pdf"))
     
     return fig
 
@@ -391,12 +407,12 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
 # EC numbers and GO terms distribution figures
 # ============================================
 
-def create_annot_obs_df(dataset_annotation_file, results_path, content):
+def create_annot_obs_df(dataset_annotation_file, outpath, content):
     """ Prepare data of 'frequences of EC numbers / Go terms in taxa' and 'fraction of all EC numbers / Go terms in taxa'
 
     Args:
         dataset_annotation_file (str) : path to an EC*taxa or Go*taxa matrix, computed by create_dataset_annotation_file()
-        results_path (str) : the path of the esmecata run
+        outpath (str) : the path of the esmecata run
         content (str) : 'GO terms' or 'EC numbers' to specifies which data is processed
 
     Returns:
@@ -485,7 +501,7 @@ def create_annot_obs_df(dataset_annotation_file, results_path, content):
 
     return data
 
-def annot_frequencies_in_obs(df, results_path, content):
+def annot_frequencies_in_obs(df, results_path, content, savefig=True):
     '''
     Plots the frequency of each EC in the taxa (i.e. which EC are in many taxa, and which EC are in few taxa)
 
@@ -527,11 +543,13 @@ def annot_frequencies_in_obs(df, results_path, content):
     fig.add_hrect(y0=0.9, y1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
     fig.update_layout(yaxis_title=f"Proportion of taxa containing the {content}", plot_bgcolor=PLOT_BGCOLOR, yaxis_range=[-0.1,1.1])
-    fig.write_html(os.path.join(results_path, f"3_analysis/{content.replace(' ', '_')}_frequencies_in_taxa.html"))
+
+    if savefig:
+        fig.write_html(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa.html"))
 
     return fig
 
-def fraction_of_all_annot_in_obs(df, df_taxo, results_path, content, rank="phylum"):
+def fraction_of_all_annot_in_obs(df, df_taxo, results_path, content, rank="phylum", savefig=True):
     '''
     Plots the fraction of all EC of the dataset in each taxa (i.e. which taxa have many ECs, and which taxa have few ECs)
 
@@ -565,11 +583,13 @@ def fraction_of_all_annot_in_obs(df, df_taxo, results_path, content, rank="phylu
     fig.add_hrect(y0=0.9, y1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
     fig.update_layout(yaxis_title=f"Proportion of present {content}/total {content}", plot_bgcolor=PLOT_BGCOLOR, yaxis_range=[-0.1,1.1])
-    fig.write_html(os.path.join(results_path, f"3_analysis/{content.replace(' ', '_')}_fraction_per_taxa.html"))
+
+    if savefig:
+        fig.write_html(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa.html"))
 
     return fig
 
-def annot_frequencies_in_obs_hist(df, results_path, content):
+def annot_frequencies_in_obs_hist(df, results_path, content, n_bins=20, savefig=True):
     '''
     For the given rank, plots stacked barplots of how many EC numbers belongs to each taxa of this rank (i.e. which EC are in many taxa, and which EC are in few taxa).
 
@@ -593,7 +613,7 @@ def annot_frequencies_in_obs_hist(df, results_path, content):
             color="EC_class",
             height=500,
             width=500,
-            nbins=20,
+            nbins=n_bins,
             labels=labels,
             title=title)
     else:
@@ -615,11 +635,13 @@ def annot_frequencies_in_obs_hist(df, results_path, content):
                       xaxis_title=f"Proportion of taxa containing the {content}", 
                       plot_bgcolor=PLOT_BGCOLOR, 
                       xaxis_range=[-0.1,1.1])
-    fig.write_html(os.path.join(results_path, f"3_analysis/{content.replace(' ', '_')}_frequencies_in_taxa_hist.html"))
+    
+    if savefig:
+        fig.write_image(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa_hist.pdf"))
 
     return fig
 
-def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, rank="phylum"):
+def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, n_bins=10, rank="phylum", savefig=True):
     '''
     Plots the histogram of the fraction of all EC of the dataset in each taxa (i.e. which taxa have many ECs, and which taxa have few ECs)
 
@@ -644,7 +666,7 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, rank="
         color_discrete_sequence=COLORSCALE,
         height=500,
         width=500,
-        nbins=10,
+        nbins=n_bins,
         labels={"taxa": "Taxa", "fraction": f"Proportion = ({content} in taxa) / (All {content})"},
         title=f"Histogram of the proportion (Number of {content} in a taxa) / (Total number of {content} in the dataset)")
 
@@ -657,7 +679,9 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, rank="
     fig.update_layout(yaxis_title="Number of taxa", 
                       plot_bgcolor=PLOT_BGCOLOR, 
                       xaxis_range=[-0.1,1.1])
-    fig.write_html(os.path.join(results_path, f"3_analysis/{content.replace(' ', '_')}_fraction_per_taxa_hist.html"))
+    
+    if savefig:
+        fig.write_image(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa_hist.pdf"))
 
     return fig
 
@@ -665,37 +689,11 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, rank="
 # EC sunburst summary figure
 # ==========================
 
-def ec_sunburst(ec_classes, results_path):
+def ec_sunburst(ec_classes, results_path, savefig=True):
     fig = ec_ontosunburst(ec_set=ec_classes, 
-                          output=os.path.join(results_path, "3_analysis/taxonomic_ranks_contribution.html"))
+                          output=None,
+                          root_cut="total")
     
-    # Ugly while a better way to do is found : remove the root node afterwards
-    # ------------------------------------------------------------------------
-    # fig_json = fig.to_plotly_json()
-
-    # # Remove/modify the root marker/parent
-    # fig_json["data"][0]["hovertext"] = fig_json["data"][0]["hovertext"][1:]
-    # fig_json["data"][0]["ids"] = fig_json["data"][0]["ids"][1:]
-    # fig_json["data"][0]["labels"] = fig_json["data"][0]["labels"][1:]
-    # fig_json["data"][0]["marker"]["colors"] = fig_json["data"][0]["marker"]["colors"][1:]
-    # fig_json["data"][0]["parents"] = fig_json["data"][0]["parents"][1:]
-    # fig_json["data"][0]["parents"] = ["" if e == "Enzyme" else e for e in fig_json["data"][0]["parents"]]
-    # fig_json["data"][0]["values"] = fig_json["data"][0]["values"][1:]
-
-    # # Readapt colorscale    
-    # maxprop, minprop = fig_json["data"][0]["values"][0], fig_json["data"][0]["values"][-1]
-    # new_scale = np.linspace(minprop, maxprop, num=12)
-    # colorscale_b = fig_json["data"][0]["marker"]["colorscale"]
-    
-    # for i in range(0, len(new_scale)):
-    #     colorscale_b[i][0] = new_scale[i]
-
-    # fig_json["data"][0]["marker"]["colorscale"] = colorscale_b
-
-    # fig = from_json(json.dumps(fig_json))
-    
-    # ---------------------    
-
     fig.update_layout(title="EC numbers categories, counts and proportions", 
                       height=1000,
                       paper_bgcolor="#ffffff", 
@@ -704,7 +702,8 @@ def ec_sunburst(ec_classes, results_path):
 
     fig.update_traces(marker=dict(colorscale=px.colors.diverging.RdYlGn, line_color=LINECOLOR, reversescale=True))
 
-    fig.write_html(os.path.join(results_path, "3_analysis/ec_classes_sunburst.html"))
+    if savefig:
+        fig.write_html(os.path.join(results_path, "3_analysis/annotation_figures/ec_classes_sunburst.html"))
 
     return fig
 
@@ -759,7 +758,7 @@ def data_proteome_representativeness(proteome_tax_id, computed_threshold_folder)
 
     return df
 
-def create_proteome_representativeness_lineplot_px(df, clust_threshold, results_path):
+def create_proteome_representativeness_lineplot_px(df, clust_threshold, results_path, savefig=True):
     '''     
     This figure shows the representativeness ratio and the number of associated protein clusters according to the taxonomic rank.
 
@@ -831,11 +830,12 @@ def create_proteome_representativeness_lineplot_px(df, clust_threshold, results_
                       plot_bgcolor=PLOT_BGCOLOR,
                       legend=dict(x=1, y=1, xanchor='right', yanchor='top')) 
 
-    fig.write_html(os.path.join(results_path, "3_analysis/proteome_representativeness.html"))
+    if savefig:
+        fig.write_image(os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness.pdf"))
 
     return fig
 
-def proteomes_representativeness_details(df, clust_threshold, results_path):
+def proteomes_representativeness_details(df, clust_threshold, results_path, savefig=True):
     '''
     This figure shows details of the representativeness ratio and the number of associated protein clusters according to each cluster. There is one sub-pnale by taxonomic rank.
 
@@ -849,7 +849,7 @@ def proteomes_representativeness_details(df, clust_threshold, results_path):
     '''
 
     titles=[f"Details for {rank}" for rank in df["rank"].unique()]
-    #figs = []
+
     n = df["rank"].nunique()
     fig = make_subplots(rows=n, 
                         cols=1,
@@ -901,7 +901,8 @@ def proteomes_representativeness_details(df, clust_threshold, results_path):
         fig.update_yaxes(title_text="Number of clusters of proteomes retained", row=i, col=1)
         i += 1
         
-    fig.write_html(os.path.join(results_path, "3_analysis/proteome_representativeness_details.html"))
+    if savefig:
+        fig.write_html(os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness_details.html"))
 
     return fig
 
