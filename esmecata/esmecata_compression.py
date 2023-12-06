@@ -271,7 +271,7 @@ def link_input_node_to_input_otu(input_data: Dict[str, Any], fig_data: Dict[str,
     fig_data = add_link_data(fig_data, source, target, value, DEFAULT_LINK_COLOR)
     # Set sp_ii position
     step = input_data[VAL_D][sp_i] / nb_otu_input
-    return set_node_position(sp_ii, step, 0.04, ii_y, fig_data, labels)
+    return set_node_position(sp_ii, step, 0.2, ii_y, fig_data, labels)
 
 
 def link_input_otu_to_input_taxa(fig_data: Dict[str, List[Any]], labels: List[str], sp_i: str, sp_ii: str,
@@ -305,7 +305,7 @@ def link_input_otu_to_input_taxa(fig_data: Dict[str, List[Any]], labels: List[st
     fig_data = add_link_data(fig_data, source, target, 1, DEFAULT_LINK_COLOR)
     # Set sp_i position
     step = 1 / nb_input_div
-    return set_node_position(sp_i, step, 0.25, i_y, fig_data, labels)
+    return set_node_position(sp_i, step, 0.5, i_y, fig_data, labels)
 
 
 def link_input_taxa_to_output_taxa(input_data: Dict[str, Any], fig_data: Dict[str, List[Any]], labels: List[str],
@@ -452,11 +452,11 @@ def draw_sankey_fig(fig_data: Dict[str, List[Any]], output: str, show_fig: bool)
               'line': dict(color='white', width=line_width)}),
     )
 
-    text_pos = [0, 0.2, 0.82]
+    text_pos = [0.2, 0.5, 0.8]
     for i in range(0, 3):
         fig.add_annotation(dict(font=dict(color='darkslategrey', size=18), x=text_pos[i], y=1.05,
                                 showarrow=False, text=fig_data[TEXT_ANNOT][i], textangle=0,
-                                xanchor='left', xref='paper', yref='paper'))
+                                xanchor='center', xref='paper', yref='paper'))
     # fig.update_layout(height=fig_height)
     # fig.write_html(output)
     if show_fig:
@@ -488,7 +488,10 @@ def esmecata_compression(run_name: str, output: str, show_fig: bool = False):
         fig_height = 600
     
     fig = draw_sankey_fig(fig_data, f'{output}.html', show_fig)
-    fig.update_layout(height=fig_height)
+    fig.update_layout(height=fig_height, 
+                      font=dict(family="Courier New, monospace",
+                                size=14,
+                                color="black"))
     fig.write_html(f'{output}.html')
 
     return fig

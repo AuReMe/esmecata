@@ -8,6 +8,7 @@ import stats_workflow_figures as swf
 from esmecata2taxontology import esmecata2taxonomy
 from analysis import create_dataset_annotation_file
 from esmecata_compression import esmecata_compression
+from plotly.io import write_json
 
 __author__ = "Pauline Hamon-Giraud, Victor Mataigne"
 __email__ = "victor.mataigne@irisa.fr"
@@ -64,6 +65,13 @@ print("Building Inputs summary figures")
 fig9 = esmecata2taxonomy(args.outdir, path.join(args.outdir, '3_analysis/inputs_outputs_figures/esmecata2taxonomy'))
 fig10 = esmecata_compression(args.outdir, path.join(args.outdir, '3_analysis/inputs_outputs_figures/esmecata_compression'), False)
 
+write_json(fig9, 
+    path.join(args.outdir, "3_analysis/inputs_outputs_figures/esmecata2taxonomy.json"), 
+    pretty=True)
+write_json(fig10, 
+    path.join(args.outdir, "3_analysis/inputs_outputs_figures/esmecata_compression.json"), 
+    pretty=True)
+
 print("Building proteomes summary figures")
 fig1 = swf.distributions_by_ranks(DATA["DF_STATS"], args.outdir, 15, RANK)
 # fig2 = swf.n_prot_ec_go_correlations(DATA["DF_STATS"], args.outdir, RANK)
@@ -112,10 +120,10 @@ report = dp.Blocks(
         title="Inputs and outputs ranks comparison",
         blocks=[
             dp.HTML("<h2>Reduction of taxonomic diversity between EsMeCaTa's inputs and outputs</h2>"),
-            dp.HTML("<p>The sunburst below displays the taxonomic diversity of inputs. White taxa indicates inputs that were not retained by EsMeCaTa, which went up to the superior taxonomic rank to find proteomes.</p>"),           
+            dp.HTML("<p>The sunburst below displays the taxonomic diversity of inputs, i.e. all the taxonomic affiliations listed in the tsv input file. White cells indicates inputs whose ranks were not retained by EsMeCaTa, which went up to the superior taxonomic rank to find proteomes.</p>"),           
             dp.Plot(fig9), #.update_traces(marker=dict(pattern=dict(shape=tmp_data['Shape'])))),
             dp.HTML("<h2>\"Compression\" of taxonomic diversity between inputs and outputs</h2>"),
-            dp.HTML("<p>The sankey diagram below also displays the intial taxonomic diversity of EsMeCaTa inputs. Then, it displays which of them were 'compressed' because of an identical taxonomy, and finally displays the ranks EsMeCaTa attributed to each of them.</p>"),
+            dp.HTML("<p>The sankey diagram below also displays the initial taxonomic diversity of taxonomic affiliations given to EsMeCaTa as inputs. The first column details the content of the input file : one block is equivalent to one taxonomic affiliation, and the block height indicates the number of times this affiliation appears in the input file. The second column details which of these taxonomic affiliations were merged together (i.e. 'compressed') because their taxonomyies were identical in the input file. Finally, The first column displays the ranks EsMeCaTa attributed to each of them : at this step, some taxonomic affiliations can be merged because EsMeCaTa went up the taxonomic ranks to find proteomes.</p>"),
             dp.Plot(fig10, label='Taxonomic compression')
         ],
     ),
@@ -125,8 +133,8 @@ report = dp.Blocks(
         title="Proteomes summary",
         blocks=[
             dp.Group(
-                dp.HTML("<p>When proteomes of the lowest taxonomic rank of a taxonomic observation are not found, EsMeCaTa goes up in the taxonomic levels to found suited proteomes. In addition to figure 2, the heatmap belows details the input taxonomic rank of all taxonomic observations (y-axis), and the rank given by EsMeCaTa to the output (x-axis).</p>"),
-                dp.HTML("<p>The barplot belows details how many proteomes were assigned to each taxonomic observation (colored by phylum). The number of proteomes found for each taxonomic observation can vary from only a few to dozens or hundreds, depending on the data available on UniProt.</p>"),
+                dp.HTML("<p>When proteomes of the lowest taxonomic rank of an input taxa are not found, EsMeCaTa goes up in the taxonomic levels to found suited proteomes. In complement to the figures in the first panel, the heatmap below details the difference between the lowest taxonomic rank of all input taxonomic observations (y-axis) and the lowest rank atributed by EsMeCaTa (x-axis).</p>"),
+                dp.HTML("<p>The barplot belows details how many proteomes were assigned to inputs taxonomic affiliations (grouped and colored by phylum). The number of proteomes found can vary from only a few to dozens or hundreds, depending on the data available on UniProt for each taxonomic group.</p>"),
                 dp.Plot(fig4.update_layout(modebar=CONFIG), label='Input and output ranks difference'),
                 dp.Plot(fig1.update_layout(modebar=CONFIG), label='Distribution of the number of proteomes found'),                
                 columns=2,
@@ -138,7 +146,7 @@ report = dp.Blocks(
     dp.Page(
         title="Clustering summary",
         blocks=[
-            dp.HTML("<p>In the clustering step, for each set of proteomes associated to an input, EsMeCaTa searchs for clusters of similar proteic sequences among these proteomes. This step is supervised by a threshold between 0 and 1, 1 meaning that a cluster contains sequences from each proteomes, 0.5 meaning that a cluster contains sequences from at least a half of the proteomes (etc). This threshold can then be an approximation of the pan-proteome (0) and the core-proteome (1). Clusters below the threshold are discarded. The figure below displays how many clusters were retained at each threshold value.</p>"),
+            dp.HTML("<p>In the clustering step, for the set of proteomes associated to each input taxa, EsMeCaTa searches for clusters of similar proteic sequences among these proteomes. This step is supervised by a threshold between 0 and 1, 1 meaning that a cluster contains sequences from each proteomes, 0.5 meaning that a cluster contains sequences from at least a half of the proteomes (etc). This threshold can then be an approximation of the pan-proteome (0) and the core-proteome (1). Clusters below the threshold are discarded. The figure below displays how many clusters were retained at each threshold value. The vertical red line displays the threshold set dor this run of EsMeCata.</p>"),
             dp.Plot(fig12.update_layout(modebar=CONFIG), label='proteomes representativeness'),
             dp.Plot(fig12_details.update_layout(modebar=CONFIG), label="proteomes representativeness details")
         ]

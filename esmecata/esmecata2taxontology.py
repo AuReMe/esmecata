@@ -347,7 +347,7 @@ def generate_sunburst_fig(data: Dict[str, List[str or int]], output: str):
                                 hoverinfo='label+value+percent entry+text', maxdepth=10,
                                 insidetextfont=dict(color='#000000', size=16), #cccccc
                                 marker=dict(colors=data['Color'],
-                                            line=dict(color='#000000'),
+                                            line=dict(color='#000000'),                                            
                                             pattern=dict(shape=data['Shape'])
                                             )
                                 )
@@ -369,6 +369,7 @@ def generate_sunburst_fig(data: Dict[str, List[str or int]], output: str):
                       font_color='#ffffff',
                       # width=2000,
                       height=1300,
+                      font=dict(family="Courier New, monospace",size=14,color="black"),
                       margin=go.layout.Margin(
                         l=0, #left margin
                         r=0, #right margin

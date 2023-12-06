@@ -9,7 +9,7 @@ import pandas as pd
 from ete3 import NCBITaxa
 import plotly.express as px
 import plotly.graph_objects as go
-# from plotly.io import from_json
+from plotly.io import write_json
 from plotly.subplots import make_subplots
 from  ontosunburst.ontosunburst import ec_ontosunburst
 from esmecata_compression import RANK2COL
@@ -35,13 +35,18 @@ PLOT_BGCOLOR='#e6ffe6'
 LINECOLOR = 'DarkSlateGrey'
 COLORSCALE = px.colors.qualitative.Dark24
 EC_CLASSES_COLORS = {"Ligases": "#636EFA",
-                    "Oxidoreductases": "#EF553B",
-                     "Transferases": "#00CC96",
-                     "Hydrolases": "#AB63FA",
-                     "Lyases": "#FFA15A",
-                     "Isomerases": "#19D3F3",
-                     "Translocases": "#FF6692"} # 'Plotly' default color map
+    "Oxidoreductases": "#EF553B",
+    "Transferases": "#00CC96",
+    "Hydrolases": "#AB63FA",
+    "Lyases": "#FFA15A",
+    "Isomerases": "#19D3F3",
+    "Translocases": "#FF6692"} # 'Plotly' default color map
 DOWNLOAD_FMT = "svg"
+FONTPARAMS = dict(
+    family="Courier New, monospace",
+    size=14,
+    color="black"
+)
 
 # ========================
 # Code factoring functions
@@ -60,18 +65,20 @@ def _format_axes(fig):
     Parameters:
         fig : a plotly object
     '''  
-    fig.update_xaxes(showline=True, 
-                     linewidth=2, 
-                     linecolor=LINECOLOR, 
-                     mirror=True, 
-                     showgrid=True, 
-                     gridwidth=2)
-    fig.update_yaxes(showline=True, 
-                     linewidth=2, 
-                     linecolor=LINECOLOR, 
-                     mirror=True, 
-                     showgrid=True, 
-                     gridwidth=2)
+    fig.update_xaxes(
+        showline=True, 
+        linewidth=2, 
+        linecolor=LINECOLOR, 
+        mirror=True, 
+        showgrid=True, 
+        gridwidth=2)
+    fig.update_yaxes(
+        showline=True, 
+        linewidth=2, 
+        linecolor=LINECOLOR, 
+        mirror=True, 
+        showgrid=True, 
+        gridwidth=2)
     
 # def _create_config(format, filename):
 #     config = {'remove': ['select', 'zoomIn', 'zoomOut', 'autoScale', 'lasso2d'],
@@ -117,7 +124,6 @@ def _format_taxo(proteome_tax_id):
         ranks[index] = ncbi.get_rank(tmp)
         names[index] = ncbi.get_taxid_translator(tmp)
 
-
     # rank:name correspondance
     for k in ranks.keys():
         data[k] = {}
@@ -146,17 +152,20 @@ def post_analysis_config(input_table, results_path):
     '''
 
     # Load and concat summaries of results
-    stats_nb_proteomes = pd.read_table(os.path.join(results_path,'0_proteomes/stat_number_proteome.tsv'),
+    stats_nb_proteomes = pd.read_table(
+        os.path.join(results_path,'0_proteomes/stat_number_proteome.tsv'),
         sep='\t',
         header=0,
         index_col='observation_name')
     
-    stats_nb_clustering = pd.read_table(os.path.join(results_path,'1_clustering/stat_number_clustering.tsv'),
+    stats_nb_clustering = pd.read_table(
+        os.path.join(results_path,'1_clustering/stat_number_clustering.tsv'),
         sep='\t',
         header=0,
         index_col='observation_name')
     
-    stats_nb_annotation = pd.read_table(os.path.join(results_path,'2_annotation/stat_number_annotation.tsv'),
+    stats_nb_annotation = pd.read_table(
+        os.path.join(results_path,'2_annotation/stat_number_annotation.tsv'),
         sep='\t',
         header=0,
         index_col='observation_name')
@@ -165,7 +174,8 @@ def post_analysis_config(input_table, results_path):
     df_stats = df_stats.dropna()
 
     # Load input
-    input_data = pd.read_table(input_table,
+    input_data = pd.read_table(
+        input_table,
         sep='\t',
         header=0,
         index_col=None,
@@ -176,7 +186,8 @@ def post_analysis_config(input_table, results_path):
     n_in = input_data.shape[0]
 
     # Load tax ids (outputs)
-    proteome_tax_id = pd.read_csv(os.path.join(results_path, '0_proteomes/proteome_tax_id.tsv'),
+    proteome_tax_id = pd.read_csv(
+        os.path.join(results_path, '0_proteomes/proteome_tax_id.tsv'),
         header=0,
         index_col='observation_name',
         sep='\t')
@@ -199,15 +210,16 @@ def post_analysis_config(input_table, results_path):
     with open(os.path.join(results_path, '0_proteomes/association_taxon_taxID.json')) as f:
         association_taxon_tax_id = json.load(f)
 
-    data = {"INPUT_DATA": input_data,
-            "DISCARDED": discarded, 
-            "N_DISCARDED": n_discarded, 
-            "DF_STATS": df_stats, 
-            "N_IN": n_in, 
-            "N_OUT": n_out, 
-            "PROTEOME_TAX_ID": proteome_tax_id, 
-            "ASSOCIATION_PROTEOME_TAX_ID": association_taxon_tax_id, 
-            }
+    data = {
+        "INPUT_DATA": input_data,
+        "DISCARDED": discarded, 
+        "N_DISCARDED": n_discarded, 
+        "DF_STATS": df_stats, 
+        "N_IN": n_in, 
+        "N_OUT": n_out, 
+        "PROTEOME_TAX_ID": proteome_tax_id, 
+        "ASSOCIATION_PROTEOME_TAX_ID": association_taxon_tax_id, 
+    }
     
     return data
 
@@ -230,23 +242,30 @@ def distributions_by_ranks(df_stats, results_path, n_bins=15, rank='phylum', sav
 
     df_stats.sort_values(by=rank, ascending=False, inplace=True)
 
-    fig = px.histogram(df_stats,
+    fig = px.histogram(
+        df_stats,
         x="Number_proteomes",
         color=rank,
         height=600,
         width=500,
         nbins=n_bins,
         color_discrete_sequence=COLORSCALE,
-        labels={"Number_proteomes": "Number of proteomes"},
         title=f"Distribution of the number of proteomes found by {rank}")
     
     _format_trace(fig)
     _format_axes(fig)
-    fig.update_layout(yaxis_title="Number of taxa", 
-                      plot_bgcolor=PLOT_BGCOLOR)
+    fig.update_layout(
+        xaxis_title="Number of proteomes",
+        yaxis_title="Number of taxa", 
+        plot_bgcolor=PLOT_BGCOLOR,
+        font=FONTPARAMS)
    
     if savefig:
         fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/proteomes_distribution_by_ranks.pdf"))
+        write_json(
+            fig, 
+            os.path.join(results_path, "3_analysis/proteomes_figures/proteomes_distribution_by_ranks.json"), 
+            pretty=True)
 
     return fig
 
@@ -258,28 +277,38 @@ def n_prot_ec_go_correlations(df_stats, results_path, rank="phylum", savefig=Tru
             df_stats (pandas): a pandas df, output of post_analysis_config()
             results_path (str) : the path of the esmecata run
             rank (str): taxonomic rank for color code. Must match the input. Default 'phylum'
+
+        Returns:
+            fig : a plotly figure
     '''
 
     # TODO : add legend for markers size + colors ?
     sizes = df_stats['Number_proteomes']**0.75+5
-    fig = px.scatter(data_frame=df_stats, 
-                     x="Number_ecs",
-                     y="Number_go_terms",
-                     size=sizes,
-                     hover_data=["Number_ecs", "Number_go_terms", "Number_proteomes"],
-                     color=rank,
-                     #color_discrete_sequence=COLORSCALE,
-                     width=800,
-                     height=600,
-                     labels={"Number_ecs": "Number of ECs", "Number_go_terms": "Number of GO terms", "Number_proteomes": "Number of proteomes"},
-                     title="Correlation between the number of EC, GO terms, and proteomes")
+    fig = px.scatter(
+        data_frame=df_stats, 
+        x="Number_ecs",
+        y="Number_go_terms",
+        size=sizes,
+        hover_data=["Number_ecs", "Number_go_terms", "Number_proteomes"],
+        color=rank,
+        #color_discrete_sequence=COLORSCALE,
+        width=800,
+        height=600,
+        labels={"Number_ecs": "Number of ECs", "Number_go_terms": "Number of GO terms", "Number_proteomes": "Number of proteomes"},
+        title="Correlation between the number of EC, GO terms, and proteomes")
     
     _format_trace(fig)
     _format_axes(fig)
-    fig.update_layout(plot_bgcolor=PLOT_BGCOLOR) 
+    fig.update_layout(
+        plot_bgcolor=PLOT_BGCOLOR,
+        font=FONTPARAMS)
     
     if savefig:
         fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/correlation_ec_go_proteomes.pdf"))
+        write_json(
+            fig, 
+            os.path.join(results_path, "3_analysis/proteomes_figures/correlation_ec_go_proteomes.json"), 
+            pretty=True)
 
     return fig
 
@@ -294,24 +323,33 @@ def taxo_ranks_contribution(proteome_tax_id, results_path, n_bins=10, savefig=Tr
             results_path (str) : the path of the esmecata run
 
         Returns:
-            fig : a plotly html figure
+            fig : a plotly figure
     '''
 
-    fig = px.histogram(proteome_tax_id,
+    fig = px.histogram(
+        proteome_tax_id,
         x="n_proteomes",
         color="tax_rank",
         height=600,
         width=500,
         nbins=n_bins,
-        labels={"n_proteomes": "Number of proteomes"},
+        # labels={"n_proteomes": "Number of proteomes"},
         title="Number of proteomes per taxonomic rank") 
 
     _format_trace(fig)
     _format_axes(fig)
-    fig.update_layout(yaxis_title="Number of inputs", plot_bgcolor=PLOT_BGCOLOR) 
+    fig.update_layout(
+        xaxis_title="Number of proteomes",
+        yaxis_title="Number of inputs", 
+        plot_bgcolor=PLOT_BGCOLOR,
+        font=FONTPARAMS)
 
     if savefig:
         fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/taxonomic_ranks_contribution.pdf"))
+        write_json(
+            fig, 
+            os.path.join(results_path, "3_analysis/proteomes_figures/taxonomic_ranks_contribution.json"), 
+            pretty=True)
 
     return fig
 
@@ -325,39 +363,27 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
             results_path (str) : the path of the esmecata run
 
         Returns:
-            fig : a plotly html figure
+            fig : a plotly figure
     '''
-
-    # out_asso_rank = {'superkingdom': 'k',
-    #              'kingdom': 'k',
-    #              'phylum': 'p',
-    #              'class': 'c',
-    #              'order': 'o',
-    #              'family': 'f',
-    #              'clade': 'f',
-    #              'genus': 'g',
-    #              'species': 's',
-    #              'no rank': 'na'}
-
-    # rank_list = ['s', 'g', 'f', 'o', 'c', 'p', 'k', 'na']
-    rank_list = ['species', 'genus', 'clade', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom', 'no rank']
+    rank_list = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom', 'clade', 'no rank']
 
     d_in = dict()
     ncbi = NCBITaxa()
 
+    # Loop on each input (=each key of 0_proteomes/association_taxon_taxID.json)
     for taxa in association_taxon_tax_id.keys():
+        # Get the list of rank names, ex: ['Gammaproteobacteria', 'Proteobacteria', 'Bacteria', 'cellular organisms']
         reversed_affiliation_taxa = list(reversed(list(association_taxon_tax_id[taxa].keys()))) # That line is f**** up
 
         i = 0
         found = False
 
-        # loop until the lowest known taxa rank is found
+        # Loop until the lowest known taxa rank is found
         # TODO : Discard taxa with only unknown
-        # TODO : gérer les not found des clade (marche pas)
         while not found and i < len(reversed_affiliation_taxa):
-            if association_taxon_tax_id[taxa][reversed_affiliation_taxa[i]] != ['not_found']:
-                tax_id = association_taxon_tax_id[taxa][reversed_affiliation_taxa[i]]
-                tax_rank = ncbi.get_rank(tax_id)
+            if "clade" not in reversed_affiliation_taxa[i] and association_taxon_tax_id[taxa][reversed_affiliation_taxa[i]] != ['not_found']:
+                tax_id = association_taxon_tax_id[taxa][reversed_affiliation_taxa[i]]                
+                tax_rank = ncbi.get_rank(tax_id) # get_rank takes a list for parameter (here, list of one elem, returns a list of one elem)
                 # d_in[taxa] = out_asso_rank[list(tax_rank.values())[0]]
                 d_in[taxa] = list(tax_rank.values())[0]
                 found = True
@@ -382,11 +408,12 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
     matrix = matrix.loc[:,(matrix != 0).any(axis=0)]
     matrix = matrix.iloc[::-1] # Reverse rows for a more suited viz
 
-    fig = px.imshow(matrix,
+    fig = px.imshow(
+        matrix,
         text_auto=True,
         height=600,
         width=800,
-        labels=dict(x="EsMeCaTa rank", y="Input rank", color="Number of proteomes"),
+        labels=dict(x="EsMeCaTa model rank", y="Taxa input rank", color="Number of proteomes"),
         title="Difference between input ranks and EsMeCaTa ranks",
         color_continuous_scale='YlGn')
     
@@ -396,10 +423,14 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
         fig.add_hline(y=i+0.5, line_width=2, line_color=LINECOLOR)
 
     _format_axes(fig)
-    #fig.update_layout(xaxis={"side": "top"}, title=dict(automargin=True, yref='container'))
+    fig.update_layout(font=FONTPARAMS)
     
     if savefig:
         fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/input_and_output_ranks.pdf"))
+        write_json(
+            fig, 
+            os.path.join(results_path, "3_analysis/proteomes_figures/input_and_output_ranks.json"), 
+            pretty=True)
     
     return fig
 
@@ -419,7 +450,8 @@ def create_annot_obs_df(dataset_annotation_file, outpath, content):
         data (dict) : stores two dataframes corresponding to each data, as well as summary numbers
     """
 
-    df = pd.read_csv(dataset_annotation_file,
+    df = pd.read_csv(
+        dataset_annotation_file,
         sep='\t',
         header=0,
         index_col=0)
@@ -495,9 +527,16 @@ def create_annot_obs_df(dataset_annotation_file, outpath, content):
     #     for idx in n91_df.index:
     #         f.write(f"{idx}\n")
 
-    data = {"df_fractionin_obs": df, "df_annot_frequencies": dfT, 
-        "n_9_an": n_9_an, "n_1_an": n_1_an, "n91_an": n91_an, 
-        "n_9_ob": n_9_ob, "n_1_ob": n_1_ob, "n91_ob": n91_ob}
+    data = {
+        "df_fractionin_obs": df, 
+        "df_annot_frequencies": dfT, 
+        "n_9_an": n_9_an, 
+        "n_1_an": n_1_an, 
+        "n91_an": n91_an, 
+        "n_9_ob": n_9_ob, 
+        "n_1_ob": n_1_ob, 
+        "n91_ob": n91_ob
+    }
 
     return data
 
@@ -516,11 +555,12 @@ def annot_frequencies_in_obs(df, results_path, content, savefig=True):
     if content not in ["GO terms", "EC numbers"]:
         raise ValueError("param `content` must either be 'GO terms' or 'EC numbers'")
     
-    labels={"annot_name": content, "frequency": "Frequence in taxa"}
-    title=f"{content} ordered by their frequency in taxa"
+    labels={"annot_name": content, "frequency": "Frequence in modelled taxa"}
+    title=f"{content} ordered by their frequency in modelled taxa"
 
     if content == "EC numbers":
-        fig = px.scatter(df,
+        fig = px.scatter(
+            df,
             x = "annot_name",
             y = "frequency",
             color="EC_class",
@@ -529,7 +569,8 @@ def annot_frequencies_in_obs(df, results_path, content, savefig=True):
             labels=labels,
             title=title)
     else:
-        fig = px.scatter(df,
+        fig = px.scatter(
+            df,
             x = "annot_name",
             y = "frequency",
             height=500,
@@ -542,10 +583,18 @@ def annot_frequencies_in_obs(df, results_path, content, savefig=True):
     fig.add_hline(y=0.1, line_dash="dash", line_width=1, line_color="red")
     fig.add_hrect(y0=0.9, y1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
-    fig.update_layout(yaxis_title=f"Proportion of taxa containing the {content}", plot_bgcolor=PLOT_BGCOLOR, yaxis_range=[-0.1,1.1])
+    fig.update_layout(
+        yaxis_title=f"Proportion of modelled taxa containing the {content}", 
+        plot_bgcolor=PLOT_BGCOLOR, 
+        yaxis_range=[-0.1,1.1],
+        font=FONTPARAMS)
 
     if savefig:
         fig.write_html(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa.html"))
+        write_json(
+            fig, 
+            os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa.json"), 
+            pretty=True)
 
     return fig
 
@@ -568,24 +617,32 @@ def fraction_of_all_annot_in_obs(df, df_taxo, results_path, content, rank="phylu
     df = df.join(df_taxo)
     #df.sort_values(by=rank, ascending=False, inplace=True)
 
-    fig = px.scatter(df,
+    fig = px.scatter(
+        df,
         x = "taxa",
         y = "fraction",
         color=rank,
         height=500,
         category_orders={"taxa": df.index},
-        labels={"taxa": "Taxa", "fraction": "Frequence in taxa"},
-        title=f"Taxa ordered by the proportion (Number of {content} in an taxa) / (Total number of {content} in the dataset)")
+        labels={"taxa": "Modelled taxa", "fraction": f"Proportion = ({content} in taxa) / (All {content})"},
+        title=f"Modelled taxa richness in {content}")
 
     _format_axes(fig)
     fig.add_hline(y=0.9, line_dash="dash", line_width=1, line_color="red")
     fig.add_hline(y=0.1, line_dash="dash", line_width=1, line_color="red")
     fig.add_hrect(y0=0.9, y1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
-    fig.update_layout(yaxis_title=f"Proportion of present {content}/total {content}", plot_bgcolor=PLOT_BGCOLOR, yaxis_range=[-0.1,1.1])
+    fig.update_layout(#yaxis_title=f"Proportion = ({content} in taxa) / (All {content})", 
+                      plot_bgcolor=PLOT_BGCOLOR, 
+                      yaxis_range=[-0.1,1.1],
+                      font=FONTPARAMS)
 
     if savefig:
         fig.write_html(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa.html"))
+        write_json(
+            fig, 
+            os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa.json"), 
+            pretty=True)
 
     return fig
 
@@ -605,10 +662,11 @@ def annot_frequencies_in_obs_hist(df, results_path, content, n_bins=20, savefig=
         raise ValueError("param `content` must either be 'GO terms' or 'EC numbers'")
     
     labels={"annot_name": content},
-    title=f"Histogram of the frequencies of {content} in taxa"
+    title=f"{content} frequencies in modelled taxa"
 
     if content == "EC numbers":
-        fig = px.histogram(df,
+        fig = px.histogram(
+            df,
             x = "frequency",
             color="EC_class",
             height=500,
@@ -617,7 +675,8 @@ def annot_frequencies_in_obs_hist(df, results_path, content, n_bins=20, savefig=
             labels=labels,
             title=title)
     else:
-        fig = px.histogram(df,
+        fig = px.histogram(
+            df,
             x = "frequency",
             height=500,
             width=500,
@@ -631,13 +690,19 @@ def annot_frequencies_in_obs_hist(df, results_path, content, n_bins=20, savefig=
     fig.add_vline(x=0.1, line_dash="dash", line_width=1, line_color="red")
     fig.add_vrect(x0=0.9, x1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
-    fig.update_layout(yaxis_title=f"Number of {content}", 
-                      xaxis_title=f"Proportion of taxa containing the {content}", 
-                      plot_bgcolor=PLOT_BGCOLOR, 
-                      xaxis_range=[-0.1,1.1])
+    fig.update_layout(
+        yaxis_title=f"Number of {content}", 
+        xaxis_title=f"Proportion of modelled taxa containing the {content}", 
+        plot_bgcolor=PLOT_BGCOLOR, 
+        xaxis_range=[-0.1,1.1],
+        font=FONTPARAMS)
     
     if savefig:
         fig.write_image(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa_hist.pdf"))
+        write_json(
+            fig, 
+            os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa_hist.json"), 
+            pretty=True)
 
     return fig
 
@@ -660,15 +725,15 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, n_bins
     df = df.join(df_taxo)
     df.sort_values(by=rank, ascending=False, inplace=True)
     
-    fig = px.histogram(df,
+    fig = px.histogram(
+        df,
         x = "fraction",
         color=rank,
         color_discrete_sequence=COLORSCALE,
         height=500,
         width=500,
         nbins=n_bins,
-        labels={"taxa": "Taxa", "fraction": f"Proportion = ({content} in taxa) / (All {content})"},
-        title=f"Histogram of the proportion (Number of {content} in a taxa) / (Total number of {content} in the dataset)")
+        title=f"Distribution of modelled taxa richness in {content}")
 
     _format_axes(fig)
     _format_trace(fig)
@@ -676,12 +741,19 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, n_bins
     fig.add_vline(x=0.1, line_dash="dash", line_width=1, line_color="red")
     fig.add_vrect(x0=0.9, x1=0.1, line_width=0, fillcolor="red", opacity=0.15)
 
-    fig.update_layout(yaxis_title="Number of taxa", 
-                      plot_bgcolor=PLOT_BGCOLOR, 
-                      xaxis_range=[-0.1,1.1])
+    fig.update_layout(
+        xaxis_title=f"Proportion = ({content} in taxa) / (All {content})",
+        yaxis_title="Number of modelled taxa", 
+        plot_bgcolor=PLOT_BGCOLOR, 
+        xaxis_range=[-0.1,1.1],
+        font=FONTPARAMS)
     
     if savefig:
         fig.write_image(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa_hist.pdf"))
+        write_json(
+            fig, 
+            os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa_hist.json"), 
+            pretty=True)
 
     return fig
 
@@ -690,20 +762,26 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, n_bins
 # ==========================
 
 def ec_sunburst(ec_classes, results_path, savefig=True):
-    fig = ec_ontosunburst(ec_set=ec_classes, 
-                          output=None,
-                          root_cut="total")
+    fig = ec_ontosunburst(
+        ec_set=ec_classes, 
+        output=None,
+        root_cut="total")
     
-    fig.update_layout(title="EC numbers categories, counts and proportions", 
-                      height=1000,
-                      paper_bgcolor="#ffffff", 
-                      font_color='#111111', 
-                      font_size=20)
+    fig.update_layout(
+        title="EC numbers categories, counts and proportions", 
+        height=1000,
+        paper_bgcolor="#ffffff", 
+        font_color='#111111', 
+        font_size=20)
 
     fig.update_traces(marker=dict(colorscale=px.colors.diverging.RdYlGn, line_color=LINECOLOR, reversescale=True))
 
     if savefig:
         fig.write_html(os.path.join(results_path, "3_analysis/annotation_figures/ec_classes_sunburst.html"))
+        write_json(
+            fig, 
+            os.path.join(results_path, "3_analysis/annotation_figures/ec_classes_sunburst.json"), 
+            pretty=True)
 
     return fig
 
@@ -747,14 +825,16 @@ def data_proteome_representativeness(proteome_tax_id, computed_threshold_folder)
     data = []
     for tsv_file in os.listdir(computed_threshold_folder):
         obs_name = os.path.splitext(tsv_file)[0]
+        full_name = f"Input name : {obs_name}; EsMeCaTa name :{proteome_tax_id.loc[obs_name,'name']}"# More precision for hover info if needed
+
         tsv_file_path = os.path.join(computed_threshold_folder, tsv_file)
         tmp_df = pd.read_csv(tsv_file_path, sep='\t')
         for tmp_threshold in np.arange(0, 1.01, 0.025):
             # Compute the number of protein clusters associated with representativeness ratio of tmp_threshold.
             nb_protein_cluster_ratio = len(tmp_df[tmp_df['cluster_ratio']>= tmp_threshold])
-            data.append([obs_name, tax_rank[obs_name], tmp_threshold, nb_protein_cluster_ratio])
+            data.append([obs_name, full_name, tax_rank[obs_name], tmp_threshold, nb_protein_cluster_ratio])
 
-    df = pd.DataFrame(data, columns=['obs_name', 'rank', 'clust', 'count'])
+    df = pd.DataFrame(data, columns=['obs_name', 'full_name', 'rank', 'clust', 'count'])
 
     return df
 
@@ -792,28 +872,35 @@ def create_proteome_representativeness_lineplot_px(df, clust_threshold, results_
         # tmp_df["lo"] = tmp_df["count"] - statsdf.loc[rank, "cilo"]
         # tmp_df["hi"] = tmp_df["count"] + statsdf.loc[rank, "ciho"]
         fig.add_traces([
-            go.Scatter(name=f"{rank} mean" ,
-                       x=rank_df.index,
-                       y=rank_df["mean"],
-                       mode="lines+markers",
-                       line=dict(color=RANK2COL[rank])),
-            go.Scatter(name=f"{rank} min",
-                       x=rank_df.index,
-                       y=rank_df["min"],
-                       mode="lines",
-                       line=dict(width=0, color=RANK2COL[rank]),
-                       showlegend=False),
-            go.Scatter(name=f"{rank} max",
-                       x=rank_df.index,
-                       y=rank_df["max"],
-                       mode="lines",
-                       fill='tonexty',
-                       fillcolor=_hex_to_rgb(RANK2COL[rank], 0.2),
-                       line=dict(width=0, color=RANK2COL[rank]),
-                       showlegend=False)
+            go.Scatter(
+                name=f"{rank} mean" ,
+                x=rank_df.index,
+                y=rank_df["mean"],
+                mode="lines+markers",
+                line=dict(color=RANK2COL[rank]),
+                hovertemplate = "Threshold: %{x}; Clusters: %{y}"),
+            go.Scatter(
+                name=f"{rank} min",
+                x=rank_df.index,
+                y=rank_df["min"],
+                mode="lines",
+                line=dict(width=0, color=RANK2COL[rank]),
+                hoverinfo='skip',
+                showlegend=False),
+            go.Scatter(
+                name=f"{rank} max",
+                x=rank_df.index,
+                y=rank_df["max"],
+                mode="lines",
+                fill='tonexty',
+                fillcolor=_hex_to_rgb(RANK2COL[rank], 0.2),
+                line=dict(width=0, color=RANK2COL[rank]),
+                hoverinfo='skip',
+                showlegend=False)
         ])
 
-    fig.add_vline(x=clust_threshold, 
+    fig.add_vline(
+        x=clust_threshold, 
         line_dash="dash", 
         line_width=1, 
         line_color="red", 
@@ -823,15 +910,21 @@ def create_proteome_representativeness_lineplot_px(df, clust_threshold, results_
     fig.update_xaxes(range=[0, 1])  
     fig.update_yaxes(type="log")    
 
-    fig.update_layout(title="Count of retained clusters of proteins (split by by taxonomic rank) according to the clustering threshold",
-                      xaxis_title="Clustering threshold (0 : pan-proteome, 1 : core-proteome)", 
-                      yaxis_title="Number of clusters of proteomes retained", 
-                      height=800, 
-                      plot_bgcolor=PLOT_BGCOLOR,
-                      legend=dict(x=1, y=1, xanchor='right', yanchor='top')) 
+    fig.update_layout(
+        title="Count of retained clusters of proteins (split by by taxonomic rank) according to the clustering threshold",
+        xaxis_title="Clustering threshold (0 : pan-proteome, 1 : core-proteome)", 
+        yaxis_title="Number of clusters of proteomes retained", 
+        height=800, 
+        plot_bgcolor=PLOT_BGCOLOR,
+        legend=dict(x=1, y=1, xanchor='right', yanchor='top'),
+        font=FONTPARAMS)
 
     if savefig:
         fig.write_image(os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness.pdf"))
+        write_json(
+            fig, 
+            os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness.json"), 
+            pretty=True)
 
     return fig
 
@@ -848,30 +941,48 @@ def proteomes_representativeness_details(df, clust_threshold, results_path, save
             fig : a plotly html figure
     '''
 
-    titles=[f"Details for {rank}" for rank in df["rank"].unique()]
+    ncbi_ranks = ["clade", "superkingdom","kingdom","subkingdom","superphylum","phylum",
+        "subphylum","infraphylum","superclass","class","subclass",
+        "infraclass","cohort","subcohort","superorder","order",
+        "suborder","infraorder","parvorder","superfamily","family",
+        "subfamily","tribe","subtribe","genus","subgenus",
+        "section","subsection","series","subseries","species group",
+        "species subgroup","species","forma specialis","subspecies","varietas",
+        "subvariety","forma","serogroup","serotype","strain","isolate"]
+    
+    ranks = df["rank"].unique()
+    ncbi_ranks = [rank for rank in ncbi_ranks if rank in ranks]
+
+    titles=[f"Details for {rank}" for rank in ncbi_ranks]
 
     n = df["rank"].nunique()
-    fig = make_subplots(rows=n, 
-                        cols=1,
-                        shared_xaxes=False,
-                        vertical_spacing=0.075,
-                        subplot_titles=titles)
+    fig = make_subplots(
+        rows=n, 
+        cols=1,
+        shared_xaxes=False,
+        vertical_spacing=0.075,
+        subplot_titles=titles)  
 
     i = 1
-    for rank in df["rank"].unique():
+    # for rank in df["rank"].unique():
+    for rank in ncbi_ranks:
 
-        rank_df = df.loc[df["rank"] == rank]
+        rank_df = df.loc[df["rank"] == rank]        
 
         for input_taxa in rank_df["obs_name"].unique():
             rank_df_taxa = rank_df.loc[df["obs_name"] == input_taxa]
 
+            fname = rank_df_taxa["full_name"].iloc[0]
+
             fig.add_trace(
-                go.Scatter(name=input_taxa,
+                go.Scatter(
+                    name=fname, # input_taxa
                     x=rank_df_taxa["clust"],
                     y=rank_df_taxa["count"],
                     mode="lines+markers",
                     line=dict(color=RANK2COL[rank]),
-                    showlegend=False
+                    showlegend=False,
+                    hovertemplate = "Threshold: %{x}; Clusters: %{y}"
                 ),
                 row=i,
                 col=1
@@ -893,7 +1004,8 @@ def proteomes_representativeness_details(df, clust_threshold, results_path, save
         yaxis_title="Number of clusters of proteomes retained", 
         height=n*400,
         width=500,
-        plot_bgcolor=PLOT_BGCOLOR)
+        plot_bgcolor=PLOT_BGCOLOR,
+        font=FONTPARAMS)
         
     i = 1
     for rank in df["rank"].unique():
@@ -903,6 +1015,10 @@ def proteomes_representativeness_details(df, clust_threshold, results_path, save
         
     if savefig:
         fig.write_html(os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness_details.html"))
+        write_json(
+            fig, 
+            os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness_details.json"), 
+            pretty=True)
 
     return fig
 
