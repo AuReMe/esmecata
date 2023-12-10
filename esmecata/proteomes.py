@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2022 Arnaud Belcour - Inria Dyliss
+# Copyright (C) 2021-2023 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -12,6 +12,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
+import copy
 import csv
 import gzip
 import json
@@ -25,6 +26,8 @@ import requests
 import shutil
 import sys
 import time
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from collections import OrderedDict
 from requests.adapters import HTTPAdapter, Retry
@@ -42,9 +45,22 @@ from SPARQLWrapper import __version__ as sparqlwrapper_version
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir, send_uniprot_sparql_query
 from esmecata import __version__ as esmecata_version
 
+from urllib.parse import unquote
+
 REQUESTS_HEADERS = {'User-Agent': 'EsMeCaTa proteomes v' + esmecata_version + ', request by requests package v' + requests.__version__ }
 
 logger = logging.getLogger(__name__)
+
+# Rank level from Supplementary Table S3 of https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/
+RANK_LEVEL = OrderedDict({'superkingdom': 1, 'kingdom': 2, 'subkingdom': 3, 'superphylum': 4,
+                'phylum': 5, 'subphylum': 6, 'infraphylum': 7, 'superclass': 8,
+                'class': 9, 'subclass': 10, 'infraclass': 11, 'cohort': 12, 'subcohort': 13,
+                'superorder': 14, 'order': 15, 'suborder': 16, 'infraorder': 17, 'parvorder': 18,
+                'superfamily': 19, 'family': 20, 'subfamily': 21, 'tribe': 22, 'subtribe': 23,
+                'genus': 24, 'subgenus': 25, 'section': 26, 'subsection': 27, 'series': 28,
+                'subseries': 29, 'species group': 30, 'species subgroup': 31, 'species': 32,
+                'forma specialis': 33, 'subspecies': 34, 'varietas': 35, 'subvariety': 36,
+                'forma': 37, 'serogroup': 38, 'serotype': 39, 'strain': 40, 'isolate': 41})
 
 
 def get_next_link(headers):
@@ -106,6 +122,89 @@ def ete3_database_update(ignore_taxadb_update):
             logger.info('|EsMeCaTa|proteomes| --ignore-taxadb-update/ignore_taxadb_update option detected, esmecata will continue with this version.')
 
 
+def update_taxonomy(observation_name, taxonomic_affiliation, ncbi=None):
+    """ Update the taxonomic affiliation using ete3 and the lowest available taxonomic name.
+
+    Args:
+        observation_name (str): observation name associated with taxonomic affiliation
+        taxonomic_affiliation (str): str with taxon from highest taxon (such as kingdom) to lowest (such as species)
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+
+    Returns:
+        new_taxonomic_affiliations (str): str with taxon from highest taxon (such as kingdom) to lowest (such as species)
+    """
+    if ncbi is None:
+        ncbi = NCBITaxa()
+
+    # For each taxon in the affiliation, search for the lineage associated in ete3.
+    lineage_all_taxa = []
+    taxons = [taxon for taxon in taxonomic_affiliation.split(';')]
+    for taxon in reversed(taxons):
+        # From taxon name to taxon ID.
+        taxon_translations = ncbi.get_name_translator([taxon])
+
+        if taxon in taxon_translations:
+            if len(taxon_translations[taxon]) > 1:
+                # If there are multiple taxon IDs for a taxon name.
+                best_lineage_match = 0
+                best_lineage_matches = []
+
+                # Need to have other taxon in affiliations to find the correct one, if not skip this affiliation.
+                if len(taxons) == 1:
+                    logger.critical('|EsMeCaTa|proteomes| Taxonomy of %s has an ambiguous taxon name but not enoug taxa in its affiliations, skip updating it.', observation_name)
+                    new_taxonomic_affiliations = None
+                    break
+                # Choose the ID matching the lineage of the other taxa in the affiliations.
+                for tax_id in taxon_translations[taxon]:
+                    tax_id_lineages = ncbi.get_lineage(tax_id)
+                    tax_id_translator = ncbi.get_taxid_translator(tax_id_lineages)
+                    tax_id_name = [tax_id_translator[tax_lineage] for tax_lineage in tax_id_lineages]
+                    if len(set(tax_id_name).intersection(set(taxons))) > best_lineage_match:
+                        best_lineage_match = len(set(tax_id_name).intersection(set(taxons)))
+                        best_lineage_matches = tax_id_name
+                lineage_all_taxa.append(best_lineage_matches)
+
+            # If there is only one taxon ID, get its lineage.
+            if len(taxon_translations[taxon]) == 1:
+                tax_id = taxon_translations[taxon][0]
+                tax_id_lineages = ncbi.get_lineage(tax_id)
+                tax_id_translator = ncbi.get_taxid_translator(tax_id_lineages)
+                tax_id_name = [tax_id_translator[tax_lineage] for tax_lineage in tax_id_lineages]
+                lineage_all_taxa.append(tax_id_name)
+
+            # If no taxon found, no possibility to update
+            else:
+                new_taxonomic_affiliations = None
+        else:
+            new_taxonomic_affiliations = None
+
+    if lineage_all_taxa != []:
+        # If it founds new affiliations, check that all lineages found are similar.
+        check_lineage = []
+        for index, lineage_taxon in enumerate(lineage_all_taxa):
+            tmp_check_lineage = []
+            for index_to_compare in range(index, len(lineage_all_taxa)):
+                # Look at the intersection between the current lineage and all the ones found for the other taxon in affiliations.
+                intersection_lineage = set(lineage_taxon).intersection(set(lineage_all_taxa[index_to_compare]))
+                # If this intersection equals to the lineage we use to compare?
+                intersection_lineage_bool = intersection_lineage == set(lineage_all_taxa[index_to_compare])
+                tmp_check_lineage.append(intersection_lineage_bool)
+            check_lineage.append(tmp_check_lineage)
+
+        for index, check_values in enumerate(check_lineage):
+            # If all comparison corresponds, keep the lowest affiliation.
+            if all(check_values) is True:
+                new_taxonomic_affiliations = ';'.join(lineage_all_taxa[index])
+                logger.critical('|EsMeCaTa|proteomes| Taxonomy of %s ("%s") updated into "%s" .', observation_name, taxonomic_affiliation, new_taxonomic_affiliations)
+                break
+
+    # If no new taxonomic affiliations, keep the old one. 
+    if new_taxonomic_affiliations is None:
+        new_taxonomic_affiliations = taxonomic_affiliation
+
+    return new_taxonomic_affiliations
+
+
 def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi=None):
     """ From a taxonomic affiliation (such as cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria) find corresponding taxon ID for each taxon.
 
@@ -134,12 +233,15 @@ def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, n
     return tax_ids_to_names, taxon_ids
 
 
-def associate_taxon_to_taxon_id(taxonomic_affiliations, ncbi=None):
+def associate_taxon_to_taxon_id(taxonomic_affiliations, update_affiliations=None, ncbi=None, output_folder=None):
     """ From a dictionary containing multiple taxonomic affiliations, find the taxon ID for each.
 
     Args:
         taxonomic_affiliations (dict): dictionary with observation name as key and taxonomic affiliation as value
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        update_affiliations (str): option to update taxonomic affiliations.
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database.
+        output_folder (str): pathname to output folder.
+
     Returns:
         tax_id_names (dict): mapping between taxon ID and taxon name
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
@@ -151,13 +253,26 @@ def associate_taxon_to_taxon_id(taxonomic_affiliations, ncbi=None):
         logger.critical('|EsMeCaTa|proteomes| Empty taxonomy dictionary.')
         return
 
+    new_taxonomic_affiliations = []
     # For each taxon find the taxon ID corresponding to each taxon.
     for observation_name in taxonomic_affiliations:
         taxonomic_affiliation = taxonomic_affiliations[observation_name]
         if isinstance(taxonomic_affiliation, str):
+            if update_affiliations is not None:
+                taxonomic_affiliation = update_taxonomy(observation_name, taxonomic_affiliation, ncbi)
+                new_taxonomic_affiliations.append([observation_name, taxonomic_affiliation])
             tax_ids_to_names, taxon_ids = taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, ncbi)
             tax_id_names.update(tax_ids_to_names)
             json_taxonomic_affiliations[observation_name] = taxon_ids
+
+    if update_affiliations:
+        # Write new taxonomic file if update-affiliations.
+        new_taxon_file = os.path.join(output_folder, 'new_taxonomic_affiliation.tsv')
+        with open(new_taxon_file, 'w') as output_file:
+            csvwriter = csv.writer(output_file, delimiter='\t')
+            csvwriter.writerow(['observation_name', 'taxonomic_affiliation'])
+            for new_taxonomic_affiliation in new_taxonomic_affiliations:
+                csvwriter.writerow(new_taxonomic_affiliation)
 
     return tax_id_names, json_taxonomic_affiliations
 
@@ -216,34 +331,26 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
 
 
 def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
-    """Using the rank_limit specificied, remove the taxon associated with this rank.
-    For example, if rank_limit == 'superkingdom', Bacteria will be removed.
+    """Using the rank_limit specificied, remove the taxon superior to this rank.
+    For example, if rank_limit == 'family', taxa associated to rank superior to family will be removed.
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
         ncbi (ete3.NCBITaxa()): ete3 NCBI database
-        rank_limit (str): rank limit to remove from the data
+        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
     Returns:
-        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
+        output_json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
     """
-    # Rank level from Supplementary Table S3 of https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/
-    rank_level = {'superkingdom': 1, 'kingdom': 2, 'subkingdom': 3, 'superphylum': 4,
-                    'phylum': 5, 'subphylum': 6, 'infraphylum': 7, 'superclass': 8,
-                    'class': 9, 'subclass': 10, 'infraclass': 11, 'cohort': 12, 'subcohort': 13,
-                    'superorder': 14, 'order': 15, 'suborder': 16, 'infraorder': 17, 'parvorder': 18,
-                    'superfamily': 19, 'family': 20, 'subfamily': 21, 'tribe': 22, 'subtribe': 23,
-                    'genus': 24, 'subgenus': 25, 'section': 26, 'subsection': 27, 'series': 28,
-                    'subseries': 29, 'species group': 30, 'species subgroup': 31, 'species': 32,
-                    'forma specialis': 33, 'subspecies': 34, 'varietas': 35, 'subvariety': 36,
-                    'forma': 37, 'serogroup': 38, 'serotype': 39, 'strain': 40, 'isolate': 41}
-    unclassified_rank = ['unclassified '+rank for rank in rank_level]
+    unclassified_rank = ['unclassified '+rank for rank in RANK_LEVEL]
     non_hierarchical_ranks = ['clade', 'environmental samples', 'incertae sedis', 'no rank'] + unclassified_rank
 
-    rank_limit_level = rank_level[rank_limit]
-    rank_to_keeps = [rank for rank in rank_level if rank_level[rank] > rank_limit_level]
+    rank_limit_level = RANK_LEVEL[rank_limit]
+    rank_to_keeps = [rank for rank in RANK_LEVEL if RANK_LEVEL[rank] >= rank_limit_level]
 
-    for observation_name in json_taxonomic_affiliations:
-        observation_name_taxons = json_taxonomic_affiliations[observation_name]
+    # Create a deep copy of the input dictionary, as we will modified this dictionary.
+    output_json_taxonomic_affiliations = copy.deepcopy(json_taxonomic_affiliations)
+    for observation_name in output_json_taxonomic_affiliations:
+        observation_name_taxons = output_json_taxonomic_affiliations[observation_name]
         tax_keep = []
         tax_ranks = {}
         tax_names = {}
@@ -273,10 +380,10 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
             else:
                 tax_keep.append(False)
 
-        # If the rank to remove is in the tax_ranks, keep all the rank below this rank.
+        # If the rank limit is in the tax_ranks, keep all the rank below this rank and this rank.
         if rank_limit in tax_ranks:
             tax_rank_max_index = tax_rank_position[rank_limit]
-            keep_tax_ids = [tax_id[0] for tax_name, tax_id in list(observation_name_taxons.items())[tax_rank_max_index+1:]]
+            keep_tax_ids = [tax_id[0] for _, tax_id in list(observation_name_taxons.items())[tax_rank_max_index:]]
         # If not find all the rank below this rank (by using rank_level and rank_to_keeps) in the list and keep them.
         # Use the tax_keep to keep non_hierarchical_ranks below the rank to remove.
         # But they need to be below a hierarchical rank that has been checked as being below the rank to remove.
@@ -289,9 +396,9 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
         # Delete the remvoed rank and all its superior.
         for tax_id in tax_id_to_deletes:
             tax_name = tax_names[tax_id]
-            del json_taxonomic_affiliations[observation_name][tax_name]
+            del output_json_taxonomic_affiliations[observation_name][tax_name]
 
-    return json_taxonomic_affiliations
+    return output_json_taxonomic_affiliations
 
 
 def requests_query(http_str, nb_retry=5):
@@ -324,7 +431,9 @@ def requests_query(http_str, nb_retry=5):
         return response
 
 
-def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session=None):
+def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep,
+                         all_proteomes, session=None, option_bioservices=None,
+                         minimal_number_proteomes=1):
     """REST query on UniProt to get the proteomes associated with a taxon.
 
     Args:
@@ -334,47 +443,40 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         session: request session object
+        option_bioservices (bool): use bioservices instead of manual queries.
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept.
 
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
         organism_ids (dict): organism ID (key) associated with each proteomes (values)
-        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome
+        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome, component_elements
     """
     if not session:
         retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
         session = requests.Session()
         session.mount("https://", HTTPAdapter(max_retries=retries))
 
-    proteomes = []
-    proteomes_data = []
-    organism_ids = {}
-    # Find proteomes associated with taxon.
-    # Take reference proteomes with "reference:yes".
-    # Avoid redundant and excluded proteomes with "redundant%3Ano+excluded%3Ano".
-    # Use "format=tab" to easily handle the ouput.
-    httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A1)&format=json&size=500'.format(tax_id)
+    if option_bioservices is None:
+        # Find proteomes associated with taxon.
+        # Search for both representative and non-representative proteomes (with proteome_type%3A2 for non-representative proteome (or Other proteome) and proteome_type%3A1) for representative proteome).
+        # Remove redundant and excluded proteomes.
+        httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND((proteome_type%3A2)OR(proteome_type%3A1))&format=json&size=500'.format(tax_id)
 
-    if all_proteomes:
-        httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json&size=500'.format(tax_id)
-
-    # If esmecata does not find proteomes with only reference, search for all poroteomes even if they are not reference.
-    all_http_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND(proteome_type%3A2)&format=json&size=500'.format(tax_id)
-
-    data = {}
-    data['results'] = []
-    for batch_reponse in get_batch(session, httpt_str):
-        batch_json = batch_reponse.json()
-        data['results'].extend(batch_json['results'])
-
-    reference_proteome = True
-    if len(data['results']) == 0:
-        logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
-        time.sleep(1)
-        for batch_reponse in get_batch(session, all_http_str):
+        data = {}
+        data['results'] = []
+        for batch_reponse in get_batch(session, httpt_str):
             batch_json = batch_reponse.json()
             data['results'].extend(batch_json['results'])
-        reference_proteome = False
+    else:
+        import bioservices
+        uniprot_bioservices = bioservices.UniProt()
+        data = uniprot_bioservices.search(f'(taxonomy_id={tax_id})AND((proteome_type=2)OR(proteome_type=1))',
+                                            database='proteomes', frmt='json', progress=False)
 
+    organism_ids = {}
+    proteomes_data = []
+    representative_proteomes = []
+    other_proteomes = []
     for proteome_data in data['results']:
         proteome_id = proteome_data['id']
         if 'proteomeCompletenessReport' in proteome_data:
@@ -394,27 +496,67 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
         else:
             assembly_level = ''
         org_tax_id = str(proteome_data['taxonomy']['taxonId'])
+
+        # Check proteome type for representative or non-representative.
         proteome_type = proteome_data['proteomeType']
+
+        if proteome_type in ['Representative proteome', 'Reference and representative proteome', 'Reference proteome']:
+            representative_proteome = True
+        elif proteome_type == 'Other proteome':
+            representative_proteome = False
+
+        if 'components' in proteome_data:
+            component_elements = []
+            for component in  proteome_data['components']:
+                component_name = component['name']
+                component_description = component['description']
+                component_elements.append([component_name, component_description])
+        else:
+            component_elements = None
+
         if busco_percentage_keep:
             if busco_score and busco_score >= busco_percentage_keep and assembly_level == 'full':
-                proteomes.append(proteome_id)
+                if representative_proteome is True:
+                    representative_proteomes.append(proteome_id)
+                elif representative_proteome is False:
+                    other_proteomes.append(proteome_id)
+
                 if org_tax_id not in organism_ids:
                     organism_ids[org_tax_id] = [proteome_id]
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
         else:
             if assembly_level == 'full':
-                proteomes.append(proteome_id)
+                if representative_proteome is True:
+                    representative_proteomes.append(proteome_id)
+                elif representative_proteome is False:
+                    other_proteomes.append(proteome_id)
+
                 if org_tax_id not in organism_ids:
                     organism_ids[org_tax_id] = [proteome_id]
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
-        proteomes_data.append([proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome])
+        proteomes_data.append([proteome_id, busco_score, assembly_level, org_tax_id, representative_proteome, component_elements])
+
+    # In REST queries, reference proteomes are not associated with non-reference proteome tag (compared to SPARQL query).
+    # So to have both of them with all_proteomes otpion, we need to add other_proteomes to representative_proteomes.
+    if all_proteomes is not None:
+        proteomes = other_proteomes + representative_proteomes
+    else:
+        if len(representative_proteomes) == 0:
+            logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
+            proteomes = other_proteomes
+        elif len(representative_proteomes) < minimal_number_proteomes:
+            logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
+            proteomes = other_proteomes + representative_proteomes
+        else:
+            proteomes = representative_proteomes
 
     return proteomes, organism_ids, proteomes_data
 
 
-def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'):
+def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep,
+                           all_proteomes, uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql', minimal_number_proteomes=1):
     """SPARQL query on UniProt to get the proteomes associated with a taxon.
 
     Args:
@@ -424,10 +566,12 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept.
+
     Returns:
         proteomes (list): list of proteome IDs associated with the taxon ID
         organism_ids (dict): organism ID (key) associated with each proteomes (values)
-        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome
+        proteomes_data (list): list of lists with proteome_id, busco_score, assembly_level, org_tax_id, reference_proteome, component_elements
     """
     # SPARQL query to retrieve proteome
     # First FILTER NOT EXISTS to avoid redundant proteomes.
@@ -440,10 +584,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     PREFIX busco: <http://busco.ezlab.org/schema#>
     PREFIX taxon: <http://purl.uniprot.org/taxonomy/>
 
-    SELECT DISTINCT ?proteome ?score ?fragmented ?missing ?organism ?completion ?type
-
-    FROM <http://sparql.uniprot.org/proteomes>
-    FROM <http://sparql.uniprot.org/taxonomy>
+    SELECT DISTINCT ?proteome ?score ?fragmented ?missing ?organism ?completion ?type ?component ?componentName
 
     WHERE
     {{
@@ -469,6 +610,10 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         OPTIONAL {{
             ?proteome rdf:type ?type .
         }}
+        OPTIONAL {{
+            ?proteome skos:narrower ?component .
+            ?component rdfs:comment ?componentName .
+        }}
     }}""".format(tax_id)
 
     csvreader = send_uniprot_sparql_query(uniprot_sparql_query, uniprot_sparql_endpoint)
@@ -478,6 +623,9 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     organism_ids = {}
     reference_proteomes = []
     other_proteomes = []
+
+    sparql_proteome_data = {}
+    # There can be multiple lines for a same proteomes (especially with reference proteomes being also associated with reference and non-reference proteomes).
     for line in csvreader:
         proteome_id = line[0].split('/')[-1]
         if line[1] != '':
@@ -494,7 +642,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
             missing = None
         org_tax_id = line[4].split('/')[-1]
         completness = line[5]
-        if 'Representative_Proteome' in line[6]:
+        if 'Representative_Proteome' in line[6] or 'Reference_Proteome' in line[6]:
             reference = True
         else:
             reference = False
@@ -506,9 +654,9 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
         # Check that proteome has busco score.
         if busco_percentage_keep:
             if busco_percentage and busco_percentage >= busco_percentage_keep and completness == 'full':
-                if reference == True:
+                if reference is True:
                     reference_proteomes.append(proteome_id)
-                else:
+                elif reference is False:
                     other_proteomes.append(proteome_id)
                 if org_tax_id not in organism_ids:
                     organism_ids[org_tax_id] = [proteome_id]
@@ -518,24 +666,181 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
             if completness == 'full':
                 if reference == True:
                     reference_proteomes.append(proteome_id)
-                else:
+                elif reference is False:
                     other_proteomes.append(proteome_id)
                 if org_tax_id not in organism_ids:
                     organism_ids[org_tax_id] = [proteome_id]
                 else:
                     organism_ids[org_tax_id].append(proteome_id)
 
-        proteomes_data.append([proteome_id, busco_percentage, completness, org_tax_id, reference])
+        # Get the components contained in the proteomes (chromosomes, plasmids).
+        if line[7] != '':
+            component_name = unquote(line[7]).split('#')[1]
+        else:
+            component_name = None
+        if line[8] != '':
+            component_description = line[8]
+        else:
+            component_description = None
+        if component_description is not None or component_name is not None:
+            component_elements = [component_name, component_description]
+
+        if proteome_id not in sparql_proteome_data:
+            sparql_proteome_data[proteome_id] = [proteome_id, busco_percentage, completness, org_tax_id, reference, [component_elements]]
+        else:
+            if sparql_proteome_data[proteome_id][4] is False and reference is True:
+                sparql_proteome_data[proteome_id][4] = True
+            sparql_proteome_data[proteome_id][5].append(component_elements)
+
+    for protein_id in sparql_proteome_data:
+        proteomes_data.append(sparql_proteome_data[protein_id])
+
+    # In SPARQL reference proteomes are also labelled as non-reference proteome (with 'http://purl.uniprot.org/core/Proteome').
+    # To use both reference and non-reference proteomes, use only other_proteomes.
+    other_proteomes = set(other_proteomes)
+    reference_proteomes = set(reference_proteomes)
+
     if all_proteomes is not None:
         proteomes = other_proteomes
     else:
         if len(reference_proteomes) == 0:
             logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
             proteomes = other_proteomes
+        elif len(reference_proteomes) < minimal_number_proteomes:
+            logger.info('|EsMeCaTa|proteomes| %s: No reference proteomes found for %s (%s) try non-reference proteomes.', observation_name, tax_id, tax_name)
+            proteomes = other_proteomes
         else:
             proteomes = reference_proteomes
 
     return proteomes, organism_ids, proteomes_data
+
+
+def compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids, ncbi):
+    """Search the taxonomic affiliations found by ete3 to find the lowest tax rank associated with each observation_name.
+    Then look at esmecata to find the taxon rank used to find proteome.
+
+    Args:
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping between taxon name and taxon ID (with remove rank specified)
+        proteomes_ids (dict):  observation name (key) associated with proteome IDs
+        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+
+    Returns:
+        taxon_rank_comparison (dict): lowest taxon name in input affiliation (key) associated with dict containing associated taxon ranks found by esmecata and the corresponding occurrence
+    """
+    # Create taxon comparison.
+    taxon_rank_comparison = {}
+    esmecata_found_ranks = []
+    for observation_name in json_taxonomic_affiliations:
+        reversed_affiliation_taxa = list(reversed(json_taxonomic_affiliations[observation_name]))
+        lowest_tax_rank = None
+        for tax_name in reversed_affiliation_taxa:
+            if json_taxonomic_affiliations[observation_name][tax_name] != ['not_found']:
+                if tax_name != 'unknown':
+                    lowest_tax_id = json_taxonomic_affiliations[observation_name][tax_name][0]
+                    lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
+
+                    # If lowest_taxon_rank is not in RANK_LEVEL, classified it with the upper tax rank.
+                    # This is the case for the unclassified taxa.
+                    if lowest_tax_rank not in RANK_LEVEL:
+                        higher_tax_id = ncbi.get_lineage(lowest_tax_id)[-2]
+                        higher_tax_rank = ncbi.get_rank([higher_tax_id])[higher_tax_id]
+                        lowest_tax_rank = higher_tax_rank
+                    break
+
+        # If no taxon identified by ete3 is found, classified it as not_found.
+        if lowest_tax_rank is None:
+            lowest_tax_rank = 'not_found'
+
+        if observation_name in proteomes_ids:
+            esmecata_tax_id = int(proteomes_ids[observation_name][0])
+            esmecata_tax_rank = ncbi.get_rank([esmecata_tax_id])[esmecata_tax_id]
+            if esmecata_tax_rank not in RANK_LEVEL:
+                esmecata_higher_tax_id = ncbi.get_lineage(esmecata_tax_id)[-2]
+                esmecata_higher_tax_rank = ncbi.get_rank([esmecata_higher_tax_id])[esmecata_higher_tax_id]
+                esmecata_tax_rank = esmecata_higher_tax_rank
+        else:
+            esmecata_tax_rank = 'not_found'
+
+        esmecata_found_ranks.append(esmecata_tax_rank)
+        if lowest_tax_rank not in taxon_rank_comparison:
+            taxon_rank_comparison[lowest_tax_rank] = {}
+            taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] = 1
+        else:
+            if esmecata_tax_rank not in taxon_rank_comparison[lowest_tax_rank]:
+                taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] = 1
+            else:
+                taxon_rank_comparison[lowest_tax_rank][esmecata_tax_rank] += 1
+
+    for esmecata_taxon_rank in esmecata_found_ranks:
+        if esmecata_taxon_rank not in taxon_rank_comparison:
+            taxon_rank_comparison[esmecata_taxon_rank] = {}
+
+    return taxon_rank_comparison
+
+
+def create_taxon_heatmap(taxon_rank_comparison, output_folder):
+    """Create a heatmap showing the lowest taxonomic rank in the input compared to the ones used by esmecata.
+
+    Args:
+        taxon_rank_comparison (dict): lowest taxon name in input affiliation (key) associated with dict containing associated taxon ranks found by esmecata and the corresponding occurrence
+        output_folder (str): path to the output folder.
+    """
+    taxon_comparison_dataframe = pd.DataFrame.from_dict(taxon_rank_comparison)
+
+    # Reorder taxonomic ranks in dataframe.
+    ordered_ranks = []
+    # Add rank not found.
+    RANK_LEVEL.update({'not_found':'not_found'})
+    RANK_LEVEL.move_to_end('not_found', last=False)
+    for tax_rank in RANK_LEVEL:
+        if tax_rank in taxon_comparison_dataframe.columns:
+            ordered_ranks.append(tax_rank)
+    taxon_comparison_dataframe = taxon_comparison_dataframe.reindex(ordered_ranks)
+    ordered_ranks = reversed(ordered_ranks)
+    taxon_comparison_dataframe = taxon_comparison_dataframe[ordered_ranks]
+
+    # Sum all the apparition
+    #import numpy as np
+    #Flip matrix
+    #matrix_sup_to_diagonal = np.triu(np.fliplr(df), 1)
+    # Keep only number above diagonal showing differences betwen input taxon and esmecata taxon.
+    #am = np.fliplr( matrix_sup_to_diagonal)[:-1]
+
+    taxon_comparison_dataframe.to_csv(os.path.join(output_folder, 'tax_comparison_rank.tsv'), sep='\t', index=None)
+    sns.set('poster', rc={'figure.figsize':(30,20), 'lines.linewidth': 10})
+    sns.set_style("white")
+    # Create output figure.
+    tax_comparison_rank_fig = os.path.join(output_folder, 'tax_comparison_rank.svg')
+    sns.heatmap(taxon_comparison_dataframe, annot=True, fmt='.0f')
+    plt.xlabel('Lowest taxonomic rank')
+    plt.ylabel('Taxonomic rank used by EsMeCaTa')
+    plt.savefig(tax_comparison_rank_fig)
+
+
+def create_taxon_heatmap_from_complete_run(esmecata_proteome_folder):
+    """ Create tax_comparison_rank picture file from esmecata proteome folder after complete run.
+
+    Args:
+        esmecata_proteome_folder (dict): path to esmecata proteome folder with all data
+    """
+    proteome_tax_id_file = os.path.join(esmecata_proteome_folder, 'proteome_tax_id.tsv')
+    proteomes_ids = {}
+    with open(proteome_tax_id_file, 'r') as proteome_tax_file:
+        csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
+        for line in csvreader:
+            observation_name = line['observation_name']
+            tax_id = line['tax_id']
+            proteomes = line['proteome'].split(',')
+            proteomes_ids[observation_name] = (tax_id, proteomes)
+
+    json_log = os.path.join(esmecata_proteome_folder, 'association_taxon_taxID.json')
+    with open(json_log, 'r') as input_json_file:
+        json_taxonomic_affiliations = json.load(input_json_file)
+
+    ncbi = NCBITaxa()
+    # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
+    taxon_rank_comparison = compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids, ncbi)
+    create_taxon_heatmap(taxon_rank_comparison, esmecata_proteome_folder)
 
 
 def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
@@ -552,7 +857,11 @@ def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
     Returns:
         selected_proteomes (list): subsample proteomes selected by the methods
     """
-    tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
+    try:
+        tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
+    except KeyError:
+        logger.critical('|EsMeCaTa|proteomes| UniProt tax ID not in ete3 NCBI Taxonomy database. Try to update it with the following command: python3 -c "from ete3 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database()".')
+        raise KeyError()
 
     # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
     childs = {}
@@ -599,19 +908,21 @@ def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
 
 def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                         busco_percentage_keep=None, all_proteomes=None, uniprot_sparql_endpoint=None,
-                        limit_maximal_number_proteomes=99, minimal_number_proteomes=1, session=None):
+                        limit_maximal_number_proteomes=99, minimal_number_proteomes=1, session=None,
+                        option_bioservices=None):
     """Find proteomes associated with taxonomic affiliations
 
     Args:
-        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping between taxon name and taxon ID (with remove rank specified)
         ncbi (ete3.NCBITaxa()): ete3 NCBI database
         proteomes_description_folder (str): pathname to the proteomes_description_folder
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kept
         session: request session object
+        option_bioservices (bool): use bioservices instead of manual queries.
 
     Returns:
         proteomes_ids (dict): observation name (key) associated with proteome IDs
@@ -622,6 +933,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
     # If there is more than limit_maximal_number_proteomes proteomes a method is applied to extract a subset of the data.
     logger.info('|EsMeCaTa|proteomes| Find proteome ID associated with taxonomic affiliation')
     proteomes_ids = {}
+    proteome_data = {}
     single_proteomes = {}
     tax_id_not_founds = {}
     tax_id_without_minimal_proteomes_number = {}
@@ -635,8 +947,10 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
             # If tax_id has already been found use the corresponding proteomes without new requests.
             if tax_id in tax_id_founds:
                 proteomes_ids[observation_name] = (tax_id, tax_id_founds[tax_id])
+                proteomes_descriptions.append(proteome_data[tax_id])
                 if len(tax_id_founds[tax_id]) == 1:
                     single_proteomes[observation_name] = (tax_id, tax_id_founds[tax_id])
+                logger.info('|EsMeCaTa|proteomes| "%s" already associated with proteomes, %s will be associated with the taxon "%s" with %d proteomes.', tax_name, observation_name, tax_name, len(tax_id_founds[tax_id]))
                 break
 
             # If tax_id has not been found with a request do not try a new request with the same tax_id.
@@ -648,12 +962,13 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
                 continue
 
             if uniprot_sparql_endpoint:
-                proteomes, organism_ids, data_proteomes = sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint)
+                proteomes, organism_ids, data_proteomes = sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint, minimal_number_proteomes)
             else:
-                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session)
+                proteomes, organism_ids, data_proteomes = rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_keep, all_proteomes, session, option_bioservices, minimal_number_proteomes)
 
             for data_proteome in data_proteomes:
                 proteomes_descriptions.append([tax_id, tax_name, *data_proteome])
+            proteome_data[tax_id] = proteomes_descriptions
 
             # Answer is empty no corresponding proteomes to the tax_id.
             if len(proteomes) == 0:
@@ -694,7 +1009,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
 
         with open(proteomes_description_file, 'w') as proteome_output:
             csvwriter = csv.writer(proteome_output, delimiter='\t')
-            csvwriter.writerow(['tax_id', 'tax_name', 'proteome_id', 'busco_percentage', 'completness', 'org_tax_id', 'reference_proteome'])
+            csvwriter.writerow(['tax_id', 'tax_name', 'proteome_id', 'busco_percentage', 'completness', 'org_tax_id', 'reference_proteome', 'components'])
             for proteomes_description in proteomes_descriptions:
                 csvwriter.writerow(proteomes_description)
 
@@ -717,9 +1032,6 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
     SELECT ?protein ?name ?isoform ?sequenceaa ?review
-
-    FROM <http://sparql.uniprot.org/uniprot>
-    FROM <http://sparql.uniprot.org/proteomes>
 
     WHERE
     {{
@@ -745,9 +1057,9 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
         prot_review = line[4].split('^^')[0]
         # Check protein review.
         # If review == Swissprot else Trembl.
-        if prot_review == 'true':
+        if prot_review == 'true' or prot_review == '1':
             prefix_record = 'sp'
-        elif prot_review == 'false':
+        elif prot_review == 'false' or prot_review == '0':
             prefix_record = 'tr'
 
         # Take only the canonical sequences (ending with -1):
@@ -765,21 +1077,23 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
-def compute_stat_proteomes(result_folder, stat_file=None):
+def compute_stat_proteomes(proteome_tax_id_file, stat_file=None):
     """Compute stat associated with the number of proteome for each taxonomic affiliations.
 
     Args:
-        result_folder (str): pathname to the result folder containing subfolder containing proteomes
+        proteome_tax_id_file (str): pathname to the proteome_tax_id file indicating the number of proteomes
         stat_file (str): pathname to the tsv stat file
 
     Returns:
         proteome_numbers (dict): dict containing observation names (as key) associated with the number of proteomes
     """
     proteome_numbers = {}
-    for folder in os.listdir(result_folder):
-        result_folder_path = os.path.join(result_folder, folder)
-        number_proteome = len([proteome for proteome in os.listdir(result_folder_path)])
-        proteome_numbers[folder] = number_proteome
+    with open(proteome_tax_id_file, 'r') as proteome_tax_file:
+        csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
+        for line in csvreader:
+            observation_name = line['observation_name']
+            proteomes = line['proteome'].split(',')
+            proteome_numbers[observation_name] = len(proteomes)
 
     if stat_file:
         with open(stat_file, 'w') as stat_file_open:
@@ -791,10 +1105,54 @@ def compute_stat_proteomes(result_folder, stat_file=None):
     return proteome_numbers
 
 
+def create_comp_taxonomy_file(association_taxon_id_json, proteomes_ids, tax_id_names, output_dir):
+    """ Create taxonomy_diff.tsv file in proteome output folder. Compare Input taxa information to esmecata taxa
+    information (taxa name, taxa ID, taxa rank) + precise OTUs associated.
+
+    Args:
+        association_taxon_id_json (dict): observation name and dictionary with mapping between taxon name and taxon
+            ID (with remove rank specified)
+        proteomes_ids (dict): observation name (key) associated with proteome IDs
+        tax_id_names (dict): associate tax id to tax name
+        output_dir (str): pathname to the output folder
+    """
+    ncbi = NCBITaxa()
+
+    d_tax = dict()
+    for observation_name in proteomes_ids:
+        reversed_affiliation_taxa = list(reversed(association_taxon_id_json[observation_name]))
+        for tax_name in reversed_affiliation_taxa:
+            if tax_name != 'unknown' and association_taxon_id_json[observation_name][tax_name] != ['not_found']:
+                if tax_name not in d_tax.keys():
+                    tax_id = association_taxon_id_json[observation_name][tax_name][0]
+                    tax_rank = ncbi.get_rank([tax_id])
+                    if tax_id in tax_rank.keys():
+                        tax_rank = tax_rank[tax_id]
+                    else:
+                        tax_rank = ''
+                    esmecata_tax_id = int(proteomes_ids[observation_name][0])
+                    esmecata_tax_name = tax_id_names[esmecata_tax_id]
+                    esmecata_tax_rank = ncbi.get_rank([esmecata_tax_id])[esmecata_tax_id]
+                    d_tax[tax_name] = {'Esmecata ID': esmecata_tax_id, 'Esmecata Rank': esmecata_tax_rank,
+                                       'Esmecata Name': esmecata_tax_name, 'Input ID': tax_id, 'Input Rank': tax_rank}
+                if 'obs' not in d_tax[tax_name].keys():
+                    d_tax[tax_name]['obs'] = list()
+                d_tax[tax_name]['obs'].append(observation_name)
+                break
+
+    output = os.path.join(output_dir, 'taxonomy_diff.tsv')
+    with open(output, 'w') as f:
+        f.write('\t'.join(['Input Name', 'Esmecata Name', 'Input Rank', 'Esmecata Rank',
+                           'Input ID', 'Esmecata ID', 'Observation Names']))
+        for name, ref in d_tax.items():
+            f.write('\n' + '\t'.join([name, ref['Esmecata Name'], ref['Input Rank'], ref['Esmecata Rank'],
+                                      str(ref['Input ID']), str(ref['Esmecata ID']), ';'.join(ref['obs'])]))
+
+
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
-                        remove_tmp=None, limit_maximal_number_proteomes=99, rank_limit=None,
-                        minimal_number_proteomes=1):
+                        limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1,
+                        update_affiliations=None, option_bioservices=None):
     """From a tsv file with taxonomic affiliations find the associated proteomes.
 
     Args:
@@ -802,17 +1160,18 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         output_folder (str): pathname to the output folder
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         ignore_taxadb_update (bool): option to ignore ete3 taxa database update
-        remove_tmp (bool): remove the tmp files
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        rank_limit (str): rank limit to remove from the data
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
+        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be kept.
+        update_affiliations (str): option to update taxonomic affiliations.
+        option_bioservices (bool): use bioservices instead of manual queries.
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|clustering| Begin proteomes search.')
 
-    retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
+    retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[429, 500, 502, 503, 504])
     session = requests.Session()
     session.mount("https://", HTTPAdapter(max_retries=retries))
 
@@ -827,6 +1186,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         sys.exit()
 
     is_valid_dir(output_folder)
+
+    proteomes_folder = os.path.join(output_folder, 'proteomes')
+    is_valid_dir(proteomes_folder)
 
     proteomes_description_folder = os.path.join(output_folder, 'proteomes_description')
     is_valid_dir(proteomes_description_folder)
@@ -846,12 +1208,10 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     proteome_tax_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
 
-    result_folder = os.path.join(output_folder, 'result')
-
     if not os.path.exists(proteome_tax_id_file):
         ncbi = NCBITaxa()
 
-        tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, ncbi)
+        tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi, output_folder)
 
         json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
 
@@ -865,7 +1225,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     if not os.path.exists(proteome_tax_id_file):
         proteomes_ids, single_proteomes, tax_id_not_founds = find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_description_folder,
                                                         busco_percentage_keep, all_proteomes, uniprot_sparql_endpoint,
-                                                        limit_maximal_number_proteomes, minimal_number_proteomes, session)
+                                                        limit_maximal_number_proteomes, minimal_number_proteomes, session, option_bioservices)
 
         proteome_to_download = []
         for proteomes_id in proteomes_ids:
@@ -881,33 +1241,41 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 tax_name = tax_id_names[tax_id]
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
                 csvwriter.writerow([observation_name, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[observation_name][1])])
+
+        create_comp_taxonomy_file(association_taxon_id_json=json_taxonomic_affiliations,
+                                  proteomes_ids=proteomes_ids,
+                                  tax_id_names=tax_id_names,
+                                  output_dir=output_folder)
+
     else:
         proteome_to_download = []
         proteomes_ids = {}
         single_proteomes = {}
+        already_download_proteomes = os.listdir(proteomes_folder)
         with open(proteome_tax_id_file, 'r') as proteome_tax_file:
-            csvreader = csv.reader(proteome_tax_file, delimiter='\t')
-            next(csvreader)
+            csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
             for line in csvreader:
-                observation_name = line[0]
-                name = line[1]
-                tax_id = line[2]
-                proteomes = line[4].split(',')
-                taxon_result_folder = os.path.join(result_folder, observation_name)
-                if not os.path.exists(taxon_result_folder):
-                    proteome_to_download.extend(proteomes)
-                    if len(proteomes) == 1:
-                        single_proteomes[observation_name] = (tax_id, proteomes)
-                    proteomes_ids[observation_name] = (tax_id, proteomes)
-                    logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, name, len(proteomes))
+                observation_name = line['observation_name']
+                name = line['name']
+                tax_id = line['tax_id']
+                proteomes = line['proteome'].split(',')
+                for proteome in proteomes:
+                    if proteome not in already_download_proteomes:
+                        proteome_to_download.append(proteome)
+
+                if len(proteomes) == 1:
+                    single_proteomes[observation_name] = (tax_id, proteomes)
+                proteomes_ids[observation_name] = (tax_id, proteomes)
+                logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, name, len(proteomes))
 
         proteome_to_download = set(proteome_to_download)
 
-    # Download all the proteomes in tmp folder.
-    tmp_folder = os.path.join(output_folder, 'tmp_proteome')
-    is_valid_dir(tmp_folder)
 
-    proteomes_already_downloaded = set([proteome_filename.replace('.faa.gz', '') for proteome_filename in os.listdir(tmp_folder)])
+    # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
+    create_taxon_heatmap_from_complete_run(output_folder)
+
+    # Download all the proteomes in proteome folder.
+    proteomes_already_downloaded = set([proteome_filename.replace('.faa.gz', '') for proteome_filename in os.listdir(proteomes_folder)])
     proteome_to_download = proteome_to_download - proteomes_already_downloaded
 
     if len(proteome_to_download) == 0:
@@ -916,23 +1284,34 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         logger.info('|EsMeCaTa|proteomes| Downloading %d proteomes', len(proteome_to_download))
 
     for index, proteome in enumerate(proteome_to_download):
-        output_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
+        output_proteome_file = os.path.join(proteomes_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
             if uniprot_sparql_endpoint is not None:
                 sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
             else:
-                http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true&size=500'.format(proteome)
-                for batch_reponse in get_batch(session, http_str):
+                if option_bioservices is None:
+                    http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
+                    proteome_response = session.get(http_str)
                     with open(output_proteome_file, 'wb') as f:
-                        f.write(batch_reponse.content)
+                        f.write(proteome_response.content)
+                else:
+                    import bioservices
+                    uniprot_bioservices = bioservices.UniProt()
+                    data_fasta = uniprot_bioservices.search(f'(proteome:{proteome})', database='uniprot',
+                                                            frmt='fasta', compress=True, progress=False)
+                    with open(output_proteome_file, 'wb') as f:
+                        f.write(data_fasta)
+
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 
     # Download Uniprot metadata and create a json file containing them.
     options = {'input_file': input_file, 'output_folder': output_folder, 'busco_percentage_keep': busco_percentage_keep,
-                        'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
-                        'remove_tmp': remove_tmp, 'limit_maximal_number_proteomes': limit_maximal_number_proteomes}
+                    'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
+                    'limit_maximal_number_proteomes': limit_maximal_number_proteomes, 'rank_limit': rank_limit,
+                    'minimal_number_proteomes': minimal_number_proteomes}
 
+    # Collect dependencies metadata.
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
     options['tool_dependencies']['python_package']['Python_version'] = sys.version
@@ -948,23 +1327,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     else:
         uniprot_releases = get_rest_uniprot_release(options)
 
-    # Create a result folder which contains one sub-folder per OTU.
-    # Each OTU sub-folder will contain the proteome found.
-    is_valid_dir(result_folder)
-
-    for observation_name in proteomes_ids:
-        output_observation_name = os.path.join(result_folder, observation_name)
-        is_valid_dir(output_observation_name)
-        for proteome in proteomes_ids[observation_name][1]:
-            input_proteome_file = os.path.join(tmp_folder, proteome+'.faa.gz')
-            output_proteome = os.path.join(output_observation_name, proteome+'.faa.gz')
-            shutil.copyfile(input_proteome_file, output_proteome)
-
-    if remove_tmp:
-        shutil.rmtree(tmp_folder)
-
     stat_file = os.path.join(output_folder, 'stat_number_proteome.tsv')
-    compute_stat_proteomes(result_folder, stat_file)
+    compute_stat_proteomes(proteome_tax_id_file, stat_file)
 
     endtime = time.time()
     duration = endtime - starttime

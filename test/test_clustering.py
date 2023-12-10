@@ -2,8 +2,7 @@ import csv
 import os
 import shutil
 
-from esmecata.clustering import make_clustering, filter_protein_cluster
-from esmecata.utils import is_valid_path, is_valid_dir
+from esmecata.clustering import make_clustering, filter_protein_cluster, compute_proteome_representativeness_ratio
 
 RESULTS = {
     'Cluster_1': {'Number_shared_proteins': 460}
@@ -11,22 +10,38 @@ RESULTS = {
 
 def test_filter_protein_cluster():
     output_folder = 'output'
+    remove_output_folder = False
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+        remove_output_folder = True
+        os.mkdir(os.path.join(output_folder, 'computed_threshold'))
+        os.mkdir(os.path.join(output_folder, 'reference_proteins'))
+        os.mkdir(os.path.join(output_folder, 'cluster_founds'))
+
     observation_name = 'Cluster_1'
     protein_clusters = {'Q89AE4': ['Q89AE4', 'P57473'],
                         'Q89AY7': ['Q89AY7']}
-    observation_name_proteomes = ['clustering_input/result/Cluster_1/UP000000601.faa.gz', 'clustering_input/result/Cluster_1/UP000001806.faa.gz']
+    observation_name_proteomes = [os.path.join('clustering_input', 'proteomes', 'UP000000601.faa.gz'),
+                                os.path.join('clustering_input', 'proteomes', 'UP000001806.faa.gz')]
     clust_threshold = 0.95
 
     expected_protein = {'Q89AE4'}
-    protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
 
+    number_proteomes, rep_prot_organims, computed_threshold_cluster = compute_proteome_representativeness_ratio(protein_clusters, observation_name_proteomes)
+    protein_cluster_to_keeps = filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims, computed_threshold_cluster,
+                            clust_threshold)
+    
     assert expected_protein == protein_cluster_to_keeps
 
     clust_threshold = 0
     expected_protein = {'Q89AE4', 'Q89AY7'}
-    protein_cluster_to_keeps = filter_protein_cluster(observation_name, protein_clusters, observation_name_proteomes, output_folder, clust_threshold)
-
+    number_proteomes, rep_prot_organims, computed_threshold_cluster = compute_proteome_representativeness_ratio(protein_clusters, observation_name_proteomes)
+    protein_cluster_to_keeps = filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims, computed_threshold_cluster,
+                            clust_threshold)
     assert expected_protein == protein_cluster_to_keeps
+
+    if remove_output_folder is True:
+        shutil.rmtree(output_folder)
 
 
 def test_make_clustering():

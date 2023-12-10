@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2022 Arnaud Belcour - Inria Dyliss
+# Copyright (C) 2021-2023 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -21,8 +21,10 @@ import time
 from esmecata.proteomes import retrieve_proteomes
 from esmecata.clustering import make_clustering
 from esmecata.annotation import annotate_proteins
-from esmecata.workflow import perform_workflow
+from esmecata.workflow import perform_workflow, perform_workflow_eggnog
+from esmecata.eggnog import annotate_with_eggnog
 from esmecata.utils import limited_integer_type, range_limited_float_type, is_valid_dir
+from esmecata.analysis import perform_analysis
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''
@@ -30,6 +32,7 @@ From taxonomic affiliation to metabolism using Uniprot.
 '''
 REQUIRES = '''
 Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
+Annotation can be performed with UniProt or eggnog-mapper (which is then a requirement if the option is selected).
 '''
 
 logger = logging.getLogger()
@@ -73,6 +76,15 @@ def main():
         dest='input',
         required=True,
         help='This input folder of annotation is the output folder of clustering command.',
+        metavar='INPUT_DIR')
+
+    parent_parser_i_analysis_folder = argparse.ArgumentParser(add_help=False)
+    parent_parser_i_analysis_folder.add_argument(
+        '-i',
+        '--input',
+        dest='input',
+        required=True,
+        help='This input folder of analysis is the output folder of annotation command.',
         metavar='INPUT_DIR')
 
     parent_parser_o = argparse.ArgumentParser(add_help=False)
@@ -119,6 +131,15 @@ def main():
         type=limited_integer_type,
         help='Choose the maximal number of proteomes after which the tool will select a subset of proteomes instead of using all the available proteomes (default is 99).',
         default=99)
+    parent_parser_update_affiliation = argparse.ArgumentParser(add_help=False)
+    parent_parser_update_affiliation.add_argument(
+        '--update-affiliations',
+        dest='update_affiliations',
+        help='''If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. \
+            This option tries to udpate the taxonomic affiliations using the lowest taxon name.''',
+        required=False,
+        action='store_true',
+        default=None)
     parent_parser_c = argparse.ArgumentParser(add_help=False)
     parent_parser_c.add_argument(
         '-c',
@@ -133,10 +154,10 @@ def main():
         '-t',
         '--threshold',
         dest='threshold_clustering',
-        help='Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.',
+        help='Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly. Default is 0.5.',
         required=False,
         type=range_limited_float_type,
-        default=0.95)
+        default=0.5)
     parent_parser_mmseqs_options = argparse.ArgumentParser(add_help=False)
     parent_parser_mmseqs_options.add_argument(
         '-m',
@@ -150,7 +171,7 @@ def main():
     parent_parser_linclust.add_argument(
         '--linclust',
         dest='linclust',
-        help='Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.',
+        help='Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.',
         required=False,
         action='store_true',
         default=None)
@@ -158,7 +179,7 @@ def main():
     parent_parser_remove_tmp.add_argument(
         '--remove-tmp',
         dest='remove_tmp',
-        help='Delete tmp files to limit the disk space used: files in tmp_proteome for esmecata proteomes and files created by mmseqs (in mmseqs_tmp).',
+        help='Delete tmp files to limit the disk space used: files created by mmseqs (in mmseqs_tmp).',
         required=False,
         action='store_true',
         default=None)
@@ -200,7 +221,9 @@ def main():
         '--rank-limit',
         dest='rank_limit',
         required=False,
-        help='This option limit the rank used by the tool for searching for proteomes. The given rank and all the superior ranks will be ignored. Look at the readme for more information (and a list of possible rank).',
+        help='''This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. \
+            For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. \
+            Look at the readme for more information (and a list of rank names).''',
         default=None)
     parent_parser_minimal_number_proteomes = argparse.ArgumentParser(add_help=False)
     parent_parser_minimal_number_proteomes.add_argument(
@@ -208,8 +231,52 @@ def main():
         dest='minimal_number_proteomes',
         required=False,
         type=limited_integer_type,
-        help='Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.',
-        default=1)
+        help='Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 5.',
+        default=5)
+    parent_parser_annotation_file = argparse.ArgumentParser(add_help=False)
+    parent_parser_annotation_file.add_argument(
+        '--annotation-files',
+        dest='annotation_files',
+        required=False,
+        help='Use UniProt annotation files (uniprot_trembl.txt and uniprot_sprot.txt) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".',
+        default=None)
+    parent_parser_bioservices = argparse.ArgumentParser(add_help=False)
+    parent_parser_bioservices.add_argument(
+        '--bioservices',
+        dest='option_bioservices',
+        help='Use bioservices instead of esmecata functions for protein annotation.',
+        required=False,
+        action='store_true',
+        default=None)
+    parent_parser_eggnog_database = argparse.ArgumentParser(add_help=False)
+    parent_parser_eggnog_database.add_argument(
+        '-e',
+        '--eggnog',
+        dest='eggnog_database',
+        help='Path to eggnog database.',
+        required=True)
+    parent_parser_nb_digit = argparse.ArgumentParser(add_help=False)
+    parent_parser_nb_digit.add_argument(
+        '--nb-digit',
+        dest='nb_digit',
+        required=False,
+        type=limited_integer_type,
+        help='Number of the digit to keep on the clustermap (1, 2, 3 or 4). Defualt 3.',
+        default=3)
+    parent_parser_taxon_rank = argparse.ArgumentParser(add_help=False)
+    parent_parser_taxon_rank.add_argument(
+        '--taxon-rank',
+        dest='taxon_rank',
+        required=False,
+        help='Taxon rank to merge organisms (default family).',
+        default='family')
+    parent_parser_eggnog_tmp_dir = argparse.ArgumentParser(add_help=False)
+    parent_parser_eggnog_tmp_dir.add_argument(
+        '--eggnog-tmp',
+        dest='eggnog_tmp_dir',
+        help='Path to eggnog tmp dir.',
+        required=False,
+        default=None)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -223,8 +290,9 @@ def main():
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_b,
             parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
-            parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
-            parent_parser_rank_limit, parent_parser_minimal_number_proteomes
+            parent_parser_limit_maximal_number_proteomes, parent_parser_rank_limit,
+            parent_parser_minimal_number_proteomes, parent_parser_update_affiliation,
+            parent_parser_bioservices
             ],
         allow_abbrev=False)
     clustering_parser = subparsers.add_parser(
@@ -241,7 +309,16 @@ def main():
         help='Retrieve protein annotations from Uniprot.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
-            parent_parser_propagate, parent_parser_uniref, parent_parser_expression
+            parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
+            parent_parser_annotation_file, parent_parser_bioservices
+            ],
+        allow_abbrev=False)
+    annotation_eggnog_parser = subparsers.add_parser(
+        'annotation_eggnog',
+        help='Annotate protein clusters using eggnog-mapper.',
+        parents=[
+            parent_parser_i_annotation_folder, parent_parser_o, parent_parser_eggnog_database,
+            parent_parser_c, parent_parser_eggnog_tmp_dir
             ],
         allow_abbrev=False)
     workflow_parser = subparsers.add_parser(
@@ -253,11 +330,38 @@ def main():
             parent_parser_remove_tmp, parent_parser_limit_maximal_number_proteomes,
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
             parent_parser_propagate, parent_parser_uniref, parent_parser_expression,
-            parent_parser_rank_limit, parent_parser_minimal_number_proteomes
+            parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
+            parent_parser_annotation_file, parent_parser_update_affiliation,
+            parent_parser_bioservices
+            ],
+        allow_abbrev=False)
+    workflow_eggnog_parser = subparsers.add_parser(
+        'workflow_eggnog',
+        help='Run all esmecata steps (proteomes, clustering and annotation_eggnog).',
+        parents=[
+            parent_parser_i_taxon, parent_parser_o, parent_parser_eggnog_database,
+            parent_parser_b, parent_parser_c, parent_parser_taxadb,
+            parent_parser_all_proteomes, parent_parser_sparql, parent_parser_remove_tmp,
+            parent_parser_limit_maximal_number_proteomes, parent_parser_thr, parent_parser_mmseqs_options,
+            parent_parser_linclust, parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
+            parent_parser_update_affiliation, parent_parser_bioservices, parent_parser_eggnog_tmp_dir
+            ],
+        allow_abbrev=False)
+    analysis_parser = subparsers.add_parser(
+        'analysis',
+        help='Create clustermap for EC.',
+        parents=[
+            parent_parser_i_analysis_folder, parent_parser_o, parent_parser_taxon_rank,
+            parent_parser_nb_digit
             ],
         allow_abbrev=False)
 
     args = parser.parse_args()
+
+    # If no argument print the help.
+    if len(sys.argv) == 1 or len(sys.argv) == 0:
+        parser.print_help()
+        sys.exit(1)
 
     is_valid_dir(args.output)
 
@@ -274,12 +378,7 @@ def main():
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    # If no argument print the help.
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)
-
-    if args.cmd in ['proteomes', 'annotation', 'workflow']:
+    if args.cmd in ['proteomes', 'annotation', 'workflow', 'workflow_eggnog']:
         if args.sparql is None:
             uniprot_sparql_endpoint = None
         elif args.sparql == 'uniprot':
@@ -287,25 +386,41 @@ def main():
         else:
             uniprot_sparql_endpoint = args.sparql
 
-    if args.cmd in ['proteomes', 'workflow']:
+    if args.cmd in ['proteomes', 'workflow', 'workflow_eggnog']:
         if args.busco is not None:
             busco_score = 100*args.busco
 
     if args.cmd == 'proteomes':
         retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
-                            args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
-                            args.limit_maximal_number_proteomes, args.rank_limit, args.minimal_number_proteomes)
+                            args.all_proteomes, uniprot_sparql_endpoint, args.limit_maximal_number_proteomes,
+                            args.rank_limit, args.minimal_number_proteomes, args.update_affiliations,
+                            args.option_bioservices)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation':
-        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint, args.propagate_annotation, args.uniref, args.expression)
+        annotate_proteins(args.input, args.output, uniprot_sparql_endpoint,
+                        args.propagate_annotation, args.uniref, args.expression,
+                        args.annotation_files, args.option_bioservices)
     elif args.cmd == 'workflow':
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
                             args.limit_maximal_number_proteomes, args.rank_limit,
                             args.cpu, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
-                            args.expression, args.minimal_number_proteomes)
+                            args.expression, args.minimal_number_proteomes, args.annotation_files,
+                            args.update_affiliations, args.option_bioservices)
+    elif args.cmd == 'annotation_eggnog':
+        annotate_with_eggnog(args.input, args.output, args.eggnog_database, args.cpu,
+                             args.eggnog_tmp_dir)
+    elif args.cmd == 'workflow_eggnog':
+        perform_workflow_eggnog(args.input, args.output, args.eggnog_database, busco_score,
+                                args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint,
+                                args.remove_tmp, args.limit_maximal_number_proteomes, args.rank_limit,
+                                args.cpu, args.threshold_clustering, args.mmseqs_options,
+                                args.linclust, args.minimal_number_proteomes, args.update_affiliations,
+                                args.option_bioservices, args.eggnog_tmp_dir)
+    elif args.cmd == 'analysis':
+        perform_analysis(args.input, args.output, args.taxon_rank, args.nb_digit)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

@@ -1,0 +1,430 @@
+ID   A0A1B2H8S9_BUCDN        Unreviewed;       474 AA.
+AC   A0A1B2H8S9;
+DT   02-NOV-2016, integrated into UniProtKB/TrEMBL.
+DT   02-NOV-2016, sequence version 1.
+DT   14-DEC-2022, entry version 39.
+DE   RecName: Full=Siroheme synthase {ECO:0000256|HAMAP-Rule:MF_01646};
+DE   Includes:
+DE     RecName: Full=Uroporphyrinogen-III C-methyltransferase {ECO:0000256|HAMAP-Rule:MF_01646};
+DE              Short=Urogen III methylase {ECO:0000256|HAMAP-Rule:MF_01646};
+DE              EC=2.1.1.107 {ECO:0000256|HAMAP-Rule:MF_01646};
+DE     AltName: Full=SUMT {ECO:0000256|HAMAP-Rule:MF_01646};
+DE     AltName: Full=Uroporphyrinogen III methylase {ECO:0000256|HAMAP-Rule:MF_01646};
+DE              Short=UROM {ECO:0000256|HAMAP-Rule:MF_01646};
+DE   Includes:
+DE     RecName: Full=Precorrin-2 dehydrogenase {ECO:0000256|HAMAP-Rule:MF_01646};
+DE              EC=1.3.1.76 {ECO:0000256|HAMAP-Rule:MF_01646};
+DE   Includes:
+DE     RecName: Full=Sirohydrochlorin ferrochelatase {ECO:0000256|HAMAP-Rule:MF_01646};
+DE              EC=4.99.1.4 {ECO:0000256|HAMAP-Rule:MF_01646};
+GN   Name=cysG {ECO:0000256|HAMAP-Rule:MF_01646};
+GN   ORFNames=ATN01_02115 {ECO:0000313|EMBL:ANZ22623.1};
+OS   Buchnera aphidicola subsp. Diuraphis noxia.
+OC   Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacterales;
+OC   Erwiniaceae; Buchnera.
+OX   NCBI_TaxID=118101 {ECO:0000313|EMBL:ANZ22623.1, ECO:0000313|Proteomes:UP000093070};
+RN   [1] {ECO:0000313|EMBL:ANZ22623.1, ECO:0000313|Proteomes:UP000093070}
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RC   STRAIN=SAM {ECO:0000313|EMBL:ANZ22623.1};
+RA   Burger N.F.V., Oberholster A.-M.;
+RT   "The complete genome of Buchnera aphidicola from Diuraphis noxia biotype
+RT   SAM.";
+RL   Submitted (NOV-2015) to the EMBL/GenBank/DDBJ databases.
+CC   -!- FUNCTION: Multifunctional enzyme that catalyzes the SAM-dependent
+CC       methylations of uroporphyrinogen III at position C-2 and C-7 to form
+CC       precorrin-2 via precorrin-1. Then it catalyzes the NAD-dependent ring
+CC       dehydrogenation of precorrin-2 to yield sirohydrochlorin. Finally, it
+CC       catalyzes the ferrochelation of sirohydrochlorin to yield siroheme.
+CC       {ECO:0000256|HAMAP-Rule:MF_01646}.
+CC   -!- CATALYTIC ACTIVITY:
+CC       Reaction=2 H(+) + siroheme = Fe(2+) + sirohydrochlorin;
+CC         Xref=Rhea:RHEA:24360, ChEBI:CHEBI:15378, ChEBI:CHEBI:29033,
+CC         ChEBI:CHEBI:58351, ChEBI:CHEBI:60052; EC=4.99.1.4;
+CC         Evidence={ECO:0000256|HAMAP-Rule:MF_01646};
+CC   -!- CATALYTIC ACTIVITY:
+CC       Reaction=2 S-adenosyl-L-methionine + uroporphyrinogen III = H(+) +
+CC         precorrin-2 + 2 S-adenosyl-L-homocysteine; Xref=Rhea:RHEA:32459,
+CC         ChEBI:CHEBI:15378, ChEBI:CHEBI:57308, ChEBI:CHEBI:57856,
+CC         ChEBI:CHEBI:58827, ChEBI:CHEBI:59789; EC=2.1.1.107;
+CC         Evidence={ECO:0000256|HAMAP-Rule:MF_01646};
+CC   -!- CATALYTIC ACTIVITY:
+CC       Reaction=NAD(+) + precorrin-2 = 2 H(+) + NADH + sirohydrochlorin;
+CC         Xref=Rhea:RHEA:15613, ChEBI:CHEBI:15378, ChEBI:CHEBI:57540,
+CC         ChEBI:CHEBI:57945, ChEBI:CHEBI:58351, ChEBI:CHEBI:58827; EC=1.3.1.76;
+CC         Evidence={ECO:0000256|ARBA:ARBA00001156, ECO:0000256|HAMAP-
+CC         Rule:MF_01646};
+CC   -!- PATHWAY: Cofactor biosynthesis; adenosylcobalamin biosynthesis;
+CC       precorrin-2 from uroporphyrinogen III: step 1/1. {ECO:0000256|HAMAP-
+CC       Rule:MF_01646}.
+CC   -!- PATHWAY: Cofactor biosynthesis; adenosylcobalamin biosynthesis;
+CC       sirohydrochlorin from precorrin-2: step 1/1. {ECO:0000256|HAMAP-
+CC       Rule:MF_01646}.
+CC   -!- PATHWAY: Porphyrin-containing compound metabolism; siroheme
+CC       biosynthesis; precorrin-2 from uroporphyrinogen III: step 1/1.
+CC       {ECO:0000256|ARBA:ARBA00025705, ECO:0000256|HAMAP-Rule:MF_01646}.
+CC   -!- PATHWAY: Porphyrin-containing compound metabolism; siroheme
+CC       biosynthesis; siroheme from sirohydrochlorin: step 1/1.
+CC       {ECO:0000256|HAMAP-Rule:MF_01646}.
+CC   -!- PATHWAY: Porphyrin-containing compound metabolism; siroheme
+CC       biosynthesis; sirohydrochlorin from precorrin-2: step 1/1.
+CC       {ECO:0000256|ARBA:ARBA00005010, ECO:0000256|HAMAP-Rule:MF_01646}.
+CC   -!- SIMILARITY: Belongs to the precorrin methyltransferase family.
+CC       {ECO:0000256|ARBA:ARBA00005879, ECO:0000256|RuleBase:RU003960}.
+CC   -!- SIMILARITY: In the C-terminal section; belongs to the precorrin
+CC       methyltransferase family. {ECO:0000256|HAMAP-Rule:MF_01646}.
+CC   -!- SIMILARITY: In the N-terminal section; belongs to the precorrin-2
+CC       dehydrogenase / sirohydrochlorin ferrochelatase family.
+CC       {ECO:0000256|HAMAP-Rule:MF_01646}.
+CC   -!- CAUTION: Lacks conserved residue(s) required for the propagation of
+CC       feature annotation. {ECO:0000256|HAMAP-Rule:MF_01646}.
+CC   ---------------------------------------------------------------------------
+CC   Copyrighted by the UniProt Consortium, see https://www.uniprot.org/terms
+CC   Distributed under the Creative Commons Attribution (CC BY 4.0) License
+CC   ---------------------------------------------------------------------------
+DR   EMBL; CP013259; ANZ22623.1; -; Genomic_DNA.
+DR   RefSeq; WP_075433445.1; NZ_CP013259.1.
+DR   AlphaFoldDB; A0A1B2H8S9; -.
+DR   STRING; 118101.ATN01_02115; -.
+DR   PATRIC; fig|118101.4.peg.419; -.
+DR   OrthoDB; 1185397at2; -.
+DR   UniPathway; UPA00148; UER00211.
+DR   UniPathway; UPA00262; UER00211.
+DR   Proteomes; UP000093070; Chromosome.
+DR   GO; GO:0051287; F:NAD binding; IEA:InterPro.
+DR   GO; GO:0043115; F:precorrin-2 dehydrogenase activity; IEA:UniProtKB-UniRule.
+DR   GO; GO:0051266; F:sirohydrochlorin ferrochelatase activity; IEA:UniProtKB-EC.
+DR   GO; GO:0004851; F:uroporphyrin-III C-methyltransferase activity; IEA:UniProtKB-UniRule.
+DR   GO; GO:0009236; P:cobalamin biosynthetic process; IEA:UniProtKB-UniRule.
+DR   GO; GO:0032259; P:methylation; IEA:UniProtKB-KW.
+DR   GO; GO:0019354; P:siroheme biosynthetic process; IEA:UniProtKB-UniRule.
+DR   CDD; cd11642; SUMT; 1.
+DR   Gene3D; 1.10.8.210; -; 1.
+DR   Gene3D; 3.30.950.10; -; 1.
+DR   Gene3D; 3.40.1010.10; -; 1.
+DR   HAMAP; MF_01646; Siroheme_synth; 1.
+DR   InterPro; IPR000878; 4pyrrol_Mease.
+DR   InterPro; IPR035996; 4pyrrol_Methylase_sf.
+DR   InterPro; IPR014777; 4pyrrole_Mease_sub1.
+DR   InterPro; IPR014776; 4pyrrole_Mease_sub2.
+DR   InterPro; IPR006366; CobA/CysG_C.
+DR   InterPro; IPR036291; NAD(P)-bd_dom_sf.
+DR   InterPro; IPR037115; Sirohaem_synt_dimer_dom_sf.
+DR   InterPro; IPR012409; Sirohaem_synth.
+DR   InterPro; IPR019478; Sirohaem_synthase_dimer_dom.
+DR   InterPro; IPR006367; Sirohaem_synthase_N.
+DR   InterPro; IPR003043; Uropor_MeTrfase_CS.
+DR   Pfam; PF10414; CysG_dimeriser; 1.
+DR   Pfam; PF00590; TP_methylase; 1.
+DR   PIRSF; PIRSF036426; Sirohaem_synth; 1.
+DR   SUPFAM; SSF51735; NAD(P)-binding Rossmann-fold domains; 1.
+DR   SUPFAM; SSF53790; Tetrapyrrole methylase; 1.
+DR   TIGRFAMs; TIGR01469; cobA_cysG_Cterm; 1.
+DR   TIGRFAMs; TIGR01470; cysG_Nterm; 1.
+DR   PROSITE; PS00839; SUMT_1; 1.
+DR   PROSITE; PS00840; SUMT_2; 1.
+PE   3: Inferred from homology;
+KW   Cobalamin biosynthesis {ECO:0000256|ARBA:ARBA00022573, ECO:0000256|HAMAP-
+KW   Rule:MF_01646};
+KW   Lyase {ECO:0000256|ARBA:ARBA00023239, ECO:0000256|HAMAP-Rule:MF_01646};
+KW   Methyltransferase {ECO:0000256|ARBA:ARBA00022603, ECO:0000256|HAMAP-
+KW   Rule:MF_01646};
+KW   Multifunctional enzyme {ECO:0000256|ARBA:ARBA00023268, ECO:0000256|HAMAP-
+KW   Rule:MF_01646};
+KW   NAD {ECO:0000256|ARBA:ARBA00023027, ECO:0000256|HAMAP-Rule:MF_01646};
+KW   Oxidoreductase {ECO:0000256|ARBA:ARBA00023002, ECO:0000256|HAMAP-
+KW   Rule:MF_01646}; Phosphoprotein {ECO:0000256|HAMAP-Rule:MF_01646};
+KW   Porphyrin biosynthesis {ECO:0000256|ARBA:ARBA00023244, ECO:0000256|HAMAP-
+KW   Rule:MF_01646};
+KW   S-adenosyl-L-methionine {ECO:0000256|ARBA:ARBA00022691, ECO:0000256|HAMAP-
+KW   Rule:MF_01646};
+KW   Transferase {ECO:0000256|ARBA:ARBA00022679, ECO:0000256|HAMAP-
+KW   Rule:MF_01646}.
+FT   DOMAIN          151..207
+FT                   /note="CysG_dimeriser"
+FT                   /evidence="ECO:0000259|Pfam:PF10414"
+FT   DOMAIN          217..426
+FT                   /note="TP_methylase"
+FT                   /evidence="ECO:0000259|Pfam:PF00590"
+FT   REGION          1..203
+FT                   /note="Precorrin-2 dehydrogenase / sirohydrochlorin
+FT                   ferrochelatase"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+FT   REGION          215..474
+FT                   /note="Uroporphyrinogen-III C-methyltransferase"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+FT   ACT_SITE        247
+FT                   /note="Proton acceptor"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646,
+FT                   ECO:0000256|PIRSR:PIRSR036426-1"
+FT   ACT_SITE        269
+FT                   /note="Proton donor"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646,
+FT                   ECO:0000256|PIRSR:PIRSR036426-1"
+FT   BINDING         22..23
+FT                   /ligand="NAD(+)"
+FT                   /ligand_id="ChEBI:CHEBI:57540"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+FT   BINDING         43..44
+FT                   /ligand="NAD(+)"
+FT                   /ligand_id="ChEBI:CHEBI:57540"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+FT   BINDING         224
+FT                   /ligand="S-adenosyl-L-methionine"
+FT                   /ligand_id="ChEBI:CHEBI:59789"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+FT   BINDING         300..302
+FT                   /ligand="S-adenosyl-L-methionine"
+FT                   /ligand_id="ChEBI:CHEBI:59789"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+FT   BINDING         305
+FT                   /ligand="S-adenosyl-L-methionine"
+FT                   /ligand_id="ChEBI:CHEBI:59789"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+FT   BINDING         382
+FT                   /ligand="S-adenosyl-L-methionine"
+FT                   /ligand_id="ChEBI:CHEBI:59789"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+FT   BINDING         411
+FT                   /ligand="S-adenosyl-L-methionine"
+FT                   /ligand_id="ChEBI:CHEBI:59789"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+FT   MOD_RES         128
+FT                   /note="Phosphoserine"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01646"
+SQ   SEQUENCE   474 AA;  53378 MW;  18A0C16EAA3D9511 CRC64;
+     MNYLPLFLDL TSKNILIVGG GEVAFNKITL LLKANAKVNV IAKDLCTDVE NLLHENKITW
+     ISREFDSLFL KKMFLVIAAT NDLKLNQYVF KLCNNRCLFV NVVDDKSKCS FIFPSIIDRS
+     PIIISLSSGG TAPVLLRLLR EKIESILPMK LGKVAKISGK WREVVKNSFN SLLARRRFWE
+     KLFKGIFTEH ILNENTEQAT RILKNTLQEH TLLKGQISLV GAGPGDSGLL TLRGLQVLQQ
+     ADVVLYDRLV SKDILNLIRR DAKRIYVGKR VGVKTISQEK IIKLLIFLAR QGKRVVRLKG
+     GDSFIFGRGG EEIEAAKNAD IDFQIIPGIT SAIGISAYTG IPLTHRKYSH GVVFITGHKY
+     KNNFVNNFSI LCNPFYTLVV YMGTLNAIEI SEKLIMYGRL KSTPIAIISE GTTMNQKVII
+     GRLDEIKKII HLIKTPSLLI IGEVVLFHEK LKWFNTNHSF NNIDNISNSI IKLI
+//
+ID   A0A0M4HE72_9GAMM        Unreviewed;       360 AA.
+AC   A0A0M4HE72;
+DT   09-DEC-2015, integrated into UniProtKB/TrEMBL.
+DT   09-DEC-2015, sequence version 1.
+DT   14-DEC-2022, entry version 30.
+DE   RecName: Full=Dual-specificity RNA methyltransferase RlmN {ECO:0000256|HAMAP-Rule:MF_01849};
+DE            EC=2.1.1.192 {ECO:0000256|HAMAP-Rule:MF_01849};
+DE   AltName: Full=23S rRNA (adenine(2503)-C(2))-methyltransferase {ECO:0000256|HAMAP-Rule:MF_01849};
+DE   AltName: Full=23S rRNA m2A2503 methyltransferase {ECO:0000256|HAMAP-Rule:MF_01849};
+DE   AltName: Full=Ribosomal RNA large subunit methyltransferase N {ECO:0000256|HAMAP-Rule:MF_01849};
+DE   AltName: Full=tRNA (adenine(37)-C(2))-methyltransferase {ECO:0000256|HAMAP-Rule:MF_01849};
+DE   AltName: Full=tRNA m2A37 methyltransferase {ECO:0000256|HAMAP-Rule:MF_01849};
+GN   Name=rlmN {ECO:0000256|HAMAP-Rule:MF_01849};
+GN   ORFNames=IX46_01485 {ECO:0000313|EMBL:ALD15235.1};
+OS   Buchnera aphidicola (Aphis glycines).
+OC   Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacterales;
+OC   Erwiniaceae; Buchnera.
+OX   NCBI_TaxID=1265350 {ECO:0000313|EMBL:ALD15235.1, ECO:0000313|Proteomes:UP000066321};
+RN   [1] {ECO:0000313|EMBL:ALD15235.1, ECO:0000313|Proteomes:UP000066321}
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RC   STRAIN=BAg {ECO:0000313|EMBL:ALD15235.1,
+RC   ECO:0000313|Proteomes:UP000066321};
+RX   PubMed=26516375; DOI=10.7150/jgen.12975;
+RA   Cassone B.J., Wenger J.A., Michel A.P.;
+RT   "Whole Genome Sequence of the Soybean Aphid Endosymbiont Buchnera
+RT   aphidicola and Genetic Differentiation among Biotype-Specific Strains.";
+RL   J Genomics 3:85-94(2015).
+CC   -!- FUNCTION: Specifically methylates position 2 of adenine 2503 in 23S
+CC       rRNA and position 2 of adenine 37 in tRNAs. m2A2503 modification seems
+CC       to play a crucial role in the proofreading step occurring at the
+CC       peptidyl transferase center and thus would serve to optimize ribosomal
+CC       fidelity. {ECO:0000256|HAMAP-Rule:MF_01849}.
+CC   -!- CATALYTIC ACTIVITY:
+CC       Reaction=adenosine(2503) in 23S rRNA + 2 reduced [2Fe-2S]-[ferredoxin]
+CC         + 2 S-adenosyl-L-methionine = 2-methyladenosine(2503) in 23S rRNA +
+CC         5'-deoxyadenosine + L-methionine + 2 oxidized [2Fe-2S]-[ferredoxin] +
+CC         S-adenosyl-L-homocysteine; Xref=Rhea:RHEA:42916, Rhea:RHEA-
+CC         COMP:10000, Rhea:RHEA-COMP:10001, Rhea:RHEA-COMP:10152, Rhea:RHEA-
+CC         COMP:10282, ChEBI:CHEBI:17319, ChEBI:CHEBI:33737, ChEBI:CHEBI:33738,
+CC         ChEBI:CHEBI:57844, ChEBI:CHEBI:57856, ChEBI:CHEBI:59789,
+CC         ChEBI:CHEBI:74411, ChEBI:CHEBI:74497; EC=2.1.1.192;
+CC         Evidence={ECO:0000256|HAMAP-Rule:MF_01849};
+CC   -!- CATALYTIC ACTIVITY:
+CC       Reaction=adenosine(37) in tRNA + 2 reduced [2Fe-2S]-[ferredoxin] + 2 S-
+CC         adenosyl-L-methionine = 2-methyladenosine(37) in tRNA + 5'-
+CC         deoxyadenosine + L-methionine + 2 oxidized [2Fe-2S]-[ferredoxin] + S-
+CC         adenosyl-L-homocysteine; Xref=Rhea:RHEA:43332, Rhea:RHEA-COMP:10000,
+CC         Rhea:RHEA-COMP:10001, Rhea:RHEA-COMP:10162, Rhea:RHEA-COMP:10485,
+CC         ChEBI:CHEBI:17319, ChEBI:CHEBI:33737, ChEBI:CHEBI:33738,
+CC         ChEBI:CHEBI:57844, ChEBI:CHEBI:57856, ChEBI:CHEBI:59789,
+CC         ChEBI:CHEBI:74411, ChEBI:CHEBI:74497; EC=2.1.1.192;
+CC         Evidence={ECO:0000256|HAMAP-Rule:MF_01849};
+CC   -!- COFACTOR:
+CC       Name=[4Fe-4S] cluster; Xref=ChEBI:CHEBI:49883;
+CC         Evidence={ECO:0000256|HAMAP-Rule:MF_01849};
+CC       Note=Binds 1 [4Fe-4S] cluster. The cluster is coordinated with 3
+CC       cysteines and an exchangeable S-adenosyl-L-methionine.
+CC       {ECO:0000256|HAMAP-Rule:MF_01849};
+CC   -!- SUBCELLULAR LOCATION: Cytoplasm {ECO:0000256|ARBA:ARBA00004496,
+CC       ECO:0000256|HAMAP-Rule:MF_01849}.
+CC   -!- MISCELLANEOUS: Reaction proceeds by a ping-pong mechanism involving
+CC       intermediate methylation of a conserved cysteine residue.
+CC       {ECO:0000256|HAMAP-Rule:MF_01849}.
+CC   -!- SIMILARITY: Belongs to the radical SAM superfamily. RlmN family.
+CC       {ECO:0000256|ARBA:ARBA00007544, ECO:0000256|HAMAP-Rule:MF_01849}.
+CC   -!- CAUTION: Lacks conserved residue(s) required for the propagation of
+CC       feature annotation. {ECO:0000256|HAMAP-Rule:MF_01849}.
+CC   ---------------------------------------------------------------------------
+CC   Copyrighted by the UniProt Consortium, see https://www.uniprot.org/terms
+CC   Distributed under the Creative Commons Attribution (CC BY 4.0) License
+CC   ---------------------------------------------------------------------------
+DR   EMBL; CP009253; ALD15235.1; -; Genomic_DNA.
+DR   RefSeq; WP_053940241.1; NZ_CP009253.1.
+DR   AlphaFoldDB; A0A0M4HE72; -.
+DR   STRING; 1265350.IX46_01485; -.
+DR   KEGG; baph:IX46_01485; -.
+DR   PATRIC; fig|1265350.3.peg.277; -.
+DR   OrthoDB; 1111428at2; -.
+DR   Proteomes; UP000066321; Chromosome.
+DR   GO; GO:0005737; C:cytoplasm; IEA:UniProtKB-SubCell.
+DR   GO; GO:0051539; F:4 iron, 4 sulfur cluster binding; IEA:UniProtKB-UniRule.
+DR   GO; GO:0046872; F:metal ion binding; IEA:UniProtKB-KW.
+DR   GO; GO:0070040; F:rRNA (adenine-C2-)-methyltransferase activity; IEA:UniProtKB-UniRule.
+DR   GO; GO:0019843; F:rRNA binding; IEA:UniProtKB-UniRule.
+DR   GO; GO:0002935; F:tRNA (adenine-C2-)-methyltransferase activity; IEA:UniProtKB-UniRule.
+DR   GO; GO:0000049; F:tRNA binding; IEA:UniProtKB-UniRule.
+DR   GO; GO:0070475; P:rRNA base methylation; IEA:UniProtKB-UniRule.
+DR   Gene3D; 3.20.20.70; -; 1.
+DR   HAMAP; MF_01849; RNA_methyltr_RlmN; 1.
+DR   InterPro; IPR013785; Aldolase_TIM.
+DR   InterPro; IPR040072; Methyltransferase_A.
+DR   InterPro; IPR027492; RNA_MTrfase_RlmN.
+DR   InterPro; IPR004383; rRNA_lsu_MTrfase_RlmN/Cfr.
+DR   InterPro; IPR007197; rSAM.
+DR   PANTHER; PTHR30544; 23S RRNA METHYLTRANSFERASE; 1.
+DR   Pfam; PF04055; Radical_SAM; 1.
+DR   PIRSF; PIRSF006004; CHP00048; 1.
+DR   SFLD; SFLDF00275; adenosine_C2_methyltransferase; 1.
+DR   TIGRFAMs; TIGR00048; rRNA_mod_RlmN; 1.
+DR   PROSITE; PS51918; RADICAL_SAM; 1.
+PE   3: Inferred from homology;
+KW   4Fe-4S {ECO:0000256|ARBA:ARBA00022485, ECO:0000256|HAMAP-Rule:MF_01849};
+KW   Cytoplasm {ECO:0000256|ARBA:ARBA00022490, ECO:0000256|HAMAP-Rule:MF_01849};
+KW   Disulfide bond {ECO:0000256|ARBA:ARBA00023157, ECO:0000256|HAMAP-
+KW   Rule:MF_01849};
+KW   Iron {ECO:0000256|ARBA:ARBA00023004, ECO:0000256|HAMAP-Rule:MF_01849};
+KW   Iron-sulfur {ECO:0000256|ARBA:ARBA00023014, ECO:0000256|HAMAP-
+KW   Rule:MF_01849};
+KW   Metal-binding {ECO:0000256|ARBA:ARBA00022723, ECO:0000256|HAMAP-
+KW   Rule:MF_01849};
+KW   Methyltransferase {ECO:0000256|ARBA:ARBA00022603, ECO:0000256|HAMAP-
+KW   Rule:MF_01849};
+KW   rRNA processing {ECO:0000256|ARBA:ARBA00022552, ECO:0000256|HAMAP-
+KW   Rule:MF_01849};
+KW   S-adenosyl-L-methionine {ECO:0000256|ARBA:ARBA00022691, ECO:0000256|HAMAP-
+KW   Rule:MF_01849};
+KW   Transferase {ECO:0000256|ARBA:ARBA00022679, ECO:0000256|HAMAP-
+KW   Rule:MF_01849};
+KW   tRNA processing {ECO:0000256|ARBA:ARBA00022694, ECO:0000256|HAMAP-
+KW   Rule:MF_01849}.
+FT   DOMAIN          107..340
+FT                   /note="Radical SAM core"
+FT                   /evidence="ECO:0000259|PROSITE:PS51918"
+FT   ACT_SITE        101
+FT                   /note="Proton acceptor"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01849"
+FT   ACT_SITE        345
+FT                   /note="S-methylcysteine intermediate"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01849"
+FT   BINDING         121
+FT                   /ligand="[4Fe-4S] cluster"
+FT                   /ligand_id="ChEBI:CHEBI:49883"
+FT                   /ligand_note="4Fe-4S-S-AdoMet"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01849"
+FT   BINDING         125
+FT                   /ligand="[4Fe-4S] cluster"
+FT                   /ligand_id="ChEBI:CHEBI:49883"
+FT                   /ligand_note="4Fe-4S-S-AdoMet"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01849"
+FT   BINDING         128
+FT                   /ligand="[4Fe-4S] cluster"
+FT                   /ligand_id="ChEBI:CHEBI:49883"
+FT                   /ligand_note="4Fe-4S-S-AdoMet"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01849"
+FT   BINDING         169..170
+FT                   /ligand="S-adenosyl-L-methionine"
+FT                   /ligand_id="ChEBI:CHEBI:59789"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01849"
+FT   BINDING         201
+FT                   /ligand="S-adenosyl-L-methionine"
+FT                   /ligand_id="ChEBI:CHEBI:59789"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01849"
+FT   BINDING         223..225
+FT                   /ligand="S-adenosyl-L-methionine"
+FT                   /ligand_id="ChEBI:CHEBI:59789"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01849"
+FT   BINDING         302
+FT                   /ligand="S-adenosyl-L-methionine"
+FT                   /ligand_id="ChEBI:CHEBI:59789"
+FT                   /evidence="ECO:0000256|HAMAP-Rule:MF_01849"
+SQ   SEQUENCE   360 AA;  40542 MW;  D583C8DA2FB9537D CRC64;
+     MDKTINLNVL NTQVNLLDLD FKNIQLFLAS IGAKIFTAEQ IIQWIYSHNC YDFNKMSNIS
+     KKIKKKLHQT SCIKTSNFSE EQISSDGTIK WVTSLNNQKI ETVYIPEKKR STLCISSQIG
+     CSLKCDFCAT GKQGFNRNLK VSEIISQILQ AKKKLKNTKI TNIVFMGMGE PLLNLNNVIT
+     ALKIILNING FGLSKRRITL STAGIAPAID KLNKIIDINL AISLHAPNNN IRNLIMPINK
+     IYNIESILSA VSRYLKNSNA NRNGVTIEYV MLKNINDSIK NAQELAYILK KIPSKINLIP
+     WNSFKNSNFI SSTNSNINTF ANILRKKGFN TTIRKNRGQD INAACGQLTG NIINYRKNHL
+//
+ID   A0A5A7R956_STRAF        Unreviewed;       292 AA.
+AC   A0A5A7R956;
+DT   13-NOV-2019, integrated into UniProtKB/TrEMBL.
+DT   13-NOV-2019, sequence version 1.
+DT   14-DEC-2022, entry version 6.
+DE   SubName: Full=Sequence-specific DNA binding transcription factors {ECO:0000313|EMBL:GER53830.1};
+GN   ORFNames=STAS_31378 {ECO:0000313|EMBL:GER53830.1};
+OS   Striga asiatica (Asiatic witchweed) (Buchnera asiatica).
+OC   Eukaryota; Viridiplantae; Streptophyta; Embryophyta; Tracheophyta;
+OC   Spermatophyta; Magnoliopsida; eudicotyledons; Gunneridae; Pentapetalae;
+OC   asterids; lamiids; Lamiales; Orobanchaceae; Buchnereae; Striga.
+OX   NCBI_TaxID=4170 {ECO:0000313|EMBL:GER53830.1, ECO:0000313|Proteomes:UP000325081};
+RN   [1] {ECO:0000313|Proteomes:UP000325081}
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RC   STRAIN=cv. UVA1 {ECO:0000313|Proteomes:UP000325081};
+RX   PubMed=31522940; DOI=10.1016/j.cub.2019.07.086;
+RA   Yoshida S., Kim S., Wafula E.K., Tanskanen J., Kim Y.M., Honaas L.,
+RA   Yang Z., Spallek T., Conn C.E., Ichihashi Y., Cheong K., Cui S., Der J.P.,
+RA   Gundlach H., Jiao Y., Hori C., Ishida J.K., Kasahara H., Kiba T., Kim M.S.,
+RA   Koo N., Laohavisit A., Lee Y.H., Lumba S., McCourt P., Mortimer J.C.,
+RA   Mutuku J.M., Nomura T., Sasaki-Sekimoto Y., Seto Y., Wang Y., Wakatake T.,
+RA   Sakakibara H., Demura T., Yamaguchi S., Yoneyama K., Manabe R.I.,
+RA   Nelson D.C., Schulman A.H., Timko M.P., dePamphilis C.W., Choi D.,
+RA   Shirasu K.;
+RT   "Genome Sequence of Striga asiatica Provides Insight into the Evolution of
+RT   Plant Parasitism.";
+RL   Curr. Biol. 29:3041-3052.e4(2019).
+CC   -!- CAUTION: The sequence shown here is derived from an EMBL/GenBank/DDBJ
+CC       whole genome shotgun (WGS) entry which is preliminary data.
+CC       {ECO:0000313|EMBL:GER53830.1}.
+CC   ---------------------------------------------------------------------------
+CC   Copyrighted by the UniProt Consortium, see https://www.uniprot.org/terms
+CC   Distributed under the Creative Commons Attribution (CC BY 4.0) License
+CC   ---------------------------------------------------------------------------
+DR   EMBL; BKCP01010848; GER53830.1; -; Genomic_DNA.
+DR   AlphaFoldDB; A0A5A7R956; -.
+DR   Proteomes; UP000325081; Unassembled WGS sequence.
+DR   GO; GO:0003682; F:chromatin binding; IEA:InterPro.
+DR   InterPro; IPR009057; Homeobox-like_sf.
+DR   InterPro; IPR032001; SAWADEE_dom.
+DR   InterPro; IPR039276; SHH1/2.
+DR   PANTHER; PTHR33827; PROTEIN SAWADEE HOMEODOMAIN HOMOLOG 2; 2.
+DR   Pfam; PF16719; SAWADEE; 1.
+DR   SUPFAM; SSF46689; Homeodomain-like; 1.
+PE   4: Predicted;
+KW   Reference proteome {ECO:0000313|Proteomes:UP000325081}.
+FT   DOMAIN          147..257
+FT                   /note="SAWADEE"
+FT                   /evidence="ECO:0000259|Pfam:PF16719"
+FT   REGION          268..292
+FT                   /note="Disordered"
+FT                   /evidence="ECO:0000256|SAM:MobiDB-lite"
+SQ   SEQUENCE   292 AA;  32887 MW;  7C6A1D87C5F76869 CRC64;
+     MGRPPSNGAP SFRFNPVEFA EMEAILQRHN CSVPGREIIE SLAQKFSATA ERAGKVEVSS
+     KQVMRHFNCV LMVLNWFQNR RYALRTKAAK AVAPNEAKMS HLPTVLYLPQ ATQPQHALST
+     LTAAKNGVQV HHPVPAISAM NASGGCQMEF EAKSARDGAW YDVTYFLSSR SSETGDPEVL
+     VRFAGFGPEE DEWINIRKHV RQRSLPCESS ECVAVLPGDL ALCFQEGKEQ ALYFDAHILN
+     TERRRHDEVV PLRKICRRPE TNYRLRQLHA TSENVNSQKM SETTQKQPLK PE
+//

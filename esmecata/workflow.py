@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2022 Arnaud Belcour - Inria Dyliss
+# Copyright (C) 2021-2023 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ import time
 from esmecata.proteomes import retrieve_proteomes, compute_stat_proteomes
 from esmecata.clustering import make_clustering, compute_stat_clustering
 from esmecata.annotation import annotate_proteins, compute_stat_annotation
+from esmecata.eggnog import annotate_with_eggnog
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +40,8 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
     """
     workflow_numbers = {}
 
-    result_folder = os.path.join(proteomes_output_folder, 'result')
-    proteome_numbers = compute_stat_proteomes(result_folder)
+    proteome_tax_id_file = os.path.join(proteomes_output_folder, 'proteome_tax_id.tsv')
+    proteome_numbers = compute_stat_proteomes(proteome_tax_id_file)
 
     clustering_folder = os.path.join(clustering_output_folder, 'reference_proteins')
     clustering_numbers = compute_stat_clustering(clustering_folder)
@@ -84,7 +85,8 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         limit_maximal_number_proteomes=99, rank_limit=None,
                         nb_cpu=1, clust_threshold=1, mmseqs_options=None,
                         linclust=None, propagate_annotation=None, uniref_annotation=None,
-                        expression_annotation=None, minimal_number_proteomes=1):
+                        expression_annotation=None, minimal_number_proteomes=1, annotation_files=None,
+                        update_affiliations=None, option_bioservices=None):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -96,15 +98,18 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         remove_tmp (bool): remove the tmp files
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        rank_limit (str): rank limit to remove from the data
+        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
         nb_cpu (int): number of CPUs to be used by mmseqs
         clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
         mmseqs_options (str): use alternative mmseqs option
         linclust (bool): use linclust
         propagate_annotation (float): float between 0 and 1. It is the ratio of proteins in the cluster that should have the annotation to keep this annotation.
-        uniref_annotation (bool): option to use uniref annotation to add annotation
-        expression_annotation (bool): option to add expression annotation from uniprot
-        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taoxn to be kepp
+        uniref_annotation (bool): option to use uniref annotation to add annotation.
+        expression_annotation (bool): option to add expression annotation from UniProt.
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be kept.
+        annotation_files (str): pathnames to UniProt dat files.
+        update_affiliations (str): option to update taxonomic affiliations.
+        option_bioservices (bool): use bioservices instead of manual queries.
     """
     starttime = time.time()
     workflow_metadata = {}
@@ -115,14 +120,86 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
     proteomes_output_folder = os.path.join(output_folder, '0_proteomes')
     retrieve_proteomes(input_file, proteomes_output_folder, busco_percentage_keep,
                         ignore_taxadb_update, all_proteomes, uniprot_sparql_endpoint,
-                        remove_tmp, limit_maximal_number_proteomes, rank_limit,
-                        minimal_number_proteomes)
+                        limit_maximal_number_proteomes, rank_limit, minimal_number_proteomes,
+                        update_affiliations, option_bioservices)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
     make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
-    annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint, propagate_annotation, uniref_annotation, expression_annotation)
+    annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint, propagate_annotation,
+                      uniref_annotation, expression_annotation, annotation_files, option_bioservices)
+
+    stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
+    compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file)
+
+    proteomes_metadata_file = os.path.join(proteomes_output_folder, 'esmecata_metadata_proteomes.json')
+    with open(proteomes_metadata_file, 'r') as json_idata:
+        proteomes_metadata = json.load(json_idata)
+    clustering_metadata_file = os.path.join(clustering_output_folder, 'esmecata_metadata_clustering.json')
+    with open(clustering_metadata_file, 'r') as json_idata:
+        clustering_metadata = json.load(json_idata)
+    annotation_metadata_file = os.path.join(annotation_output_folder, 'esmecata_metadata_annotation.json')
+    with open(annotation_metadata_file, 'r') as json_idata:
+        annotation_metadata = json.load(json_idata)
+
+    workflow_metadata['proteomes_metadata'] = proteomes_metadata
+    workflow_metadata['clustering_metadata'] = clustering_metadata
+    workflow_metadata['annotation_metadata'] = annotation_metadata
+
+    endtime = time.time()
+    duration = endtime - starttime
+    workflow_metadata['esmecata_workflow_duration'] = duration
+    workflow_metadata_file = os.path.join(output_folder, 'esmecata_metadata_workflow.json')
+    with open(workflow_metadata_file, 'w') as ouput_file:
+        json.dump(workflow_metadata, ouput_file, indent=4)
+
+
+def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, busco_percentage_keep=80,
+                            ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
+                            remove_tmp=None, limit_maximal_number_proteomes=99, rank_limit=None,
+                            nb_cpu=1, clust_threshold=0.5, mmseqs_options=None,
+                            linclust=None, minimal_number_proteomes=5, update_affiliations=None,
+                            option_bioservices=None, eggnog_tmp_dir=None):
+    """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
+
+    Args:
+        input_file (str): pathname to the tsv input file containing taxonomic affiliations
+        output_folder (str): pathname to the output folder
+        eggnog_database_path (str): pathname to eggnog database folder
+        busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
+        ignore_taxadb_update (bool): option to ignore ete3 taxa database update
+        all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
+        remove_tmp (bool): remove the tmp files
+        limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
+        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
+        nb_cpu (int): number of CPUs to be used by mmseqs
+        clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
+        mmseqs_options (str): use alternative mmseqs option
+        linclust (bool): use linclust
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be kept.
+        update_affiliations (str): option to update taxonomic affiliations.
+        option_bioservices (bool): use bioservices instead of manual queries.
+        eggnog_tmp_dir (str): pathname to eggnog-mapper temporary folder.
+    """
+    starttime = time.time()
+    workflow_metadata = {}
+
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+
+    proteomes_output_folder = os.path.join(output_folder, '0_proteomes')
+    retrieve_proteomes(input_file, proteomes_output_folder, busco_percentage_keep,
+                        ignore_taxadb_update, all_proteomes, uniprot_sparql_endpoint,
+                        limit_maximal_number_proteomes, rank_limit, minimal_number_proteomes,
+                        update_affiliations, option_bioservices)
+
+    clustering_output_folder = os.path.join(output_folder, '1_clustering')
+    make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)
+
+    annotation_output_folder = os.path.join(output_folder, '2_annotation')
+    annotate_with_eggnog(clustering_output_folder, annotation_output_folder, eggnog_database_path, nb_cpu, eggnog_tmp_dir)
 
     stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
     compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file)
