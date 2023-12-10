@@ -15,6 +15,7 @@ Also modify the default option of EsMeCaTa for option with better results on tes
 * Show the failedIDs during mapping for annotation.
 * Add an option to specify eggnog-mapper tmp fodler (`--eggnog-tmp`). By default, it is in esmecata output folder.
 * Add KEGG reaction in annotation_reference file when using eggnog-mapper.
+* Add a function to compare Input taxa information to esmecata taxa information (taxa name, taxa ID, taxa rank) + precise OTUs associated. Thanks to @PaulineGHG.
 
 ## Fix
 
