@@ -29,5 +29,6 @@ setup(
             'esmecata = esmecata.__main__:main',
         ]
     },
-    install_requires=['biopython', 'matplotlib', 'pandas', 'requests', 'ete3', 'seaborn', 'SPARQLWrapper'],
+    install_requires=['biopython', 'bioservices', 'matplotlib',
+    'pandas', 'requests', 'ete3', 'seaborn', 'SPARQLWrapper'],
 )

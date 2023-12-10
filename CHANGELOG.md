@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.3.0 (2022-03-15)
+# EsMeCaTa v0.3.0 (2022-12-10)
 
 Add a new way to annotate protein clusters using eggnog-mapper. From test on metagenomcis data, it is more accurate than the methods with UniProt.
 Also modify the default option of EsMeCaTa for option with better results on tested data (minimal number of proteomes from 1 to 5 and clustering threshold from 0.95 to 0.5).
@@ -13,6 +13,8 @@ Also modify the default option of EsMeCaTa for option with better results on tes
 * Add more tests for proteomes selection.
 * Add an option to update taxonomic affiliations (`--update-affiliations`).
 * Show the failedIDs during mapping for annotation.
+* Add an option to specify eggnog-mapper tmp fodler (`--eggnog-tmp`). By default, it is in esmecata output folder.
+* Add KEGG reaction in annotation_reference file when using eggnog-mapper.
 
 ## Fix
 
@@ -31,6 +33,7 @@ Also modify the default option of EsMeCaTa for option with better results on tes
 * Remove FROM in SPARQL queries to speed up the queries (could speed up SPARQL queries).
 * Change header for annotation files, especially: 'gos', 'ecs', 'interpros', 'rhea_ids' into 'GO', 'EC', 'InterPro', 'Rhea'.
 * Add column `cluster_members` in annotation reference file and renamed column `protein` into `protein_cluster`.
+* Do not create fasta file when there are no protein clusters.
 * Update license year.
 * Update esmecata worfklow picture.
 * Update the doc of esmecata.
