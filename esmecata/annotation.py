@@ -1301,7 +1301,13 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
     duration = endtime - starttime
     uniprot_releases['esmecata_annotation_duration'] = duration
     uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation.json')
-    with open(uniprot_metadata_file, 'w') as ouput_file:
-        json.dump(uniprot_releases, ouput_file, indent=4)
+    if os.path.exists(uniprot_metadata_file):
+        metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_annotation' in metadata_file]
+        uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation_{0}.json'.format(len(metadata_files)))
+        with open(uniprot_metadata_file, 'w') as ouput_file:
+            json.dump(uniprot_releases, ouput_file, indent=4)
+    else:
+        with open(uniprot_metadata_file, 'w') as ouput_file:
+            json.dump(uniprot_releases, ouput_file, indent=4)
 
-    logger.info('|EsMeCaTa|annotation| Annotation complete.')
+    logger.info('|EsMeCaTa|annotation| Annotation complete in {0}.'.format(duration))

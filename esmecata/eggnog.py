@@ -397,8 +397,14 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     duration = endtime - starttime
     esmecata_metadata['esmecata_annotation_method'] = 'eggnog-mapper'
     esmecata_metadata['esmecata_annotation_duration'] = duration
-    uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation.json')
-    with open(uniprot_metadata_file, 'w') as ouput_file:
-        json.dump(esmecata_metadata, ouput_file, indent=4)
+    eggnog_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation.json')
+    if os.path.exists(eggnog_metadata_file):
+        metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_annotation' in metadata_file]
+        eggnog_metadata_file = os.path.join(output_folder, 'esmecata_metadata_annotation_{0}.json'.format(len(metadata_files)))
+        with open(eggnog_metadata_file, 'w') as ouput_file:
+            json.dump(esmecata_metadata, ouput_file, indent=4)
+    else:
+        with open(eggnog_metadata_file, 'w') as ouput_file:
+            json.dump(esmecata_metadata, ouput_file, indent=4)
 
-    logger.info('|EsMeCaTa|annotation-eggnog| Annotation complete.')
+    logger.info('|EsMeCaTa|annotation-eggnog| Annotation complete in {0}s.'.format(duration))

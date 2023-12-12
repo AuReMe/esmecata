@@ -1367,7 +1367,13 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     uniprot_releases['esmecata_proteomes_duration'] = duration
     json_log = os.path.join(output_folder, 'association_taxon_taxID.json')
     uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_proteomes.json')
-    with open(uniprot_metadata_file, 'w') as ouput_file:
-        json.dump(uniprot_releases, ouput_file, indent=4)
+    if os.path.exists(uniprot_metadata_file):
+        metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_proteomes' in metadata_file]
+        uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_proteomes_{0}.json'.format(len(metadata_files)))
+        with open(uniprot_metadata_file, 'w') as ouput_file:
+            json.dump(uniprot_releases, ouput_file, indent=4)
+    else:
+        with open(uniprot_metadata_file, 'w') as ouput_file:
+            json.dump(uniprot_releases, ouput_file, indent=4)
 
-    logger.info('|EsMeCaTa|proteomes| Proteome step complete.')
+    logger.info('|EsMeCaTa|proteomes| Proteome step complete in {0}s.'.format(duration))

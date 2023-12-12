@@ -182,6 +182,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
         eggnog_tmp_dir (str): pathname to eggnog-mapper temporary folder.
     """
     starttime = time.time()
+    logger.info('|EsMeCaTa|workflow| Begin workflow.')
     workflow_metadata = {}
 
     if not os.path.exists(output_folder):
@@ -220,5 +221,13 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
     duration = endtime - starttime
     workflow_metadata['esmecata_workflow_duration'] = duration
     workflow_metadata_file = os.path.join(output_folder, 'esmecata_metadata_workflow.json')
-    with open(workflow_metadata_file, 'w') as ouput_file:
-        json.dump(workflow_metadata, ouput_file, indent=4)
+    if os.path.exists(workflow_metadata_file):
+        metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_workflow' in metadata_file]
+        workflow_metadata_file = os.path.join(output_folder, 'esmecata_metadata_workflow_{0}.json'.format(len(metadata_files)))
+        with open(workflow_metadata_file, 'w') as ouput_file:
+            json.dump(workflow_metadata, ouput_file, indent=4)
+    else:
+        with open(workflow_metadata_file, 'w') as ouput_file:
+            json.dump(workflow_metadata, ouput_file, indent=4)
+
+    logger.info('|EsMeCaTa|workflow| Workflow step complete in {0}s.'.format(duration))

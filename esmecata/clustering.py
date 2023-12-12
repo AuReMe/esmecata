@@ -533,7 +533,13 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     duration = endtime - starttime
     clustering_metadata['esmecata_clustering_duration'] = duration
     clustering_metadata_file = os.path.join(output_folder, 'esmecata_metadata_clustering.json')
-    with open(clustering_metadata_file, 'w') as ouput_file:
-        json.dump(clustering_metadata, ouput_file, indent=4)
+    if os.path.exists(clustering_metadata_file):
+        metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_clustering' in metadata_file]
+        clustering_metadata_file = os.path.join(output_folder, 'esmecata_metadata_clustering_{0}.json'.format(len(metadata_files)))
+        with open(clustering_metadata_file, 'w') as ouput_file:
+            json.dump(clustering_metadata, ouput_file, indent=4)
+    else:
+        with open(clustering_metadata_file, 'w') as ouput_file:
+            json.dump(clustering_metadata, ouput_file, indent=4)
 
-    logger.info('|EsMeCaTa|clustering| Clustering complete.')
+    logger.info('|EsMeCaTa|clustering| Clustering complete in {0}s.'.format(duration))
