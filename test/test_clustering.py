@@ -5,7 +5,7 @@ import shutil
 from esmecata.clustering import make_clustering, filter_protein_cluster, compute_proteome_representativeness_ratio
 
 RESULTS = {
-    'Cluster_1': {'Number_shared_proteins': 460}
+    'Cluster_1': {'Number_shared_proteins': 604}
 }
 
 def test_filter_protein_cluster():
@@ -46,7 +46,7 @@ def test_filter_protein_cluster():
 
 def test_make_clustering():
     output_folder = 'clustering_output'
-    make_clustering('clustering_input', output_folder, nb_cpu=1, clust_threshold=0.95, mmseqs_options=None, linclust=None, remove_tmp=None)
+    make_clustering('clustering_input', output_folder, nb_cpu=1, clust_threshold=0.5, mmseqs_options=None, linclust=None, remove_tmp=None)
 
     expected_results = {}
     output_stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')

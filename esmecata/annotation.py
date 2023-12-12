@@ -1179,7 +1179,17 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         with open(proteome_tax_id_file, 'r') as tax_id_file:
             csvreader = csv.DictReader(tax_id_file, delimiter='\t')
             for line in csvreader:
-                input_proteomes[line['observation_name']] = line['proteome'].split(',')
+                input_proteomes[line['name']] = line['proteome'].split(',')
+
+    taxon_name_to_observation_name = {}
+    with open(proteome_tax_id_file, 'r') as tax_id_file:
+        csvreader = csv.DictReader(tax_id_file, delimiter='\t')
+        for line in csvreader:
+            taxon_name = line['name'].replace(' ', '_')
+            if taxon_name not in taxon_name_to_observation_name:
+                taxon_name_to_observation_name[taxon_name] = [line['observation_name']]
+            else:
+                taxon_name_to_observation_name[taxon_name].append(line['observation_name'])
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
     # There are 2 ways to handle already annotated proteins:
@@ -1257,9 +1267,6 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         else:
             expression_output_dict = None
         protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
-        annotation_reference_file = os.path.join(annotation_reference_folder, base_filename+'.tsv')
-        write_annotation_reference(protein_annotations, reference_proteins, annotation_reference_file, expression_output_dict)
-        write_pathologic_file(protein_annotations, reference_proteins, pathologic_folder, base_filename, set_proteins)
 
         gos = [go for protein in protein_annotations for go in protein_annotations[protein][1]]
         unique_gos = set(gos)
@@ -1267,6 +1274,11 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         unique_ecs = set(ecs)
         logger.info('|EsMeCaTa|annotation| %d Go Terms (with %d unique GO Terms) and %d EC numbers (with %d unique EC) associated with %s.', len(gos),
                                                                                                 len(unique_gos), len(ecs), len(unique_ecs), base_filename)
+
+        for observation_name in taxon_name_to_observation_name[base_filename]:
+            annotation_reference_file = os.path.join(annotation_reference_folder, observation_name+'.tsv')
+            write_annotation_reference(protein_annotations, reference_proteins, annotation_reference_file, expression_output_dict)
+            write_pathologic_file(protein_annotations, reference_proteins, pathologic_folder, observation_name, set_proteins)
 
     # Create mpwt taxon ID file.
     clustering_taxon_id = {}

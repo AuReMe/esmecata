@@ -477,6 +477,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
     proteomes_data = []
     representative_proteomes = []
     other_proteomes = []
+
     for proteome_data in data['results']:
         proteome_id = proteome_data['id']
         if 'proteomeCompletenessReport' in proteome_data:
@@ -1077,7 +1078,7 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
     os.remove(intermediary_file)
 
 
-def compute_stat_proteomes(proteome_tax_id_file, stat_file=None):
+def compute_stat_proteomes(proteomes_folder, stat_file=None):
     """Compute stat associated with the number of proteome for each taxonomic affiliations.
 
     Args:
@@ -1087,18 +1088,49 @@ def compute_stat_proteomes(proteome_tax_id_file, stat_file=None):
     Returns:
         proteome_numbers (dict): dict containing observation names (as key) associated with the number of proteomes
     """
+    ncbi = NCBITaxa()
     proteome_numbers = {}
+
+    json_log = os.path.join(proteomes_folder, 'association_taxon_taxID.json')
+    with open(json_log, 'r') as input_json_file:
+        json_taxonomic_affiliations = json.load(input_json_file)
+
+    proteome_status = {}
+    proteome_description_folder = os.path.join(proteomes_folder, 'proteomes_description')
+    for proteome_description_file in os.listdir(proteome_description_folder):
+        with open(os.path.join(proteome_description_folder, proteome_description_file), 'r') as open_proteome_description_file:
+             csvreader = csv.DictReader(open_proteome_description_file, delimiter='\t')
+             for line in csvreader:
+                 if line['reference_proteome'] == 'False':
+                     reference_proteome = False
+                 else:
+                     reference_proteome = True
+                 proteome_status[line['proteome_id']] = reference_proteome
+
+    proteome_tax_id_file = os.path.join(proteomes_folder, 'proteome_tax_id.tsv')
     with open(proteome_tax_id_file, 'r') as proteome_tax_file:
         csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
         for line in csvreader:
             observation_name = line['observation_name']
+            reversed_affiliation_taxa = list(reversed(list(json_taxonomic_affiliations[observation_name].keys())))
+            lowest_tax_rank = None
+            for tax_name in reversed_affiliation_taxa:
+                if json_taxonomic_affiliations[observation_name][tax_name] != ['not_found']:
+                    if tax_name != 'unknown':
+                        lowest_tax_id = json_taxonomic_affiliations[observation_name][tax_name][0]
+                        lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
+                        break
+            esmecata_name = line['name']
+            esmecata_rank = line['tax_rank']
             proteomes = line['proteome'].split(',')
-            proteome_numbers[observation_name] = len(proteomes)
+            proteomes_status = all([proteome_status[proteome] for proteome in proteomes])
+
+            proteome_numbers[observation_name] = [len(proteomes), tax_name, lowest_tax_rank, esmecata_name, esmecata_rank, proteomes_status]
 
     if stat_file:
         with open(stat_file, 'w') as stat_file_open:
             csvwriter = csv.writer(stat_file_open, delimiter='\t')
-            csvwriter.writerow(['observation_name', 'Number_proteomes'])
+            csvwriter.writerow(['observation_name', 'Number_proteomes', 'Input_taxon_Name', 'Taxon_rank', 'EsMeCaTa_used_taxon', 'EsMeCaTa_used_rank', 'only_reference_proteome_used'])
             for observation_name in proteome_numbers:
                 csvwriter.writerow([observation_name, proteome_numbers[observation_name]])
 
@@ -1328,7 +1360,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         uniprot_releases = get_rest_uniprot_release(options)
 
     stat_file = os.path.join(output_folder, 'stat_number_proteome.tsv')
-    compute_stat_proteomes(proteome_tax_id_file, stat_file)
+    compute_stat_proteomes(output_folder, stat_file)
 
     endtime = time.time()
     duration = endtime - starttime

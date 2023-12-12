@@ -40,11 +40,9 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
     """
     workflow_numbers = {}
 
-    proteome_tax_id_file = os.path.join(proteomes_output_folder, 'proteome_tax_id.tsv')
-    proteome_numbers = compute_stat_proteomes(proteome_tax_id_file)
+    proteome_numbers = compute_stat_proteomes(proteomes_output_folder)
 
-    clustering_folder = os.path.join(clustering_output_folder, 'reference_proteins')
-    clustering_numbers = compute_stat_clustering(clustering_folder)
+    clustering_numbers = compute_stat_clustering(clustering_output_folder)
 
     annotation_reference_folder = os.path.join(annotation_output_folder, 'annotation_reference')
     annotation_numbers = compute_stat_annotation(annotation_reference_folder)
@@ -52,7 +50,7 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
     all_observation_names = {*proteome_numbers.keys(), *clustering_numbers.keys(), *annotation_numbers.keys()}
     for observation_name in all_observation_names:
         if observation_name in proteome_numbers:
-            nb_proteomes = proteome_numbers[observation_name]
+            nb_proteomes, tax_name, lowest_tax_rank, esmecata_name, esmecata_rank, reference_status = proteome_numbers[observation_name]
         else:
             nb_proteomes = 'NA'
         if observation_name in clustering_numbers:
@@ -64,18 +62,18 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
             nb_ecs = annotation_numbers[observation_name][1]
         else:
             nb_proteomes = 'NA'
-        workflow_numbers[observation_name] = [nb_proteomes, nb_shared_proteins, nb_gos, nb_ecs]
+        workflow_numbers[observation_name] = [nb_proteomes, tax_name, lowest_tax_rank, esmecata_name, esmecata_rank, reference_status, nb_shared_proteins, nb_gos, nb_ecs]
 
     if stat_file:
         with open(stat_file, 'w') as stat_file_open:
             csvwriter = csv.writer(stat_file_open, delimiter='\t')
-            csvwriter.writerow(['observation_name', 'Number_proteomes', 'Number_shared_proteins', 'Number_go_terms', 'Number_ecs'])
+            csvwriter.writerow(['observation_name', 'Input_taxon_name', 'Input_rank', 'EsMeCaTa_chosen_name', 'EsMeCaTa_chosen_rank','Number_proteomes', 'Only_reference_proteome', 'Proteins_clusters_0_5' , 'Number_go_terms', 'Number_ecs'])
             for observation_name in workflow_numbers:
-                nb_proteomes = workflow_numbers[observation_name][0]
-                nb_shared_proteins = workflow_numbers[observation_name][1]
-                nb_gos = workflow_numbers[observation_name][2]
-                nb_ecs = workflow_numbers[observation_name][3]
-                csvwriter.writerow([observation_name, nb_proteomes, nb_shared_proteins, nb_gos, nb_ecs])
+                nb_proteomes, tax_name, lowest_tax_rank, esmecata_name, esmecata_rank, reference_status = workflow_numbers[observation_name][:6]
+                nb_shared_proteins = workflow_numbers[observation_name][6]
+                nb_gos = workflow_numbers[observation_name][7]
+                nb_ecs = workflow_numbers[observation_name][8]
+                csvwriter.writerow([observation_name, tax_name, lowest_tax_rank, esmecata_name, esmecata_rank, nb_proteomes, reference_status, nb_shared_proteins, nb_gos, nb_ecs])
 
     return workflow_numbers
 
