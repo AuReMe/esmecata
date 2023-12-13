@@ -1354,6 +1354,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     options['tool_dependencies']['python_package']['requests'] = requests.__version__
     options['tool_dependencies']['python_package']['SPARQLWrapper'] = sparqlwrapper_version
     if option_bioservices is True:
+        import bioservices
         options['tool_dependencies']['python_package']['bioservices'] = bioservices.version
 
 
