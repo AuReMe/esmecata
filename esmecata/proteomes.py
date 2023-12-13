@@ -1353,6 +1353,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     options['tool_dependencies']['python_package']['pandas'] = pd.__version__
     options['tool_dependencies']['python_package']['requests'] = requests.__version__
     options['tool_dependencies']['python_package']['SPARQLWrapper'] = sparqlwrapper_version
+    if option_bioservices is True:
+        options['tool_dependencies']['python_package']['bioservices'] = bioservices.version
+
 
     if uniprot_sparql_endpoint:
         uniprot_releases = get_sparql_uniprot_release(uniprot_sparql_endpoint, options)
