@@ -1181,27 +1181,26 @@ def create_comp_taxonomy_file(association_taxon_id_json, proteomes_ids, tax_id_n
                                       str(ref['Input ID']), str(ref['Esmecata ID']), ';'.join(ref['obs'])]))
 
 
-def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
+def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1,
                         update_affiliations=None, option_bioservices=None):
-    """From a tsv file with taxonomic affiliations find the associated proteomes.
+    """From a tsv file with taxonomic affiliations check the associated proteomes for the taxa.
 
     Args:
-        input_file (str): pathname to the tsv input file containing taxonomic affiliations
-        output_folder (str): pathname to the output folder
-        busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
-        ignore_taxadb_update (bool): option to ignore ete3 taxa database update
-        all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
-        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
-        limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
+        input_file (str): pathname to the tsv input file containing taxonomic affiliations.
+        output_folder (str): pathname to the output folder.
+        busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold).
+        ignore_taxadb_update (bool): option to ignore ete3 taxa database update.
+        all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes).
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint).
+        limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data.
+        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks).
         minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be kept.
         update_affiliations (str): option to update taxonomic affiliations.
         option_bioservices (bool): use bioservices instead of manual queries.
     """
-    starttime = time.time()
-    logger.info('|EsMeCaTa|clustering| Begin proteomes search.')
+    logger.info('|EsMeCaTa|proteomes| Begin proteomes search.')
 
     retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[429, 500, 502, 503, 504])
     session = requests.Session()
@@ -1301,10 +1300,42 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, name, len(proteomes))
 
         proteome_to_download = set(proteome_to_download)
-
-
     # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
     create_taxon_heatmap_from_complete_run(output_folder)
+
+    return proteome_to_download, session
+
+
+def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
+                        ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
+                        limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1,
+                        update_affiliations=None, option_bioservices=None):
+    """From a tsv file with taxonomic affiliations find the associated proteomes and download them.
+
+    Args:
+        input_file (str): pathname to the tsv input file containing taxonomic affiliations.
+        output_folder (str): pathname to the output folder.
+        busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold).
+        ignore_taxadb_update (bool): option to ignore ete3 taxa database update.
+        all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes).
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint).
+        limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data.
+        rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks).
+        minimal_number_proteomes (int): minimal number of proteomes required to be associated with a taxon for the taxon to be kept.
+        update_affiliations (str): option to update taxonomic affiliations.
+        option_bioservices (bool): use bioservices instead of manual queries.
+    """
+    starttime = time.time()
+
+    proteome_to_download, session = check_proteomes(input_file, output_folder, busco_percentage_keep,
+                            ignore_taxadb_update, all_proteomes, uniprot_sparql_endpoint,
+                            limit_maximal_number_proteomes, rank_limit, minimal_number_proteomes,
+                            update_affiliations, option_bioservices)
+
+    logger.info('|EsMeCaTa|proteomes| Start downloading proteomes.')
+
+    proteomes_folder = os.path.join(output_folder, 'proteomes')
+    is_valid_dir(proteomes_folder)
 
     # Download all the proteomes in proteome folder.
     proteomes_already_downloaded = set([proteome_filename.replace('.faa.gz', '') for proteome_filename in os.listdir(proteomes_folder)])
@@ -1369,7 +1400,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     endtime = time.time()
     duration = endtime - starttime
     uniprot_releases['esmecata_proteomes_duration'] = duration
-    json_log = os.path.join(output_folder, 'association_taxon_taxID.json')
+
     uniprot_metadata_file = os.path.join(output_folder, 'esmecata_metadata_proteomes.json')
     if os.path.exists(uniprot_metadata_file):
         metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_proteomes' in metadata_file]

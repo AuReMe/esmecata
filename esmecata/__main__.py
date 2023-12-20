@@ -18,7 +18,7 @@ import os
 import sys
 import time
 
-from esmecata.proteomes import retrieve_proteomes
+from esmecata.proteomes import check_proteomes, retrieve_proteomes
 from esmecata.clustering import make_clustering
 from esmecata.annotation import annotate_proteins
 from esmecata.workflow import perform_workflow, perform_workflow_eggnog
@@ -284,6 +284,17 @@ def main():
         description='valid subcommands:',
         dest='cmd')
 
+    check_parser = subparsers.add_parser(
+        'check',
+        help='Check proteomes associated with taxon in Uniprot Proteomes database.',
+        parents=[
+            parent_parser_i_taxon, parent_parser_o, parent_parser_b,
+            parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
+            parent_parser_limit_maximal_number_proteomes, parent_parser_rank_limit,
+            parent_parser_minimal_number_proteomes, parent_parser_update_affiliation,
+            parent_parser_bioservices
+            ],
+        allow_abbrev=False)
     proteomes_parser = subparsers.add_parser(
         'proteomes',
         help='Download proteomes associated with taxon from Uniprot Proteomes.',
@@ -378,7 +389,7 @@ def main():
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    if args.cmd in ['proteomes', 'annotation', 'workflow', 'workflow_eggnog']:
+    if args.cmd in ['proteomes', 'annotation', 'workflow', 'workflow_eggnog', 'check']:
         if args.sparql is None:
             uniprot_sparql_endpoint = None
         elif args.sparql == 'uniprot':
@@ -386,12 +397,17 @@ def main():
         else:
             uniprot_sparql_endpoint = args.sparql
 
-    if args.cmd in ['proteomes', 'workflow', 'workflow_eggnog']:
+    if args.cmd in ['proteomes', 'workflow', 'workflow_eggnog', 'check']:
         if args.busco is not None:
             busco_score = 100*args.busco
 
     if args.cmd == 'proteomes':
         retrieve_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
+                            args.all_proteomes, uniprot_sparql_endpoint, args.limit_maximal_number_proteomes,
+                            args.rank_limit, args.minimal_number_proteomes, args.update_affiliations,
+                            args.option_bioservices)
+    if args.cmd == 'check':
+        check_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.limit_maximal_number_proteomes,
                             args.rank_limit, args.minimal_number_proteomes, args.update_affiliations,
                             args.option_bioservices)

@@ -1,5 +1,7 @@
+import csv
 import os
 import shutil
+import subprocess
 import time
 
 from collections import OrderedDict, Counter
@@ -379,6 +381,18 @@ def test_sparql_find_proteomes_tax_ids():
         assert expected_proteomes_ids[taxon][0] == proteomes_ids[taxon][0]
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])
 
+
+def test_check_cli():
+    output_folder = 'proteomes_output'
+    subprocess.call(['esmecata', 'check', '-i', 'buchnera_workflow.tsv', '-o', output_folder])
+    expected_results = []
+    output_stat_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
+    with open(output_stat_file, 'r') as stat_file_read:
+        csvreader = csv.reader(stat_file_read, delimiter='\t')
+        next(csvreader)
+        for line in csvreader:
+            expected_results.append(line[3])
+    assert expected_results == ['species']
 
 if __name__ == "__main__":
     #test_find_proteomes_tax_ids()
