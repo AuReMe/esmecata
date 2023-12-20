@@ -1200,6 +1200,8 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
         update_affiliations (str): option to update taxonomic affiliations.
         option_bioservices (bool): use bioservices instead of manual queries.
     """
+    check_starttime = time.time()
+
     logger.info('|EsMeCaTa|proteomes| Begin proteomes search.')
 
     retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[429, 500, 502, 503, 504])
@@ -1302,6 +1304,10 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
         proteome_to_download = set(proteome_to_download)
     # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
     create_taxon_heatmap_from_complete_run(output_folder)
+
+    check_endtime = time.time()
+    check_duration = check_endtime - check_starttime
+    logger.info('|EsMeCaTa|proteomes| Check step complete in {0}s.'.format(check_duration))
 
     return proteome_to_download, session
 
