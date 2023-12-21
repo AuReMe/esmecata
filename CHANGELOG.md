@@ -1,6 +1,25 @@
 # Changelog
 
-# EsMeCaTa v0.3.0 (2022-12-10)
+# EsMeCaTa v0.4.0 (2022-12-10)
+
+WARNING:
+* change in intermediary files of `clustering` and `annotation` in order to reduce disk space used by EsMeCaTa and the number of operations performed by the methods.
+* annotation with eggnog-mapper is now the default workflow methods of EsMeCaTa. The previous annotation methods with UniProt has been moved to `annotation_uniprot` and `workflow_uniprot`.
+
+## Add
+
+* Add a new step called `check`, which corresponds to the `proteomes` step of EsMeCaTa without downloading the proteomes. This allows to look at the knowledge associated with the dataset in the UniProt databases.
+
+
+## Fix
+
+
+## Modify
+
+* Modify the intermerdiary files of `clustering` and `annotation` (made with an idea propsoed by @PaulineGHG). This change replaces tsv files, that were created for each observation names. Now they will be created for each taxon instead. This means that observation names with the same taxon will be associated with the same file. This reduces the redundancy of the file and decreases the number of operations made by EsMeCaTa.
+* Modify how the log json files are created so if a run failed, a new log json file is created instead of erasing the previous ones.
+
+# EsMeCaTa v0.3.0 (2023-12-10)
 
 Add a new way to annotate protein clusters using eggnog-mapper. From test on metagenomcis data, it is more accurate than the methods with UniProt.
 Also modify the default option of EsMeCaTa for option with better results on tested data (minimal number of proteomes from 1 to 5 and clustering threshold from 0.95 to 0.5).
