@@ -9,7 +9,7 @@ RESULTS = {
 
 
 def test_workflow():
-    subprocess.call(['esmecata', 'workflow_uniprot', '-i', 'buchnera_workflow.tsv', '-o', 'test_output', '-p', '1', '--minimal-nb-proteomes', '2'])
+    subprocess.call(['esmecata', 'workflow_uniprot', '-i', 'buchnera_workflow.tsv', '-o', 'test_output', '-p', '1', '--minimal-nb-proteomes', '2', '--bioservices'])
 
     output_stat_file = os.path.join('test_output', 'stat_number_workflow.tsv')
 
