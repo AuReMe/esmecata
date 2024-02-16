@@ -22,6 +22,7 @@ WARNING:
 
 * Modify intermediary files to associate them with taxon name selected by EsMeCaTa instead of the observation name (based on an idea of @PaulineGHG). This change replaces tsv files, that were created for each observation names. Now they will be created for each taxon instead. This means that observation names with the same taxon will be associated with the same file. This reduces the redundancy of the file and decreases the number of operations made by EsMeCaTa.
 * Modify how the log json files are created so if a run failed, a new log json file is created instead of erasing the previous ones.
+* Move from `setup.py` and `setup.cfg` to `pyproject.toml`.
 * Update readme and tutorial.
 * Update license year.
 

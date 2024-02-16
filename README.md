@@ -75,7 +75,7 @@ It can also be installed using esmecata github directory:
 
 ```cd esmecata```
 
-```pip install -e . ```
+```pip install -e . --config-settings editable_mode=compat```
 
 ### Singularity
 
