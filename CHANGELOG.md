@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.4.0 (2022-12-10)
+# EsMeCaTa v0.4.0 (2024-02-16)
 
 WARNING:
 * change in intermediary files of `clustering` and `annotation` in order to reduce disk space used by EsMeCaTa and the number of operations performed by the methods. Instead of assigning one file per observation name, this new version assigns one file per taxon used by EsMeCaTa. This removes a lot of redundant work that slowed EsMeCaTa and could lead to issue.
