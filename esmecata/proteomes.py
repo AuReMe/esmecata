@@ -1227,6 +1227,13 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
     proteomes_description_folder = os.path.join(output_folder, 'proteomes_description')
     is_valid_dir(proteomes_description_folder)
 
+    known_extensions = ['.xlsx', '.tsv', '.csv']
+    file_name, file_extension = os.path.splitext(input_file)
+
+    if file_extension not in known_extensions:
+        logger.critical('|EsMeCaTa|proteomes| ERROR: Extension ({0}) of input file ({1}) is not part of the compatible extensions ({2}).'.format(file_extension, input_file, ','.join(known_extensions)))
+        sys.exit(1)
+
     if '.xlsx' in input_file:
         df = pd.read_excel(input_file)
     if '.tsv' in input_file:
