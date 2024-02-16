@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "esmecata"
 dynamic = ["version"]
-authors = ["AuReMe"]
+authors = [{name = "AuReMe", email = "gem-aureme@inria.fr"}]
 readme = "README.md"
 description = "EsMeCaTa: Estimating Metabolic Capabilties from Taxonomy"
-license = "GPL-3.0-or-later"
+license = {text = "GPL-3.0-or-later"}
 
 dependencies = [
   'biopython',
