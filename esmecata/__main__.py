@@ -1,4 +1,5 @@
-# Copyright (C) 2021-2023 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2021-2024 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +19,7 @@ import os
 import sys
 import time
 
-from esmecata.proteomes import retrieve_proteomes
+from esmecata.proteomes import check_proteomes, retrieve_proteomes
 from esmecata.clustering import make_clustering
 from esmecata.annotation import annotate_proteins
 from esmecata.workflow import perform_workflow, perform_workflow_eggnog
@@ -284,6 +285,17 @@ def main():
         description='valid subcommands:',
         dest='cmd')
 
+    check_parser = subparsers.add_parser(
+        'check',
+        help='Check proteomes associated with taxon in Uniprot Proteomes database.',
+        parents=[
+            parent_parser_i_taxon, parent_parser_o, parent_parser_b,
+            parent_parser_taxadb, parent_parser_all_proteomes, parent_parser_sparql,
+            parent_parser_limit_maximal_number_proteomes, parent_parser_rank_limit,
+            parent_parser_minimal_number_proteomes, parent_parser_update_affiliation,
+            parent_parser_bioservices
+            ],
+        allow_abbrev=False)
     proteomes_parser = subparsers.add_parser(
         'proteomes',
         help='Download proteomes associated with taxon from Uniprot Proteomes.',
@@ -304,8 +316,8 @@ def main():
             parent_parser_remove_tmp
             ],
         allow_abbrev=False)
-    annotation_parser = subparsers.add_parser(
-        'annotation',
+    annotation_uniprot_parser = subparsers.add_parser(
+        'annotation_uniprot',
         help='Retrieve protein annotations from Uniprot.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_sparql,
@@ -314,15 +326,15 @@ def main():
             ],
         allow_abbrev=False)
     annotation_eggnog_parser = subparsers.add_parser(
-        'annotation_eggnog',
+        'annotation',
         help='Annotate protein clusters using eggnog-mapper.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_eggnog_database,
             parent_parser_c, parent_parser_eggnog_tmp_dir
             ],
         allow_abbrev=False)
-    workflow_parser = subparsers.add_parser(
-        'workflow',
+    workflow_uniprot_parser = subparsers.add_parser(
+        'workflow_uniprot',
         help='Run all esmecata steps (proteomes, clustering and annotation).',
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_b, parent_parser_c,
@@ -336,8 +348,8 @@ def main():
             ],
         allow_abbrev=False)
     workflow_eggnog_parser = subparsers.add_parser(
-        'workflow_eggnog',
-        help='Run all esmecata steps (proteomes, clustering and annotation_eggnog).',
+        'workflow',
+        help='Run all esmecata steps (proteomes, clustering and annotation with eggnog-mapper).',
         parents=[
             parent_parser_i_taxon, parent_parser_o, parent_parser_eggnog_database,
             parent_parser_b, parent_parser_c, parent_parser_taxadb,
@@ -378,7 +390,7 @@ def main():
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    if args.cmd in ['proteomes', 'annotation', 'workflow', 'workflow_eggnog']:
+    if args.cmd in ['proteomes', 'annotation_uniprot', 'workflow_uniprot', 'workflow', 'check']:
         if args.sparql is None:
             uniprot_sparql_endpoint = None
         elif args.sparql == 'uniprot':
@@ -386,7 +398,7 @@ def main():
         else:
             uniprot_sparql_endpoint = args.sparql
 
-    if args.cmd in ['proteomes', 'workflow', 'workflow_eggnog']:
+    if args.cmd in ['proteomes', 'workflow_uniprot', 'workflow', 'check']:
         if args.busco is not None:
             busco_score = 100*args.busco
 
@@ -395,13 +407,18 @@ def main():
                             args.all_proteomes, uniprot_sparql_endpoint, args.limit_maximal_number_proteomes,
                             args.rank_limit, args.minimal_number_proteomes, args.update_affiliations,
                             args.option_bioservices)
+    if args.cmd == 'check':
+        check_proteomes(args.input, args.output, busco_score, args.ignore_taxadb_update,
+                            args.all_proteomes, uniprot_sparql_endpoint, args.limit_maximal_number_proteomes,
+                            args.rank_limit, args.minimal_number_proteomes, args.update_affiliations,
+                            args.option_bioservices)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
-    elif args.cmd == 'annotation':
+    elif args.cmd == 'annotation_uniprot':
         annotate_proteins(args.input, args.output, uniprot_sparql_endpoint,
                         args.propagate_annotation, args.uniref, args.expression,
                         args.annotation_files, args.option_bioservices)
-    elif args.cmd == 'workflow':
+    elif args.cmd == 'workflow_uniprot':
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
                             args.limit_maximal_number_proteomes, args.rank_limit,
@@ -409,10 +426,10 @@ def main():
                             args.linclust, args.propagate_annotation, args.uniref,
                             args.expression, args.minimal_number_proteomes, args.annotation_files,
                             args.update_affiliations, args.option_bioservices)
-    elif args.cmd == 'annotation_eggnog':
+    elif args.cmd == 'annotation':
         annotate_with_eggnog(args.input, args.output, args.eggnog_database, args.cpu,
                              args.eggnog_tmp_dir)
-    elif args.cmd == 'workflow_eggnog':
+    elif args.cmd == 'workflow':
         perform_workflow_eggnog(args.input, args.output, args.eggnog_database, busco_score,
                                 args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint,
                                 args.remove_tmp, args.limit_maximal_number_proteomes, args.rank_limit,

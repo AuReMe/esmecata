@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "esmecata"
+dynamic = ["version"]
+
+description = "EsMeCaTa: Estimating Metabolic Capabilties from Taxonomy"
+license = {file = "LICENSE"}
+
+dependencies = [
+  'biopython',
+  'bioservices',
+  'matplotlib',
+  'pandas',
+  'requests',
+  'ete3',
+  'seaborn',
+  'SPARQLWrapper'
+]
+
+[project.scripts]
+esmecata = "esmecata.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/AuReMe/esmecata"
+Changelog = "https://github.com/AuReMe/esmecata/blob/main/CHANGELOG.md"
+
+[tool.setuptools.package-dir]
+toolbox = "esmecata"
+
+[tool.setuptools.dynamic]
+version = { attr = "esmecata.__version__" }
+readme = {file = "README.md", content-type = "text/markdown"}
+dependencies = {file = ["requirements.txt"]}

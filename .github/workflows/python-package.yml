@@ -5,7 +5,7 @@ name: Python package
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
     paths-ignore:
       - 'article_data/**'
       - 'README.md'
@@ -17,7 +17,7 @@ on:
       - 'tutorials/**'
       - 'pictures/**'
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
     paths-ignore:
       - 'article_data/**'
       - 'README.md'
@@ -53,7 +53,7 @@ jobs:
         brew update
         brew install mmseqs2
         mmseqs -h
-        pip install -e .
+        pip install -e . --config-settings editable_mode=compat
     - name: Test with pytest
       run: |
         pip install pytest

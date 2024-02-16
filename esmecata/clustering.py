@@ -1,4 +1,5 @@
-# Copyright (C) 2021-2023 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2021-2024 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -36,21 +37,31 @@ from esmecata.utils import is_valid_path, is_valid_dir
 logger = logging.getLogger(__name__)
 
 
-def compute_stat_clustering(result_folder, stat_file=None):
+def compute_stat_clustering(output_folder, stat_file=None):
     """Compute stat associated to the number of proteome for each taxonomic affiliations.
 
     Args:
-        result_folder (str): pathname to the result folder containing mmseqs results
+        output_folder (str): pathname to the result folder containing mmseqs results
         stat_file (str): pathname to the tsv stat file
 
     Returns:
         clustering_numbers (dict): dict containing observation names (as key) associated with the number of protein clusters
     """
-    clustering_numbers = {}
+    clustering_taxon_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
+    result_folder = os.path.join(output_folder, 'computed_threshold')
+
+    proteomes_taxa_names = get_proteomes_tax_name(clustering_taxon_id_file)
+
+    tax_name_clustering_numbers = {}
     for clustering_file in os.listdir(result_folder):
         clustering_file_path = os.path.join(result_folder, clustering_file)
         num_lines = sum(1 for line in open(clustering_file_path))
-        clustering_numbers[clustering_file.replace('.tsv', '')] = num_lines
+        tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = num_lines
+
+    clustering_numbers = {}
+    for observation_name in proteomes_taxa_names:
+        tax_name = proteomes_taxa_names[observation_name].replace(' ', '_')
+        clustering_numbers[observation_name] = tax_name_clustering_numbers[tax_name]
 
     if stat_file:
         with open(stat_file, 'w') as stat_file_open:
@@ -84,7 +95,7 @@ def create_proteome_representativeness_lineplot(proteome_tax_id_file, computed_t
         for tmp_threshold in np.arange(0, 1.01, 0.025):
             # Compute the number of protein clusters associated with representativeness ratio of tmp_threshold.
             nb_protein_cluster_ratio = len(tmp_df[tmp_df['cluster_ratio']>= tmp_threshold])
-            data.append([obs_name, tax_rank[obs_name], tmp_threshold, nb_protein_cluster_ratio])
+            data.append([obs_name, obs_name, tmp_threshold, nb_protein_cluster_ratio])
 
     df = pd.DataFrame(data, columns=['obs_name', 'rank', 'clust', 'count'])
 
@@ -106,20 +117,20 @@ def create_proteome_representativeness_lineplot_per_taxon_rank(proteome_tax_id_f
         output_folder (str): pathname to the output folder.
     """
     proteome_df = pd.read_csv(proteome_tax_id_file, sep='\t')
-    proteome_df.set_index('observation_name', inplace=True)
-    tax_rank = proteome_df['tax_rank'].to_dict()
-    tax_name = proteome_df['name'].to_dict()
+    proteome_df.set_index('name', inplace=True)
+    tax_ranks = proteome_df['tax_rank'].to_dict()
+    tax_ids = proteome_df['tax_id'].to_dict()
 
     data = []
     for tsv_file in os.listdir(computed_threshold_folder):
-        obs_name = os.path.splitext(tsv_file)[0]
+        tax_name = os.path.splitext(tsv_file)[0].replace('_', ' ')
         tsv_file_path = os.path.join(computed_threshold_folder, tsv_file)
         tmp_df = pd.read_csv(tsv_file_path, sep='\t')
         for tmp_threshold in np.arange(0, 1.01, 0.025):
             nb_protein_cluster_ratio = len(tmp_df[tmp_df['cluster_ratio']>= tmp_threshold])
-            data.append([obs_name, tax_rank[obs_name], tax_name[obs_name], tmp_threshold, nb_protein_cluster_ratio])
+            data.append([tax_name, tax_ranks[tax_name], tax_ids[tax_name], tmp_threshold, nb_protein_cluster_ratio])
 
-    df = pd.DataFrame(data, columns=['obs_name', 'tax_rank', 'tax_name', 'clust', 'count'])
+    df = pd.DataFrame(data, columns=['tax_name', 'tax_rank', 'tax_id', 'clust', 'count'])
 
     for rank in df['tax_rank'].unique():
         tmp_df = df[df['tax_rank']==rank]
@@ -132,24 +143,24 @@ def create_proteome_representativeness_lineplot_per_taxon_rank(proteome_tax_id_f
         plt.clf()
 
 
-def get_proteomes_tax_id(proteomes_taxon_id_file):
+def get_proteomes_tax_name(proteomes_taxon_id_file):
     """ Extract tax_id associated with observation name.
 
     Args:
         proteomes_taxon_id_file (str): pathname to the proteomes_tax_id file.
 
     Returns:
-        annotation_numbers (dict): dict containing observation names (as key) associated with tax ID used for proteomes (as value)
+        proteomes_taxa_names (dict): dict containing observation names (as key) associated with tax name used for proteomes (as value)
     """
-    proteomes_taxa_ids = {}
+    proteomes_taxa_names = {}
     with open(proteomes_taxon_id_file, 'r') as proteome_tax_file:
         csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
         for line in csvreader:
             observation_name = line['observation_name']
-            tax_id = line['tax_id']
-            proteomes_taxa_ids[observation_name] = tax_id
+            tax_name = line['name']
+            proteomes_taxa_names[observation_name] = tax_name
 
-    return proteomes_taxa_ids
+    return proteomes_taxa_names
 
 def copy_already_clustered_file(output_folder, already_clustered_obs_name, new_observation_name, file_extension='.tsv'):
     """ Copy files from an observation name with the same tax ID than the new ones.
@@ -397,13 +408,13 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     with open(proteome_tax_id_pathname, 'r') as proteome_tax_file:
         csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
         for line in csvreader:
-            observation_name = line['observation_name']
             proteomes = line['proteome'].split(',')
+            tax_name = line['name']
             proteomes_path = [os.path.join(proteome_folder, 'proteomes', proteome+'.faa.gz') for proteome in proteomes]
-            if observation_name not in already_performed_clustering:
-                observation_name_fasta_files[observation_name] = proteomes_path
+            if tax_name not in already_performed_clustering:
+                observation_name_fasta_files[tax_name] = proteomes_path
             else:
-                logger.info('|EsMeCaTa|clustering| Already performed clustering for %s.', observation_name)
+                logger.info('|EsMeCaTa|clustering| Already performed clustering for %s.', tax_name)
 
     is_valid_dir(output_folder)
 
@@ -444,92 +455,74 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     else:
         shutil.copyfile(proteome_taxon_id_file, clustering_taxon_id_file)
 
-    proteomes_taxa_ids = get_proteomes_tax_id(proteome_taxon_id_file)
+    proteomes_taxa_names = get_proteomes_tax_name(proteome_taxon_id_file)
 
-    already_clustered_taxon = {}
+    all_tax_names = set(list(proteomes_taxa_names.values()))
 
     # For each OTU run mmseqs easy-cluster on them to found the clusters that have a protein in each proteome of the OTU.
     # We take the representative protein of a cluster if the cluster contains a protein from all the proteomes of the OTU.
     # If this condition is not satisfied the cluster will be ignored.
     # Then a fasta file containing all the representative proteins for each OTU is written in representative_fasta folder.
-    for observation_name in observation_name_fasta_files:
-        proteomes_tax_id = proteomes_taxa_ids[observation_name]
+    for proteomes_tax_name in all_tax_names:
+        # Get proteomes associated with taxon name.
+        observation_name_proteomes = observation_name_fasta_files[proteomes_tax_name]
 
-        # If the proteomes associated with the taxon ID have already been clustered, copy the results.
-        if proteomes_tax_id in already_clustered_taxon:
-            already_clustered_observation_name = already_clustered_taxon[proteomes_tax_id]
-            logger.info('|EsMeCaTa|clustering| Clustering of taxon ID %s already performed with %s.', proteomes_tax_id, already_clustered_observation_name)
+        # Change space with '_' to avoid issue.
+        proteomes_tax_name = proteomes_tax_name.replace(' ', '_')
+        # If the computed threshold file exists, mmseqs has already been run.
+        mmseqs_tmp_cluster = os.path.join(mmseqs_tmp_path, proteomes_tax_name)
+        # Run mmseqs on organism.
+        # Delete previous mmseqs2 run if it exists to avoid overwritting issues.
+        if os.path.exists(mmseqs_tmp_cluster):
+            shutil.rmtree(mmseqs_tmp_cluster)
+        mmseqs_tmp_clustered_tabulated, mmseqs_tmp_representative_fasta, mmseqs_consensus_fasta = run_mmseqs(proteomes_tax_name, observation_name_proteomes, mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust)
 
-            copy_already_clustered_file(cluster_founds_path, already_clustered_observation_name, observation_name)
+        # Extract protein clusters from mmseqs results.
+        cluster_proteomes_output_file = os.path.join(cluster_founds_path, proteomes_tax_name+'.tsv')
+        protein_clusters = extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated, cluster_proteomes_output_file)
 
-            copy_already_clustered_file(computed_threshold_path, already_clustered_observation_name, observation_name)
+        # Compute proteome representativeness ratio.
+        computed_threshold_file = os.path.join(computed_threshold_path, proteomes_tax_name+'.tsv')
+        number_proteomes, rep_prot_organims, computed_threshold_cluster = compute_proteome_representativeness_ratio(protein_clusters,
+                                                                                                                    observation_name_proteomes, computed_threshold_file)
 
-            copy_already_clustered_file(reference_proteins_path, already_clustered_observation_name, observation_name)
+        # Filter protein cluster for each protein cluster.
+        cluster_proteomes_filtered_output_file = os.path.join(reference_proteins_path, proteomes_tax_name+'.tsv')
+        protein_cluster_to_keeps = filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims, computed_threshold_cluster,
+                                                        clust_threshold, cluster_proteomes_filtered_output_file)
 
-            copy_already_clustered_file(reference_proteins_representative_fasta_path, already_clustered_observation_name, observation_name, '.faa')
+        logger.info('|EsMeCaTa|clustering| %d protein clusters kept for %s.', len(protein_cluster_to_keeps), proteomes_tax_name)
 
-            copy_already_clustered_file(reference_proteins_consensus_fasta_path, already_clustered_observation_name, observation_name, '.faa')
+        # Create BioPython records with the representative proteins kept.
+        new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
 
-            logger.info('|EsMeCaTa|clustering| Copy clustering results from %s to %s.', already_clustered_observation_name, observation_name)
-
+        # Do not create fasta file when 0 sequences were kept.
+        if len(new_records) > 0:
+            # Create output proteome file for OTU.
+            representative_fasta_file = os.path.join(reference_proteins_representative_fasta_path, proteomes_tax_name+'.faa')
+            SeqIO.write(new_records, representative_fasta_file, 'fasta')
         else:
-            # If the computed threshold file exists, mmseqs has already been run.
-            mmseqs_tmp_cluster = os.path.join(mmseqs_tmp_path, observation_name)
-            observation_name_proteomes = observation_name_fasta_files[observation_name]
-            # Run mmseqs on organism.
-            # Delete previous mmseqs2 run if it exists to avoid overwritting issues.
-            if os.path.exists(mmseqs_tmp_cluster):
-                shutil.rmtree(mmseqs_tmp_cluster)
-            mmseqs_tmp_clustered_tabulated, mmseqs_tmp_representative_fasta, mmseqs_consensus_fasta = run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust)
+            logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no fasta created.', proteomes_tax_name)
+        del new_records
 
-            # Extract protein clusters from mmseqs results.
-            cluster_proteomes_output_file = os.path.join(cluster_founds_path, observation_name+'.tsv')
-            protein_clusters = extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated, cluster_proteomes_output_file)
+        # Create BioPython records with the consensus proteins kept.
+        consensus_new_records = [record for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
 
-            # Compute proteome representativeness ratio.
-            computed_threshold_file = os.path.join(computed_threshold_path, observation_name+'.tsv')
-            number_proteomes, rep_prot_organims, computed_threshold_cluster = compute_proteome_representativeness_ratio(protein_clusters,
-                                                                                                                        observation_name_proteomes, computed_threshold_file)
+        # Do not create fasta file when 0 sequences were kept.
+        if len(consensus_new_records) > 0:
+            # Create output proteome file for OTU.
+            consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta_path, proteomes_tax_name+'.faa')
+            SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
+        else:
+            logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no fasta created.', proteomes_tax_name)
+        del consensus_new_records
 
-            # Filter protein cluster for each protein cluster.
-            cluster_proteomes_filtered_output_file = os.path.join(reference_proteins_path, observation_name+'.tsv')
-            protein_cluster_to_keeps = filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims, computed_threshold_cluster,
-                                                            clust_threshold, cluster_proteomes_filtered_output_file)
-
-            logger.info('|EsMeCaTa|clustering| %d protein clusters kept for %s.', len(protein_cluster_to_keeps), observation_name)
-
-            # Create BioPython records with the representative proteins kept.
-            new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
-
-            # Do not create fasta file when 0 sequences were kept.
-            if len(new_records) > 0:
-                # Create output proteome file for OTU.
-                representative_fasta_file = os.path.join(reference_proteins_representative_fasta_path, observation_name+'.faa')
-                SeqIO.write(new_records, representative_fasta_file, 'fasta')
-            else:
-                logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no fasta created.', observation_name)
-            del new_records
-
-            # Create BioPython records with the consensus proteins kept.
-            consensus_new_records = [record for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
-
-            # Do not create fasta file when 0 sequences were kept.
-            if len(consensus_new_records) > 0:
-                # Create output proteome file for OTU.
-                consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta_path, observation_name+'.faa')
-                SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
-            else:
-                logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no fasta created.', observation_name)
-            del consensus_new_records
-
-            if remove_tmp:
-                shutil.rmtree(mmseqs_tmp_cluster)
-
-            already_clustered_taxon[proteomes_tax_id] = observation_name
+        if remove_tmp:
+            shutil.rmtree(mmseqs_tmp_cluster)
 
     # Compute number of protein clusters kept.
     stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
-    compute_stat_clustering(reference_proteins_path, stat_file)
+    compute_stat_clustering(output_folder, stat_file)
     output_figure_file = os.path.join(output_folder, 'representativeness_clustering_ratio.svg')
     create_proteome_representativeness_lineplot(clustering_taxon_id_file, computed_threshold_path, output_figure_file)
 
@@ -541,7 +534,13 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     duration = endtime - starttime
     clustering_metadata['esmecata_clustering_duration'] = duration
     clustering_metadata_file = os.path.join(output_folder, 'esmecata_metadata_clustering.json')
-    with open(clustering_metadata_file, 'w') as ouput_file:
-        json.dump(clustering_metadata, ouput_file, indent=4)
+    if os.path.exists(clustering_metadata_file):
+        metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_clustering' in metadata_file]
+        clustering_metadata_file = os.path.join(output_folder, 'esmecata_metadata_clustering_{0}.json'.format(len(metadata_files)))
+        with open(clustering_metadata_file, 'w') as ouput_file:
+            json.dump(clustering_metadata, ouput_file, indent=4)
+    else:
+        with open(clustering_metadata_file, 'w') as ouput_file:
+            json.dump(clustering_metadata, ouput_file, indent=4)
 
-    logger.info('|EsMeCaTa|clustering| Clustering complete.')
+    logger.info('|EsMeCaTa|clustering| Clustering complete in {0}s.'.format(duration))

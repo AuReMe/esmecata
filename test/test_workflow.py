@@ -4,12 +4,12 @@ import subprocess
 import shutil
 
 RESULTS = {
-    'Cluster_1': {'proteomes': 2, 'protein_clusters': 460, 'GOs': 621, 'ECs': 245}
+    'Cluster_1': {'proteomes': 2, 'protein_clusters': 604, 'GOs': 755, 'ECs': 313}
 }
 
 
 def test_workflow():
-    subprocess.call(['esmecata', 'workflow', '-i', 'buchnera_workflow.tsv', '-o', 'test_output', '-p', '1', '--minimal-nb-proteomes', '1', '-t', '0.95'])
+    subprocess.call(['esmecata', 'workflow_uniprot', '-i', 'buchnera_workflow.tsv', '-o', 'test_output', '-p', '1', '--minimal-nb-proteomes', '2', '--bioservices'])
 
     output_stat_file = os.path.join('test_output', 'stat_number_workflow.tsv')
 
@@ -19,10 +19,10 @@ def test_workflow():
         next(csvreader)
         for line in csvreader:
             expected_results[line[0]] = {}
-            expected_results[line[0]]['proteomes'] = int(line[1])
-            expected_results[line[0]]['protein_clusters'] = int(line[2])
-            expected_results[line[0]]['GOs'] = int(line[3])
-            expected_results[line[0]]['ECs'] = int(line[4])
+            expected_results[line[0]]['proteomes'] = int(line[5])
+            expected_results[line[0]]['protein_clusters'] = int(line[7])
+            expected_results[line[0]]['GOs'] = int(line[8])
+            expected_results[line[0]]['ECs'] = int(line[9])
 
     for observation_name in expected_results:
         for data in expected_results[observation_name]:
