@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.4.1 (2024-02-16)
+
+## Fix
+
+* Some issues on the PyPI page of the package (due to change from `setup.py` to `pyproject.toml`).
+
 # EsMeCaTa v0.4.0 (2024-02-16)
 
 WARNING:

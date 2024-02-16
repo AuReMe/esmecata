@@ -5,9 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "esmecata"
 dynamic = ["version"]
-
+authors = ["AuReMe"]
+readme = "README.md"
 description = "EsMeCaTa: Estimating Metabolic Capabilties from Taxonomy"
-license = {file = "LICENSE"}
+license = "GPL-3.0-or-later"
 
 dependencies = [
   'biopython',
@@ -32,5 +33,4 @@ toolbox = "esmecata"
 
 [tool.setuptools.dynamic]
 version = { attr = "esmecata.__version__" }
-readme = {file = "README.md", content-type = "text/markdown"}
 dependencies = {file = ["requirements.txt"]}
