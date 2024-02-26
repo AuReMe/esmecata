@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.4.2 (2024-02-26)
+
+## Fix
+
+* Issue in `pyproject.toml` and how the package is installed with `pip`.
+
 # EsMeCaTa v0.4.1 (2024-02-16)
 
 ## Fix

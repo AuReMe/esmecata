@@ -28,8 +28,9 @@ esmecata = "esmecata.__main__:main"
 Homepage = "https://github.com/AuReMe/esmecata"
 Changelog = "https://github.com/AuReMe/esmecata/blob/main/CHANGELOG.md"
 
-[tool.setuptools.package-dir]
-toolbox = "esmecata"
+[tool.setuptools]
+packages = ['esmecata']
+package-dir = {'esmecata'= 'esmecata'}
 
 [tool.setuptools.dynamic]
 version = { attr = "esmecata.__version__" }
