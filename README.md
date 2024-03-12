@@ -9,6 +9,7 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
 ## Table of contents
 - [EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic affiliations](#esmecata-estimating-metabolic-capabilties-from-taxonomic-affiliations)
   - [Table of contents](#table-of-contents)
+  - [License](#license)
   - [Requirements](#requirements)
   - [Installation](#installation)
     - [Conda and pip](#conda-and-pip)
@@ -29,6 +30,10 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
     - [EsMeCaTa annotation](#esmecata-annotation)
     - [EsMeCaTa annotation\_uniprot](#esmecata-annotation_uniprot)
     - [EsMeCaTa workflow](#esmecata-workflow)
+
+## License
+
+This software is licensed under the GNU GPL-3.0-or-later, see the [LICENSE](https://github.com/AuReMe/esmecata/blob/main/LICENSE) file for details.
 
 ## Requirements
 
