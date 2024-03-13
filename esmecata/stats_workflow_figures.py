@@ -797,6 +797,42 @@ def ec_sunburst(ec_classes, results_path, savefig=True):
 
     return fig
 
+def ec_sunburst_per_group(ec_classes, results_path, taxgroup, savefig=True):
+    """
+    parameters
+        ec_classes (list) : a list of EC numbers
+        taxgroup (int) : an ete3 taxonomic group id
+    """
+
+    title = f"{taxgroup}: EC numbers categories, counts and proportions"
+    figpath = os.path.join(results_path, f"3_analysis/annotation_figures/ec_sunburst_per_model/{taxgroup}_ec_classes_sunburst.svg")
+    jsonpath = os.path.join(results_path, f"3_analysis/annotation_figures/ec_sunburst_per_model/{taxgroup}_ec_classes_sunburst.json")
+
+    fig = ec_ontosunburst(
+        ec_set=ec_classes, 
+        output=None,
+        root_cut="total")
+    
+    fig.update_layout(
+        title=title, 
+        height=1000,
+        width=1000,
+        paper_bgcolor="#ffffff", 
+        font_color='#111111', 
+        font_size=20)
+
+    fig.update_traces(marker=dict(colorscale=px.colors.diverging.RdYlGn, line_color=LINECOLOR, reversescale=True))
+
+    if savefig:
+        # fig.write_html(figpath)
+        fig.write_image(figpath)
+        write_json(
+            fig, 
+            os.path.join(jsonpath), 
+            pretty=True)
+
+    return fig
+
 # =========================
 # Clustering summary figure
 # =========================
