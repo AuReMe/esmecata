@@ -439,7 +439,7 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
 # ============================================
 
 def create_annot_obs_df(dataset_annotation_file, outpath, content):
-    """ Prepare data of 'frequences of EC numbers / Go terms in taxa' and 'fraction of all EC numbers / Go terms in taxa'
+    ''' Prepare data of 'frequences of EC numbers / Go terms in taxa' and 'fraction of all EC numbers / Go terms in taxa'
 
     Args:
         dataset_annotation_file (str) : path to an EC*taxa or GO*taxa matrix, computed by create_dataset_annotation_file()
@@ -448,7 +448,7 @@ def create_annot_obs_df(dataset_annotation_file, outpath, content):
 
     Returns:
         data (dict) : stores two dataframes corresponding to each data, as well as summary numbers
-    """
+    '''
 
     df = pd.read_csv(
         dataset_annotation_file,
@@ -772,7 +772,7 @@ def ec_sunburst(ec_classes, results_path, savefig=True):
             savefig (bool): if the figure should be saved (in html format). True by default
 
         Returns:
-            fig (plotly) : a plotly figure conda object 
+            fig (plotly) : a plotly figure object 
     '''
     fig = ec_ontosunburst(
         ec_set=ec_classes, 
@@ -797,12 +797,20 @@ def ec_sunburst(ec_classes, results_path, savefig=True):
 
     return fig
 
-def ec_sunburst_per_group(ec_classes, results_path, taxgroup, savefig=True):
-    """
-    parameters
+def ec_sunburst_per_model(ec_classes, results_path, taxgroup, savefig=True):
+    '''
+    Calls ontosunburst to create a figure summarizing EC numbers categories, counts and proportions
+    for a model in the dataset
+
+    Parameters
         ec_classes (list) : a list of EC numbers
+        results_path (str): the path of an esmecata run
         taxgroup (int) : an ete3 taxonomic group id
-    """
+        savefig (bool): if the figure should be saved (in svg format). True by default
+
+    Returns:
+        fig (plotly) : a plotly figure object
+    '''
 
     title = f"{taxgroup}: EC numbers categories, counts and proportions"
     figpath = os.path.join(results_path, f"3_analysis/annotation_figures/ec_sunburst_per_model/{taxgroup}_ec_classes_sunburst.svg")
@@ -1095,64 +1103,3 @@ def reproducibility_tokens(outdir):
     # metadata = json.dumps(metadata, indent=4)
 
     return metadata
-
-    #fig.for_each_trace(lambda trace: trace.update(opacity = 0.2) if trace.name in ["max"] else (),)
-
-    # def confidence_interval(data, confidence=0.95):
-    #     dist = NormalDist.from_samples(data)
-    #     z = NormalDist().inv_cdf((1 + confidence) / 2.)
-    #     h = dist.stdev * z / ((len(data) - 1) ** .5)
-    #     return h
-    
-    # CI = confidence_interval(df["count"], 0.95)
-    # df["CIlb"] = df["count"] - CI
-    # df["CIhb"] = df["count"] + CI
-
-
-    # fig, ax = plt.subplots(figsize=(9,5))
-    # g_results = sns.lineplot(data=df, x="clust", y='count', hue="rank", errorbar='ci')
-    # g_results.set(yscale='log')
-    # # Use max + 0.25 quantile to set ylim.
-    # g_results.set(ylim=[1, df['count'].max()+df['count'].quantile(0.25)], xlim=[0,1])
-    # # plt.savefig(os.path.join(results_path, "3_analysis/proteome_representativeness.png"))
-    # fig = tls.mpl_to_plotly(fig)
-    
-    # ci95_hi = []
-    # ci95_lo = []
-    # for i in statsdf.index:
-    #     m, c, s = statsdf.loc[i]
-    #     # ci95_hi.append(m + 1.96*s/math.sqrt(c))
-    #     # ci95_lo.append(m - 1.96*s/math.sqrt(c))
-    #     ci95 = st.norm.interval(confidence=0.95, loc=m, scale=s)
-    #     ci95_hi.append(ci95[1])
-    #     ci95_lo.append(ci95[0])
-    # statsdf['ci95_hi'] = ci95_hi
-    # statsdf['ci95_lo'] = ci95_lo
-
-    # print(statsdf)
-
-    # ci = st.norm.interval(confidence=0.95, 
-    #     loc=np.mean(df['count']),
-    #     scale=st.sem(df['count'])) 
-
-    # df["lower_ci"] = df["count"] - ci[1]
-    # df["upper_ci"] = df["count"] + ci[1]
-
-    # fig = go.Figure()
-    # fig = px.line(df, x="clust", 
-    #     y="count", 
-    #     color="rank", 
-    #     log_y=True) 
-    # #     #error_y=df["upper_ci"], 
-    # #     #error_y_minus=df["lower_ci"])
-    
-    # fig.add_traces([go.Scatter(df, 
-    #         x="clust",
-    #         y='CIlb',
-    #         color="rank",
-    #         log_y=True),
-    #     px.line(df, 
-    #         x="clust", 
-    #         y='CIhb', 
-    #         color="rank",
-    #         log_y=True)])

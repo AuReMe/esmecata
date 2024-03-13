@@ -11,7 +11,7 @@ import os
 import json
 import argparse
 import pandas as pd
-from stats_workflow_figures import ec_sunburst_per_group
+from stats_workflow_figures import ec_sunburst_per_model
 
 __author__ = "Victor Mataigne"
 __email__ = "victor.mataigne@irisa.fr"
@@ -44,4 +44,4 @@ for taxid in taxo["name"].unique():
     # observations_and_groups[taxid] = group
     df_ec_reduced = df_ec.loc[group,]
     ecs = df_ec_reduced.loc[:, (df_ec_reduced != 0).all()].columns.tolist()
-    fig = ec_sunburst_per_group(ecs, args.directory, taxid, True)
+    fig = ec_sunburst_per_model(ecs, args.directory, taxid, True)
