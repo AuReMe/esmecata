@@ -2,10 +2,11 @@ import csv
 import os
 import shutil
 import subprocess
-from esmecata.clustering import make_clustering, filter_protein_cluster, compute_proteome_representativeness_ratio
+
+from esmecata.core.clustering import make_clustering, filter_protein_cluster, compute_proteome_representativeness_ratio
 
 RESULTS = {
-    'Cluster_1': {'Number_shared_proteins': 604}
+    'Cluster_1': {'Number_shared_proteins': 603}
 }
 
 def test_filter_protein_cluster():
@@ -55,7 +56,7 @@ def test_make_clustering():
         next(csvreader)
         for line in csvreader:
             expected_results[line[0]] = {}
-            expected_results[line[0]]['Number_shared_proteins'] = int(line[1])
+            expected_results[line[0]]['Number_shared_proteins'] = int(line[2])
 
     for observation_name in expected_results:
         for data in expected_results[observation_name]:
@@ -74,7 +75,7 @@ def test_clustering_cli():
         next(csvreader)
         for line in csvreader:
             expected_results[line[0]] = {}
-            expected_results[line[0]]['Number_shared_proteins'] = int(line[1])
+            expected_results[line[0]]['Number_shared_proteins'] = int(line[2])
 
     for observation_name in expected_results:
         for data in expected_results[observation_name]:

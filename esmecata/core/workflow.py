@@ -55,7 +55,7 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
         else:
             nb_proteomes = 'NA'
         if observation_name in clustering_numbers:
-            nb_shared_proteins = clustering_numbers[observation_name][2]
+            nb_shared_proteins = len(clustering_numbers[observation_name][1])
         else:
             nb_shared_proteins = 'NA'
         if observation_name in annotation_numbers:

@@ -779,7 +779,7 @@ def ec_sunburst(ec_classes, output_folder, savefig=True):
     '''
     fig = ontosunburst(ontology='ec',
         metabolic_objects=ec_classes, 
-        output=None,
+        output=os.path.join(output_folder, "ec_classes_sunburst.html"),
         root_cut="total")
     
     fig.update_layout(

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from esmecata.analysis import normalise_dataframe
+from esmecata.esmecata_analysis.analysis import normalise_dataframe
 
 def test_normalisation_default_3_digits():
     input_dataframe = pd.DataFrame([[5, 5, 1, 2, 3],
