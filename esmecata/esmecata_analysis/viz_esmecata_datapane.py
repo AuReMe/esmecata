@@ -2,7 +2,7 @@
 
 import os
 import json
-#import datapane as dp
+import datapane as dp
 
 from esmecata.esmecata_analysis import stats_workflow_figures as swf
 from esmecata.esmecata_analysis.esmecata2taxontology import esmecata2taxonomy
@@ -102,8 +102,8 @@ def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_fol
     fig7b = swf.annot_frequencies_in_obs_hist(DATA3["df_annot_frequencies"], output_annotation_figures_folder, "GO terms")
     fig8b = swf.fraction_of_all_annot_in_obs_hist(DATA3["df_fractionin_obs"], DATA["DF_STATS"], output_annotation_figures_folder, "GO terms")
 
-    fig11 = swf.ec_sunburst(DATA2["df_annot_frequencies"].index, output_annotation_figures_folder)
-    """
+    #fig11 = swf.ec_sunburst(DATA2["df_annot_frequencies"].index, output_annotation_figures_folder)
+
     print("Formatting summary dataframes")
     if not DATA["DISCARDED"].empty:    
         df_discarded_panel_content = dp.DataTable(DATA["DISCARDED"],label="Data")
@@ -192,8 +192,8 @@ def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_fol
                     columns=2,
                 ),
 
-                dp.HTML("<h2>EC numbers classes, counts and proportions</h2>"),
-                dp.Plot(fig11.update_layout(modebar=CONFIG), label="EC numbers classes, counts and proportions"),
+                #dp.HTML("<h2>EC numbers classes, counts and proportions</h2>"),
+                #dp.Plot(fig11.update_layout(modebar=CONFIG), label="EC numbers classes, counts and proportions"),
 
                 # GO terms figures
                 dp.HTML("<h2>GO terms frequencies among taxa</h2>"),
@@ -251,11 +251,10 @@ def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_fol
     )
 
     dp.save_report(report, 
-        path=path.join(output_folder, 'esmecata_summary.html'),
+        path=os.path.join(output_folder, 'esmecata_summary.html'),
         formatting=dp.Formatting(
             accent_color="rgb(204, 255, 204)",
             font=dp.FontChoice.MONOSPACE,
             width=dp.Width.FULL
         )
     )
-    """
