@@ -26,16 +26,20 @@ from ete3 import NCBITaxa
 logger = logging.getLogger(__name__)
 
 
-def create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_file_path):
+def create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_file_path, content="EC"):
     """ From annotation reference folder, creates a file resuming the number of ECs for each observation names.
 
     Args:
         annotation_reference_folder (str): path to annotation reference folder
         dataset_annotation_file_path (str): path to output dataset annotation file
+        content (str): indicates which data to parse (default 'EC' other possible value is 'GO')
 
     Returns:
         dataset_annotation (dict): annotation dict: observation_name as key and EC number as value
     """
+    if content not in ("EC", "GO"):
+        raise ValueError("Wrong content. Authorized values are 'EC' and 'GO'.")
+
     dataset_annotation = {}
     total_annotations = []
     for annotation_file in os.listdir(annotation_reference_folder):
@@ -46,9 +50,7 @@ def create_dataset_annotation_file(annotation_reference_folder, dataset_annotati
         with open(annotation_file_path, 'r') as open_annotation_input_file_path:
             csvreader = csv.DictReader(open_annotation_input_file_path, delimiter='\t')
             for line in csvreader:
-                #gos = line['GO'].split(',')
-                ecs = line['EC'].split(',')
-                #annotations.extend(gos)
+                ecs = line[content].split(',')
                 annotations.extend(ecs)
         annotations = [annot for annot in annotations if annot != '']
         total_annotations.extend(annotations)
