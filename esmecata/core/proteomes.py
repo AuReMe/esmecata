@@ -1133,7 +1133,7 @@ def compute_stat_proteomes(proteomes_folder, stat_file=None):
             csvwriter = csv.writer(stat_file_open, delimiter='\t')
             csvwriter.writerow(['observation_name', 'Number_proteomes', 'Input_taxon_Name', 'Taxon_rank', 'EsMeCaTa_used_taxon', 'EsMeCaTa_used_rank', 'only_reference_proteome_used'])
             for observation_name in proteome_numbers:
-                csvwriter.writerow([observation_name, proteome_numbers[observation_name]])
+                csvwriter.writerow([observation_name, *proteome_numbers[observation_name]])
 
     return proteome_numbers
 

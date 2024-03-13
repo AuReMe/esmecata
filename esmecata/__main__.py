@@ -19,13 +19,13 @@ import os
 import sys
 import time
 
-from esmecata.proteomes import check_proteomes, retrieve_proteomes
-from esmecata.clustering import make_clustering
-from esmecata.annotation import annotate_proteins
-from esmecata.workflow import perform_workflow, perform_workflow_eggnog
-from esmecata.eggnog import annotate_with_eggnog
+from esmecata.core.proteomes import check_proteomes, retrieve_proteomes
+from esmecata.core.clustering import make_clustering
+from esmecata.core.annotation import annotate_proteins
+from esmecata.core.workflow import perform_workflow, perform_workflow_eggnog
+from esmecata.core.eggnog import annotate_with_eggnog
 from esmecata.utils import limited_integer_type, range_limited_float_type, is_valid_dir
-from esmecata.analysis import perform_analysis
+from esmecata.esmecata_analysis.analysis import perform_analysis
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''

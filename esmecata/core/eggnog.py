@@ -28,7 +28,7 @@ import sys
 
 from esmecata.utils import is_valid_dir
 from esmecata import __version__ as esmecata_version
-from esmecata.annotation import extract_protein_cluster
+from esmecata.core.annotation import extract_protein_cluster
 
 logger = logging.getLogger(__name__)
 

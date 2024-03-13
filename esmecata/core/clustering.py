@@ -55,8 +55,22 @@ def compute_stat_clustering(output_folder, stat_file=None):
     tax_name_clustering_numbers = {}
     for clustering_file in os.listdir(result_folder):
         clustering_file_path = os.path.join(result_folder, clustering_file)
-        num_lines = sum(1 for line in open(clustering_file_path))
-        tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = num_lines
+        with open(clustering_file_path, 'r') as open_clustering_file_path:
+            csvreader = csv.reader(open_clustering_file_path, delimiter='\t')
+            next(csvreader)
+            cluster_0 = []
+            cluster_0_5 = []
+            cluster_0_95 = []
+            for line in csvreader:
+                protein_cluster_threshold = float(line[1])
+                if protein_cluster_threshold >= 0.95:
+                    cluster_0_95.append(line[0])
+                if protein_cluster_threshold >= 0.5:
+                    cluster_0_5.append(line[0])
+                if protein_cluster_threshold >= 0:
+                    cluster_0.append(line[0])
+
+        tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = [cluster_0, cluster_0_5, cluster_0_95]
 
     clustering_numbers = {}
     for observation_name in proteomes_taxa_names:
@@ -66,9 +80,12 @@ def compute_stat_clustering(output_folder, stat_file=None):
     if stat_file:
         with open(stat_file, 'w') as stat_file_open:
             csvwriter = csv.writer(stat_file_open, delimiter='\t')
-            csvwriter.writerow(['observation_name', 'Number_protein_clusters'])
+            csvwriter.writerow(['observation_name', 'Number_protein_clusters_panproteome', 'Number_protein_clusters_kept', 'Number_protein_clusters_coreproteome'])
             for observation_name in clustering_numbers:
-                csvwriter.writerow([observation_name, clustering_numbers[observation_name]])
+                cluster_0 = len(clustering_numbers[observation_name][0])
+                cluster_0_5 = len(clustering_numbers[observation_name][1])
+                cluster_0_95 = len(clustering_numbers[observation_name][2])
+                csvwriter.writerow([observation_name, cluster_0, cluster_0_5, cluster_0_95])
 
     return clustering_numbers
 

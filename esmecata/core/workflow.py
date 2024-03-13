@@ -19,10 +19,10 @@ import logging
 import os
 import time
 
-from esmecata.proteomes import retrieve_proteomes, compute_stat_proteomes
-from esmecata.clustering import make_clustering, compute_stat_clustering
-from esmecata.annotation import annotate_proteins, compute_stat_annotation
-from esmecata.eggnog import annotate_with_eggnog
+from esmecata.core.proteomes import retrieve_proteomes, compute_stat_proteomes
+from esmecata.core.clustering import make_clustering, compute_stat_clustering
+from esmecata.core.annotation import annotate_proteins, compute_stat_annotation
+from esmecata.core.eggnog import annotate_with_eggnog
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
         else:
             nb_proteomes = 'NA'
         if observation_name in clustering_numbers:
-            nb_shared_proteins = clustering_numbers[observation_name]
+            nb_shared_proteins = clustering_numbers[observation_name][2]
         else:
             nb_shared_proteins = 'NA'
         if observation_name in annotation_numbers:

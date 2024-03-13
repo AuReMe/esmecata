@@ -11,8 +11,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.io import write_json
 from plotly.subplots import make_subplots
-from  ontosunburst.ontosunburst import ec_ontosunburst
-from esmecata_compression import RANK2COL
+from ontosunburst.ontosunburst import ontosunburst
+from esmecata.esmecata_analysis.esmecata_compression import RANK2COL
 
 # from statistics import NormalDist
 # import matplotlib.pyplot as plt
@@ -131,7 +131,8 @@ def _format_taxo(proteome_tax_id):
             data[k].update({v:names[k][k2]})
 
     df = pd.DataFrame.from_dict(data, orient='index')
-    df.drop("no rank", axis=1, inplace=True)
+    if 'no rank' in df.columns:
+        df.drop('no rank', axis=1, inplace=True)
 
     # order columns according to hierarchy
     ncbi_ranks = [rank for rank in ncbi_ranks if rank in df.columns]
@@ -171,6 +172,7 @@ def post_analysis_config(input_table, results_path):
         index_col='observation_name')
     
     df_stats = stats_nb_proteomes.join([stats_nb_clustering, stats_nb_annotation])
+    df_stats.to_csv('test.tsv', sep='\t')
     df_stats = df_stats.dropna()
 
     # Load input
@@ -191,14 +193,14 @@ def post_analysis_config(input_table, results_path):
         header=0,
         index_col='observation_name',
         sep='\t')
-    
+
     proteome_tax_id = proteome_tax_id[proteome_tax_id.index.isin(df_stats.index)]
     proteome_tax_id['n_proteomes'] = proteome_tax_id['proteome'].str.split(pat=',').str.len()
-    
+
     # Input taxonomy must be formatted ; ete3 is used to find the lineage
     output_taxo = _format_taxo(proteome_tax_id)
     df_stats = df_stats.join(output_taxo)
-    
+
     input_data.set_index('observation_name', inplace=True)
     discarded = input_data[~input_data.index.isin(df_stats.index)]
     n_discarded = n_in - n_out
@@ -220,21 +222,22 @@ def post_analysis_config(input_table, results_path):
         "PROTEOME_TAX_ID": proteome_tax_id, 
         "ASSOCIATION_PROTEOME_TAX_ID": association_taxon_tax_id, 
     }
-    
+
     return data
 
 # ==============================
 # Proteomes summary page figures
 # ==============================
 
-def distributions_by_ranks(df_stats, results_path, n_bins=15, rank='phylum', savefig=True):
+def distributions_by_ranks(df_stats, output_folder, n_bins=15, rank='phylum', savefig=True):
     '''
     For the given rank, plots stacked barplots of how many proteomes belongs to each taxa of this rank.
 
         Parameters:
             df_stats (pandas): a pandas df, output of post_analysis_config()
+            output_folder (str) : path to output folder to save fig
             rank (str): taxonomic rank for color code. Must match the input. Default 'phylum'
-            results_path (str) : the path of the emecata run
+            savefig (bool): boolean to save fig or not
 
         Returns:
             fig : a plotly html figure
@@ -261,10 +264,10 @@ def distributions_by_ranks(df_stats, results_path, n_bins=15, rank='phylum', sav
         font=FONTPARAMS)
    
     if savefig:
-        fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/proteomes_distribution_by_ranks.pdf"))
+        fig.write_image(os.path.join(output_folder, 'proteomes_distribution_by_ranks.pdf'))
         write_json(
             fig, 
-            os.path.join(results_path, "3_analysis/proteomes_figures/proteomes_distribution_by_ranks.json"), 
+            os.path.join(output_folder, 'proteomes_distribution_by_ranks.json'), 
             pretty=True)
 
     return fig
@@ -353,14 +356,14 @@ def taxo_ranks_contribution(proteome_tax_id, results_path, n_bins=10, savefig=Tr
 
     return fig
 
-def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path, savefig=True):
+def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, output_folder, savefig=True):
     '''
     Plots a heatmap displaying how many input taxonomic ranks were assigned to the same rank by esmecata and how many were assigned to higher tanks.
 
         Parameters:
             proteome_tax_id (pandas): a pandas df loaded with esmecata 'proteome_tax_id.tsv' file, output of post_analysis_config()
             association_taxon_tax_id (dict) : a dict of taxa loaded from json by post_analysis_config()
-            results_path (str) : the path of the esmecata run
+            output_folder (str) : path to output folder
 
         Returns:
             fig : a plotly figure
@@ -426,10 +429,10 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, results_path
     fig.update_layout(font=FONTPARAMS)
     
     if savefig:
-        fig.write_image(os.path.join(results_path, "3_analysis/proteomes_figures/input_and_output_ranks.pdf"))
+        fig.write_image(os.path.join(output_folder, 'input_and_output_ranks.pdf'))
         write_json(
             fig, 
-            os.path.join(results_path, "3_analysis/proteomes_figures/input_and_output_ranks.json"), 
+            os.path.join(output_folder, 'input_and_output_ranks.json'), 
             pretty=True)
     
     return fig
@@ -540,13 +543,13 @@ def create_annot_obs_df(dataset_annotation_file, outpath, content):
 
     return data
 
-def annot_frequencies_in_obs(df, results_path, content, savefig=True):
+def annot_frequencies_in_obs(df, output_folder, content, savefig=True):
     '''
     Plots the frequency of each EC in the taxa (i.e. which EC are in many taxa, and which EC are in few taxa)
 
         Parameters:
             df (pandas): a pandas df with ECs names, frequencies, and classes as columns (key 'df_ec_frequencies' in the output of create_ec_obs_df())
-            results_path (str) : the path of the esmecata run
+            output_folder (str) : the path of the output folder
             content (str) : 'GO terms' or 'EC numbers' to specifies which data is processed
 
         Returns:
@@ -590,22 +593,22 @@ def annot_frequencies_in_obs(df, results_path, content, savefig=True):
         font=FONTPARAMS)
 
     if savefig:
-        fig.write_html(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa.html"))
+        fig.write_html(os.path.join(output_folder, f"{content.replace(' ', '_')}_frequencies_in_taxa.html"))
         write_json(
             fig, 
-            os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa.json"), 
+            os.path.join(output_folder, f"{content.replace(' ', '_')}_frequencies_in_taxa.json"), 
             pretty=True)
 
     return fig
 
-def fraction_of_all_annot_in_obs(df, df_taxo, results_path, content, rank="phylum", savefig=True):
+def fraction_of_all_annot_in_obs(df, df_taxo, output_folder, content, rank="phylum", savefig=True):
     '''
     Plots the fraction of all EC of the dataset in each taxa (i.e. which taxa have many ECs, and which taxa have few ECs)
 
         Parameters:
             df (pandas) : a pandas df with taxa names, and its fraction of EC as columns (key 'df_ec_fraction' in the output of create_ec_obs_df())
             df_taxo (pandas) : a pandas dataframe containing the taxonomy of taxa (key 'DF_STATS' in the output of swf.post_analysis_config())
-            results_path (str) : the path of the esmecata run
+            results_path (str) : path to the output folder
             content (str) : 'GO terms' or 'EC numbers' to specifies which data is processed
 
         Returns:
@@ -638,21 +641,21 @@ def fraction_of_all_annot_in_obs(df, df_taxo, results_path, content, rank="phylu
                       font=FONTPARAMS)
 
     if savefig:
-        fig.write_html(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa.html"))
+        fig.write_html(os.path.join(output_folder, f"{content.replace(' ', '_')}_fraction_per_taxa.html"))
         write_json(
             fig, 
-            os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa.json"), 
+            os.path.join(output_folder, f"{content.replace(' ', '_')}_fraction_per_taxa.json"), 
             pretty=True)
 
     return fig
 
-def annot_frequencies_in_obs_hist(df, results_path, content, n_bins=20, savefig=True):
+def annot_frequencies_in_obs_hist(df, output_folder, content, n_bins=20, savefig=True):
     '''
     For the given rank, plots stacked barplots of how many EC numbers belongs to each taxa of this rank (i.e. which EC are in many taxa, and which EC are in few taxa).
 
         Parameters:
             df (pandas): a pandas df with EC/GO as rows, taxa as column, filled with the frequencies of EC/GO in taxa
-            results_path (str) : the path of the esmecata run
+            output_folder (str) : path to the output folder
             content (str) : 'GO terms' or 'EC numbers' to specifies which data is processed
 
         Returns:
@@ -698,22 +701,22 @@ def annot_frequencies_in_obs_hist(df, results_path, content, n_bins=20, savefig=
         font=FONTPARAMS)
     
     if savefig:
-        fig.write_image(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa_hist.pdf"))
+        fig.write_image(os.path.join(output_folder, f"{content.replace(' ', '_')}_frequencies_in_taxa_hist.pdf"))
         write_json(
             fig, 
-            os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_frequencies_in_taxa_hist.json"), 
+            os.path.join(output_folder, f"{content.replace(' ', '_')}_frequencies_in_taxa_hist.json"), 
             pretty=True)
 
     return fig
 
-def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, n_bins=10, rank="phylum", savefig=True):
+def fraction_of_all_annot_in_obs_hist(df, df_taxo, output_folder, content, n_bins=10, rank="phylum", savefig=True):
     '''
     Plots the histogram of the fraction of all EC of the dataset in each taxa (i.e. which taxa have many ECs, and which taxa have few ECs)
 
         Parameters:
             df (pandas): a pandas df with ECs as rows, taxa as column, filled with the frequencies of ECs in the taxa's clusters
             df_taxo (pandas) : a pandas dataframe containing the taxonomy of taxa (key 'DF_STATS' in the output of swf.post_analysis_config())
-            results_path (str) : the path of the esmecata run
+            output_folder (str) : path to the output folder
             content (str) : 'GO terms' or 'EC numbers' to specifies which data is processed
 
         Returns:
@@ -749,10 +752,10 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, n_bins
         font=FONTPARAMS)
     
     if savefig:
-        fig.write_image(os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa_hist.pdf"))
+        fig.write_image(os.path.join(output_folder, f"{content.replace(' ', '_')}_fraction_per_taxa_hist.pdf"))
         write_json(
             fig, 
-            os.path.join(results_path, f"3_analysis/annotation_figures/{content.replace(' ', '_')}_fraction_per_taxa_hist.json"), 
+            os.path.join(output_folder, f"{content.replace(' ', '_')}_fraction_per_taxa_hist.json"), 
             pretty=True)
 
     return fig
@@ -761,21 +764,21 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, n_bins
 # EC sunburst summary figure
 # ==========================
 
-def ec_sunburst(ec_classes, results_path, savefig=True):
+def ec_sunburst(ec_classes, output_folder, savefig=True):
     '''
     Calls ontosunburst to create a figure summarizing EC numbers categories, counts and proportions
     for the whole dataset
 
         Parameters:
             ec_classes (list): a list of EC numbers
-            results_path (str): the path of an esmecata run
+            output_folder (str): path to the output folder
             savefig (bool): if the figure should be saved (in html format). True by default
 
         Returns:
             fig (plotly) : a plotly figure object 
     '''
-    fig = ec_ontosunburst(
-        ec_set=ec_classes, 
+    fig = ontosunburst(ontology='ec',
+        metabolic_objects=ec_classes, 
         output=None,
         root_cut="total")
     
@@ -789,10 +792,10 @@ def ec_sunburst(ec_classes, results_path, savefig=True):
     fig.update_traces(marker=dict(colorscale=px.colors.diverging.RdYlGn, line_color=LINECOLOR, reversescale=True))
 
     if savefig:
-        fig.write_html(os.path.join(results_path, "3_analysis/annotation_figures/ec_classes_sunburst.html"))
+        fig.write_html(os.path.join(output_folder, "ec_classes_sunburst.html"))
         write_json(
             fig, 
-            os.path.join(results_path, "3_analysis/annotation_figures/ec_classes_sunburst.json"), 
+            os.path.join(output_folder, "ec_classes_sunburst.json"), 
             pretty=True)
 
     return fig
@@ -816,8 +819,8 @@ def ec_sunburst_per_model(ec_classes, results_path, taxgroup, savefig=True):
     figpath = os.path.join(results_path, f"3_analysis/annotation_figures/ec_sunburst_per_model/{taxgroup}_ec_classes_sunburst.svg")
     jsonpath = os.path.join(results_path, f"3_analysis/annotation_figures/ec_sunburst_per_model/{taxgroup}_ec_classes_sunburst.json")
 
-    fig = ec_ontosunburst(
-        ec_set=ec_classes, 
+    fig = ontosunburst(ontology='ec',
+        metabolic_objects=ec_classes, 
         output=None,
         root_cut="total")
     
@@ -864,26 +867,29 @@ def _hex_to_rgb(hex, opacity):
 
     return rgba
 
-def data_proteome_representativeness(proteome_tax_id, computed_threshold_folder):
+def data_proteome_representativeness(pandas_dict, computed_threshold_folder):
     ''' 
     Prepare data for plotting summary of the clustering step (i.e. representativeness ratio), from the computed threshold folder and the proteomes_tax_id file.
 
         Parameters:
-            proteomes_taxon_id (pandas): pandas dataframe of proteomes taxa id (key "PROTEOME_TAX_ID" of post_analysis_config() output)
+            pandas_dict (dict): dict of pandas dataframe, with pandas dataframe of proteomes taxa id (key "PROTEOME_TAX_ID" of post_analysis_config() output)
             computed_threshold_folder (str): pathname to computed threshold folder.
 
         Returns:
             statsdf (pandas) : a pandas dataframe summarizing the mean, max, and min number of protein clusters for each clustering trhesholdand each input taxa
     '''
     # From proteomes_tax_id get the taxonomic rank for each observation name.
+    proteome_tax_id = pandas_dict['PROTEOME_TAX_ID']
     tax_rank = proteome_tax_id['tax_rank'].to_dict()
+    df_stats = pandas_dict['DF_STATS']
+    tax_obs_name = {key: value.replace(' ', '_') for key, value in df_stats['EsMeCaTa_used_taxon'].to_dict().items()}
 
     data = []
-    for tsv_file in os.listdir(computed_threshold_folder):
-        obs_name = os.path.splitext(tsv_file)[0]
+    for obs_name in tax_rank:
+        taxon_name = tax_obs_name[obs_name]
         full_name = f"Input name : {obs_name}; EsMeCaTa name :{proteome_tax_id.loc[obs_name,'name']}"# More precision for hover info if needed
 
-        tsv_file_path = os.path.join(computed_threshold_folder, tsv_file)
+        tsv_file_path = os.path.join(computed_threshold_folder, taxon_name+'.tsv')
         tmp_df = pd.read_csv(tsv_file_path, sep='\t')
         for tmp_threshold in np.arange(0, 1.01, 0.025):
             # Compute the number of protein clusters associated with representativeness ratio of tmp_threshold.
@@ -894,14 +900,14 @@ def data_proteome_representativeness(proteome_tax_id, computed_threshold_folder)
 
     return df
 
-def create_proteome_representativeness_lineplot_px(df, clust_threshold, results_path, savefig=True):
+def create_proteome_representativeness_lineplot_px(df, clust_threshold, output_folder, savefig=True):
     '''     
     This figure shows the representativeness ratio and the number of associated protein clusters according to the taxonomic rank.
 
         Parameters:
             df (pandas) : a dataframe summarizing proteomes by cluster and by threshold, output of data_proteome_representativeness()
             clust_threshold (float) : the threshold between 0 and 1 fixed by the user for the clustering process of EsMeCaTa
-            results_path (str): pathname to the output figure file.
+            output_folder (str): pathname to the output figure file.
 
         Returns:
             fig : a plotly html figure
@@ -976,22 +982,22 @@ def create_proteome_representativeness_lineplot_px(df, clust_threshold, results_
         font=FONTPARAMS)
 
     if savefig:
-        fig.write_image(os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness.pdf"))
+        fig.write_image(os.path.join(output_folder, 'proteome_representativeness.pdf'))
         write_json(
             fig, 
-            os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness.json"), 
+            os.path.join(output_folder, 'proteome_representativeness.json'), 
             pretty=True)
 
     return fig
 
-def proteomes_representativeness_details(df, clust_threshold, results_path, savefig=True):
+def proteomes_representativeness_details(df, clust_threshold, output_folder, savefig=True):
     '''
     This figure shows details of the representativeness ratio and the number of associated protein clusters according to each cluster. There is one sub-pnale by taxonomic rank.
 
         Parameters:
             df (pandas) : a dataframe summarizing proteomes by cluster and by threshold, output of data_proteome_representativeness()
             clust_threshold (float) : the threshold between 0 and 1 fixed by the user for the clustering process of EsMeCaTa
-            results_path (str): pathname to the output figure file.
+            output_folder (str): pathname to the output figure file.
 
         Returns:
             fig : a plotly html figure
@@ -1070,10 +1076,10 @@ def proteomes_representativeness_details(df, clust_threshold, results_path, save
         i += 1
         
     if savefig:
-        fig.write_html(os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness_details.html"))
+        fig.write_html(os.path.join(output_folder, 'proteome_representativeness_details.html'))
         write_json(
             fig, 
-            os.path.join(results_path, "3_analysis/clustering_figures/proteome_representativeness_details.json"), 
+            os.path.join(output_folder, '/proteome_representativeness_details.json'), 
             pretty=True)
 
     return fig

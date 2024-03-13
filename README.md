@@ -9,7 +9,6 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
 ## Table of contents
 - [EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic affiliations](#esmecata-estimating-metabolic-capabilties-from-taxonomic-affiliations)
   - [Table of contents](#table-of-contents)
-  - [License](#license)
   - [Requirements](#requirements)
   - [Installation](#installation)
     - [Conda and pip](#conda-and-pip)
@@ -30,10 +29,7 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
     - [EsMeCaTa annotation](#esmecata-annotation)
     - [EsMeCaTa annotation\_uniprot](#esmecata-annotation_uniprot)
     - [EsMeCaTa workflow](#esmecata-workflow)
-
-## License
-
-This software is licensed under the GNU GPL-3.0-or-later, see the [LICENSE](https://github.com/AuReMe/esmecata/blob/main/LICENSE) file for details.
+  - [License](#license)
 
 ## Requirements
 
@@ -801,3 +797,8 @@ The `esmecata_metadata_workflow.json` retrieves metadata about Uniprot release a
 `stat_number_workflow.tsv` is a tabulated file containing the number of proteomes, shared proteins, GO Terms and EC numbers found for each observation name.
 
 `esmecata workflow_uniprot` has the same output files except that the outputs of the annotation step corresponds to the output of `esmecata annotation_uniprot`.
+
+## License
+
+This software is licensed under the GNU GPL-3.0-or-later, see the [LICENSE](https://github.com/AuReMe/esmecata/blob/main/LICENSE) file for details.
+

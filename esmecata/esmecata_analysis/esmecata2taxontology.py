@@ -5,11 +5,7 @@ import plotly.graph_objects as go
 from ete3 import NCBITaxa
 from typing import Dict, List, Set, Tuple
 
-from esmecata_compression import RANK2COL
-
-__author__ = "Pauline Hamon-Giraud, Victor Mataigne"
-__email__ = "victor.mataigne@irisa.fr"
-
+from esmecata.esmecata_analysis.esmecata_compression import RANK2COL
 
 # CONSTANTS ==========================================================================================================
 
@@ -258,6 +254,7 @@ def select_root(count_input: Dict[int, int], parent: Dict[int, int or str]) -> T
             if parent[ch_id] in roots and ch_id not in roots:
                 root = parent[ch_id]
     parent[root] = ''
+
     return set(roots).difference({root}), parent
 
 
@@ -304,21 +301,21 @@ def fill_parameters(tax_names: Dict[int, str], tax_ranks: Dict[int, str], parent
             'Color': list(),
             'Shape': list()}
     for tax_id in tax_names.keys():
-        if tax_id not in to_exclude:
-            data['ID'].append(tax_id)
-            data['Name'].append(tax_names[tax_id])
-            data['Rank'].append(tax_ranks[tax_id])
-            data['Parent'].append(parent[tax_id])
-            data['Count Input'].append(count_input[tax_id])
-            # data['Color'].append(RANK2COL[tax_ranks[tax_id]])
-            if tax_id in count_esmecata.keys():
-                data['Count Esmecata'].append(count_esmecata[tax_id])
-                data['Color'].append(RANK2COL[tax_ranks[tax_id]])
-                #data['Shape'].append('')
-            else:
-                data['Count Esmecata'].append(0)
-                data['Color'].append('#ffffff')
-                #data['Shape'].append('/')
+        data['ID'].append(tax_id)
+        data['Name'].append(tax_names[tax_id])
+        data['Rank'].append(tax_ranks[tax_id])
+        data['Parent'].append(parent[tax_id])
+        data['Count Input'].append(count_input[tax_id])
+        # data['Color'].append(RANK2COL[tax_ranks[tax_id]])
+        if tax_id in count_esmecata.keys():
+            data['Count Esmecata'].append(count_esmecata[tax_id])
+            data['Color'].append(RANK2COL[tax_ranks[tax_id]])
+            #data['Shape'].append('')
+        else:
+            data['Count Esmecata'].append(0)
+            data['Color'].append('#ffffff')
+            #data['Shape'].append('/')
+
     return data
 
 

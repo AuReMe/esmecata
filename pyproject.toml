@@ -23,6 +23,7 @@ dependencies = [
 
 [project.scripts]
 esmecata = "esmecata.__main__:main"
+esmecata_analysis = "esmecata.__main_analysis__:main"
 
 [project.urls]
 Homepage = "https://github.com/AuReMe/esmecata"
@@ -30,7 +31,7 @@ Changelog = "https://github.com/AuReMe/esmecata/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 packages = ['esmecata']
-package-dir = {'esmecata'= 'esmecata'}
+package-dir = {'esmecata' = 'esmecata', 'esmecata.esmecata' = 'esmecata/esmecata' , 'esmecata.esmecata_analysis' = 'esmecata/esmecata_analysis'}
 
 [tool.setuptools.dynamic]
 version = { attr = "esmecata.__version__" }
