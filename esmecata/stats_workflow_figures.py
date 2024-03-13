@@ -442,7 +442,7 @@ def create_annot_obs_df(dataset_annotation_file, outpath, content):
     """ Prepare data of 'frequences of EC numbers / Go terms in taxa' and 'fraction of all EC numbers / Go terms in taxa'
 
     Args:
-        dataset_annotation_file (str) : path to an EC*taxa or Go*taxa matrix, computed by create_dataset_annotation_file()
+        dataset_annotation_file (str) : path to an EC*taxa or GO*taxa matrix, computed by create_dataset_annotation_file()
         outpath (str) : the path of the esmecata run
         content (str) : 'GO terms' or 'EC numbers' to specifies which data is processed
 
@@ -651,7 +651,7 @@ def annot_frequencies_in_obs_hist(df, results_path, content, n_bins=20, savefig=
     For the given rank, plots stacked barplots of how many EC numbers belongs to each taxa of this rank (i.e. which EC are in many taxa, and which EC are in few taxa).
 
         Parameters:
-            df (pandas): a pandas df with ECs as rows, taxa as column, filled with the frequencies of ECs in the taxa's clusters
+            df (pandas): a pandas df with EC/GO as rows, taxa as column, filled with the frequencies of EC/GO in taxa
             results_path (str) : the path of the esmecata run
             content (str) : 'GO terms' or 'EC numbers' to specifies which data is processed
 
@@ -762,6 +762,18 @@ def fraction_of_all_annot_in_obs_hist(df, df_taxo, results_path, content, n_bins
 # ==========================
 
 def ec_sunburst(ec_classes, results_path, savefig=True):
+    '''
+    Calls ontosunburst to create a figure summarizing EC numbers categories, counts and proportions
+    for the whole dataset
+
+        Parameters:
+            ec_classes (list): a list of EC numbers
+            results_path (str): the path of an esmecata run
+            savefig (bool): if the figure should be saved (in html format). True by default
+
+        Returns:
+            fig (plotly) : a plotly figure conda object 
+    '''
     fig = ec_ontosunburst(
         ec_set=ec_classes, 
         output=None,
@@ -1023,7 +1035,7 @@ def proteomes_representativeness_details(df, clust_threshold, results_path, save
     return fig
 
 # ======================
-# Metadata Page function
+# Metadata Page function
 # ======================
 
 def reproducibility_tokens(outdir):

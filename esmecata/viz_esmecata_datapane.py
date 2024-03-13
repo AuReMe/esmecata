@@ -38,12 +38,27 @@ for dir in dirs:
     except OSError: pass
 
 print("Getting data")
+
 DATA = swf.post_analysis_config(args.input, args.outdir)
-_ = create_dataset_annotation_file(path.join(args.outdir, "2_annotation/annotation_reference"), path.join(args.outdir, "3_analysis/dataset_annotation_ec.tsv"), "EC")
-_ = create_dataset_annotation_file(path.join(args.outdir, "2_annotation/annotation_reference"), path.join(args.outdir, "3_analysis/dataset_annotation_go.tsv"), "GO")
-DATA2 = swf.create_annot_obs_df(path.join(args.outdir, "3_analysis/dataset_annotation_ec.tsv"), args.outdir, "EC numbers")
-DATA3 = swf.create_annot_obs_df(path.join(args.outdir, "3_analysis/dataset_annotation_go.tsv"), args.outdir, "GO terms")
-DF_CLUSTERING = swf.data_proteome_representativeness(DATA["PROTEOME_TAX_ID"], path.join(args.outdir, '1_clustering/computed_threshold'))
+
+_ = create_dataset_annotation_file(path.join(args.outdir, "2_annotation/annotation_reference"), 
+                                   path.join(args.outdir, "3_analysis/dataset_annotation_ec.tsv"), 
+                                   "EC")
+
+_ = create_dataset_annotation_file(path.join(args.outdir, "2_annotation/annotation_reference"), 
+                                   path.join(args.outdir, "3_analysis/dataset_annotation_go.tsv"), 
+                                   "GO")
+
+DATA2 = swf.create_annot_obs_df(path.join(args.outdir, "3_analysis/dataset_annotation_ec.tsv"), 
+                                args.outdir, 
+                                "EC numbers")
+
+DATA3 = swf.create_annot_obs_df(path.join(args.outdir, "3_analysis/dataset_annotation_go.tsv"), 
+                                args.outdir, 
+                                "GO terms")
+
+DF_CLUSTERING = swf.data_proteome_representativeness(DATA["PROTEOME_TAX_ID"], 
+                                                     path.join(args.outdir, '1_clustering/computed_threshold'))
 
 RANK = 'phylum'
 
