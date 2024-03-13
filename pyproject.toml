@@ -29,6 +29,13 @@ esmecata_analysis = "esmecata.__main_analysis__:main"
 Homepage = "https://github.com/AuReMe/esmecata"
 Changelog = "https://github.com/AuReMe/esmecata/blob/main/CHANGELOG.md"
 
+[project.optional-dependencies]
+ANALYSIS = ['datapane',
+  'plotly',
+  'kaleido',
+  'ontosunburst'
+]
+
 [tool.setuptools]
 packages = ['esmecata']
 package-dir = {'esmecata' = 'esmecata', 'esmecata.esmecata' = 'esmecata/esmecata' , 'esmecata.esmecata_analysis' = 'esmecata/esmecata_analysis'}

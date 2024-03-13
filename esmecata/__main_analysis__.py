@@ -27,7 +27,7 @@ MESSAGE = '''
 Create report files from esmecata output folder.
 '''
 REQUIRES = '''
-Requires: dataplane, plotly, kaleido, ontosunburst.
+Requires: datapane, plotly, kaleido, ontosunburst.
 '''
 
 logger = logging.getLogger()
