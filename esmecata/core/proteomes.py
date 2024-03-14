@@ -333,7 +333,7 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
 
 def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
     """Using the rank_limit specificied, remove the taxon superior to this rank.
-    For example, if rank_limit == 'family', taxa associated to rank superior to family will be removed.
+    For example, if rank_limit == 'family', taxa associated with rank superior to family will be removed.
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID

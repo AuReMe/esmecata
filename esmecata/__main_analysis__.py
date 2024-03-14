@@ -19,7 +19,7 @@ import os
 import sys
 import time
 
-from esmecata.esmecata_analysis.esmecata_analysis_workflow import run_analysis_pipeline
+from esmecata.esmecata_analysis.esmecata_analysis_workflow import run_analysis_pipeline, run_proteomes_report_creation, run_clustering_report_creation
 from esmecata.utils import is_valid_dir
 from esmecata import __version__ as VERSION
 
@@ -81,9 +81,25 @@ def main():
 
     create_report_parser = subparsers.add_parser(
         'create_report',
-        help='Create report from esmecata output folder.',
+        help='Create report from esmecata output folder of workflow subcommand.',
         parents=[
             parent_parser_i, parent_parser_f, parent_parser_o
+            ],
+        allow_abbrev=False)
+
+    create_report_proteomes_parser = subparsers.add_parser(
+        'create_report_proteomes',
+        help='Create report from esmecata output folder of proteomes subcommand.',
+        parents=[
+            parent_parser_f, parent_parser_o
+            ],
+        allow_abbrev=False)
+
+    create_report_clustering_parser = subparsers.add_parser(
+        'create_report_clustering',
+        help='Create report from esmecata output folder of clustering subcommand.',
+        parents=[
+            parent_parser_f, parent_parser_o
             ],
         allow_abbrev=False)
 
@@ -111,6 +127,10 @@ def main():
 
     if args.cmd == 'create_report':
         run_analysis_pipeline(args.input, args.input_folder, args.output)
+    elif args.cmd == 'create_report_proteomes':
+        run_proteomes_report_creation(args.input_folder, args.output)
+    elif args.cmd == 'create_report_clustering':
+        run_clustering_report_creation(args.input_folder, args.output)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

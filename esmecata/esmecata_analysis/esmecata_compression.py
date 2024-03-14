@@ -466,6 +466,36 @@ def draw_sankey_fig(fig_data: Dict[str, List[Any]], output: str, show_fig: bool)
 
 # MAIN FUNCTION
 # ======================================================================================================================
+def esmecata_compression_taxonomy_file(input_file, output, show_fig):
+    """ Draw a Sankey graph showing compression and taxonomic ranks rearrangement between input and output taxa of an
+    Esmecata run.
+
+    Parameters
+    ----------
+    input_file: str
+        Path to the taxonomy_diff file in proteomes folder
+    output: str
+        Name of the output file
+    show_fig: bool (default=False)
+        True to show figure, False to only save in html
+    """
+    input_data = get_input_data(input_file)
+    fig_data = get_fig_parameters(input_data)
+    
+    fig_height = 10*len(fig_data[LABELS]) # bug report : Datapane does not uses height correctly if coded inside draw_sankey_fig. Code here instead works (why ?)
+    if fig_height < 600:
+        fig_height = 600
+    
+    fig = draw_sankey_fig(fig_data, f'{output}.html', show_fig)
+    fig.update_layout(height=fig_height, 
+                      font=dict(family="Courier New, monospace",
+                                size=14,
+                                color="black"))
+    fig.write_html(f'{output}.html')
+
+    return fig
+
+
 def esmecata_compression(run_name: str, output: str, show_fig: bool = False):
     """ Draw a Sankey graph showing compression and taxonomic ranks rearrangement between input and output taxa of an
     Esmecata run.
@@ -480,18 +510,5 @@ def esmecata_compression(run_name: str, output: str, show_fig: bool = False):
         True to show figure, False to only save in html
     """
     tax_diff_file = os.path.join(run_name, '0_proteomes', 'taxonomy_diff.tsv')
-    input_data = get_input_data(tax_diff_file)
-    fig_data = get_fig_parameters(input_data)
-    
-    fig_height = 10*len(fig_data[LABELS]) # bug report : Datapane does not uses height correctly if coded inside draw_sankey_fig. Code here instead works (why ?)
-    if fig_height < 600:
-        fig_height = 600
-    
-    fig = draw_sankey_fig(fig_data, f'{output}.html', show_fig)
-    fig.update_layout(height=fig_height, 
-                      font=dict(family="Courier New, monospace",
-                                size=14,
-                                color="black"))
-    fig.write_html(f'{output}.html')
-
+    fig = esmecata_compression_taxonomy_file(tax_diff_file, output, show_fig)
     return fig

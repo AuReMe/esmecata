@@ -1,4 +1,4 @@
-from esmecata.annotation import extract_protein_cluster, search_already_annotated_protein, query_uniprot_annotation_rest, \
+from esmecata.core.annotation import extract_protein_cluster, search_already_annotated_protein, query_uniprot_annotation_rest, \
                                 query_uniprot_annotation_sparql, propagate_annotation_in_cluster, extract_protein_annotation_from_files
 
 from Bio import SeqIO

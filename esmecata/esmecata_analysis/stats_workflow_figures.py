@@ -172,7 +172,6 @@ def post_analysis_config(input_table, results_path):
         index_col='observation_name')
     
     df_stats = stats_nb_proteomes.join([stats_nb_clustering, stats_nb_annotation])
-    df_stats.to_csv('test.tsv', sep='\t')
     df_stats = df_stats.dropna()
 
     # Load input
@@ -821,7 +820,7 @@ def ec_sunburst_per_model(ec_classes, results_path, taxgroup, savefig=True):
 
     fig = ontosunburst(ontology='ec',
         metabolic_objects=ec_classes, 
-        output=None,
+        output=figpath,
         root_cut="total")
     
     fig.update_layout(
@@ -867,7 +866,7 @@ def _hex_to_rgb(hex, opacity):
 
     return rgba
 
-def data_proteome_representativeness(pandas_dict, computed_threshold_folder):
+def data_proteome_representativeness(proteome_tax_id, computed_threshold_folder):
     ''' 
     Prepare data for plotting summary of the clustering step (i.e. representativeness ratio), from the computed threshold folder and the proteomes_tax_id file.
 
@@ -879,10 +878,9 @@ def data_proteome_representativeness(pandas_dict, computed_threshold_folder):
             statsdf (pandas) : a pandas dataframe summarizing the mean, max, and min number of protein clusters for each clustering trhesholdand each input taxa
     '''
     # From proteomes_tax_id get the taxonomic rank for each observation name.
-    proteome_tax_id = pandas_dict['PROTEOME_TAX_ID']
     tax_rank = proteome_tax_id['tax_rank'].to_dict()
-    df_stats = pandas_dict['DF_STATS']
-    tax_obs_name = {key: value.replace(' ', '_') for key, value in df_stats['EsMeCaTa_used_taxon'].to_dict().items()}
+
+    tax_obs_name = {key: value.replace(' ', '_') for key, value in proteome_tax_id['name'].to_dict().items()}
 
     data = []
     for obs_name in tax_rank:
