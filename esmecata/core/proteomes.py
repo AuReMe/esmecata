@@ -949,7 +949,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
             # If tax_id has already been found use the corresponding proteomes without new requests.
             if tax_id in tax_id_founds:
                 proteomes_ids[observation_name] = (tax_id, tax_id_founds[tax_id])
-                proteomes_descriptions.append(proteome_data[tax_id])
+                proteomes_descriptions.extend(proteome_data[tax_id])
                 if len(tax_id_founds[tax_id]) == 1:
                     single_proteomes[observation_name] = (tax_id, tax_id_founds[tax_id])
                 logger.info('|EsMeCaTa|proteomes| "%s" already associated with proteomes, %s will be associated with the taxon "%s" with %d proteomes.', tax_name, observation_name, tax_name, len(tax_id_founds[tax_id]))
@@ -1320,6 +1320,33 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
     return proteome_to_download, session
 
 
+def download_proteome_file(proteome, output_proteome_file, option_bioservices=None, session=None, uniprot_sparql_endpoint=None):
+    """Download proteome file.
+
+    Args:
+        proteome (str): UniProt identifier of the proteome.
+        output_proteome_file (str): pathname to the output proteome file.
+        option_bioservices (bool): use bioservices instead of manual queries.
+        session: request session object
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint).
+    """
+    if uniprot_sparql_endpoint is not None:
+        sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
+    else:
+        if option_bioservices is None:
+            http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
+            proteome_response = session.get(http_str)
+            with open(output_proteome_file, 'wb') as f:
+                f.write(proteome_response.content)
+        else:
+            import bioservices
+            uniprot_bioservices = bioservices.UniProt()
+            data_fasta = uniprot_bioservices.search(f'(proteome:{proteome})', database='uniprot',
+                                                    frmt='fasta', compress=True, progress=False)
+            with open(output_proteome_file, 'wb') as f:
+                f.write(data_fasta)
+
+
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1,
@@ -1363,22 +1390,11 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     for index, proteome in enumerate(proteome_to_download):
         output_proteome_file = os.path.join(proteomes_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
-            if uniprot_sparql_endpoint is not None:
-                sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
-            else:
-                if option_bioservices is None:
-                    http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
-                    proteome_response = session.get(http_str)
-                    with open(output_proteome_file, 'wb') as f:
-                        f.write(proteome_response.content)
-                else:
-                    import bioservices
-                    uniprot_bioservices = bioservices.UniProt()
-                    data_fasta = uniprot_bioservices.search(f'(proteome:{proteome})', database='uniprot',
-                                                            frmt='fasta', compress=True, progress=False)
-                    with open(output_proteome_file, 'wb') as f:
-                        f.write(data_fasta)
-
+            download_proteome_file(proteome, output_proteome_file, option_bioservices, session, uniprot_sparql_endpoint)
+            # Check if downloaded file is not empty.
+            if os.path.getsize(output_proteome_file) <= 20:
+                time.sleep(2)
+                download_proteome_file(proteome, output_proteome_file, option_bioservices, session, uniprot_sparql_endpoint)
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 
