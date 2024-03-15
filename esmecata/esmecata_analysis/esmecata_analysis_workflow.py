@@ -8,7 +8,8 @@ from esmecata.esmecata_analysis.ec_sunburst_per_model import create_sunburst_ec
 from esmecata.esmecata_analysis.viz_esmecata_datapane import create_datapane
 from esmecata.esmecata_analysis.esmecata2taxontology import get_fig_parameters, generate_sunburst_fig
 from esmecata.esmecata_analysis.stats_workflow_figures import distributions_by_ranks, compare_ranks_in_out, _format_taxo, create_proteome_representativeness_lineplot_px, \
-                                                    data_proteome_representativeness, proteomes_representativeness_details
+                                                    data_proteome_representativeness, proteomes_representativeness_details, create_annot_obs_df,annot_frequencies_in_obs, \
+                                                    fraction_of_all_annot_in_obs, annot_frequencies_in_obs_hist, fraction_of_all_annot_in_obs_hist, ec_sunburst
 from esmecata.esmecata_analysis.esmecata_compression import esmecata_compression_taxonomy_file
 
 logger = logging.getLogger(__name__)
@@ -64,3 +65,29 @@ def run_clustering_report_creation(input_folder, output_folder):
     fig12_details = proteomes_representativeness_details(df_clustering,
         metadata_clustering["tool_options"]["clust_threshold"],
         output_folder)
+
+
+def run_annotation_report_creation(input_folder, output_folder):
+    annotation_reference_folder = os.path.join(input_folder, 'annotation_reference')
+    dataset_annotation_ec_file = os.path.join(output_folder, 'dataset_annotation_ec.tsv')
+    dataset_annotation_go_file = os.path.join(output_folder, 'dataset_annotation_go.tsv')
+
+    _ = create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_ec_file, 'EC')
+
+    _ = create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_go_file, 'GO')
+
+    data_ec_number = create_annot_obs_df(dataset_annotation_ec_file, output_folder, 'EC numbers')
+
+    data_go_term = create_annot_obs_df(dataset_annotation_go_file, output_folder, "GO terms")
+
+    fig5 = annot_frequencies_in_obs(data_ec_number["df_annot_frequencies"], output_folder, "EC numbers")
+    #fig6 = fraction_of_all_annot_in_obs(data_ec_number["df_fractionin_obs"], DATA["DF_STATS"], output_folder, "EC numbers")
+    fig7 = annot_frequencies_in_obs_hist(data_ec_number["df_annot_frequencies"], output_folder, "EC numbers")
+    #fig8 = fraction_of_all_annot_in_obs_hist(data_ec_number["df_fractionin_obs"], DATA["DF_STATS"], output_folder, "EC numbers")
+
+    fig5b = annot_frequencies_in_obs(data_go_term["df_annot_frequencies"], output_folder, "GO terms")
+    #fig6b = fraction_of_all_annot_in_obs(data_go_term["df_fractionin_obs"], DATA["DF_STATS"], output_folder, "GO terms")
+    fig7b = annot_frequencies_in_obs_hist(data_go_term["df_annot_frequencies"], output_folder, "GO terms")
+    #fig8b = fraction_of_all_annot_in_obs_hist(data_go_term["df_fractionin_obs"], DATA["DF_STATS"], output_folder, "GO terms")
+
+    fig11 = ec_sunburst(data_ec_number["df_annot_frequencies"].index, output_folder)

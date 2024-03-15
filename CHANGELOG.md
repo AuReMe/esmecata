@@ -1,5 +1,25 @@
 # Changelog
 
+# EsMeCaTa v0.5.0 (2024-03-15)
+
+WARNING: changes of the structure of th epython package of EsMeCaTa.
+If you previously use python import of the package, you will need to modify your import.
+
+## Add
+
+* Creation of command `esmecata_analysis` to create report from the output folder of EsMeCaTa. Scripts of `esmecata_analysis` allow to create `html`, `pdf` and `tsv reports from EsMeCaTa (work done by @Mataivic and @PaulineGHG). This command has different subcommands:
+    * (1) `create_report` to create a report from the output folder of the `esmecata workflow` subcommand.
+    * (2) `create_report_proteomes` to create report files from output of `esmecata proteomes` subcommand.
+    * (3) `create_report_clustering` to create report files from output of `esmecata clustering` subcommand.
+    * (4) `create_report_annotation` to create report files from output of `esmecata annotation` subcommand.
+
+* New optional dependencies for `esmecata_analysis`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
+
+## Modify
+
+* Modification of the structure of EsMeCaTa package, now divided in 2 main folders: (1) `esmecata/core` (for scritp spreviously contained in EsMeCaTa folder) and used for the workflow and (2) `esmecata/esmecata_analysis` to create report from esmecata output folder.
+* Modify test according to changes of packaging structure.
+
 # EsMeCaTa v0.4.2 (2024-02-26)
 
 ## Fix

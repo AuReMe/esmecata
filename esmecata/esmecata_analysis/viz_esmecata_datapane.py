@@ -35,6 +35,9 @@ def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_fol
 
     DATA = swf.post_analysis_config(esmecata_input_file, esmecata_core_output_folder)
 
+    data_summary_file_path = os.path.join(output_folder, 'data_summary.tsv')
+    DATA["DF_STATS"].to_csv(data_summary_file_path, sep='\t')
+
     _ = create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_ec_file, 'EC')
 
     _ = create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_go_file, 'GO')
@@ -43,7 +46,7 @@ def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_fol
 
     DATA3 = swf.create_annot_obs_df(dataset_annotation_go_file, output_folder, "GO terms")
 
-    DF_CLUSTERING = swf.data_proteome_representativeness(DATA, computed_threshold_folder)
+    DF_CLUSTERING = swf.data_proteome_representativeness(DATA['PROTEOME_TAX_ID'], computed_threshold_folder)
 
     RANK = 'phylum'
 

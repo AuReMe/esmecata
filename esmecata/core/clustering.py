@@ -476,6 +476,8 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
 
     all_tax_names = set(list(proteomes_taxa_names.values()))
 
+    logger.info('|EsMeCaTa|clustering| Create consensus proteomes for %d taxa.', len(all_tax_names))
+
     # For each OTU run mmseqs easy-cluster on them to found the clusters that have a protein in each proteome of the OTU.
     # We take the representative protein of a cluster if the cluster contains a protein from all the proteomes of the OTU.
     # If this condition is not satisfied the cluster will be ignored.
