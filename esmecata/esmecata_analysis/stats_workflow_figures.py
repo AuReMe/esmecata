@@ -778,7 +778,7 @@ def ec_sunburst(ec_classes, output_folder, savefig=True):
     '''
     fig = ontosunburst(ontology='ec',
         metabolic_objects=ec_classes, 
-        output=os.path.join(output_folder, "ec_classes_sunburst.html"),
+        output=os.path.join(output_folder, "ec_classes_sunburst"),
         root_cut="total")
     
     fig.update_layout(
@@ -799,14 +799,15 @@ def ec_sunburst(ec_classes, output_folder, savefig=True):
 
     return fig
 
-def ec_sunburst_per_model(ec_classes, results_path, taxgroup, savefig=True):
+
+def ec_sunburst_per_model(ec_classes, output_folder, taxgroup, savefig=True):
     '''
     Calls ontosunburst to create a figure summarizing EC numbers categories, counts and proportions
     for a model in the dataset
 
     Parameters
         ec_classes (list) : a list of EC numbers
-        results_path (str): the path of an esmecata run
+        output_folder (str): path to the output folder
         taxgroup (int) : an ete3 taxonomic group id
         savefig (bool): if the figure should be saved (in svg format). True by default
 
@@ -815,8 +816,8 @@ def ec_sunburst_per_model(ec_classes, results_path, taxgroup, savefig=True):
     '''
 
     title = f"{taxgroup}: EC numbers categories, counts and proportions"
-    figpath = os.path.join(results_path, f"3_analysis/annotation_figures/ec_sunburst_per_model/{taxgroup}_ec_classes_sunburst.svg")
-    jsonpath = os.path.join(results_path, f"3_analysis/annotation_figures/ec_sunburst_per_model/{taxgroup}_ec_classes_sunburst.json")
+    figpath = os.path.join(output_folder, f"{taxgroup}_ec_classes_sunburst")
+    jsonpath = os.path.join(output_folder, f"{taxgroup}_ec_classes_sunburst.json")
 
     fig = ontosunburst(ontology='ec',
         metabolic_objects=ec_classes, 
@@ -835,7 +836,7 @@ def ec_sunburst_per_model(ec_classes, results_path, taxgroup, savefig=True):
 
     if savefig:
         # fig.write_html(figpath)
-        fig.write_image(figpath)
+        fig.write_image(figpath + '.svg')
         write_json(
             fig, 
             os.path.join(jsonpath), 
@@ -885,9 +886,14 @@ def data_proteome_representativeness(proteome_tax_id, computed_threshold_folder)
     data = []
     for obs_name in tax_rank:
         taxon_name = tax_obs_name[obs_name]
+        tsv_file_path = os.path.join(computed_threshold_folder, taxon_name+'.tsv')
+        obs_tsv_file_path = os.path.join(computed_threshold_folder, obs_name+'.tsv')
+        # Add a condition for run of esmecata with version under 0.4.0: in computed_threshold folder, files were named according to observation name.
+        if not os.path.exists(tsv_file_path) and os.path.exists(obs_tsv_file_path):
+            tsv_file_path = obs_tsv_file_path
+
         full_name = f"Input name : {obs_name}; EsMeCaTa name :{proteome_tax_id.loc[obs_name,'name']}"# More precision for hover info if needed
 
-        tsv_file_path = os.path.join(computed_threshold_folder, taxon_name+'.tsv')
         tmp_df = pd.read_csv(tsv_file_path, sep='\t')
         for tmp_threshold in np.arange(0, 1.01, 0.025):
             # Compute the number of protein clusters associated with representativeness ratio of tmp_threshold.
@@ -993,9 +999,10 @@ def proteomes_representativeness_details(df, clust_threshold, output_folder, sav
     This figure shows details of the representativeness ratio and the number of associated protein clusters according to each cluster. There is one sub-pnale by taxonomic rank.
 
         Parameters:
-            df (pandas) : a dataframe summarizing proteomes by cluster and by threshold, output of data_proteome_representativeness()
-            clust_threshold (float) : the threshold between 0 and 1 fixed by the user for the clustering process of EsMeCaTa
+            df (pandas) : a dataframe summarizing proteomes by cluster and by threshold, output of data_proteome_representativeness().
+            clust_threshold (float) : the threshold between 0 and 1 fixed by the user for the clustering process of EsMeCaTa.
             output_folder (str): pathname to the output figure file.
+            savefig (bool): boolean to create output files.
 
         Returns:
             fig : a plotly html figure
@@ -1077,7 +1084,7 @@ def proteomes_representativeness_details(df, clust_threshold, output_folder, sav
         fig.write_html(os.path.join(output_folder, 'proteome_representativeness_details.html'))
         write_json(
             fig, 
-            os.path.join(output_folder, '/proteome_representativeness_details.json'), 
+            os.path.join(output_folder, 'proteome_representativeness_details.json'),
             pretty=True)
 
     return fig

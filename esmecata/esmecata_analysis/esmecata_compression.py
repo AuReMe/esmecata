@@ -91,7 +91,7 @@ OUT_TAXA_SUFFIX = ' '
 # FUNCTIONS
 # ======================================================================================================================
 def sort_tax_by_ranks(input_data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
-    """ Sort the 'input_lst' and 'output_lst' lists of 'input_data' according to taxonomic rank : more specific to
+    """ Sort the 'input_lst' and 'output_list' lists of 'input_data' according to taxonomic rank : more specific to
     less specific (~ species --> kingdom)
 
     Parameters
