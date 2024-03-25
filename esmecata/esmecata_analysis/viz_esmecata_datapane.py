@@ -11,7 +11,7 @@ from esmecata.esmecata_analysis.esmecata_compression import esmecata_compression
 from plotly.io import write_json
 
 
-def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_folder):
+def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_folder, create_svg=False):
 
     # ======
     # CONFIG
@@ -72,26 +72,45 @@ def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_fol
 
     esmecata2taxonomy_json_file_path = os.path.join(output_folder, 'inputs_outputs_figures', 'esmecata2taxonomy.json')
     write_json(fig9, esmecata2taxonomy_json_file_path, pretty=True)
+    if create_svg is True:
+        esmecata2taxonomy_svg_file_path = os.path.join(output_folder, 'inputs_outputs_figures', 'esmecata2taxonomy.svg')
+        fig9.write_image(esmecata2taxonomy_svg_file_path)
 
     esmecata_compression_json_file_path = os.path.join(output_folder, 'inputs_outputs_figures', 'esmecata_compression.json')
     write_json(fig10, esmecata_compression_json_file_path, pretty=True)
+    if create_svg is True:
+        esmecata_compression_svg_file_path = os.path.join(output_folder, 'inputs_outputs_figures', 'esmecata_compression.svg')
+        fig10.write_image(esmecata_compression_svg_file_path)
 
     print("Building proteomes summary figures")
     output_proteomes_figure_folder = os.path.join(output_folder, 'proteomes_figures')
     fig1 = swf.distributions_by_ranks(DATA["DF_STATS"], output_proteomes_figure_folder, 15, RANK)
+    if create_svg is True:
+        proteomes_distribution_by_ranks_svg_file = os.path.join(output_proteomes_figure_folder, 'proteomes_distribution_by_ranks.svg')
+        fig1.write_image(proteomes_distribution_by_ranks_svg_file)
+
     # fig2 = swf.n_prot_ec_go_correlations(DATA["DF_STATS"], args.outdir, RANK)
     # fig3 = swf.taxo_ranks_contribution(DATA["PROTEOME_TAX_ID"], args.outdir)
     fig4 = swf.compare_ranks_in_out(DATA["PROTEOME_TAX_ID"], DATA["ASSOCIATION_PROTEOME_TAX_ID"], output_proteomes_figure_folder)
+    if create_svg is True:
+        input_and_output_ranks_svg_file = os.path.join(output_proteomes_figure_folder, 'input_and_output_ranks.svg')
+        fig4.write_image(input_and_output_ranks_svg_file)
 
     print("Building clustering summary figures")
     output_clustering_figures_folder = os.path.join(output_folder, 'clustering_figures')
     fig12 = swf.create_proteome_representativeness_lineplot_px(DF_CLUSTERING,
         metadata["clustering"]["tool_options"]["clust_threshold"],
         output_clustering_figures_folder)
+    if create_svg is True:
+        proteome_representativeness_svg_file = os.path.join(output_clustering_figures_folder, 'proteome_representativeness.svg')
+        fig12.write_image(proteome_representativeness_svg_file)
 
     fig12_details = swf.proteomes_representativeness_details(DF_CLUSTERING,
         metadata["clustering"]["tool_options"]["clust_threshold"],
         output_clustering_figures_folder)
+    if create_svg is True:
+        proteome_representativeness_details_svg_file = os.path.join(output_clustering_figures_folder, 'proteome_representativeness_details.svg')
+        fig12_details.write_image(proteome_representativeness_details_svg_file)
 
     print("Building annotation summary figures")
     output_annotation_figures_folder = os.path.join(output_folder, 'annotation_figures')
@@ -99,6 +118,15 @@ def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_fol
     fig6 = swf.fraction_of_all_annot_in_obs(DATA2["df_fractionin_obs"], DATA["DF_STATS"], output_annotation_figures_folder, "EC numbers")
     fig7 = swf.annot_frequencies_in_obs_hist(DATA2["df_annot_frequencies"], output_annotation_figures_folder, "EC numbers")
     fig8 = swf.fraction_of_all_annot_in_obs_hist(DATA2["df_fractionin_obs"], DATA["DF_STATS"], output_annotation_figures_folder, "EC numbers")
+    if create_svg is True:
+        EC_numbers_frequencies_in_taxa_svg_file = os.path.join(output_annotation_figures_folder, 'EC_numbers_frequencies_in_taxa.svg')
+        fig5.write_image(EC_numbers_frequencies_in_taxa_svg_file)
+        EC_numbers_fraction_per_taxa_svg_file = os.path.join(output_annotation_figures_folder, 'EC_numbers_fraction_per_taxa.svg')
+        fig6.write_image(EC_numbers_fraction_per_taxa_svg_file)
+        EC_numbers_frequencies_in_taxa_hist_svg_file = os.path.join(output_annotation_figures_folder, 'EC_numbers_frequencies_in_taxa_hist.svg')
+        fig7.write_image(EC_numbers_frequencies_in_taxa_hist_svg_file)
+        EC_numbers_fraction_per_taxa_hist_svg_file = os.path.join(output_annotation_figures_folder, 'EC_numbers_fraction_per_taxa_hist.svg')
+        fig8.write_image(EC_numbers_fraction_per_taxa_hist_svg_file)
 
     fig5b = swf.annot_frequencies_in_obs(DATA3["df_annot_frequencies"], output_annotation_figures_folder, "GO terms")
     fig6b = swf.fraction_of_all_annot_in_obs(DATA3["df_fractionin_obs"], DATA["DF_STATS"], output_annotation_figures_folder, "GO terms")
@@ -106,6 +134,18 @@ def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_fol
     fig8b = swf.fraction_of_all_annot_in_obs_hist(DATA3["df_fractionin_obs"], DATA["DF_STATS"], output_annotation_figures_folder, "GO terms")
 
     fig11 = swf.ec_sunburst(DATA2["df_annot_frequencies"].index, output_annotation_figures_folder)
+
+    if create_svg is True:
+        GO_terms_frequencies_in_taxa_svg_file = os.path.join(output_annotation_figures_folder, 'GO_terms_frequencies_in_taxa.svg')
+        fig5b.write_image(GO_terms_frequencies_in_taxa_svg_file)
+        GO_terms_fraction_per_taxa_svg_file = os.path.join(output_annotation_figures_folder, 'GO_terms_fraction_per_taxa.svg')
+        fig6b.write_image(GO_terms_fraction_per_taxa_svg_file)
+        GO_terms_frequencies_in_taxa_hist_svg_file = os.path.join(output_annotation_figures_folder, 'GO_terms_frequencies_in_taxa_hist.svg')
+        fig7b.write_image(GO_terms_frequencies_in_taxa_hist_svg_file)
+        GO_terms_fraction_per_taxa_hist_svg_file = os.path.join(output_annotation_figures_folder, 'GO_terms_fraction_per_taxa_hist.svg')
+        fig8b.write_image(GO_terms_fraction_per_taxa_hist_svg_file)
+        ec_classes_sunburst_svg_file = os.path.join(output_annotation_figures_folder, 'ec_classes_sunburst.svg')
+        fig11.write_image(ec_classes_sunburst_svg_file)
 
     print("Formatting summary dataframes")
     if not DATA["DISCARDED"].empty:    

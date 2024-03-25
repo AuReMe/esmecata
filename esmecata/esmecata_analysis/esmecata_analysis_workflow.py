@@ -15,7 +15,7 @@ from esmecata.esmecata_analysis.esmecata_compression import esmecata_compression
 logger = logging.getLogger(__name__)
 
 
-def run_analysis_pipeline(input_file, input_folder, output_folder):
+def run_analysis_pipeline(input_file, input_folder, output_folder, create_svg=False):
     logger.info("--- Launch creation of report for workflow ---")
     annotation_referene_folder_path = os.path.join(input_folder, '2_annotation', 'annotation_reference')
     dataset_annotation_ec_file_path = os.path.join(output_folder, 'dataset_annotation_ec.tsv')
@@ -23,11 +23,11 @@ def run_analysis_pipeline(input_file, input_folder, output_folder):
 
     dataset_annotation_go_file_path = os.path.join(output_folder, 'dataset_annotation_go.tsv')
     create_dataset_annotation_file(annotation_referene_folder_path, dataset_annotation_go_file_path, content='GO')
-    #create_sunburst_ec(input_folder, output_folder)
-    create_datapane(input_file, input_folder, output_folder)
+
+    create_datapane(input_file, input_folder, output_folder, create_svg)
 
 
-def run_proteomes_report_creation(input_folder, output_folder):
+def run_proteomes_report_creation(input_folder, output_folder, create_svg=False):
     logger.info("--- Launch creation of report for proteomes ---")
     df_stat = pd.read_csv(os.path.join(input_folder, 'stat_number_proteome.tsv'), header=0, index_col='observation_name', sep='\t')
     df_proteome_tax_id = pd.read_csv(os.path.join(input_folder, 'proteome_tax_id.tsv'), header=0, index_col='observation_name', sep='\t')
@@ -49,7 +49,7 @@ def run_proteomes_report_creation(input_folder, output_folder):
     fig10 = esmecata_compression_taxonomy_file(tax_comp_file, output_file, False)
 
 
-def run_clustering_report_creation(input_folder, output_folder):
+def run_clustering_report_creation(input_folder, output_folder, create_svg=False):
     logger.info("--- Launch creation of report for clustering ---")
 
     df_proteome_tax_id = pd.read_csv(os.path.join(input_folder, 'proteome_tax_id.tsv'), header=0, index_col='observation_name', sep='\t')
@@ -67,7 +67,7 @@ def run_clustering_report_creation(input_folder, output_folder):
         output_folder)
 
 
-def run_annotation_report_creation(input_folder, output_folder):
+def run_annotation_report_creation(input_folder, output_folder, create_svg=False):
     annotation_reference_folder = os.path.join(input_folder, 'annotation_reference')
     dataset_annotation_ec_file = os.path.join(output_folder, 'dataset_annotation_ec.tsv')
     dataset_annotation_go_file = os.path.join(output_folder, 'dataset_annotation_go.tsv')

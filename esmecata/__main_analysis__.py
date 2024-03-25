@@ -73,6 +73,14 @@ def main():
         help='Output directory path.',
         metavar='OUPUT_DIR')
 
+    parent_parser_svg = argparse.ArgumentParser(add_help=False)
+    parent_parser_svg.add_argument(
+        '--svg',
+        dest='create_svg',
+        action='store_true',
+        required=False,
+        help='Create SVG files of picture.')
+
     # subparsers
     subparsers = parser.add_subparsers(
         title='subcommands',
@@ -83,7 +91,7 @@ def main():
         'create_report',
         help='Create report from esmecata output folder of workflow subcommand.',
         parents=[
-            parent_parser_i, parent_parser_f, parent_parser_o
+            parent_parser_i, parent_parser_f, parent_parser_o, parent_parser_svg
             ],
         allow_abbrev=False)
 
@@ -91,7 +99,7 @@ def main():
         'create_report_proteomes',
         help='Create report from esmecata output folder of proteomes subcommand.',
         parents=[
-            parent_parser_f, parent_parser_o
+            parent_parser_f, parent_parser_o, parent_parser_svg
             ],
         allow_abbrev=False)
 
@@ -99,7 +107,7 @@ def main():
         'create_report_clustering',
         help='Create report from esmecata output folder of clustering subcommand.',
         parents=[
-            parent_parser_f, parent_parser_o
+            parent_parser_f, parent_parser_o, parent_parser_svg
             ],
         allow_abbrev=False)
 
@@ -126,11 +134,11 @@ def main():
     logger.addHandler(console_handler)
 
     if args.cmd == 'create_report':
-        run_analysis_pipeline(args.input, args.input_folder, args.output)
+        run_analysis_pipeline(args.input, args.input_folder, args.output, args.create_svg)
     elif args.cmd == 'create_report_proteomes':
-        run_proteomes_report_creation(args.input_folder, args.output)
+        run_proteomes_report_creation(args.input_folder, args.output, args.create_svg)
     elif args.cmd == 'create_report_clustering':
-        run_clustering_report_creation(args.input_folder, args.output)
+        run_clustering_report_creation(args.input_folder, args.output, args.create_svg)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
