@@ -1,8 +1,8 @@
 # Changelog
 
-# EsMeCaTa v0.5.0 (2024-03-15)
+# EsMeCaTa v0.5.0 (2024-04-04)
 
-WARNING: changes of the structure of th epython package of EsMeCaTa.
+WARNING: changes of the structure of the python package of EsMeCaTa.
 If you previously use python import of the package, you will need to modify your import.
 
 ## Add
@@ -12,13 +12,19 @@ If you previously use python import of the package, you will need to modify your
     * (2) `create_report_proteomes` to create report files from output of `esmecata proteomes` subcommand.
     * (3) `create_report_clustering` to create report files from output of `esmecata clustering` subcommand.
     * (4) `create_report_annotation` to create report files from output of `esmecata annotation` subcommand.
-
+* Creation of command `esmecata_gseapy` to create enrichment analysis of functions predicted by EsMeCaTa according to taxon rank.
 * New optional dependencies for `esmecata_analysis`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
+* New optional dependencies for `esmecata_gseapy`: [gseap](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
+* Creation of a new file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
 
 ## Modify
 
-* Modification of the structure of EsMeCaTa package, now divided in 2 main folders: (1) `esmecata/core` (for scritp spreviously contained in EsMeCaTa folder) and used for the workflow and (2) `esmecata/esmecata_analysis` to create report from esmecata output folder.
+* Modification of the structure of EsMeCaTa package, now divided in 3 main folders: (1) `esmecata/core` (for scritp spreviously contained in EsMeCaTa folder) and used for the workflow, (2) `esmecata/esmecata_analysis` to create report from esmecata output folder and (3) `gseapy` to perform enrichment analysis of esmecata output.
 * Modify test according to changes of packaging structure.
+
+## Remove
+
+* Remvoe esmecata analysis subcommand as it was not used and not very useful.
 
 # EsMeCaTa v0.4.2 (2024-02-26)
 
