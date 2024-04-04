@@ -12,7 +12,6 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
   - [Requirements](#requirements)
   - [Installation](#installation)
     - [Conda and pip](#conda-and-pip)
-    - [Singularity](#singularity)
   - [Input](#input)
   - [EsMeCaTa commands](#esmecata-commands)
   - [EsMeCaTa functions](#esmecata-functions)
@@ -55,14 +54,13 @@ If you use the option `--bioservices`, EsMeCaTa will also require this package:
 
 - [bioservices](https://github.com/cokelaer/bioservices): To query Uniprot instead of using the query functions of EsMeCaTa (more robust overtime).
 
-
 ## Installation
 
 ### Conda and pip
 
-The easiest way to install the dependencies of EsMeCaTa is by using conda:
+The easiest way to install the dependencies of EsMeCaTa is by using conda (or mamba):
 
-```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 -c conda-forge -c bioconda```
+```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 eggnog-mapper -c conda-forge -c bioconda```
 
 A conda package for esmecata will be created in the future.
 
@@ -78,17 +76,7 @@ It can also be installed using esmecata github directory:
 
 ```pip install -e . --config-settings editable_mode=compat```
 
-### Singularity
-
-A Singularity recipe for EsMeCaTa is available [here](https://github.com/AuReMe/esmecata/blob/master/recipes/Singularity).
-
-The image can be created with the following command:
-
-```sudo singularity build  esmecata.sif Singularity```
-
-And EsMeCaTa can be used with:
-
-```singularity exec esmecata.sif esmecata workflow -i buchnera_workflow.tsv -o output```
+To use eggnog-mapper, you have to setup it and install [its database](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.12#storage-requirements), refer to the [setup part of the doc](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.12#setup).
 
 ## Input
 
