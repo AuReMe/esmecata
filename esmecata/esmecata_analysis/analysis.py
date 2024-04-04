@@ -32,13 +32,13 @@ def create_dataset_annotation_file(annotation_reference_folder, dataset_annotati
     Args:
         annotation_reference_folder (str): path to annotation reference folder
         dataset_annotation_file_path (str): path to output dataset annotation file
-        content (str): indicates which data to parse (default 'EC' other possible value is 'GO')
+        content (str): indicates which data to parse (default 'EC' other possible value is 'GO' or 'all')
 
     Returns:
         dataset_annotation (dict): annotation dict: observation_name as key and EC number as value
     """
-    if content not in ("EC", "GO"):
-        raise ValueError("Wrong content. Authorized values are 'EC' and 'GO'.")
+    if content not in ['EC', 'GO', 'all']:
+        raise ValueError("Wrong content. Authorized values are 'EC', 'GO' or 'all.")
 
     dataset_annotation = {}
     total_annotations = []
@@ -50,8 +50,12 @@ def create_dataset_annotation_file(annotation_reference_folder, dataset_annotati
         with open(annotation_file_path, 'r') as open_annotation_input_file_path:
             csvreader = csv.DictReader(open_annotation_input_file_path, delimiter='\t')
             for line in csvreader:
-                ecs = line[content].split(',')
-                annotations.extend(ecs)
+                if content in ['EC', 'GO']:
+                    intermediary_annots = line[content].split(',')
+                if content == 'all':
+                    intermediary_annots = line['GO'].split(',')
+                    intermediary_annots.extend(line['EC'])
+                annotations.extend(intermediary_annots)
         annotations = [annot for annot in annotations if annot != '']
         total_annotations.extend(annotations)
         dataset_annotation[annotation_file_name] = annotations

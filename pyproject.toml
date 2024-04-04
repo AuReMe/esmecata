@@ -24,6 +24,7 @@ dependencies = [
 [project.scripts]
 esmecata = "esmecata.__main__:main"
 esmecata_analysis = "esmecata.__main_analysis__:main"
+esmecata_gseapy = "esmecata.__main_gseapy__:main"
 
 [project.urls]
 Homepage = "https://github.com/AuReMe/esmecata"
@@ -34,6 +35,9 @@ ANALYSIS = ['datapane',
   'plotly',
   'kaleido',
   'ontosunburst'
+]
+GSEAPY = ['gseapy',
+  'orsum'
 ]
 
 [tool.setuptools]

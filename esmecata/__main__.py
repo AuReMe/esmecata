@@ -359,14 +359,6 @@ def main():
             parent_parser_update_affiliation, parent_parser_bioservices, parent_parser_eggnog_tmp_dir
             ],
         allow_abbrev=False)
-    analysis_parser = subparsers.add_parser(
-        'analysis',
-        help='Create clustermap for EC.',
-        parents=[
-            parent_parser_i_analysis_folder, parent_parser_o, parent_parser_taxon_rank,
-            parent_parser_nb_digit
-            ],
-        allow_abbrev=False)
 
     args = parser.parse_args()
 
@@ -436,8 +428,6 @@ def main():
                                 args.cpu, args.threshold_clustering, args.mmseqs_options,
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
                                 args.option_bioservices, args.eggnog_tmp_dir)
-    elif args.cmd == 'analysis':
-        perform_analysis(args.input, args.output, args.taxon_rank, args.nb_digit)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
