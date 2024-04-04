@@ -26,7 +26,6 @@ import shutil
 import subprocess
 import sys
 
-from collections import Counter
 from esmecata.utils import is_valid_dir
 from esmecata import __version__ as esmecata_version
 from esmecata.core.annotation import extract_protein_cluster, create_dataset_annotation_file

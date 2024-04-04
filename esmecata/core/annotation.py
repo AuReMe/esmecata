@@ -25,6 +25,7 @@ import sys
 import urllib.parse
 import urllib.request
 
+from collections import Counter
 from Bio import SeqIO
 from SPARQLWrapper import __version__ as sparqlwrapper_version
 from urllib.parse import urlparse, parse_qs, urlencode
