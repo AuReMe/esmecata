@@ -1182,6 +1182,63 @@ def create_comp_taxonomy_file(association_taxon_id_json, proteomes_ids, tax_id_n
                                       str(ref['Input ID']), str(ref['Esmecata ID']), ';'.join(ref['obs'])]))
 
 
+def get_taxon_obs_name(proteome_tax_id_file, selected_taxon_rank='family'):
+    """ From proteome tax id file, reads it and extract the taxonomic name associated with the observation name.
+    To achieve this, it searches for observation name with taxon rank equal to selected_taxon_rank.
+    To homogenise taxon names, the first extraction is performed with taxon ID and then the taxon IDs are translated into names.
+
+    Args:
+        proteome_tax_id_file (str): path to the proteome fax id file
+        selected_taxon_rank (str): taxonomic rank selected
+
+    Returns:
+        taxa_name (dict): annotation dict: taxon_name as key and observation_name as value
+    """
+    ncbi = NCBITaxa()
+    taxa_name_ids = {}
+    total_obs_name = []
+    selected_obs_name = []
+
+    # Parse proteome_tax_id_file to find observation name with taxon rank equal to selected_taxon_rank.
+    with open(proteome_tax_id_file, 'r') as proteome_tax_file:
+        csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
+        for line in csvreader:
+            observation_name = line['observation_name']
+            total_obs_name.append(observation_name)
+
+            tax_id = line['tax_id']
+            tax_rank = line['tax_rank']
+
+            found_taxon_id = None
+            if tax_rank == selected_taxon_rank:
+                found_taxon_id = tax_id
+            else:
+                tax_id_lineages = ncbi.get_lineage(tax_id)
+                for tax_id in tax_id_lineages:
+                    if ncbi.get_rank([tax_id])[tax_id] == selected_taxon_rank:
+                        found_taxon_id = tax_id
+
+            if found_taxon_id is not None:
+                if found_taxon_id not in taxa_name_ids:
+                    taxa_name_ids[found_taxon_id] = [observation_name]
+                    selected_obs_name.append(observation_name)
+                else:
+                    taxa_name_ids[found_taxon_id].append(observation_name)
+                    selected_obs_name.append(observation_name)
+
+    selected_obs_name = set(selected_obs_name)
+
+    logger.info('|EsMeCaTa|analysis| {0} of {1} could been associated with taxon rank {2}.'.format(len(selected_obs_name), len(total_obs_name), selected_taxon_rank))
+
+    # Translate taxon IDs into names.
+    taxa_names = {}
+    for tax_id in taxa_name_ids:
+        taxid2name = ncbi.get_taxid_translator([tax_id])[int(tax_id)]
+        taxa_names[taxid2name] = taxa_name_ids[tax_id]
+
+    return taxa_names
+
+
 def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1,

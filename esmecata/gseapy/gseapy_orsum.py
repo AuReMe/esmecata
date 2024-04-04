@@ -22,7 +22,7 @@ import urllib.request
 import gseapy
 
 from Bio.ExPASy import Enzyme
-from esmecata.esmecata_analysis.analysis import get_taxon_obs_name
+from esmecata.core.proteomes import get_taxon_obs_name
 
 def extract_annotation(annotation_reference_folder):
     """ From annotation reference folder, creates a dict indicating the file associated with each annotation.
