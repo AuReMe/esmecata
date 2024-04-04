@@ -30,7 +30,15 @@ from esmecata.esmecata_analysis.esmecata_compression import esmecata_compression
 logger = logging.getLogger(__name__)
 
 
-def run_analysis_pipeline(input_file, input_folder, output_folder, create_svg=False):
+def run_create_workflow_report(input_file, input_folder, output_folder, create_svg=False):
+    """ Create report from esmecata workflow output.
+
+    Args:
+        input_file (str): pathname to the input file of esmecata.
+        input_folder (str): pathname to the output folder of esmecata worklow.
+        output_folder (str): output folder path
+        create_svg (bool): boolean to create svg files of the figure
+    """
     logger.info("--- Launch creation of report for workflow ---")
     annotation_referene_folder_path = os.path.join(input_folder, '2_annotation', 'annotation_reference')
     dataset_annotation_ec_file_path = os.path.join(output_folder, 'dataset_annotation_ec.tsv')
@@ -43,6 +51,13 @@ def run_analysis_pipeline(input_file, input_folder, output_folder, create_svg=Fa
 
 
 def run_proteomes_report_creation(input_folder, output_folder, create_svg=False):
+    """ Create report from esmecata proteomes output.
+
+    Args:
+        input_folder (str): pathname to the output folder of esmecata proteomes.
+        output_folder (str): output folder path
+        create_svg (bool): boolean to create svg files of the figure
+    """
     logger.info("--- Launch creation of report for proteomes ---")
     df_stat = pd.read_csv(os.path.join(input_folder, 'stat_number_proteome.tsv'), header=0, index_col='observation_name', sep='\t')
     df_proteome_tax_id = pd.read_csv(os.path.join(input_folder, 'proteome_tax_id.tsv'), header=0, index_col='observation_name', sep='\t')
@@ -65,6 +80,13 @@ def run_proteomes_report_creation(input_folder, output_folder, create_svg=False)
 
 
 def run_clustering_report_creation(input_folder, output_folder, create_svg=False):
+    """ Create report from esmecata clustering output.
+
+    Args:
+        input_folder (str): pathname to the output folder of esmecata clustering.
+        output_folder (str): output folder path
+        create_svg (bool): boolean to create svg files of the figure
+    """
     logger.info("--- Launch creation of report for clustering ---")
 
     df_proteome_tax_id = pd.read_csv(os.path.join(input_folder, 'proteome_tax_id.tsv'), header=0, index_col='observation_name', sep='\t')
@@ -83,6 +105,13 @@ def run_clustering_report_creation(input_folder, output_folder, create_svg=False
 
 
 def run_annotation_report_creation(input_folder, output_folder, create_svg=False):
+    """ Create report from esmecata annotation output.
+
+    Args:
+        input_folder (str): pathname to the output folder of esmecata annotation.
+        output_folder (str): output folder path
+        create_svg (bool): boolean to create svg files of the figure
+    """
     annotation_reference_folder = os.path.join(input_folder, 'annotation_reference')
     dataset_annotation_ec_file = os.path.join(output_folder, 'dataset_annotation_ec.tsv')
     dataset_annotation_go_file = os.path.join(output_folder, 'dataset_annotation_go.tsv')

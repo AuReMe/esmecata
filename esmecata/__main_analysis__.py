@@ -19,7 +19,8 @@ import os
 import sys
 import time
 
-from esmecata.esmecata_analysis.esmecata_analysis_workflow import run_analysis_pipeline, run_proteomes_report_creation, run_clustering_report_creation
+from esmecata.esmecata_analysis.esmecata_analysis_workflow import run_create_workflow_report, run_proteomes_report_creation, run_clustering_report_creation, \
+                                                                    run_annotation_report_creation
 from esmecata.utils import is_valid_dir
 from esmecata import __version__ as VERSION
 
@@ -111,6 +112,14 @@ def main():
             ],
         allow_abbrev=False)
 
+    create_report_annotation_parser = subparsers.add_parser(
+        'create_report_annotation',
+        help='Create report from esmecata output folder of annotation subcommand.',
+        parents=[
+            parent_parser_f, parent_parser_o, parent_parser_svg
+            ],
+        allow_abbrev=False)
+
     args = parser.parse_args()
 
     # If no argument print the help.
@@ -134,11 +143,13 @@ def main():
     logger.addHandler(console_handler)
 
     if args.cmd == 'create_report':
-        run_analysis_pipeline(args.input, args.input_folder, args.output, args.create_svg)
+        run_create_workflow_report(args.input, args.input_folder, args.output, args.create_svg)
     elif args.cmd == 'create_report_proteomes':
         run_proteomes_report_creation(args.input_folder, args.output, args.create_svg)
     elif args.cmd == 'create_report_clustering':
         run_clustering_report_creation(args.input_folder, args.output, args.create_svg)
+    elif args.cmd == 'create_report_annotation':
+        run_annotation_report_creation(args.input_folder, args.output, args.create_svg)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
