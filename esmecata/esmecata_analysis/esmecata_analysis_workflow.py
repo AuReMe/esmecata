@@ -18,7 +18,7 @@ import json
 import logging
 import pandas as pd
 
-from esmecata.esmecata_analysis.analysis import create_dataset_annotation_file
+from esmecata.core.eggnog import create_dataset_annotation_file
 from esmecata.esmecata_analysis.ec_sunburst_per_model import create_sunburst_ec
 from esmecata.esmecata_analysis.viz_esmecata_datapane import create_datapane
 from esmecata.esmecata_analysis.esmecata2taxontology import get_fig_parameters, generate_sunburst_fig
