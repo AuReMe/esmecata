@@ -4,7 +4,7 @@
 
 EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affiliation (for example with 16S rRNA sequencing or using a specific taxon name) by using the UniProt Proteomes database. This can be used to (1) estimate protein sequences and functions for an organism with no sequenced genomes, (2) explore the protein diveristy of a taxon.
 
-![](esmecata.svg)
+![](pictures/esmecata.svg)
 
 ## Table of contents
 - [EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic affiliations](#esmecata-estimating-metabolic-capabilties-from-taxonomic-affiliations)
