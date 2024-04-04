@@ -24,8 +24,6 @@ import time
 import sys
 import urllib.parse
 import urllib.request
-import pandas as pd
-
 
 from Bio import SeqIO
 from SPARQLWrapper import __version__ as sparqlwrapper_version
@@ -33,6 +31,7 @@ from urllib.parse import urlparse, parse_qs, urlencode
 from requests.adapters import HTTPAdapter, Retry
 
 from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_dir, send_uniprot_sparql_query
+from esmecata.core.eggnog import create_dataset_annotation_file
 from esmecata import __version__ as esmecata_version
 
 URLLIB_HEADERS = {'User-Agent': 'EsMeCaTa annotation v' + esmecata_version + ', request by urllib package v' + urllib.request.__version__}
@@ -1294,6 +1293,9 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         taxon_id_csvwriter.writerow(['species', 'taxon_id'])
         for species in clustering_taxon_id:
             taxon_id_csvwriter.writerow([species, clustering_taxon_id[species]])
+
+    dataset_annotation_file_path = os.path.join(output_folder, 'dataset_annotation_observation_name.tsv')
+    create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_file_path, 'all')
 
     stat_file = os.path.join(output_folder, 'stat_number_annotation.tsv')
     compute_stat_annotation(annotation_reference_folder, stat_file)
