@@ -7,13 +7,13 @@ If you previously use python import of the package, you will need to modify your
 
 ## Add
 
-* Creation of command `esmecata_analysis` to create report from the output folder of EsMeCaTa. Scripts of `esmecata_analysis` allow to create `html`, `pdf` and `tsv reports from EsMeCaTa (work done by @Mataivic and @PaulineGHG). This command has different subcommands:
+* Creation of command `esmecata_report` to create report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv reports from EsMeCaTa (work done by @Mataivic and @PaulineGHG). This command has different subcommands:
     * (1) `create_report` to create a report from the output folder of the `esmecata workflow` subcommand.
     * (2) `create_report_proteomes` to create report files from output of `esmecata proteomes` subcommand.
     * (3) `create_report_clustering` to create report files from output of `esmecata clustering` subcommand.
     * (4) `create_report_annotation` to create report files from output of `esmecata annotation` subcommand.
 * Creation of command `esmecata_gseapy` to create enrichment analysis of functions predicted by EsMeCaTa according to taxon rank.
-* New optional dependencies for `esmecata_analysis`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
+* New optional dependencies for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
 * New optional dependencies for `esmecata_gseapy`: [gseap](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
 * Creation of a new file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
 

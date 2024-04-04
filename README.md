@@ -11,7 +11,8 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
   - [Table of contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Installation](#installation)
-    - [Conda and pip](#conda-and-pip)
+    - [Core pipeline installation](#core-pipeline-installation)
+    - [Optional dependencies](#optional-dependencies)
   - [Input](#input)
   - [EsMeCaTa commands](#esmecata-commands)
   - [EsMeCaTa functions](#esmecata-functions)
@@ -56,13 +57,11 @@ If you use the option `--bioservices`, EsMeCaTa will also require this package:
 
 ## Installation
 
-### Conda and pip
+### Core pipeline installation
 
 The easiest way to install the dependencies of EsMeCaTa is by using conda (or mamba):
 
 ```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 eggnog-mapper -c conda-forge -c bioconda```
-
-A conda package for esmecata will be created in the future.
 
 EsMeCata can be installed with pip command:
 
@@ -77,6 +76,19 @@ It can also be installed using esmecata github directory:
 ```pip install -e . --config-settings editable_mode=compat```
 
 To use eggnog-mapper, you have to setup it and install [its database](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.12#storage-requirements), refer to the [setup part of the doc](https://github.com/eggnogdb/eggnog-mapper/wiki/eggNOG-mapper-v2.1.5-to-v2.1.12#setup).
+
+### Optional dependencies
+
+`esmecata_report` requires:
+
+- [datapane](https://github.com/datapane/datapane).
+- [plotly](https://github.com/plotly/plotly.py).
+- [kaleido](https://github.com/plotly/Kaleido)
+- [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
+
+`esmecata_gseapy` requires:
+- [gseap](https://github.com/zqfang/GSEApy).
+- [orsum](https://github.com/ozanozisik/orsum).
 
 ## Input
 
