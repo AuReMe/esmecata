@@ -21,7 +21,7 @@ import datapane as dp
 
 from esmecata.esmecata_analysis import stats_workflow_figures as swf
 from esmecata.esmecata_analysis.esmecata2taxontology import esmecata2taxonomy
-from esmecata.core.eggnog import create_dataset_annotation_file
+from esmecata.core.annotation import create_dataset_annotation_file
 from esmecata.esmecata_analysis.esmecata_compression import esmecata_compression
 from plotly.io import write_json
 

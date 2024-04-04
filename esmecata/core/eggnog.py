@@ -29,7 +29,7 @@ import sys
 from collections import Counter
 from esmecata.utils import is_valid_dir
 from esmecata import __version__ as esmecata_version
-from esmecata.core.annotation import extract_protein_cluster
+from esmecata.core.annotation import extract_protein_cluster, create_dataset_annotation_file
 
 logger = logging.getLogger(__name__)
 
@@ -130,53 +130,6 @@ def compute_stat_annotation(annotation_reference_folder, stat_file=None):
                 csvwriter.writerow([observation_name, annotation_numbers[observation_name][0], annotation_numbers[observation_name][1]])
 
     return annotation_numbers
-
-
-def create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_file_path, content="EC"):
-    """ From annotation reference folder, creates a file resuming the number of ECs for each observation names.
-
-    Args:
-        annotation_reference_folder (str): path to annotation reference folder
-        dataset_annotation_file_path (str): path to output dataset annotation file
-        content (str): indicates which data to parse (default 'EC' other possible value is 'GO' or 'all')
-
-    Returns:
-        dataset_annotation (dict): annotation dict: observation_name as key and EC number as value
-    """
-    if content not in ['EC', 'GO', 'all']:
-        raise ValueError("Wrong content. Authorized values are 'EC', 'GO' or 'all.")
-
-    dataset_annotation = {}
-    total_annotations = []
-    for annotation_file in os.listdir(annotation_reference_folder):
-        annotation_file_name = os.path.splitext(annotation_file)[0]
-        annotation_file_path = os.path.join(annotation_reference_folder, annotation_file)
-
-        annotations = []
-        with open(annotation_file_path, 'r') as open_annotation_input_file_path:
-            csvreader = csv.DictReader(open_annotation_input_file_path, delimiter='\t')
-            for line in csvreader:
-                if content in ['EC', 'GO']:
-                    intermediary_annots = line[content].split(',')
-                if content == 'all':
-                    intermediary_annots = line['GO'].split(',')
-                    intermediary_annots.extend(line['EC'])
-                annotations.extend(intermediary_annots)
-        annotations = [annot for annot in annotations if annot != '']
-        total_annotations.extend(annotations)
-        dataset_annotation[annotation_file_name] = annotations
-
-    total_annotations = list(set(total_annotations))
-
-    with open(dataset_annotation_file_path, 'w') as dataset_annotation_file:
-        csvwriter = csv.writer(dataset_annotation_file, delimiter='\t')
-        csvwriter.writerow(['observation_name'] + total_annotations)
-        for observation_name in dataset_annotation:
-            occurrence_annotations = Counter(dataset_annotation[observation_name])
-            observation_name_annotations = [occurrence_annotations[annot] for annot in total_annotations]
-            csvwriter.writerow([observation_name] + observation_name_annotations)
-
-    return dataset_annotation
 
 
 def read_annotation(eggnog_outfile:str):
