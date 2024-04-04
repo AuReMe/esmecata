@@ -20,7 +20,7 @@ needed (in its default path)
 
 import os
 import pandas as pd
-from esmecata.esmecata_analysis.stats_workflow_figures import ec_sunburst_per_model
+from esmecata.report.stats_workflow_figures import ec_sunburst_per_model
 
 
 def create_sunburst_ec(esmecata_output_folder, output_folder):

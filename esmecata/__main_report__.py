@@ -19,7 +19,7 @@ import os
 import sys
 import time
 
-from esmecata.esmecata_analysis.esmecata_analysis_workflow import run_create_workflow_report, run_proteomes_report_creation, run_clustering_report_creation, \
+from esmecata.report.create_report import run_create_workflow_report, run_proteomes_report_creation, run_clustering_report_creation, \
                                                                     run_annotation_report_creation
 from esmecata.utils import is_valid_dir
 from esmecata import __version__ as VERSION

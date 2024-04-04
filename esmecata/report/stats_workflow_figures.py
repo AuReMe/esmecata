@@ -26,8 +26,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.io import write_json
 from plotly.subplots import make_subplots
+
 from ontosunburst.ontosunburst import ontosunburst
-from esmecata.esmecata_analysis.esmecata_compression import RANK2COL
+from esmecata.report.esmecata_compression import RANK2COL
 
 # from statistics import NormalDist
 # import matplotlib.pyplot as plt

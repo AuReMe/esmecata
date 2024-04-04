@@ -19,11 +19,12 @@ import os
 import json
 import datapane as dp
 
-from esmecata.esmecata_analysis import stats_workflow_figures as swf
-from esmecata.esmecata_analysis.esmecata2taxontology import esmecata2taxonomy
-from esmecata.core.annotation import create_dataset_annotation_file
-from esmecata.esmecata_analysis.esmecata_compression import esmecata_compression
 from plotly.io import write_json
+
+from esmecata.core.annotation import create_dataset_annotation_file
+from esmecata.report import stats_workflow_figures as swf
+from esmecata.report.esmecata2taxontology import esmecata2taxonomy
+from esmecata.report.esmecata_compression import esmecata_compression
 
 
 def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_folder, create_svg=False):

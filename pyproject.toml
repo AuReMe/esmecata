@@ -23,7 +23,7 @@ dependencies = [
 
 [project.scripts]
 esmecata = "esmecata.__main__:main"
-esmecata_analysis = "esmecata.__main_analysis__:main"
+esmecata_report = "esmecata.__main_report__:main"
 esmecata_gseapy = "esmecata.__main_gseapy__:main"
 
 [project.urls]
@@ -42,7 +42,7 @@ GSEAPY = ['gseapy',
 
 [tool.setuptools]
 packages = ['esmecata']
-package-dir = {'esmecata' = 'esmecata', 'esmecata.esmecata' = 'esmecata/esmecata' , 'esmecata.esmecata_analysis' = 'esmecata/esmecata_analysis'}
+package-dir = {'esmecata' = 'esmecata', 'esmecata.core' = 'esmecata/core' , 'esmecata.report' = 'esmecata/report', 'esmecata.gseapy' = 'esmecata/gseapy'}
 
 [tool.setuptools.dynamic]
 version = { attr = "esmecata.__version__" }

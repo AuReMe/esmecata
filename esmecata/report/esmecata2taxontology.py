@@ -20,7 +20,7 @@ import plotly.graph_objects as go
 from ete3 import NCBITaxa
 from typing import Dict, List, Set, Tuple
 
-from esmecata.esmecata_analysis.esmecata_compression import RANK2COL
+from esmecata.report.esmecata_compression import RANK2COL
 
 # CONSTANTS ==========================================================================================================
 
