@@ -64,6 +64,36 @@ def main():
         help='Output directory path.',
         metavar='OUPUT_DIR')
 
+    parent_parser_e = argparse.ArgumentParser(add_help=False)
+    parent_parser_e.add_argument(
+        '-e',
+        '--enzyme',
+        dest='enzyme_file',
+        required=False,
+        help='Pathanme to enzyme.dat file of expasy. If no path is given, it will be downloaded and put in the output folder.',
+        metavar='INPUT_FILE',
+        default=None)
+
+    parent_parser_g = argparse.ArgumentParser(add_help=False)
+    parent_parser_g.add_argument(
+        '-g',
+        '--go',
+        dest='go_file',
+        required=False,
+        help='Pathname to go-basic.obo file. If no path is given, it will be downloaded and put in the output folder.',
+        metavar='INPUT_FILE',
+        default=None)
+
+    parent_parser_t = argparse.ArgumentParser(add_help=False)
+    parent_parser_t.add_argument(
+        '-t',
+        '--taxon',
+        dest='taxon_rank',
+        required=False,
+        help='Taxon rank to cluster observation names of EsMeCaTa together (default "phylum").',
+        metavar='INPUT_TAXON',
+        default='phylum')
+
     # subparsers
     subparsers = parser.add_subparsers(
         title='subcommands',
@@ -74,7 +104,7 @@ def main():
         'gseapy_taxon',
         help='Extract enriched functions from taxon using gseapy and orsum.',
         parents=[
-            parent_parser_f, parent_parser_o
+            parent_parser_f, parent_parser_o, parent_parser_e, parent_parser_g, parent_parser_t
             ],
         allow_abbrev=False)
 
@@ -101,7 +131,8 @@ def main():
     logger.addHandler(console_handler)
 
     if args.cmd == 'gseapy_taxon':
-        taxon_rank_annotation_enrichment(args.input_folder, args.output)
+        taxon_rank_annotation_enrichment(args.input_folder, args.output, enzyme_data_file=args.enzyme_file,
+                                         go_basic_obo_file=args.go_file, taxon_rank=args.taxon_rank)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

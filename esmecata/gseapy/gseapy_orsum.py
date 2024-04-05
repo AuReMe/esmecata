@@ -14,8 +14,10 @@
 
 import csv
 import os
+import sys
 import pandas as pd
 import pronto
+import logging
 import subprocess
 import matplotlib.pyplot as plt
 import urllib.request
@@ -23,6 +25,9 @@ import gseapy
 
 from Bio.ExPASy import Enzyme
 from esmecata.core.proteomes import get_taxon_obs_name
+
+logger = logging.getLogger(__name__)
+
 
 def extract_annotation(annotation_reference_folder):
     """ From annotation reference folder, creates a dict indicating the file associated with each annotation.
@@ -114,6 +119,13 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, enzyme_da
         go_basic_obo_file (str): path to Gene Ontology go-basic.obo file, if not given, download it
         taxon_rank (str): taxon rank to cluster the observation name together (by default, phylum)
     """
+    taxon_ranks = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']
+
+    if taxon_rank != 'phylum':
+        if taxon_rank not in taxon_ranks:
+            logger.critical('Incorrect taxon given {0}, possible ranks are: {1}'.format(taxon_rank, ','.join(taxon_ranks)))
+            sys.exit()
+
     # If no enzyme.Dat available download it.
     if enzyme_data_file is None:
         enzyme_data_file = os.path.join(output_folder, 'enzyme.dat')
