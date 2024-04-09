@@ -87,8 +87,12 @@ To use eggnog-mapper, you have to setup it and install [its database](https://gi
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
 
 `esmecata_gseapy` requires:
-- [gseap](https://github.com/zqfang/GSEApy).
+- [gseapy](https://github.com/zqfang/GSEApy).
 - [orsum](https://github.com/ozanozisik/orsum).
+
+All dependencies can be installed with following command:
+
+```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 eggnog-mapper orsum gseapy plotly datapane python-kaleido -c conda-forge -c bioconda```
 
 ## Input
 
