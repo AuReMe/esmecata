@@ -1448,10 +1448,9 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         output_proteome_file = os.path.join(proteomes_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
             download_proteome_file(proteome, output_proteome_file, option_bioservices, session, uniprot_sparql_endpoint)
-            # Check if downloaded file is not empty.
+            # Check if downloaded file is empty.
             if os.path.getsize(output_proteome_file) <= 20:
-                time.sleep(2)
-                download_proteome_file(proteome, output_proteome_file, option_bioservices, session, uniprot_sparql_endpoint)
+                logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be empty, it seems that there is an issue with this proteome on UniProt.', proteome)
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 
