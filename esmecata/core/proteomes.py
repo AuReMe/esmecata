@@ -1444,6 +1444,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     else:
         logger.info('|EsMeCaTa|proteomes| Downloading %d proteomes', len(proteome_to_download))
 
+    empty_proteomes = []
     for index, proteome in enumerate(proteome_to_download):
         output_proteome_file = os.path.join(proteomes_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
@@ -1451,6 +1452,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             # Check if downloaded file is empty.
             if os.path.getsize(output_proteome_file) <= 20:
                 logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be empty, it seems that there is an issue with this proteome on UniProt.', proteome)
+                empty_proteomes.append(proteome)
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 
@@ -1459,6 +1461,14 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                     'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
                     'limit_maximal_number_proteomes': limit_maximal_number_proteomes, 'rank_limit': rank_limit,
                     'minimal_number_proteomes': minimal_number_proteomes}
+
+    # Create file containing empty proteomes.
+    empty_proteome_file = os.path.join(output_folder, 'empty_proteome.tsv')
+    with open(empty_proteome_file, 'w') as empty_proteome_file_open:
+        csvwriter = csv.writer(empty_proteome_file_open, delimiter='\t')
+        csvwriter.writerow(['empty_proteome_id'])
+        for empty_proteome in empty_proteomes:
+            csvwriter.writerow([empty_proteome])
 
     # Collect dependencies metadata.
     options['tool_dependencies'] = {}

@@ -583,6 +583,7 @@ output_folder
 │   └── Proteome_3.faa.gz
 │   └── ...
 ├── association_taxon_taxID.json
+├── empty_proteome.tsv
 ├── proteome_tax_id.tsv
 ├── esmecata_proteomes.log
 ├── esmecata_metadata_proteomes.json
@@ -594,6 +595,8 @@ The `proteomes_description` contains list of proteomes find by esmecata on Unipr
 The `proteomes` contains all the proteomes that have been found to be associated with one taxon. It will be used for the clustering step.
 
 `association_taxon_taxID.json` contains for each `observation_name` the name of the taxon and the corresponding taxon_id found with `ete3`.
+
+`empty_proteome.tsv` contains UniProt proteome ID that have been downloaded but are empty.
 
 `proteome_tax_id.tsv` contains the name, the taxon_id and the proteomes associated with each `observation_name`.
 
@@ -743,6 +746,7 @@ output_folder
   │   └── Proteome_3.faa.gz
   │   └── ...
   ├── association_taxon_taxID.json
+  ├── empty_proteome.tsv
   ├── proteome_tax_id.tsv
   ├── esmecata_metadata_proteomes.json
   ├── stat_number_proteome.tsv
