@@ -566,7 +566,7 @@ options:
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
-EsMeCTa will perform the search for proteomes, the protein clustering and the annotation using UniProt.
+EsMeCaTa will perform the search for proteomes, the protein clustering and the annotation using UniProt.
 
 ## EsMeCaTa outputs
 
