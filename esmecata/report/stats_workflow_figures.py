@@ -897,7 +897,7 @@ def data_proteome_representativeness(proteome_tax_id, computed_threshold_folder)
     # From proteomes_tax_id get the taxonomic rank for each observation name.
     tax_rank = proteome_tax_id['tax_rank'].to_dict()
 
-    tax_obs_name = {key: value.replace(' ', '_') for key, value in proteome_tax_id['name'].to_dict().items()}
+    tax_obs_name = {key: value for key, value in proteome_tax_id['tax_id_name'].to_dict().items()}
 
     data = []
     for obs_name in tax_rank:
@@ -984,7 +984,7 @@ def create_proteome_representativeness_lineplot_px(df, clust_threshold, output_f
     fig.add_vline(
         x=clust_threshold, 
         line_dash="dash", 
-        line_width=1, 
+        line_width=1,
         line_color="red", 
         annotation_text="EsMeCaTa's clustering threshold")
 
