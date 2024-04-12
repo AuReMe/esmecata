@@ -6,7 +6,7 @@ import subprocess
 from esmecata.core.clustering import make_clustering, filter_protein_cluster, compute_proteome_representativeness_ratio
 
 RESULTS = {
-    'Cluster_1': {'Number_shared_proteins': 603}
+    'Cluster_1': {'Number_protein_clusters_kept': 603}
 }
 
 def test_filter_protein_cluster():
@@ -52,11 +52,10 @@ def test_make_clustering():
     expected_results = {}
     output_stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
     with open(output_stat_file, 'r') as stat_file_read:
-        csvreader = csv.reader(stat_file_read, delimiter='\t')
-        next(csvreader)
+        csvreader = csv.DictReader(stat_file_read, delimiter='\t')
         for line in csvreader:
-            expected_results[line[0]] = {}
-            expected_results[line[0]]['Number_shared_proteins'] = int(line[2])
+            expected_results[line['observation_name']] = {}
+            expected_results[line['observation_name']]['Number_protein_clusters_kept'] = int(line['Number_protein_clusters_kept'])
 
     for observation_name in expected_results:
         for data in expected_results[observation_name]:
@@ -71,11 +70,10 @@ def test_clustering_cli():
     expected_results = {}
     output_stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
     with open(output_stat_file, 'r') as stat_file_read:
-        csvreader = csv.reader(stat_file_read, delimiter='\t')
-        next(csvreader)
+        csvreader = csv.DictReader(stat_file_read, delimiter='\t')
         for line in csvreader:
-            expected_results[line[0]] = {}
-            expected_results[line[0]]['Number_shared_proteins'] = int(line[2])
+            expected_results[line['observation_name']] = {}
+            expected_results[line['observation_name']]['Number_protein_clusters_kept'] = int(line['Number_protein_clusters_kept'])
 
     for observation_name in expected_results:
         for data in expected_results[observation_name]:

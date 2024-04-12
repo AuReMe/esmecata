@@ -31,6 +31,8 @@ from ete3 import NCBITaxa
 
 from esmecata.utils import is_valid_dir
 from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit
+from esmecata.core.eggnog import compute_stat_annotation
+from esmecata.core.clustering import compute_stat_clustering
 
 from esmecata import __version__ as esmecata_version
 
@@ -169,16 +171,6 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     archive = zipfile.ZipFile(database_taxon_file_path, 'r')
     database_taxon_ids, proteomes_tax_id_names, taxon_data = get_taxon_database(archive)
-    proteome_tax_id_file = os.path.join(proteomes_output_folder, 'proteome_tax_id.tsv')
-    with open(proteome_tax_id_file, 'w') as out_file:
-        csvwriter = csv.writer(out_file, delimiter='\t')
-        csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_id_name', 'tax_rank', 'proteome'])
-        for observation_name in taxon_data:
-            tax_id = int(taxon_data[observation_name][0])
-            tax_name = taxon_data[observation_name][1]
-            tax_id_name = proteomes_tax_id_names[observation_name]
-            tax_rank = taxon_data[observation_name][2]
-            csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, taxon_data[observation_name][3]])
 
     esmecata_metadata['precomputed_database'] = {}
     with archive.open('esmecata_metadata_proteomes.json', 'r') as open_metadata_json:
@@ -209,6 +201,20 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     association_taxon_database, observation_name_not_founds = find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, database_taxon_ids)
 
+    proteome_tax_id_file = os.path.join(proteomes_output_folder, 'proteome_tax_id.tsv')
+    with open(proteome_tax_id_file, 'w') as out_file:
+        csvwriter = csv.writer(out_file, delimiter='\t')
+        csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_id_name', 'tax_rank', 'proteome'])
+        for observation_name in association_taxon_database:
+            tax_id = int(taxon_data[observation_name][0])
+            tax_name = taxon_data[observation_name][1]
+            tax_id_name = proteomes_tax_id_names[observation_name]
+            tax_rank = taxon_data[observation_name][2]
+            csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, taxon_data[observation_name][3]])
+
+    clustering_proteome_tax_id_file = os.path.join(clustering_output_folder, 'proteome_tax_id.tsv')
+    shutil.copyfile(proteome_tax_id_file, clustering_proteome_tax_id_file)
+
     # If some organisms have no match in their taxonomic affiliations with esmecata precomputed database, create an input file for esmecata containing them.
     if len(observation_name_not_founds) > 0:
         df_not_found = df.loc[observation_name_not_founds]
@@ -230,22 +236,28 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
         # Create a computed threhsold file.
         output_computed_threshold_file = os.path.join(computed_threshold_folder, taxi_id_name+'.tsv')
-        df_annotation[['representative_protein', 'cluster_ratio', 'proteomes']].to_csv(output_computed_threshold_file, sep='\t')
+        df_annotation[['representative_protein', 'cluster_ratio', 'proteomes']].to_csv(output_computed_threshold_file, sep='\t', index=None)
 
         # Create an imitation of an eggnog output file.
         df_annotation_eggnog = df_annotation[['representative_protein', 'seed_ortholog', 'evalue', 'score', 'COG_category',
                                               'Preferred_name', 'GOs', 'EC', 'KEGG_ko', 'KEGG_Pathway', 'KEGG_Module', 'KEGG_Reaction',
                                               'CAZy', 'BiGG_Reaction', 'PFAMs']]
         output_eggnog_annotation_file = os.path.join(eggnog_output_folder, taxi_id_name+'.emapper.annotations')
-        df_annotation_eggnog.to_csv(output_eggnog_annotation_file, sep='\t')
+        df_annotation_eggnog.to_csv(output_eggnog_annotation_file, sep='\t', index=None)
 
         # Create an annotaiton_reference file.
         df_annotation_reference = df_annotation[['representative_protein', 'cluster_members', 'Preferred_name', 'GOs', 'EC', 'KEGG_Reaction']]
         df_annotation_reference.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
         output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
-        df_annotation_reference.to_csv(output_path_annotation_file, sep='\t')
+        df_annotation_reference.to_csv(output_path_annotation_file, sep='\t', index=None)
 
     archive.close()
+
+    stat_file = os.path.join(clustering_output_folder, 'stat_number_clustering.tsv')
+    compute_stat_clustering(clustering_output_folder, stat_file)
+
+    stat_file = os.path.join(annotation_output_folder, 'stat_number_annotation.tsv')
+    compute_stat_annotation(annotation_reference_output_folder, stat_file)
 
     endtime = time.time()
     duration = endtime - starttime
