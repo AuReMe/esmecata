@@ -1,30 +1,32 @@
 # Changelog
 
-# EsMeCaTa v0.5.0 (2024-04-04)
+# EsMeCaTa v0.5.0 (2024-04-12)
 
 WARNING: changes of the structure of the python package of EsMeCaTa.
 If you previously use python import of the package, you will need to modify your import.
 
 ## Add
 
-* Creation of command `esmecata_report` to create report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv reports from EsMeCaTa (work done by @Mataivic and @PaulineGHG). This command has different subcommands:
+* New subcommand to `esmecata precomputed`. This subcommand uses a precomputed database to make predictions from input file (using EsMeCaTa default parameters). It has been made to avoid recreating the same prediction at each run and to have a fast way to make prediction with EsMeCaTa. It requires to download the precomptued databse before using it.
+* Command `esmecata_report` to create report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv reports from EsMeCaTa (work done by @Mataivic and @PaulineGHG). This command has different subcommands:
     * (1) `create_report` to create a report from the output folder of the `esmecata workflow` subcommand.
     * (2) `create_report_proteomes` to create report files from output of `esmecata proteomes` subcommand.
     * (3) `create_report_clustering` to create report files from output of `esmecata clustering` subcommand.
     * (4) `create_report_annotation` to create report files from output of `esmecata annotation` subcommand.
-* Creation of command `esmecata_gseapy` to create enrichment analysis of functions predicted by EsMeCaTa according to taxon rank.
+* Command `esmecata_gseapy` to create enrichment analysis of functions predicted by EsMeCaTa according to taxon rank.
 * New optional dependencies for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
 * New optional dependencies for `esmecata_gseapy`: [gseap](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
-* Creation of a new file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
+* New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
 
 ## Modify
 
 * Modification of the structure of EsMeCaTa package, now divided in 3 main folders: (1) `esmecata/core` (for scritp spreviously contained in EsMeCaTa folder) and used for the workflow, (2) `esmecata/esmecata_analysis` to create report from esmecata output folder and (3) `gseapy` to perform enrichment analysis of esmecata output.
+* Change the name of intermediary files in `clustering` and `annotation` to avoid issues with ambiguous taxon names.
 * Modify test according to changes of packaging structure.
 
 ## Remove
 
-* Remvoe esmecata analysis subcommand as it was not used and not very useful.
+* Remvoe `esmecata analysis` subcommand as it was not used and not very useful.
 
 # EsMeCaTa v0.4.2 (2024-02-26)
 
