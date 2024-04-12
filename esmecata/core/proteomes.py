@@ -1333,12 +1333,13 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
         # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
         with open(proteome_tax_id_file, 'w') as out_file:
             csvwriter = csv.writer(out_file, delimiter='\t')
-            csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_rank', 'proteome'])
+            csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_id_name', 'tax_rank', 'proteome'])
             for observation_name in proteomes_ids:
                 tax_id = int(proteomes_ids[observation_name][0])
                 tax_name = tax_id_names[tax_id]
+                tax_id_name = tax_name.replace(' ', '_') + '__taxid__' + str(tax_id)
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
-                csvwriter.writerow([observation_name, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[observation_name][1])])
+                csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, ','.join(proteomes_ids[observation_name][1])])
 
         create_comp_taxonomy_file(association_taxon_id_json=json_taxonomic_affiliations,
                                   proteomes_ids=proteomes_ids,

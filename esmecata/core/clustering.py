@@ -50,7 +50,7 @@ def compute_stat_clustering(output_folder, stat_file=None):
     clustering_taxon_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
     result_folder = os.path.join(output_folder, 'computed_threshold')
 
-    proteomes_taxa_names = get_proteomes_tax_name(clustering_taxon_id_file)
+    proteomes_taxa_id_names = get_proteomes_tax_id_name(clustering_taxon_id_file)
 
     tax_name_clustering_numbers = {}
     for clustering_file in os.listdir(result_folder):
@@ -73,8 +73,8 @@ def compute_stat_clustering(output_folder, stat_file=None):
         tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = [cluster_0, cluster_0_5, cluster_0_95]
 
     clustering_numbers = {}
-    for observation_name in proteomes_taxa_names:
-        tax_name = proteomes_taxa_names[observation_name].replace(' ', '_')
+    for observation_name in proteomes_taxa_id_names:
+        tax_name = proteomes_taxa_id_names[observation_name]
         clustering_numbers[observation_name] = tax_name_clustering_numbers[tax_name]
 
     if stat_file:
@@ -134,18 +134,19 @@ def create_proteome_representativeness_lineplot_per_taxon_rank(proteome_tax_id_f
         output_folder (str): pathname to the output folder.
     """
     proteome_df = pd.read_csv(proteome_tax_id_file, sep='\t')
-    proteome_df.set_index('name', inplace=True)
+    proteome_df.set_index('tax_id_name', inplace=True)
     tax_ranks = proteome_df['tax_rank'].to_dict()
     tax_ids = proteome_df['tax_id'].to_dict()
 
     data = []
     for tsv_file in os.listdir(computed_threshold_folder):
-        tax_name = os.path.splitext(tsv_file)[0].replace('_', ' ')
+        tax_id_name = os.path.splitext(tsv_file)[0]
+        tax_name = tax_id_name.split('__taxid__')[0]
         tsv_file_path = os.path.join(computed_threshold_folder, tsv_file)
         tmp_df = pd.read_csv(tsv_file_path, sep='\t')
         for tmp_threshold in np.arange(0, 1.01, 0.025):
             nb_protein_cluster_ratio = len(tmp_df[tmp_df['cluster_ratio']>= tmp_threshold])
-            data.append([tax_name, tax_ranks[tax_name], tax_ids[tax_name], tmp_threshold, nb_protein_cluster_ratio])
+            data.append([tax_name, tax_ranks[tax_id_name], tax_ids[tax_id_name], tmp_threshold, nb_protein_cluster_ratio])
 
     df = pd.DataFrame(data, columns=['tax_name', 'tax_rank', 'tax_id', 'clust', 'count'])
 
@@ -160,24 +161,25 @@ def create_proteome_representativeness_lineplot_per_taxon_rank(proteome_tax_id_f
         plt.clf()
 
 
-def get_proteomes_tax_name(proteomes_taxon_id_file):
-    """ Extract tax_id associated with observation name.
+def get_proteomes_tax_id_name(proteomes_tax_id_file_path):
+    """ Extract tax_name + tax_id associated with observation name.
 
     Args:
-        proteomes_taxon_id_file (str): pathname to the proteomes_tax_id file.
+        proteomes_tax_id_file_path (str): pathname to the proteomes_tax_id file.
 
     Returns:
-        proteomes_taxa_names (dict): dict containing observation names (as key) associated with tax name used for proteomes (as value)
+        proteomes_taxa_id_names (dict): dict containing observation names (as key) associated with tax name + tax_id used for proteomes (as value)
     """
-    proteomes_taxa_names = {}
-    with open(proteomes_taxon_id_file, 'r') as proteome_tax_file:
+    proteomes_taxa_id_names = {}
+    with open(proteomes_tax_id_file_path, 'r') as proteome_tax_file:
         csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
         for line in csvreader:
             observation_name = line['observation_name']
-            tax_name = line['name']
-            proteomes_taxa_names[observation_name] = tax_name
+            tax_id_name = line['tax_id_name']
+            proteomes_taxa_id_names[observation_name] = tax_id_name
 
-    return proteomes_taxa_names
+    return proteomes_taxa_id_names
+
 
 def copy_already_clustered_file(output_folder, already_clustered_obs_name, new_observation_name, file_extension='.tsv'):
     """ Copy files from an observation name with the same tax ID than the new ones.
@@ -426,12 +428,12 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
         for line in csvreader:
             proteomes = line['proteome'].split(',')
-            tax_name = line['name']
+            tax_id_name = line['tax_id_name']
             proteomes_path = [os.path.join(proteome_folder, 'proteomes', proteome+'.faa.gz') for proteome in proteomes]
-            if tax_name not in already_performed_clustering:
-                observation_name_fasta_files[tax_name] = proteomes_path
+            if tax_id_name not in already_performed_clustering:
+                observation_name_fasta_files[tax_id_name] = proteomes_path
             else:
-                logger.info('|EsMeCaTa|clustering| Already performed clustering for %s.', tax_name)
+                logger.info('|EsMeCaTa|clustering| Already performed clustering for %s.', tax_id_name)
 
     is_valid_dir(output_folder)
 
@@ -472,9 +474,9 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     else:
         shutil.copyfile(proteome_taxon_id_file, clustering_taxon_id_file)
 
-    proteomes_taxa_names = get_proteomes_tax_name(proteome_taxon_id_file)
+    proteomes_taxa_names = get_proteomes_tax_id_name(proteome_taxon_id_file)
 
-    all_tax_names = set(list(proteomes_taxa_names.values()))
+    all_tax_names = set(list(proteomes_taxa_names.values())) - set(already_performed_clustering)
     nb_taxa_names = len(all_tax_names)
     logger.info('|EsMeCaTa|clustering| Create consensus proteomes for %d taxa.', nb_taxa_names)
 
@@ -487,7 +489,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         observation_name_proteomes = observation_name_fasta_files[proteomes_tax_name]
 
         # Change space with '_' to avoid issue.
-        proteomes_tax_name = proteomes_tax_name.replace(' ', '_')
+        proteomes_tax_name = proteomes_tax_name
         # If the computed threshold file exists, mmseqs has already been run.
         mmseqs_tmp_cluster = os.path.join(mmseqs_tmp_path, proteomes_tax_name)
         # Run mmseqs on organism.

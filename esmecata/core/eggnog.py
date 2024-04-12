@@ -29,6 +29,7 @@ import sys
 from esmecata.utils import is_valid_dir
 from esmecata import __version__ as esmecata_version
 from esmecata.core.annotation import extract_protein_cluster, create_dataset_annotation_file
+from esmecata.core.clustering import get_proteomes_tax_id_name
 
 logger = logging.getLogger(__name__)
 
@@ -52,26 +53,6 @@ def get_eggnog_version():
         sys.exit()
 
     return eggnog_version
-
-
-def get_proteomes_tax_name(proteomes_tax_id):
-    """ Extract tax_id associated with observation name.
-
-    Args:
-        proteomes_tax_id (str): pathname to the proteomes_tax_id file.
-
-    Returns:
-        proteomes_taxa_names (dict): dict containing observation names (as key) associated with tax name used for proteomes (as value)
-    """
-    proteomes_taxa_names = {}
-    with open(proteomes_tax_id, 'r') as proteome_tax_file:
-        csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
-        for line in csvreader:
-            observation_name = line['observation_name']
-            tax_name = line['name']
-            proteomes_taxa_names[observation_name] = tax_name.replace(' ', '_')
-
-    return proteomes_taxa_names
 
 
 def call_to_emapper(input_path, output_name, output_dir, temporary_dir, eggnog_database_path, nb_cpu):
@@ -150,14 +131,30 @@ def read_annotation(eggnog_outfile:str):
         headers_row.extend(['tax_scope', 'eggNOG_OGs', 'bestOG', 'COG_functional_category', 'eggNOG_free_text'])
 
     to_extract_annotations = ['GOs','EC', 'Preferred_name']
+    if 'seed_ortholog' in headers_row:
+        to_extract_annotations.append('seed_ortholog')
+    if 'evalue' in headers_row:
+        to_extract_annotations.append('evalue')
+    if 'score' in headers_row:
+        to_extract_annotations.append('score')
+    if 'eggNOG_OGs' in headers_row:
+        to_extract_annotations.append('eggNOG_OGs')
+    if 'COG_category' in headers_row:
+        to_extract_annotations.append('COG_category')
     if 'PFAMs' in headers_row:
         to_extract_annotations.append('PFAMs')
     if 'BiGG_Reaction' in headers_row:
         to_extract_annotations.append('BiGG_Reaction')
-    if 'KEGG_Reaction' in headers_row:
-        to_extract_annotations.append('KEGG_Reaction')
     if 'CAZy' in headers_row:
         to_extract_annotations.append('CAZy')
+    if 'KEGG_ko' in headers_row:
+        to_extract_annotations.append('KEGG_ko')
+    if 'KEGG_Pathway' in headers_row:
+        to_extract_annotations.append('KEGG_Pathway')
+    if 'KEGG_Module' in headers_row:
+        to_extract_annotations.append('KEGG_Module')
+    if 'KEGG_Reaction' in headers_row:
+        to_extract_annotations.append('KEGG_Reaction')
 
     # Use chunk when reading eggnog file to cope with big file.
     chunksize = 10 ** 6
@@ -293,7 +290,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             shutil.copyfile(clustering_taxon_id_file, annotation_taxon_id_file)
     else:
         shutil.copyfile(clustering_taxon_id_file, annotation_taxon_id_file)
-    proteomes_tax_names = get_proteomes_tax_name(annotation_taxon_id_file)
+    proteomes_tax_id_names = get_proteomes_tax_id_name(annotation_taxon_id_file)
 
     reference_protein_path = os.path.join(input_folder, 'reference_proteins')
 
@@ -340,13 +337,13 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             shutil.rmtree(eggnog_temporary_dir)
 
     # Create annotation reference and pathologic files for each observation name.
-    for observation_name in proteomes_tax_names:
-        proteomes_tax_name = proteomes_tax_names[observation_name]
-        reference_protein_pathname = os.path.join(reference_protein_path, proteomes_tax_name+'.tsv')
+    for observation_name in proteomes_tax_id_names:
+        proteomes_tax_id_name = proteomes_tax_id_names[observation_name]
+        reference_protein_pathname = os.path.join(reference_protein_path, proteomes_tax_id_name+'.tsv')
         reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
 
         # Read eggnog output.
-        eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, proteomes_tax_name+'.emapper.annotations')
+        eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, proteomes_tax_id_name+'.emapper.annotations')
         annotated_proteins = read_annotation(eggnog_mapper_annotation_file)
         annotated_proteins = list(annotated_proteins)
 

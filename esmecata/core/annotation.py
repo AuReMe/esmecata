@@ -1232,7 +1232,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
     with open(proteome_tax_id_file, 'r') as tax_id_file:
         csvreader = csv.DictReader(tax_id_file, delimiter='\t')
         for line in csvreader:
-            taxon_name = line['name'].replace(' ', '_')
+            taxon_name = line['tax_id_name']
             if taxon_name not in taxon_name_to_observation_name:
                 taxon_name_to_observation_name[taxon_name] = [line['observation_name']]
             else:
