@@ -24,6 +24,7 @@ from esmecata.core.clustering import make_clustering
 from esmecata.core.annotation import annotate_proteins
 from esmecata.core.workflow import perform_workflow, perform_workflow_eggnog
 from esmecata.core.eggnog import annotate_with_eggnog
+from esmecata.core.precomputed import precomputed_parse_affiliation
 from esmecata.utils import limited_integer_type, range_limited_float_type, is_valid_dir
 from esmecata import __version__ as VERSION
 
@@ -278,6 +279,15 @@ def main():
         required=False,
         default=None)
 
+    parent_parser_d = argparse.ArgumentParser(add_help=False)
+    parent_parser_d.add_argument(
+        '-d',
+        '--database',
+        dest='database',
+        required=True,
+        help='EsMeCaTa precomputed database file path.',
+        metavar='INPUT_FILE')
+
     # subparsers
     subparsers = parser.add_subparsers(
         title='subcommands',
@@ -359,6 +369,15 @@ def main():
             ],
         allow_abbrev=False)
 
+    precomputed_parser = subparsers.add_parser(
+        'precomputed',
+        help='Use precomputed database to create estimated data for the run.',
+        parents=[
+            parent_parser_i_taxon, parent_parser_d, parent_parser_o,
+            parent_parser_rank_limit, parent_parser_update_affiliation
+            ],
+        allow_abbrev=False)
+
     args = parser.parse_args()
 
     # If no argument print the help.
@@ -427,6 +446,8 @@ def main():
                                 args.cpu, args.threshold_clustering, args.mmseqs_options,
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
                                 args.option_bioservices, args.eggnog_tmp_dir)
+    elif args.cmd == 'precomputed':
+        precomputed_parse_affiliation(args.input, args.database, args.output, args.rank_limit, args.update_affiliations)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
