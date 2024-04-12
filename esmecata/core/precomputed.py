@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2024 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2024 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
 import csv
+import datetime
 import json
 import logging
 import os
@@ -26,9 +27,9 @@ import zipfile
 from io import TextIOWrapper
 
 from ete3 import __version__ as ete3_version
-from ete3 import NCBITaxa, is_taxadb_up_to_date
+from ete3 import NCBITaxa
 
-from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir, send_uniprot_sparql_query
+from esmecata.utils import is_valid_dir
 from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit
 
 from esmecata import __version__ as esmecata_version
@@ -55,7 +56,7 @@ def get_taxon_database(archive):
     return database_taxon_ids, proteomes_tax_id_names
 
 
-def find_proteomes_tax_ids(json_taxonomic_affiliations, database_taxon_ids):
+def find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, database_taxon_ids):
     """Find proteomes associated with taxonomic affiliations
 
     Args:
@@ -64,6 +65,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, database_taxon_ids):
 
     Returns:
         association_taxon_database (dict): observation name (key) associated with tax_name and tax_id
+        observation_name_not_founds (list): list of observation name which taxonomic affiliation has no match in esmecata database
     """
     logger.info('|EsMeCaTa|proteomes| Find observation name present in precomputed database.')
 
@@ -78,7 +80,13 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, database_taxon_ids):
                 logger.info('|EsMeCaTa|precomputed| "%s" present in database, %s will be associated with the taxon "%s".', tax_name, observation_name, tax_name)
                 break
 
-    return association_taxon_database
+    observation_name_not_founds = []
+    for observation_name in json_taxonomic_affiliations:
+        if observation_name not in association_taxon_database:
+            logger.info('|EsMeCaTa|precomputed| No taxon available in the database has been found for %s. Maybe, try a new run of esmecata with it?', observation_name)
+            observation_name_not_founds.append(observation_name)
+
+    return association_taxon_database, observation_name_not_founds
 
 
 def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_folder, rank_limit=None, update_affiliations=None):
@@ -91,39 +99,52 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         update_affiliations (str): option to update taxonomic affiliations.
     """
     starttime = time.time()
+    logger.info('|EsMeCaTa|precomputed| Reading input file.')
 
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
+    is_valid_dir(output_folder)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
-    if not os.path.exists(clustering_output_folder):
-        os.mkdir(clustering_output_folder)
+    is_valid_dir(clustering_output_folder)
+
     computed_threshold_folder = os.path.join(clustering_output_folder, 'computed_threshold')
-    if not os.path.exists(computed_threshold_folder):
-        os.mkdir(computed_threshold_folder)
+    is_valid_dir(computed_threshold_folder)
+
     reference_proteins_consensus_fasta_folder = os.path.join(clustering_output_folder, 'reference_proteins_consensus_fasta')
-    if not os.path.exists(reference_proteins_consensus_fasta_folder):
-        os.mkdir(reference_proteins_consensus_fasta_folder)
+    is_valid_dir(reference_proteins_consensus_fasta_folder)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
-    if not os.path.exists(annotation_output_folder):
-        os.mkdir(annotation_output_folder)
+    is_valid_dir(annotation_output_folder)
 
     annotation_reference_output_folder = os.path.join(annotation_output_folder, 'annotation_reference')
-    if not os.path.exists(annotation_reference_output_folder):
-        os.mkdir(annotation_reference_output_folder)
+    is_valid_dir(annotation_reference_output_folder)
+
     eggnog_output_folder = os.path.join(annotation_output_folder, 'eggnog_output')
-    if not os.path.exists(eggnog_output_folder):
-        os.mkdir(eggnog_output_folder)
+    is_valid_dir(eggnog_output_folder)
+
     pathologic_folder = os.path.join(annotation_output_folder, 'pathologic')
-    if not os.path.exists(pathologic_folder):
-        os.mkdir(pathologic_folder)
+    is_valid_dir(pathologic_folder)
+
+    # Metadata of the script.
+    options = {'input_file': input_file, 'output_folder': output_folder, 'database_taxon_file_path': database_taxon_file_path,
+               'rank_limit': rank_limit, 'update_affiliations': update_affiliations}
+
+    options['tool_dependencies'] = {}
+    options['tool_dependencies']['python_package'] = {}
+    options['tool_dependencies']['python_package']['Python_version'] = sys.version
+    options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
+    options['tool_dependencies']['python_package']['ete3'] = ete3_version
+    options['tool_dependencies']['python_package']['pandas'] = pd.__version__
+
+    esmecata_metadata = {}
+    date = datetime.datetime.now().strftime('%d-%B-%Y %H:%M:%S')
+    esmecata_metadata['access_time'] = date
+    esmecata_metadata['tool_options'] = options
 
     known_extensions = ['.xlsx', '.tsv', '.csv']
     file_name, file_extension = os.path.splitext(input_file)
 
     if file_extension not in known_extensions:
-        logger.critical('|EsMeCaTa|proteomes| ERROR: Extension ({0}) of input file ({1}) is not part of the compatible extensions ({2}).'.format(file_extension, input_file, ','.join(known_extensions)))
+        logger.critical('|EsMeCaTa|precomputed| ERROR: Extension ({0}) of input file ({1}) is not part of the compatible extensions ({2}).'.format(file_extension, input_file, ','.join(known_extensions)))
         sys.exit(1)
 
     if '.xlsx' in input_file:
@@ -144,12 +165,26 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     archive = zipfile.ZipFile(database_taxon_file_path, 'r')
     database_taxon_ids, proteomes_tax_id_names = get_taxon_database(archive)
 
+    esmecata_metadata['precomputed_database'] = {}
+    with archive.open('esmecata_metadata_proteomes.json', 'r') as open_metadata_json:
+        json_data = json.load(open_metadata_json)
+    esmecata_metadata['precomputed_database']['esmecata_query_system'] = json_data['esmecata_query_system']
+    esmecata_metadata['precomputed_database']['uniprot_release'] = json_data['uniprot_release']
+    esmecata_metadata['precomputed_database']['access_time'] = json_data['access_time']
+    esmecata_metadata['precomputed_database']['swissprot_release_number'] = json_data['swissprot_release_number']
+    esmecata_metadata['precomputed_database']['swissprot_release_date'] = json_data['swissprot_release_date']
+    esmecata_metadata['precomputed_database']['trembl_release_number'] = json_data['trembl_release_number']
+    esmecata_metadata['precomputed_database']['trembl_release_date'] = json_data['trembl_release_date']
+
     ncbi = NCBITaxa()
 
+    # Parse taxonomic affiliations with ete3 to find matching taxon name.
     tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi, output_folder)
 
+    # Disambiguate taxon name using other taxon from the taxonomic affiliations.
     json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
 
+    # If a rank limit option has been used, limit the taxonomic ranks used.
     if rank_limit:
         json_taxonomic_affiliations = filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit)
 
@@ -157,10 +192,19 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     with open(json_log, 'w') as ouput_file:
         json.dump(json_taxonomic_affiliations, ouput_file, indent=4)
 
-    association_taxon_database = find_proteomes_tax_ids(json_taxonomic_affiliations, database_taxon_ids)
+    association_taxon_database, observation_name_not_founds = find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, database_taxon_ids)
 
+    # If some organisms have no match in their taxonomic affiliations with esmecata precomputed database, create an input file for esmecata containing them.
+    if len(observation_name_not_founds) > 0:
+        df_not_found = df.loc[observation_name_not_founds]
+        organism_not_found_in_database_file_path = os.path.join(output_folder, 'organism_not_found_in_database.tsv')
+        df_not_found.to_csv(organism_not_found_in_database_file_path, sep='\t')
+
+    # For each line of the input files that has a match in the database, recreate an imitation of esmecata output folder.
     for observation_name in association_taxon_database:
         taxi_id_name = proteomes_tax_id_names[observation_name]
+
+        # Create a consensus proteoems file.
         clustering_consensus_file = os.path.join(taxi_id_name, taxi_id_name+'.faa')
         output_path_consensus_file = os.path.join(reference_proteins_consensus_fasta_folder, taxi_id_name+'.faa')
         with archive.open(clustering_consensus_file) as zf, open(output_path_consensus_file, 'wb') as f:
@@ -169,15 +213,18 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         annotation_file = os.path.join(taxi_id_name, taxi_id_name+'.tsv')
         df_annotation = pd.read_csv(archive.open(annotation_file), sep='\t')
 
+        # Create a computed threhsold file.
         output_computed_threshold_file = os.path.join(computed_threshold_folder, taxi_id_name+'.tsv')
+        df_annotation[['representative_protein', 'cluster_ratio', 'proteomes']].to_csv(output_computed_threshold_file, sep='\t')
+
+        # Create an imitation of an eggnog output file.
         df_annotation_eggnog = df_annotation[['representative_protein', 'seed_ortholog', 'evalue', 'score', 'COG_category',
                                               'Preferred_name', 'GOs', 'EC', 'KEGG_ko', 'KEGG_Pathway', 'KEGG_Module', 'KEGG_Reaction',
                                               'CAZy', 'BiGG_Reaction', 'PFAMs']]
         output_eggnog_annotation_file = os.path.join(eggnog_output_folder, taxi_id_name+'.emapper.annotations')
         df_annotation_eggnog.to_csv(output_eggnog_annotation_file, sep='\t')
 
-        df_annotation[['representative_protein', 'cluster_ratio', 'proteomes']].to_csv(output_computed_threshold_file, sep='\t')
-
+        # Create an annotaiton_reference file.
         df_annotation_reference = df_annotation[['representative_protein', 'cluster_members', 'Preferred_name', 'GOs', 'EC', 'KEGG_Reaction']]
         df_annotation_reference.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
         output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
@@ -187,4 +234,15 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     endtime = time.time()
     duration = endtime - starttime
-    logger.info('|EsMeCaTa|proteomes| Proteome step complete in {0}s.'.format(duration))
+    esmecata_metadata['esmecata_precomputed_duration'] = duration
+    precomputed_metadata_file = os.path.join(output_folder, 'esmecata_metadata_precomputed.json')
+    if os.path.exists(precomputed_metadata_file):
+        metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_precomputed' in metadata_file]
+        precomputed_metadata_file = os.path.join(output_folder, 'esmecata_metadata_precomputed_{0}.json'.format(len(metadata_files)))
+        with open(precomputed_metadata_file, 'w') as ouput_file:
+            json.dump(esmecata_metadata, ouput_file, indent=4)
+    else:
+        with open(precomputed_metadata_file, 'w') as ouput_file:
+            json.dump(esmecata_metadata, ouput_file, indent=4)
+
+    logger.info('|EsMeCaTa|precomputed| Extraction of data from database completed in {0}s.'.format(duration))

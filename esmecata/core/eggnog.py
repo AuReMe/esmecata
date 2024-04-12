@@ -296,7 +296,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
 
     # Convert CPU int into str.
     nb_cpu = str(nb_cpu)
-    # Download Uniprot metadata and create a json file containing them.
+    # Create a dictionary containing metadata.
     options = {'input_folder': input_folder, 'output_folder': output_folder, 'nb_cpu': nb_cpu,
                'eggnog_database_path': eggnog_database_path, 'eggnog_tmp_dir': eggnog_tmp_dir}
 
