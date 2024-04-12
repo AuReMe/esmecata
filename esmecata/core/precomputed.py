@@ -44,16 +44,20 @@ def get_taxon_database(archive):
 
     Returns:
         database_taxon_ids (dict): list of taxon IDs contained in the database
+        proteomes_tax_id_names (dict): dict of observation name as key and tax_id_name as value
+        taxon_proteomes (dict): dict of observation name as key and tax_id, tax_name, tax_rank and associated proteomes as value
     """
     database_taxon_ids = []
     proteomes_tax_id_names = {}
+    taxon_data = {}
     with archive.open('proteome_tax_id.tsv', 'r') as open_database_taxon_file_path:
         csvreader = csv.DictReader(TextIOWrapper(open_database_taxon_file_path), delimiter='\t')
         for line in csvreader:
             database_taxon_ids.append(line['tax_id'])
             proteomes_tax_id_names[line['observation_name']] = line['tax_id_name']
+            taxon_data[line['observation_name']] = [line['tax_id'], line['name'], line['tax_rank'], line['proteome']]
 
-    return database_taxon_ids, proteomes_tax_id_names
+    return database_taxon_ids, proteomes_tax_id_names, taxon_data
 
 
 def find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, database_taxon_ids):
@@ -102,6 +106,9 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     logger.info('|EsMeCaTa|precomputed| Reading input file.')
 
     is_valid_dir(output_folder)
+
+    proteomes_output_folder = os.path.join(output_folder, '0_proteomes')
+    is_valid_dir(proteomes_output_folder)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
     is_valid_dir(clustering_output_folder)
@@ -160,10 +167,18 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     # taxonomic_affiliation is the column containing the taxonomic affiliation separated by ';': phylum;class;order;family;genus;genus + species
     taxonomies = df.to_dict()['taxonomic_affiliation']
 
-    proteome_tax_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
-
     archive = zipfile.ZipFile(database_taxon_file_path, 'r')
-    database_taxon_ids, proteomes_tax_id_names = get_taxon_database(archive)
+    database_taxon_ids, proteomes_tax_id_names, taxon_data = get_taxon_database(archive)
+    proteome_tax_id_file = os.path.join(proteomes_output_folder, 'proteome_tax_id.tsv')
+    with open(proteome_tax_id_file, 'w') as out_file:
+        csvwriter = csv.writer(out_file, delimiter='\t')
+        csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_id_name', 'tax_rank', 'proteome'])
+        for observation_name in taxon_data:
+            tax_id = int(taxon_data[observation_name][0])
+            tax_name = taxon_data[observation_name][1]
+            tax_id_name = proteomes_tax_id_names[observation_name]
+            tax_rank = taxon_data[observation_name][2]
+            csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, taxon_data[observation_name][3]])
 
     esmecata_metadata['precomputed_database'] = {}
     with archive.open('esmecata_metadata_proteomes.json', 'r') as open_metadata_json:
