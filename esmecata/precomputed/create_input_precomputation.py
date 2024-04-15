@@ -47,8 +47,9 @@ def get_taxon_proteomes(output_file, taxon_rank='Genus'):
         for taxon, taxon_id in taxon_proteomes:
             try:
                 lineage = ncbi.get_lineage(taxon_id)
+                observation_name = taxon.replace(' ', '_') + '__taxid__' + str(taxon_id)
                 lineage_names = [ncbi.get_taxid_translator([lineage_tax_id])[lineage_tax_id] for lineage_tax_id in lineage]
-                csvwriter.writerow([taxon, ';'.join(lineage_names), taxon_id])
+                csvwriter.writerow([observation_name, ';'.join(lineage_names), taxon_id])
             except:
                 continue
 get_taxon_proteomes('esmecata_precomputed_species.tsv', 'Species')
