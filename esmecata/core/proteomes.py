@@ -1457,6 +1457,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 
+    logger.info('|EsMeCaTa|proteomes| Check downloaded protoeme files.')
     # Check for completly empty file that could block mmseqs2.
     for proteome_file in os.listdir(proteomes_folder):
         proteome_file_path = os.path.join(proteomes_folder, proteome_file)
