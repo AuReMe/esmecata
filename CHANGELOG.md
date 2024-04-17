@@ -17,6 +17,7 @@ If you previously use python import of the package, you will need to modify your
 * New optional dependencies for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
 * New optional dependencies for `esmecata_gseapy`: [gseap](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
 * New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
+* Check if proteome files are completly empty and could lead to issue with mmseqs2. 
 
 ## Modify
 
