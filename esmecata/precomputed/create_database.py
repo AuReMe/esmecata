@@ -120,9 +120,16 @@ def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmec
 
 
 def main(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder):
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+
     output_database_folder = os.path.join(output_folder, 'database_folder')
+    if not os.path.exists(output_database_folder):
+        os.mkdir(output_database_folder)
     create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder)
 
     compress_database_file = os.path.join(output_folder, 'esmecata_database')
+    if not os.path.exists(compress_database_file):
+        os.mkdir(compress_database_file)
     shutil.make_archive(compress_database_file, 'zip', output_database_folder)
     shutil.rmtree(output_database_folder)
