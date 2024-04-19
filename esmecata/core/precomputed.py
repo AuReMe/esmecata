@@ -55,9 +55,9 @@ def get_taxon_database(archive):
     with archive.open('proteome_tax_id.tsv', 'r') as open_database_taxon_file_path:
         csvreader = csv.DictReader(TextIOWrapper(open_database_taxon_file_path), delimiter='\t')
         for line in csvreader:
-            database_taxon_ids.append(line['tax_id'])
-            proteomes_tax_id_names[line['observation_name']] = line['tax_id_name']
-            taxon_data[line['observation_name']] = [line['tax_id'], line['name'], line['tax_rank'], line['proteome']]
+            database_taxon_ids.append(line['name'])
+            proteomes_tax_id_names[line['tax_id']] = line['tax_id_name']
+            taxon_data[line['tax_id']] = [line['tax_id'], line['name'], line['tax_rank'], line['proteome']]
 
     return database_taxon_ids, proteomes_tax_id_names, taxon_data
 
@@ -81,7 +81,7 @@ def find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, 
             tax_id = str(json_taxonomic_affiliations[observation_name][tax_name][0])
 
             # If tax_id has already been found use the corresponding proteomes without new requests.
-            if tax_id in database_taxon_ids:
+            if tax_name in database_taxon_ids:
                 association_taxon_database[observation_name] = (tax_name,  tax_id)
                 logger.info('|EsMeCaTa|precomputed| "%s" present in database, %s will be associated with the taxon "%s".', tax_name, observation_name, tax_name)
                 break
@@ -202,15 +202,20 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     association_taxon_database, observation_name_not_founds = find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, database_taxon_ids)
 
     proteome_tax_id_file = os.path.join(proteomes_output_folder, 'proteome_tax_id.tsv')
+    tax_id_obs_names = {}
     with open(proteome_tax_id_file, 'w') as out_file:
         csvwriter = csv.writer(out_file, delimiter='\t')
         csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_id_name', 'tax_rank', 'proteome'])
         for observation_name in association_taxon_database:
-            tax_id = int(taxon_data[observation_name][0])
-            tax_name = taxon_data[observation_name][1]
-            tax_id_name = proteomes_tax_id_names[observation_name]
-            tax_rank = taxon_data[observation_name][2]
-            csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, taxon_data[observation_name][3]])
+            tax_id = association_taxon_database[observation_name][1]
+            tax_name = association_taxon_database[observation_name][1]
+            tax_id_name = proteomes_tax_id_names[tax_id]
+            tax_rank = taxon_data[tax_id][2]
+            if tax_id not in tax_id_obs_names:
+                tax_id_obs_names[tax_id] = [observation_name]
+            else:
+                tax_id_obs_names[tax_id].append(observation_name)
+            csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, taxon_data[tax_id][3]])
 
     clustering_proteome_tax_id_file = os.path.join(clustering_output_folder, 'proteome_tax_id.tsv')
     shutil.copyfile(proteome_tax_id_file, clustering_proteome_tax_id_file)
@@ -222,17 +227,20 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         df_not_found.to_csv(organism_not_found_in_database_file_path, sep='\t')
 
     # For each line of the input files that has a match in the database, recreate an imitation of esmecata output folder.
-    for observation_name in association_taxon_database:
-        taxi_id_name = proteomes_tax_id_names[observation_name]
+    for tax_id in tax_id_obs_names:
+        taxi_id_name = proteomes_tax_id_names[tax_id]
 
         # Create a consensus proteoems file.
         clustering_consensus_file = os.path.join(taxi_id_name, taxi_id_name+'.faa')
         output_path_consensus_file = os.path.join(reference_proteins_consensus_fasta_folder, taxi_id_name+'.faa')
-        with archive.open(clustering_consensus_file) as zf, open(output_path_consensus_file, 'wb') as f:
-            shutil.copyfileobj(zf, f)
+        if not os.path.exists(output_path_consensus_file):
+            with archive.open(clustering_consensus_file) as zf, open(output_path_consensus_file, 'wb') as f:
+                shutil.copyfileobj(zf, f)
 
+        # Read annotaiton file
         annotation_file = os.path.join(taxi_id_name, taxi_id_name+'.tsv')
-        df_annotation = pd.read_csv(archive.open(annotation_file), sep='\t')
+        with archive.open(annotation_file) as zf:
+            df_annotation = pd.read_csv(zf, sep='\t')
 
         # Create a computed threhsold file.
         output_computed_threshold_file = os.path.join(computed_threshold_folder, taxi_id_name+'.tsv')
@@ -243,13 +251,15 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
                                               'Preferred_name', 'GOs', 'EC', 'KEGG_ko', 'KEGG_Pathway', 'KEGG_Module', 'KEGG_Reaction',
                                               'CAZy', 'BiGG_Reaction', 'PFAMs']]
         output_eggnog_annotation_file = os.path.join(eggnog_output_folder, taxi_id_name+'.emapper.annotations')
-        df_annotation_eggnog.to_csv(output_eggnog_annotation_file, sep='\t', index=None)
+        if not os.path.exists(output_eggnog_annotation_file):
+            df_annotation_eggnog.to_csv(output_eggnog_annotation_file, sep='\t', index=None)
 
-        # Create an annotaiton_reference file.
-        df_annotation_reference = df_annotation[['representative_protein', 'cluster_members', 'Preferred_name', 'GOs', 'EC', 'KEGG_Reaction']]
-        df_annotation_reference.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
-        output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
-        df_annotation_reference.to_csv(output_path_annotation_file, sep='\t', index=None)
+        for observation_name in tax_id_obs_names[tax_id]:
+            # Create an annotaiton_reference file for the observation name.
+            df_annotation_reference = df_annotation[['representative_protein', 'cluster_members', 'Preferred_name', 'GOs', 'EC', 'KEGG_Reaction']]
+            df_annotation_reference.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
+            output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
+            df_annotation_reference.to_csv(output_path_annotation_file, sep='\t', index=None)
 
     archive.close()
 
