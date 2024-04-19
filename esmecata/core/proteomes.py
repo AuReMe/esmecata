@@ -1457,6 +1457,19 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 
+    logger.info('|EsMeCaTa|proteomes| Check downloaded protoeme files.')
+    # Check for completly empty file that could block mmseqs2.
+    for proteome_file in os.listdir(proteomes_folder):
+        proteome_file_path = os.path.join(proteomes_folder, proteome_file)
+        proteome = os.path.splitext(os.path.splitext(proteome_file_path)[0])[0] # Remove .gz then .faa extensions.
+        if os.path.getsize(proteome_file_path) == 0:
+            logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be completly empty (0 octet), it could lead to an issue with mmseqs2, try to download it again.', proteome)
+            download_proteome_file(proteome, proteome_file_path, option_bioservices, session, uniprot_sparql_endpoint)
+            if os.path.getsize(proteome_file_path) == 0:
+                logger.info('|EsMeCaTa|proteomes| Proteome file %s is still completly empty (0 octet), remove it to avoid issue with mmseqs2.', proteome)
+                os.remove(proteome_file_path)
+
+
     # Download Uniprot metadata and create a json file containing them.
     options = {'input_file': input_file, 'output_folder': output_folder, 'busco_percentage_keep': busco_percentage_keep,
                     'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
