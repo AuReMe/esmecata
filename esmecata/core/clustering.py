@@ -523,7 +523,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
             representative_fasta_file = os.path.join(reference_proteins_representative_fasta_path, proteomes_tax_name+'.faa')
             SeqIO.write(new_records, representative_fasta_file, 'fasta')
         else:
-            logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no fasta created (%d on %d).', proteomes_tax_name, index+1, nb_taxa_names)
+            logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no representatitve fasta created (%d on %d).', proteomes_tax_name, index+1, nb_taxa_names)
         del new_records
 
         # Create BioPython records with the consensus proteins kept.
@@ -535,7 +535,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
             consensus_fasta_file = os.path.join(reference_proteins_consensus_fasta_path, proteomes_tax_name+'.faa')
             SeqIO.write(consensus_new_records, consensus_fasta_file, 'fasta')
         else:
-            logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no fasta created (%d on %d).', proteomes_tax_name, index+1, nb_taxa_names)
+            logger.info('|EsMeCaTa|clustering| 0 protein clusters %s, no consensus fasta created (%d on %d).', proteomes_tax_name, index+1, nb_taxa_names)
         del consensus_new_records
 
         if remove_tmp:
