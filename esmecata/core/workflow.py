@@ -62,7 +62,8 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
             nb_gos = annotation_numbers[observation_name][0]
             nb_ecs = annotation_numbers[observation_name][1]
         else:
-            nb_proteomes = 'NA'
+            nb_gos = 'NA'
+            nb_ecs = 'NA'
         workflow_numbers[observation_name] = [nb_proteomes, tax_name, lowest_tax_rank, esmecata_name, esmecata_rank, reference_status, nb_shared_proteins, nb_gos, nb_ecs]
 
     if stat_file:
