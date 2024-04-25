@@ -343,7 +343,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
         reference_protein_pathname = os.path.join(reference_protein_path, proteomes_tax_id_name+'.tsv')
         reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
 
-        if len(reference_proteins) == 0:
+        if len(reference_proteins) > 0:
             # Read eggnog output.
             eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, proteomes_tax_id_name+'.emapper.annotations')
             annotated_proteins = read_annotation(eggnog_mapper_annotation_file)
@@ -376,7 +376,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             else:
                 logger.critical('|EsMeCaTa|annotation-eggnog| Annotation already performed for %s.', observation_name)
         else:
-                logger.critical('|EsMeCaTa|annotation-eggnog| No consensus proteins for %s, annotation will not be performed on it.', observation_name)
+            logger.critical('|EsMeCaTa|annotation-eggnog| No consensus proteins for %s, annotation will not be performed on it.', observation_name)
 
     # Create mpwt taxon ID file.
     clustering_taxon_id = {}
