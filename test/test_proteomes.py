@@ -356,7 +356,7 @@ def test_check_cli():
         csvreader = csv.reader(stat_file_read, delimiter='\t')
         next(csvreader)
         for line in csvreader:
-            expected_results.append(line[3])
+            expected_results.append(line[4])
     assert expected_results == ['species']
 
 if __name__ == "__main__":
