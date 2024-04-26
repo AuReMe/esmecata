@@ -55,7 +55,7 @@ def get_eggnog_version():
     return eggnog_version
 
 
-def call_to_emapper(input_path, output_name, output_dir, temporary_dir, eggnog_database_path, nb_cpu):
+def call_to_emapper(input_path, output_name, output_dir, temporary_dir, eggnog_database_path, nb_cpu, no_dbmem=False):
     """ Calls eggnog-mapper on the protein clusters.
 
     Args:
@@ -65,12 +65,15 @@ def call_to_emapper(input_path, output_name, output_dir, temporary_dir, eggnog_d
         temporayyr_dir (str): path to temporary folder.
         eggnog_database_path (str): pathname to eggnog database folder.
         nb_cpu (int): number of CPUs to use with eggnog-mapper.
+        no_dbmem (bool): Boolean to choose to not load eggnog database in memory.
     """
-    # Use dbmem for faster run.
     # Use override to avoid issue if already present annotation (if there was a failed run for example).
     eggnog_cmds = ['emapper.py', '--cpu', nb_cpu, '-i', input_path, '--output', output_name,
                    '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
-                   '--dbmem', '--temp_dir', temporary_dir, '--override']
+                   '--temp_dir', temporary_dir, '--override']
+    # Use dbmem for faster run, except if the option --no-dbmem gas been used.
+    if no_dbmem is False:
+        eggnog_cmds.append('--dbmem')
 
     subprocess.call(eggnog_cmds)
 
@@ -254,7 +257,7 @@ def write_annotation_reference(protein_annotations, reference_proteins, annotati
             csvwriter.writerow([protein, cluster_members, gene_name, gos, ecs, keggs])
 
 
-def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_cpu, eggnog_tmp_dir=None):
+def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_cpu, eggnog_tmp_dir=None, no_dbmem=False):
     """Write the annotation associated with a cluster after propagation step into pathologic file for run on Pathway Tools.
 
     Args:
@@ -263,6 +266,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
         eggnog_database_path (str): pathname to eggnog database folder.
         nb_cpu (int): number of CPUs to be used by eggnog-mapper.
         eggnog_tmp_dir (str): pathname to eggnog-mapper temporary folder.
+        no_dbmem (bool): Boolean to choose to not load eggnog database in memory.
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|annotation-eggnog| Begin annotation.')
@@ -329,7 +333,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, taxa_name+'.emapper.annotations')
             if not os.path.exists(eggnog_mapper_annotation_file):
                 logger.info('|EsMeCaTa|annotation| Launch eggnog-mapper on %s.',  taxa_name)
-                call_to_emapper(fasta_file_path, taxa_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_cpu)
+                call_to_emapper(fasta_file_path, taxa_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_cpu, no_dbmem)
             else:
                 logger.info('|EsMeCaTa|annotation| Results of eggnog-mapper already present for %s.',  taxa_name)
 
