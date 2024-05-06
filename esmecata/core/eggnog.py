@@ -73,7 +73,7 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
         eggnog_cmds = ['emapper.py', '--cpu', nb_cpu, '-i', input_path, '--output', taxon_name,
                     '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
                     '--temp_dir', temporary_dir, '--override']
-        # Use dbmem for faster run, except if the option --no-dbmem gas been used.
+        # Use dbmem for faster run, except if the option --no-dbmem has been used.
         if no_dbmem is False:
             eggnog_cmds.append('--dbmem')
 
@@ -88,14 +88,16 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
 
         # Parallel run.
         eggnog_hits_output_file = os.path.join(output_dir, taxon_name + '.emapper.hits')
-        diamond_parallel_run_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path, '-o', eggnog_hits_output_file, '--multiprocessing', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir]
+        diamond_parallel_run_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path, '-o', eggnog_hits_output_file,
+                                     '--multiprocessing', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir,
+                                     '--outfmt', '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qcovhsp scovhsp']
         subprocess.call(diamond_parallel_run_cmds)
 
         # Then resume run of eggnog-mapper.
         eggnog_cmds = ['emapper.py', '--cpu', nb_cpu, '-i', input_path, '--output', taxon_name,
                     '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
                     '--temp_dir', temporary_dir, '--resume']
-        # Use dbmem for faster run, except if the option --no-dbmem gas been used.
+        # Use dbmem for faster run, except if the option --no-dbmem has been used.
         if no_dbmem is False:
             eggnog_cmds.append('--dbmem')
 
