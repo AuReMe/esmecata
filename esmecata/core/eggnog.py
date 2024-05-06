@@ -90,7 +90,7 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
         eggnog_hits_output_file = os.path.join(output_dir, taxon_name + '.emapper.hits')
         diamond_parallel_run_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path, '-o', eggnog_hits_output_file,
                                      '--multiprocessing', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir,
-                                     '--outfmt', '"6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qcovhsp scovhsp"']
+                                     '--outfmt', '6', 'qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore', 'qcovhsp', 'scovhsp']
         subprocess.call(diamond_parallel_run_cmds)
 
         # Then resume run of eggnog-mapper.
