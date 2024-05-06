@@ -83,14 +83,16 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
         # Command from https://github.com/bbuchfink/diamond/wiki/6.-Distributed-computing#diamond-distributed-memory-parallel-processing.
         # Init diamond multiprocessing on multiple nodes.
         diamond_database = os.path.join(eggnog_database_path, 'eggnog_proteins.dmnd')
-        diamond_init_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path, '--multiprocessing', '--mp-init', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir]
+        diamond_init_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path,
+                             '--multiprocessing', '--mp-init', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir,
+                             '--threads', nb_cpu,]
         subprocess.call(diamond_init_cmds)
 
         # Parallel run.
         eggnog_hits_output_file = os.path.join(output_dir, taxon_name + '.emapper.hits')
         diamond_parallel_run_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path, '-o', eggnog_hits_output_file,
                                      '--multiprocessing', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir,
-                                     '--top', '3',
+                                     '--top', '3', '--threads', nb_cpu,
                                      '--outfmt', '6', 'qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore', 'qcovhsp', 'scovhsp']
         subprocess.call(diamond_parallel_run_cmds)
 
