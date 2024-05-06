@@ -169,6 +169,9 @@ def read_annotation(eggnog_outfile:str):
     # Fix issue when header is incomplete (eggnog before version 2.0).
     if len(headers_row) == 17:
         headers_row.extend(['tax_scope', 'eggNOG_OGs', 'bestOG', 'COG_functional_category', 'eggNOG_free_text'])
+    if len(headers_row) == 1:
+        headers_row = ['query_name', 'seed_eggNOG_ortholog', 'seed_ortholog_evalue', 'seed_ortholog_score', 'eggNOG_OGs', 'max_annot_lvl', 'COG_category', 'Description', 'Preferred_name',
+                'GOs', 'EC', 'KEGG_ko', 'KEGG_Pathway', 'KEGG_Module', 'KEGG_Reaction', 'KEGG_rclass', 'BRITE', 'KEGG_TC', 'CAZy', 'BiGG_Reaction', 'PFAMs']
 
     to_extract_annotations = ['GOs','EC', 'Preferred_name']
     if 'seed_ortholog' in headers_row:
