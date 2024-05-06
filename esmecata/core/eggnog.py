@@ -90,8 +90,19 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
         eggnog_hits_output_file = os.path.join(output_dir, taxon_name + '.emapper.hits')
         diamond_parallel_run_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path, '-o', eggnog_hits_output_file,
                                      '--multiprocessing', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir,
+                                     '--top', '3',
                                      '--outfmt', '6', 'qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore', 'qcovhsp', 'scovhsp']
         subprocess.call(diamond_parallel_run_cmds)
+
+        # See this issue: https://github.com/bbuchfink/diamond/issues/549
+        # Suffixed files are created by diamond for each query chunk.
+        # Concat them in the final file.
+        diamond_result_files = [os.path.join(output_dir, output_file) for output_file in os.listdir(output_dir) if taxon_name + '.emapper.hits_' in output_file]
+        for diamond_result_file in diamond_result_files:
+            with open(diamond_result_file, 'r') as open_diamond_result_file:
+                with open(eggnog_hits_output_file, 'a') as open_diamond_output_hit_concat:
+                    open_diamond_output_hit_concat.write(open_diamond_result_file.read())
+            os.remove(diamond_result_file)
 
         # Then resume run of eggnog-mapper.
         eggnog_cmds = ['emapper.py', '--cpu', nb_cpu, '-i', input_path, '--output', taxon_name,
