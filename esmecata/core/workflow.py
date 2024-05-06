@@ -170,7 +170,8 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
                             remove_tmp=None, limit_maximal_number_proteomes=99, rank_limit=None,
                             nb_cpu=1, clust_threshold=0.5, mmseqs_options=None,
                             linclust=None, minimal_number_proteomes=5, update_affiliations=None,
-                            option_bioservices=None, eggnog_tmp_dir=None, no_dbmem=False):
+                            option_bioservices=None, eggnog_tmp_dir=None, no_dbmem=False,
+                            multiple_nodes=False):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -193,6 +194,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
         option_bioservices (bool): use bioservices instead of manual queries.
         eggnog_tmp_dir (str): pathname to eggnog-mapper temporary folder.
         no_dbmem (bool): Boolean to choose to not load eggnog database in memory.
+        multiple_nodes (bool): For multiprocessing on HPC, to handle multiprocessing with multiple nodes.
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|workflow| Begin workflow.')
@@ -211,7 +213,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
     make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
-    annotate_with_eggnog(clustering_output_folder, annotation_output_folder, eggnog_database_path, nb_cpu, eggnog_tmp_dir, no_dbmem)
+    annotate_with_eggnog(clustering_output_folder, annotation_output_folder, eggnog_database_path, nb_cpu, eggnog_tmp_dir, no_dbmem, multiple_nodes)
 
     stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
     compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file)
