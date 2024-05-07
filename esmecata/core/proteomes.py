@@ -585,6 +585,7 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX busco: <http://busco.ezlab.org/schema#>
     PREFIX taxon: <http://purl.uniprot.org/taxonomy/>
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
     SELECT DISTINCT ?proteome ?score ?fragmented ?missing ?organism ?completion ?type ?component ?componentName
 
