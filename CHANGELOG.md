@@ -1,23 +1,28 @@
 # Changelog
 
-# EsMeCaTa v0.5.0 (2024-04-12)
+# EsMeCaTa v0.5.0 (2024-05-07)
 
 WARNING: changes of the structure of the python package of EsMeCaTa.
 If you previously use python import of the package, you will need to modify your import.
 
 ## Add
 
-* New subcommand to `esmecata precomputed`. This subcommand uses a precomputed database to make predictions from input file (using EsMeCaTa default parameters). It has been made to avoid recreating the same prediction at each run and to have a fast way to make prediction with EsMeCaTa. It requires to download the precomptued databse before using it.
+* New subcommand to `esmecata precomputed`. This subcommand uses a precomputed database to make predictions from input file (using EsMeCaTa default parameters). It has been made to avoid recreating the same prediction at each run and to have a fast way to make prediction with EsMeCaTa. It requires to download the precomptued database before using it.
 * Command `esmecata_report` to create report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv reports from EsMeCaTa (work done by @Mataivic and @PaulineGHG). This command has different subcommands:
     * (1) `create_report` to create a report from the output folder of the `esmecata workflow` subcommand.
     * (2) `create_report_proteomes` to create report files from output of `esmecata proteomes` subcommand.
     * (3) `create_report_clustering` to create report files from output of `esmecata clustering` subcommand.
     * (4) `create_report_annotation` to create report files from output of `esmecata annotation` subcommand.
 * Command `esmecata_gseapy` to create enrichment analysis of functions predicted by EsMeCaTa according to taxon rank.
+* New parameter `--multiple-nodes` for `workflow`, `clustering` and `eggnog`: this parameter allows multiprocessing on multiple nodes when using a HPC (thanks to Loris Megy). Otherwise, only one node will be used.
 * New optional dependencies for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
 * New optional dependencies for `esmecata_gseapy`: [gseap](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
 * New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
 * Check if proteome files are completly empty and could lead to issue with mmseqs2. 
+
+## Fix
+
+* Issue in proteomes SPARQL query (missing `PREFIX`).
 
 ## Modify
 
@@ -27,7 +32,7 @@ If you previously use python import of the package, you will need to modify your
 
 ## Remove
 
-* Remvoe `esmecata analysis` subcommand as it was not used and not very useful.
+* Remove `esmecata analysis` subcommand as it was not used and not very useful.
 
 # EsMeCaTa v0.4.2 (2024-02-26)
 

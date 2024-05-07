@@ -5,4 +5,5 @@
 * [Clémence Frioux](https://github.com/cfrioux)
 * [Victor Mataigne](https://github.com/Mataivic)
 * [Pauline Hamon-Giraud](https://github.com/PaulineGHG)
+* Loris Megy
 * [Jeanne Got](https://github.com/jeannegot)
