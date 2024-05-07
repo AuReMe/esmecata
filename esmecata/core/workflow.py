@@ -83,7 +83,7 @@ def compute_stat_workflow(proteomes_output_folder, clustering_output_folder, ann
 def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore_taxadb_update=None,
                         all_proteomes=None, uniprot_sparql_endpoint=None, remove_tmp=None,
                         limit_maximal_number_proteomes=99, rank_limit=None,
-                        nb_cpu=1, clust_threshold=1, mmseqs_options=None,
+                        nb_core=1, clust_threshold=1, mmseqs_options=None,
                         linclust=None, propagate_annotation=None, uniref_annotation=None,
                         expression_annotation=None, minimal_number_proteomes=1, annotation_files=None,
                         update_affiliations=None, option_bioservices=None):
@@ -99,7 +99,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         remove_tmp (bool): remove the tmp files
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
         rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
-        nb_cpu (int): number of CPUs to be used by mmseqs
+        nb_core (int): number of CPU-cores to be used by mmseqs
         clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
         mmseqs_options (str): use alternative mmseqs option
         linclust (bool): use linclust
@@ -125,7 +125,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
                         update_affiliations, option_bioservices)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
-    make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)
+    make_clustering(proteomes_output_folder, clustering_output_folder, nb_core, clust_threshold, mmseqs_options, linclust, remove_tmp)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
     annotate_proteins(clustering_output_folder, annotation_output_folder, uniprot_sparql_endpoint, propagate_annotation,
@@ -168,7 +168,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
 def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, busco_percentage_keep=80,
                             ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                             remove_tmp=None, limit_maximal_number_proteomes=99, rank_limit=None,
-                            nb_cpu=1, clust_threshold=0.5, mmseqs_options=None,
+                            nb_core=1, clust_threshold=0.5, mmseqs_options=None,
                             linclust=None, minimal_number_proteomes=5, update_affiliations=None,
                             option_bioservices=None, eggnog_tmp_dir=None, no_dbmem=False,
                             multiple_nodes=False):
@@ -185,7 +185,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
         remove_tmp (bool): remove the tmp files
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
         rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
-        nb_cpu (int): number of CPUs to be used by mmseqs
+        nb_core (int): number of CPU-cores to be used by mmseqs and eggnog-mapper
         clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
         mmseqs_options (str): use alternative mmseqs option
         linclust (bool): use linclust
@@ -210,10 +210,10 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
                         update_affiliations, option_bioservices)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
-    make_clustering(proteomes_output_folder, clustering_output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp)
+    make_clustering(proteomes_output_folder, clustering_output_folder, nb_core, clust_threshold, mmseqs_options, linclust, remove_tmp, multiple_nodes)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
-    annotate_with_eggnog(clustering_output_folder, annotation_output_folder, eggnog_database_path, nb_cpu, eggnog_tmp_dir, no_dbmem, multiple_nodes)
+    annotate_with_eggnog(clustering_output_folder, annotation_output_folder, eggnog_database_path, nb_core, eggnog_tmp_dir, no_dbmem, multiple_nodes)
 
     stat_file = os.path.join(output_folder, 'stat_number_workflow.tsv')
     compute_stat_workflow(proteomes_output_folder, clustering_output_folder, annotation_output_folder, stat_file)

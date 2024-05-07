@@ -144,9 +144,9 @@ def main():
     parent_parser_c = argparse.ArgumentParser(add_help=False)
     parent_parser_c.add_argument(
         '-c',
-        '--cpu',
-        dest='cpu',
-        help='CPU number for multiprocessing.',
+        '--core',
+        dest='core',
+        help='Number of CPU-cores for multiprocessing.',
         required=False,
         type=int,
         default=1)
@@ -164,7 +164,7 @@ def main():
         '-m',
         '--mmseqs',
         dest='mmseqs_options',
-        help='String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"',
+        help='String containing mmseqs options for cluster command (except --threads which is already set by --core command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"',
         required=False,
         type=str,
         default=None)
@@ -340,7 +340,7 @@ def main():
         parents=[
             parent_parser_i_clustering_folder, parent_parser_o, parent_parser_c,
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
-            parent_parser_remove_tmp
+            parent_parser_remove_tmp, parent_parser_multiple_nodes
             ],
         allow_abbrev=False)
     annotation_uniprot_parser = subparsers.add_parser(
@@ -442,7 +442,8 @@ def main():
                             args.rank_limit, args.minimal_number_proteomes, args.update_affiliations,
                             args.option_bioservices)
     elif args.cmd == 'clustering':
-        make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
+        make_clustering(args.input, args.output, args.core, args.threshold_clustering, args.mmseqs_options,
+                        args.linclust, args.remove_tmp, args.multiple_nodes)
     elif args.cmd == 'annotation_uniprot':
         annotate_proteins(args.input, args.output, uniprot_sparql_endpoint,
                         args.propagate_annotation, args.uniref, args.expression,
@@ -451,18 +452,18 @@ def main():
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
                             args.limit_maximal_number_proteomes, args.rank_limit,
-                            args.cpu, args.threshold_clustering, args.mmseqs_options,
+                            args.core, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
                             args.expression, args.minimal_number_proteomes, args.annotation_files,
                             args.update_affiliations, args.option_bioservices)
     elif args.cmd == 'annotation':
-        annotate_with_eggnog(args.input, args.output, args.eggnog_database, args.cpu,
+        annotate_with_eggnog(args.input, args.output, args.eggnog_database, args.core,
                              args.eggnog_tmp_dir, args.no_dbmem, args.multiple_nodes)
     elif args.cmd == 'workflow':
         perform_workflow_eggnog(args.input, args.output, args.eggnog_database, busco_score,
                                 args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint,
                                 args.remove_tmp, args.limit_maximal_number_proteomes, args.rank_limit,
-                                args.cpu, args.threshold_clustering, args.mmseqs_options,
+                                args.core, args.threshold_clustering, args.mmseqs_options,
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
                                 args.option_bioservices, args.eggnog_tmp_dir, args.no_dbmem,
                                 args.multiple_nodes)

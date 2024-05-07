@@ -47,7 +47,7 @@ def test_filter_protein_cluster():
 
 def test_make_clustering():
     output_folder = 'clustering_output'
-    make_clustering('clustering_input', output_folder, nb_cpu=1, clust_threshold=0.5, mmseqs_options=None, linclust=None, remove_tmp=None)
+    make_clustering('clustering_input', output_folder, nb_core=1, clust_threshold=0.5, mmseqs_options=None, linclust=None, remove_tmp=None)
 
     expected_results = {}
     output_stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')

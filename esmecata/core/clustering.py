@@ -194,16 +194,17 @@ def copy_already_clustered_file(output_folder, already_clustered_obs_name, new_o
     shutil.copyfile(already_cluster_output_file, cluster_output_file)
 
 
-def run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust):
+def run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb_core, mmseqs_options, linclust, multiple_nodes):
     """Run MMseqs2 on proteomes for an observation name
 
     Args:
         observation_name (str): observation name associated to a taxonomic affiliations
         observation_name_proteomes (list): list of pathname to each proteomes associated to the observation_name
         mmseqs_tmp_path (str): pathname to the folder which will contain mmseqs results
-        nb_cpu (int): number of CPU for mmseqs
+        nb_core (int): number of CPU-cores for mmseqs
         mmseqs_options (str): options that will be used by mmseqs (default: '--min-seq-id', '0.3', '-c', '0.8')
         linclust (bool): use linclust for faster clustering
+        multiple_nodes (bool): for multiprocessing on HPC, to handle multiprocessing with multiple nodes
 
     Returns:
         mmseqs_tmp_clustered_tabulated (str): pathname to the mmseqs tabulated file containg protein cluster
@@ -232,13 +233,16 @@ def run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb
         subprocess.call(['mmseqs', 'createdb', *observation_name_proteomes, mmseqs_tmp_db, '-v', '2'])
 
         # Cluster the protein sequences.
+        # Create environment variable for mpi run.
+        if multiple_nodes is True:
+            os.environ['RUNNER'] = 'mpirun -pernode -np 42'
         cluster_cmd = ['mmseqs']
         if linclust:
             cluster_cmd += ['linclust']
         else:
             cluster_cmd += ['cluster']
 
-        cluster_cmd += [mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_cluster_tmp, '--threads', str(nb_cpu), '-v', '2']
+        cluster_cmd += [mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_cluster_tmp, '--threads', str(nb_core), '-v', '2']
 
         # If no option given by the user, use the default options: '--min-seq-id', '0.3', '-c', '0.8'.
         # Sequence identity of 30% and coverage of 80%.
@@ -252,13 +256,13 @@ def run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb
         # Create sequence database with representative from the clustered proteins.
         subprocess.call(['mmseqs', 'createsubdb', mmseqs_tmp_db_clustered, mmseqs_tmp_db, mmseqs_seq_db, '-v', '2'])
         # Create the profile from the clustering.
-        subprocess.call(['mmseqs', 'result2profile', mmseqs_seq_db, mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_profile, '--threads', str(nb_cpu), '-v', '2'])
+        subprocess.call(['mmseqs', 'result2profile', mmseqs_seq_db, mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_profile, '--threads', str(nb_core), '-v', '2'])
         # Create the consensus from the profile.
-        subprocess.call(['mmseqs', 'profile2consensus', mmseqs_profile, mmseqs_consensus, '--threads', str(nb_cpu), '-v', '2'])
+        subprocess.call(['mmseqs', 'profile2consensus', mmseqs_profile, mmseqs_consensus, '--threads', str(nb_core), '-v', '2'])
         # Create the consensus fasta file.
         subprocess.call(['mmseqs', 'convert2fasta', mmseqs_consensus, mmseqs_consensus_fasta, '-v', '2'])
         # Create TSV resulting files to be analysed after.
-        subprocess.call(['mmseqs', 'createtsv', mmseqs_tmp_db, mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_clustered_tabulated, '--threads', str(nb_cpu), '-v', '2'])
+        subprocess.call(['mmseqs', 'createtsv', mmseqs_tmp_db, mmseqs_tmp_db, mmseqs_tmp_db_clustered, mmseqs_tmp_clustered_tabulated, '--threads', str(nb_core), '-v', '2'])
         # Create fasta file containing representative proteins (representatives are the first protein of the alignement).
         subprocess.call(['mmseqs', 'convert2fasta', mmseqs_seq_db, mmseqs_tmp_representative_fasta, '-v', '2'])
 
@@ -266,7 +270,7 @@ def run_mmseqs(observation_name, observation_name_proteomes, mmseqs_tmp_path, nb
     """
     if not os.path.exists(mmseqs_tmp_clustered_tabulated):
         # Code using easy-cluster to extract representative protein.
-        subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], mmseqs_tmp_cluster_output, mmseqs_tmp_cluster, '--threads', str(nb_cpu), '-v', '2', '--min-seq-id', '0.3'])
+        subprocess.call(['mmseqs', 'easy-cluster', *cluster_fasta_files[cluster], mmseqs_tmp_cluster_output, mmseqs_tmp_cluster, '--threads', str(nb_core), '-v', '2', '--min-seq-id', '0.3'])
     """
 
     return mmseqs_tmp_clustered_tabulated, mmseqs_tmp_representative_fasta, mmseqs_consensus_fasta
@@ -379,17 +383,18 @@ def filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims
     return protein_cluster_to_keeps
 
 
-def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mmseqs_options, linclust, remove_tmp):
+def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mmseqs_options, linclust, remove_tmp, multiple_nodes=False):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
         proteome_folder (str): pathname to folder from esmecata folder
         output_folder (str): pathname to the output folder
-        nb_cpu (int): number of CPUs to be used by mmseqs
+        nb_core (int): number of CPU-cores to be used by mmseqs
         clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
         mmseqs_options (str): use alternative mmseqs option
         linclust (bool): use linclust
         remove_tmp (bool): remove the tmp files
+        multiple_nodes (bool): for multiprocessing on HPC, to handle multiprocessing with multiple nodes
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|clustering| Begin clustering.')
@@ -403,6 +408,23 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
     if not is_valid_dir(proteome_folder):
         logger.critical('|EsMeCaTa|clustering| Input must be a folder %s.', proteome_folder)
         sys.exit(1)
+
+    # If using multiple_nodes, check if mmseqs is compiled with MPI.
+    if multiple_nodes is True:
+        mmseqs_mpi = None
+        response = subprocess.Popen(['mmseqs', 'version'], stdout=subprocess.PIPE, start_new_session=True, universal_newlines="")
+        for mmseqs_line in response.stdout:
+            mmseqs_line = str(mmseqs_line)
+            if '-MPI' in mmseqs_line:
+                mmseqs_mpi = True
+
+        if mmseqs_mpi is True:
+            logger.critical('|EsMeCaTa|clustering| mmseqs2 is compiled with MPI, EsMeCaTa will be using MPI to run mmseqs clustering.')
+        elif mmseqs_mpi is None:
+            logger.critical('|EsMeCaTa|clustering| mmseqs2 is not compiled with MPI, try compile it: ')
+            logger.critical('|EsMeCaTa|clustering| https://github.com/soedinglab/MMseqs2/wiki#how-to-run-mmseqs2-on-multiple-servers-using-mpi ')
+            logger.critical('|EsMeCaTa|clustering| EsMeCaTa will be using multiprocessing without MPI.')
+            multiple_nodes = False
 
     # Use the proteomes folder created by retrieve_proteome.py.
     proteome_tax_id_pathname = os.path.join(proteome_folder, 'proteome_tax_id.tsv')
@@ -439,9 +461,9 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
 
     # Create metadata file.
     clustering_metadata = {}
-    clustering_metadata['tool_options'] = {'proteome_folder': proteome_folder, 'output_folder': output_folder, 'nb_cpu':nb_cpu,
+    clustering_metadata['tool_options'] = {'proteome_folder': proteome_folder, 'output_folder': output_folder, 'nb_core':nb_core,
                                         'clust_threshold':clust_threshold, 'mmseqs_options': mmseqs_options, 'linclust':linclust,
-                                        'remove_tmp': remove_tmp}
+                                        'remove_tmp': remove_tmp, 'multiple_nodes': multiple_nodes}
 
     clustering_metadata['tool_dependencies'] = {}
     subprocess_output = subprocess.check_output(['mmseqs', 'version'])
@@ -496,7 +518,7 @@ def make_clustering(proteome_folder, output_folder, nb_cpu, clust_threshold, mms
         # Delete previous mmseqs2 run if it exists to avoid overwritting issues.
         if os.path.exists(mmseqs_tmp_cluster):
             shutil.rmtree(mmseqs_tmp_cluster)
-        mmseqs_tmp_clustered_tabulated, mmseqs_tmp_representative_fasta, mmseqs_consensus_fasta = run_mmseqs(proteomes_tax_name, observation_name_proteomes, mmseqs_tmp_path, nb_cpu, mmseqs_options, linclust)
+        mmseqs_tmp_clustered_tabulated, mmseqs_tmp_representative_fasta, mmseqs_consensus_fasta = run_mmseqs(proteomes_tax_name, observation_name_proteomes, mmseqs_tmp_path, nb_core, mmseqs_options, linclust, multiple_nodes)
 
         # Extract protein clusters from mmseqs results.
         cluster_proteomes_output_file = os.path.join(cluster_founds_path, proteomes_tax_name+'.tsv')
