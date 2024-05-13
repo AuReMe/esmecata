@@ -413,7 +413,7 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
     # If using multiple_nodes, check if mmseqs is compiled with MPI.
     if multiple_nodes is True:
         if multiple_node_procs is None:
-            logger.critical('|EsMeCaTa|clustering| multiple_node_procs is nto defined, to use multiple_nodes for clustering, you must define the number of core associated with each node.')
+            logger.critical('|EsMeCaTa|clustering| multiple_node_procs is not defined, to use multiple_nodes for clustering, you must define the number of processes associated with each node.')
             sys.exit(1)
         mmseqs_mpi = None
         response = subprocess.Popen(['mmseqs', 'version'], stdout=subprocess.PIPE, start_new_session=True, universal_newlines="")
