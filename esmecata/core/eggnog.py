@@ -346,7 +346,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     # Create a dictionary containing metadata.
     options = {'input_folder': input_folder, 'output_folder': output_folder, 'nb_core': nb_core,
                'eggnog_database_path': eggnog_database_path, 'eggnog_tmp_dir': eggnog_tmp_dir,
-               'multiple_nodes': multiple_nodes}
+               'no_dbmem': no_dbmem, 'multiple_nodes': multiple_nodes}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
