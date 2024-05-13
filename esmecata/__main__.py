@@ -392,7 +392,7 @@ def main():
             parent_parser_limit_maximal_number_proteomes, parent_parser_thr, parent_parser_mmseqs_options,
             parent_parser_linclust, parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
             parent_parser_update_affiliation, parent_parser_bioservices, parent_parser_eggnog_tmp_dir,
-            parent_parser_no_dbmem, parent_parser_multiple_nodes
+            parent_parser_no_dbmem, parent_parser_multiple_nodes, parent_parser_multiple_node_processes
             ],
         allow_abbrev=False)
 
@@ -474,7 +474,7 @@ def main():
                                 args.core, args.threshold_clustering, args.mmseqs_options,
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
                                 args.option_bioservices, args.eggnog_tmp_dir, args.no_dbmem,
-                                args.multiple_nodes)
+                                args.multiple_nodes, args.multiple_node_procs)
     elif args.cmd == 'precomputed':
         precomputed_parse_affiliation(args.input, args.database, args.output, args.rank_limit, args.update_affiliations)
 

@@ -171,7 +171,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
                             nb_core=1, clust_threshold=0.5, mmseqs_options=None,
                             linclust=None, minimal_number_proteomes=5, update_affiliations=None,
                             option_bioservices=None, eggnog_tmp_dir=None, no_dbmem=False,
-                            multiple_nodes=False):
+                            multiple_nodes=False, multiple_node_procs=None):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
     Args:
@@ -195,6 +195,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
         eggnog_tmp_dir (str): pathname to eggnog-mapper temporary folder.
         no_dbmem (bool): Boolean to choose to not load eggnog database in memory.
         multiple_nodes (bool): For multiprocessing on HPC, to handle multiprocessing with multiple nodes.
+        multiple_node_procs (int): number of process per node for mmseqs2 when using multiple_nodes option.
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|workflow| Begin workflow.')
@@ -210,7 +211,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
                         update_affiliations, option_bioservices)
 
     clustering_output_folder = os.path.join(output_folder, '1_clustering')
-    make_clustering(proteomes_output_folder, clustering_output_folder, nb_core, clust_threshold, mmseqs_options, linclust, remove_tmp, multiple_nodes)
+    make_clustering(proteomes_output_folder, clustering_output_folder, nb_core, clust_threshold, mmseqs_options, linclust, remove_tmp, multiple_nodes, multiple_node_procs)
 
     annotation_output_folder = os.path.join(output_folder, '2_annotation')
     annotate_with_eggnog(clustering_output_folder, annotation_output_folder, eggnog_database_path, nb_core, eggnog_tmp_dir, no_dbmem, multiple_nodes)
