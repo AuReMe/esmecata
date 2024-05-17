@@ -306,14 +306,6 @@ def main():
         action='store_true',
         default=False)
 
-    parent_parser_multiple_node_processes = argparse.ArgumentParser(add_help=False)
-    parent_parser_multiple_node_processes.add_argument(
-        '--multiple-node-procs',
-        dest='multiple_node_procs',
-        help='Number of processes per node for mmseqs2 (to be used with --multiple-nodes for mmseqs2 clustering).',
-        required=False,
-        default=False)
-
     # subparsers
     subparsers = parser.add_subparsers(
         title='subcommands',
@@ -348,7 +340,7 @@ def main():
         parents=[
             parent_parser_i_clustering_folder, parent_parser_o, parent_parser_c,
             parent_parser_thr, parent_parser_mmseqs_options, parent_parser_linclust,
-            parent_parser_remove_tmp, parent_parser_multiple_nodes, parent_parser_multiple_node_processes
+            parent_parser_remove_tmp
             ],
         allow_abbrev=False)
     annotation_uniprot_parser = subparsers.add_parser(
@@ -392,7 +384,7 @@ def main():
             parent_parser_limit_maximal_number_proteomes, parent_parser_thr, parent_parser_mmseqs_options,
             parent_parser_linclust, parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
             parent_parser_update_affiliation, parent_parser_bioservices, parent_parser_eggnog_tmp_dir,
-            parent_parser_no_dbmem, parent_parser_multiple_nodes, parent_parser_multiple_node_processes
+            parent_parser_no_dbmem, parent_parser_multiple_nodes
             ],
         allow_abbrev=False)
 
@@ -451,7 +443,7 @@ def main():
                             args.option_bioservices)
     elif args.cmd == 'clustering':
         make_clustering(args.input, args.output, args.core, args.threshold_clustering, args.mmseqs_options,
-                        args.linclust, args.remove_tmp, args.multiple_nodes, args.multiple_node_procs)
+                        args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation_uniprot':
         annotate_proteins(args.input, args.output, uniprot_sparql_endpoint,
                         args.propagate_annotation, args.uniref, args.expression,
@@ -474,7 +466,7 @@ def main():
                                 args.core, args.threshold_clustering, args.mmseqs_options,
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
                                 args.option_bioservices, args.eggnog_tmp_dir, args.no_dbmem,
-                                args.multiple_nodes, args.multiple_node_procs)
+                                args.multiple_nodes)
     elif args.cmd == 'precomputed':
         precomputed_parse_affiliation(args.input, args.database, args.output, args.rank_limit, args.update_affiliations)
 
