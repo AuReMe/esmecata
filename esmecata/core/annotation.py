@@ -41,6 +41,10 @@ API_URL = "https://rest.uniprot.org"
 
 logger = logging.getLogger(__name__)
 
+# Increase field limit when reading CSV file to avoid error:
+# csv.Error: field larger than field limit
+# This happens when annotating some high-rank taxa.
+csv.field_size_limit(sys.maxsize)
 
 # Set of Python functions from https://www.uniprot.org/help/id_mapping
 
