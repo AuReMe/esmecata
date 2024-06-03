@@ -373,8 +373,8 @@ def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eg
 
                     else:
                         logger.critical('|EsMeCaTa|annotation-eggnog| Annotation already performed for %s.', obs_name)
-        else:
-            logger.critical('|EsMeCaTa|annotation-eggnog| No consensus proteins for %s, annotation will not be performed on it.', proteomes_tax_id_name)
+            else:
+                logger.critical('|EsMeCaTa|annotation-eggnog| No consensus proteins for %s, annotation will not be performed on it.', proteomes_tax_id_name)
 
 
 def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_core, eggnog_tmp_dir=None, no_dbmem=False, multiple_nodes=False, merge_fasta=False):
