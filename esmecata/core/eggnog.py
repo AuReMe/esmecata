@@ -336,7 +336,7 @@ def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eg
     for superkingdom in obs_name_superkingdom:
         eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, superkingdom + '.emapper.annotations')
         annotated_proteins = {prot_id: prot_annot for prot_id, prot_annot in read_annotation(eggnog_mapper_annotation_file)}
-        for obs_name in proteomes_tax_id_names:
+        for obs_name in obs_name_superkingdom[superkingdom]:
             proteomes_tax_id_name = proteomes_tax_id_names[obs_name]
             proteomes_tax_id_fasta = os.path.join(reference_protein_fasta_path, proteomes_tax_id_name + '.faa')
             protein_ids = [record.id for record in SeqIO.parse(proteomes_tax_id_fasta, 'fasta')]
