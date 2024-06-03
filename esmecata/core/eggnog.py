@@ -161,6 +161,7 @@ def read_annotation(eggnog_outfile:str):
     """Read an eggnog-mapper annotation file and retrieve EC numbers and GO terms by genes.
     Args:
         eggnog_outfile (str): path to eggnog-mapper annotation file
+
     Returns:
         dict: dict of genes and their annotations as {gene1:{EC:'..,..', GOs:'..,..,'}}
     """
@@ -303,6 +304,18 @@ def write_annotation_reference(protein_annotations, reference_proteins, annotati
 
 
 def merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_fasta_folder):
+    """Merge fasta files contain in reference_proteins_consensus_fasta into bigger fasta files according to their taxonomic rank.
+    At this moment, it is merged at the superkingdom level.
+
+    Args:
+        reference_protein_fasta_path (str): pathname to the reference_proteins_consensus_fasta folder
+        proteome_tax_id_file (str): pathname to the proteomes_tax_id file.
+        merge_fasta_folder (str): pathname to the output folder that will be containing the merged fasta
+
+    Returns:
+        obs_name_superkingdom (dict): superkingdom as value and the proteomes_tax_id_name associated with them
+        taxa_names (dict): list of superkingdom
+    """
     ncbi = NCBITaxa()
     obs_name_tax_ids = get_proteomes_tax_id_name(proteome_tax_id_file, 'tax_id')
     proteomes_tax_id_names = get_proteomes_tax_id_name(proteome_tax_id_file)
@@ -331,8 +344,21 @@ def merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_f
     taxa_names = list(obs_name_superkingdom.keys())
     return obs_name_superkingdom, taxa_names
 
+
 def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eggnog_output_folder, reference_protein_path,
                                reference_protein_fasta_path, pathologic_folder, annotation_reference_folder):
+    """Retrieve annotations from the predictions of eggnog-mapper on the merged fasat files.
+    Then write output files.
+
+    Args:
+        proteomes_tax_id_names (dict): dict containing observation names (as key) associated with tax name + tax_id used for proteomes (as value)
+        obs_name_superkingdom (dict): superkingdom as value and the proteomes_tax_id_name associated with them
+        eggnog_output_folder (str): pathname to the output folder of eggnog-mapper
+        reference_protein_path (str): pathname to the reference_protein folder of clustering
+        reference_protein_fasta_path (str): pathname to the reference_proteins_consensus_fasta folder
+        pathologic_folder (str): pathname to the pathologic folder
+        annotation_reference_folder (str): pathname to the annotation_reference folder
+    """
     for superkingdom in obs_name_superkingdom:
         eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, superkingdom + '.emapper.annotations')
         annotated_proteins = {prot_id: prot_annot for prot_id, prot_annot in read_annotation(eggnog_mapper_annotation_file)}
@@ -431,7 +457,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     # Create a dictionary containing metadata.
     options = {'input_folder': input_folder, 'output_folder': output_folder, 'nb_core': nb_core,
                'eggnog_database_path': eggnog_database_path, 'eggnog_tmp_dir': eggnog_tmp_dir,
-               'no_dbmem': no_dbmem, 'multiple_nodes': multiple_nodes}
+               'no_dbmem': no_dbmem, 'multiple_nodes': multiple_nodes, 'merge_fasta': merge_fasta}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
