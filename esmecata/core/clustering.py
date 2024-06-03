@@ -161,11 +161,12 @@ def create_proteome_representativeness_lineplot_per_taxon_rank(proteome_tax_id_f
         plt.clf()
 
 
-def get_proteomes_tax_id_name(proteomes_tax_id_file_path):
+def get_proteomes_tax_id_name(proteomes_tax_id_file_path, header_to_extract='tax_id_name'):
     """ Extract tax_name + tax_id associated with observation name.
 
     Args:
         proteomes_tax_id_file_path (str): pathname to the proteomes_tax_id file.
+        header_to_extract (str): name of the header to extract data from (by default tax_id_name).
 
     Returns:
         proteomes_taxa_id_names (dict): dict containing observation names (as key) associated with tax name + tax_id used for proteomes (as value)
@@ -175,8 +176,8 @@ def get_proteomes_tax_id_name(proteomes_tax_id_file_path):
         csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
         for line in csvreader:
             observation_name = line['observation_name']
-            tax_id_name = line['tax_id_name']
-            proteomes_taxa_id_names[observation_name] = tax_id_name
+            data_extract = line[header_to_extract]
+            proteomes_taxa_id_names[observation_name] = data_extract
 
     return proteomes_taxa_id_names
 
