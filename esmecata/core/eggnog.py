@@ -405,6 +405,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
 
     if merge_fasta is True:
         merge_fasta_folder = os.path.join(output_folder, 'merge_fasta')
+        is_valid_dir(merge_fasta_folder)
         obs_name_superkingdom, taxa_names = merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_fasta_folder)
     else:
         taxa_names = [input_file.replace('.faa', '') for input_file in os.listdir(reference_protein_fasta_path)]
