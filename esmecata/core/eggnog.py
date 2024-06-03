@@ -339,7 +339,7 @@ def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eg
             proteomes_tax_id_name = proteomes_tax_id_names[obs_name]
             proteomes_tax_id_fasta = os.path.join(reference_protein_fasta_path, proteomes_tax_id_name + '.faa')
             protein_ids = [record.id.split('|')[1] for record in SeqIO.parse(proteomes_tax_id_fasta, 'fasta')]
-            sub_annotated_proteins = {protein_id: annotated_proteins[protein_id] for protein_id in protein_ids}
+            sub_annotated_proteins = {protein_id: annotated_proteins[protein_id] for protein_id in protein_ids if protein_id in annotated_proteins}
 
             gos = [go for protein_id, protein_annot in sub_annotated_proteins for go in protein_annot['GOs'].split(',') if go not in ['', '-']]
             unique_gos = set(gos)
