@@ -399,14 +399,15 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     is_valid_dir(pathologic_folder)
 
     reference_protein_fasta_path = os.path.join(input_folder, 'reference_proteins_consensus_fasta')
+
+    proteome_tax_id_file = os.path.join(input_folder, 'proteome_tax_id.tsv')
+    annotation_taxon_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
+
     if merge_fasta is True:
         merge_fasta_folder = os.path.join(output_folder, 'merge_fasta')
         obs_name_superkingdom, taxa_names = merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_fasta_folder)
     else:
         taxa_names = [input_file.replace('.faa', '') for input_file in os.listdir(reference_protein_fasta_path)]
-
-    proteome_tax_id_file = os.path.join(input_folder, 'proteome_tax_id.tsv')
-    annotation_taxon_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
 
     if os.path.exists(annotation_taxon_id_file):
         if not os.path.samefile(proteome_tax_id_file, annotation_taxon_id_file):
