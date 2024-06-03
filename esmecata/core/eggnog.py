@@ -331,7 +331,8 @@ def merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_f
     taxa_names = list(obs_name_superkingdom.keys())
     return obs_name_superkingdom, taxa_names
 
-def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eggnog_output_folder, reference_protein_fasta_path, pathologic_folder, annotation_reference_folder):
+def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eggnog_output_folder, reference_protein_path,
+                               reference_protein_fasta_path, pathologic_folder, annotation_reference_folder):
     for superkingdom in obs_name_superkingdom:
         eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, superkingdom + '.emapper.annotations')
         annotated_proteins = {prot_id: prot_annot for prot_id, prot_annot in read_annotation(eggnog_mapper_annotation_file)}
@@ -339,6 +340,8 @@ def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eg
             proteomes_tax_id_name = proteomes_tax_id_names[obs_name]
             proteomes_tax_id_fasta = os.path.join(reference_protein_fasta_path, proteomes_tax_id_name + '.faa')
             protein_ids = [record.id for record in SeqIO.parse(proteomes_tax_id_fasta, 'fasta')]
+            reference_protein_pathname = os.path.join(reference_protein_path, proteomes_tax_id_name+'.tsv')
+            reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
             sub_annotated_proteins = [(protein_id, annotated_proteins[protein_id]) for protein_id in protein_ids if protein_id in annotated_proteins]
 
             gos = [go for protein_id, protein_annot in sub_annotated_proteins for go in protein_annot['GOs'].split(',') if go not in ['', '-']]
@@ -351,7 +354,7 @@ def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eg
             # Create annotation reference file.
             annotation_reference_file = os.path.join(annotation_reference_folder, obs_name+'.tsv')
             if not os.path.exists(annotation_reference_file):
-                write_annotation_reference(sub_annotated_proteins, protein_ids, annotation_reference_file)
+                write_annotation_reference(sub_annotated_proteins, reference_proteins, annotation_reference_file)
 
             # Create pathologic files.
             pathologic_organism_folder = os.path.join(pathologic_folder, obs_name)
@@ -361,7 +364,7 @@ def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eg
             if not os.path.exists(pathologic_file):
                 if len(sub_annotated_proteins) > 0:
                     is_valid_dir(pathologic_organism_folder)
-                    write_pathologic(obs_name, sub_annotated_proteins, pathologic_file, obs_name)
+                    write_pathologic(obs_name, sub_annotated_proteins, pathologic_file, reference_proteins)
                 elif len(sub_annotated_proteins) == 0:
                     logger.critical('|EsMeCaTa|annotation-eggnog| No reference proteins for %s, esmecata will not create a pathologic folder for it.', obs_name)
 
@@ -467,7 +470,8 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     logger.info('|EsMeCaTa|annotation| Runs of eggnog-mapper finished.')
 
     if merge_fasta is True:
-        merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eggnog_output_folder, reference_protein_fasta_path, pathologic_folder, annotation_reference_folder)
+        merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eggnog_output_folder, reference_protein_path,
+                                   reference_protein_fasta_path, pathologic_folder, annotation_reference_folder)
     else:
         # Create annotation reference and pathologic files for each observation name.
         for observation_name in proteomes_tax_id_names:
