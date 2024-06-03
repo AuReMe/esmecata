@@ -333,7 +333,7 @@ def merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_f
 
 def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eggnog_output_folder, reference_protein_fasta_path, pathologic_folder, annotation_reference_folder):
     for superkingdom in obs_name_superkingdom:
-        eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, superkingdom + '.tsv')
+        eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, superkingdom + '.emapper.annotations')
         annotated_proteins = {prot_id: prot_annot for prot_id, prot_annot in read_annotation(eggnog_mapper_annotation_file)}
         for obs_name in proteomes_tax_id_names:
             proteomes_tax_id_name = proteomes_tax_id_names[obs_name]
