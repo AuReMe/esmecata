@@ -310,7 +310,7 @@ def main():
     parent_parser_merge_fasta.add_argument(
         '--merge-fasta',
         dest='merge_fasta',
-        help='Command to run multiprocessing on multiple nodes (on HPC).',
+        help='Command to merge protein fasta files into bigger one (on the superkingdom level) during annotation, to speed-up annotation with eggnog-mapper.',
         required=False,
         action='store_true',
         default=False)
