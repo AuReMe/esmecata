@@ -80,12 +80,16 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
         # Use dbmem for faster run, except if the option --no-dbmem has been used.
         if no_dbmem is False:
             eggnog_cmds.append('--dbmem')
+        if taxon_id_scope is not None:
+            eggnog_cmds.append('--tax_scope')
+            eggnog_cmds.append(taxon_id_scope)
 
         subprocess.call(eggnog_cmds)
     else:
         # First, run diamon using multiprocessing on multiple nodes.
         # Command from https://github.com/bbuchfink/diamond/wiki/6.-Distributed-computing#diamond-distributed-memory-parallel-processing.
         # Init diamond multiprocessing on multiple nodes.
+        diamond_starttime = time.time()
         diamond_database = os.path.join(eggnog_database_path, 'eggnog_proteins.dmnd')
         diamond_init_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path,
                              '--multiprocessing', '--mp-init', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir,
@@ -99,6 +103,9 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
                                      '--top', '3', '--threads', nb_core,
                                      '--outfmt', '6', 'qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore', 'qcovhsp', 'scovhsp']
         subprocess.call(diamond_parallel_run_cmds)
+        diamond_endtime = time.time()
+        diamond_duration = diamond_endtime - diamond_starttime
+        logger.debug('|EsMeCaTa|annotation-eggnog| Diamond complete in {0}s.'.format(diamond_duration))
 
         # See this issue: https://github.com/bbuchfink/diamond/issues/549
         # Suffixed files are created by diamond for each query chunk.
@@ -110,6 +117,7 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
                     open_diamond_output_hit_concat.write(open_diamond_result_file.read())
             os.remove(diamond_result_file)
 
+        eggnog_starttime = time.time()
         # Then resume run of eggnog-mapper.
         eggnog_cmds = ['emapper.py', '--cpu', nb_core, '-i', input_path, '--output', taxon_name,
                     '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
@@ -123,6 +131,9 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
             eggnog_cmds.append('--dbmem')
 
         subprocess.call(eggnog_cmds)
+        eggnog_endtime = time.time()
+        eggnog_duration = eggnog_endtime - eggnog_starttime
+        logger.debug('|EsMeCaTa|annotation-eggnog| Emapper compelte in {0}s.'.format(eggnog_duration))
 
 
 def compute_stat_annotation(annotation_reference_folder, stat_file=None):
