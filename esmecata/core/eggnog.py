@@ -58,7 +58,7 @@ def get_eggnog_version():
     return eggnog_version
 
 
-def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_database_path, nb_core, no_dbmem=False, multiple_nodes=False):
+def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_database_path, nb_core, no_dbmem=False, multiple_nodes=False, taxon_id_scope=None):
     """ Calls eggnog-mapper on the protein clusters.
 
     Args:
@@ -70,6 +70,7 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
         nb_core (int): number of CPU-cores to use with eggnog-mapper.
         no_dbmem (bool): Boolean to choose to not load eggnog database in memory.
         multiple_nodes (bool): For multiprocessing on HPC, to handle multiprocessing with multiple nodes.
+        taxon_id_scope (str): String of taxon IDs associated with query.
     """
     if multiple_nodes is False:
         # Use override to avoid issue if already present annotation (if there was a failed run for example).
@@ -113,6 +114,10 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
         eggnog_cmds = ['emapper.py', '--cpu', nb_core, '-i', input_path, '--output', taxon_name,
                     '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
                     '--temp_dir', temporary_dir, '--resume']
+        if taxon_id_scope is not None:
+            eggnog_cmds.append('--tax_scope')
+            eggnog_cmds.append(taxon_id_scope)
+
         # Use dbmem for faster run, except if the option --no-dbmem has been used.
         if no_dbmem is False:
             eggnog_cmds.append('--dbmem')
@@ -489,7 +494,10 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, taxon_name+'.emapper.annotations')
             if not os.path.exists(eggnog_mapper_annotation_file):
                 logger.info('|EsMeCaTa|annotation| Launch eggnog-mapper on %s.', taxon_name)
-                call_to_emapper(fasta_file_path, taxon_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_core, no_dbmem, multiple_nodes)
+                if merge_fasta is True:
+                    call_to_emapper(fasta_file_path, taxon_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_core, no_dbmem, multiple_nodes, taxon_name)
+                else:
+                    call_to_emapper(fasta_file_path, taxon_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_core, no_dbmem, multiple_nodes)
             else:
                 logger.info('|EsMeCaTa|annotation| Results of eggnog-mapper already present for %s.',  taxon_name)
 
