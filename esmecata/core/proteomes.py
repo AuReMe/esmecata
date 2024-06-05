@@ -1338,7 +1338,9 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
             for observation_name in proteomes_ids:
                 tax_id = int(proteomes_ids[observation_name][0])
                 tax_name = tax_id_names[tax_id]
-                tax_id_name = tax_name.replace(' ', '_') + '__taxid__' + str(tax_id)
+                # Convert characters in tax_name into unicode code.
+                convert_tax_name = ''.join(c if c.isalnum() or c in '-_' else ('_c' + str(ord(c)) + '_') for c in tax_name)
+                tax_id_name = convert_tax_name + '__taxid__' + str(tax_id)
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
                 csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, ','.join(proteomes_ids[observation_name][1])])
 
