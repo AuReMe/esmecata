@@ -354,8 +354,10 @@ def merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_f
         with open(merge_fasta_superkingdom_filepath, 'a') as output_file:
             for proteomes_tax_id_name in obs_name_superkingdom[superkingdom]:
                 proteomes_tax_id_name_fasta = os.path.join(reference_protein_fasta_path, proteomes_tax_id_name + '.faa')
-                with open(proteomes_tax_id_name_fasta, 'r') as input_file:
-                    output_file.write(input_file.read())
+                # Check if proteomes_tax_id_name_fasta exists, because if it contains 0 proteins, there will not be a fasta file associated.
+                if os.path.exists(proteomes_tax_id_name_fasta):
+                    with open(proteomes_tax_id_name_fasta, 'r') as input_file:
+                        output_file.write(input_file.read())
 
     taxa_names = list(obs_name_superkingdom.keys())
     return obs_name_superkingdom, taxa_names
