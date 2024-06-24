@@ -343,10 +343,13 @@ def merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_f
         rank_tax_id_lineages = ncbi.get_rank(tax_id_lineages)
         superkingdom = str([tax_id for tax_id in rank_tax_id_lineages if rank_tax_id_lineages[tax_id] == 'superkingdom'][0])
         proteomes_tax_id_name = proteomes_tax_id_names[obs_name]
-        if superkingdom not in obs_name_superkingdom:
-            obs_name_superkingdom[superkingdom] = [proteomes_tax_id_name]
-        else:
-            obs_name_superkingdom[superkingdom].append(proteomes_tax_id_name)
+        proteomes_tax_id_name_fasta = os.path.join(reference_protein_fasta_path, proteomes_tax_id_name + '.faa')
+        # Check if proteomes_tax_id_name_fasta exists, because if it contains 0 proteins, there will not be a fasta file associated.
+        if os.path.exists(proteomes_tax_id_name_fasta):
+            if superkingdom not in obs_name_superkingdom:
+                obs_name_superkingdom[superkingdom] = [proteomes_tax_id_name]
+            else:
+                obs_name_superkingdom[superkingdom].append(proteomes_tax_id_name)
 
     for superkingdom in obs_name_superkingdom:
         obs_name_superkingdom[superkingdom] = set(obs_name_superkingdom[superkingdom])
@@ -354,10 +357,8 @@ def merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_f
         with open(merge_fasta_superkingdom_filepath, 'a') as output_file:
             for proteomes_tax_id_name in obs_name_superkingdom[superkingdom]:
                 proteomes_tax_id_name_fasta = os.path.join(reference_protein_fasta_path, proteomes_tax_id_name + '.faa')
-                # Check if proteomes_tax_id_name_fasta exists, because if it contains 0 proteins, there will not be a fasta file associated.
-                if os.path.exists(proteomes_tax_id_name_fasta):
-                    with open(proteomes_tax_id_name_fasta, 'r') as input_file:
-                        output_file.write(input_file.read())
+                with open(proteomes_tax_id_name_fasta, 'r') as input_file:
+                    output_file.write(input_file.read())
 
     taxa_names = list(obs_name_superkingdom.keys())
     return obs_name_superkingdom, taxa_names
