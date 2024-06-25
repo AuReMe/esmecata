@@ -223,21 +223,18 @@ def read_annotation(eggnog_outfile:str):
 
     # Use chunk when reading eggnog file to cope with big file.
     chunksize = 10 ** 6
-    for annotation_data in pd.read_csv(eggnog_outfile, sep='\t', comment='#', header=None, dtype = str, chunksize = chunksize):
+    for annotation_data in pd.read_csv(eggnog_outfile, sep='\t', comment='#', header=None, dtype=str, chunksize=chunksize):
         annotation_data.replace(np.nan, '', inplace=True)
         # Assign the headers
         annotation_data.columns = headers_row
         if 'query_name' in annotation_data.columns:
-            # Check if the gene IDs are numeric, if yes add 'gene_' in front of them.
-            numeric_row_dataframe = pd.to_numeric(annotation_data['query_name'], errors='coerce').notnull()
-            if bool(numeric_row_dataframe.any()) is True:
-                annotation_data.loc[numeric_row_dataframe, 'query_name'] = 'gene_' + annotation_data.loc[numeric_row_dataframe, 'query_name']
+            # If a protein is annotated multiple time, selected the match with the highest score.
+            annotation_data = annotation_data.sort_values('score', ascending=True).drop_duplicates('query_name').sort_index()
             annotation_dict = annotation_data.set_index('query_name')[to_extract_annotations].to_dict('index')
         # 'query' added for compatibility with eggnog-mapper 2.1.2
         elif 'query' in annotation_data.columns:
-            numeric_row_dataframe = pd.to_numeric(annotation_data['query'], errors='coerce').notnull()
-            if bool(numeric_row_dataframe.any()) is True:
-                annotation_data.loc[numeric_row_dataframe, 'query'] = 'gene_' + annotation_data.loc[numeric_row_dataframe, 'query']
+            # If a protein is annotated multiple time, selected the match with the highest score.
+            annotation_data = annotation_data.sort_values('score', ascending=True).drop_duplicates('query').sort_index()
             annotation_dict = annotation_data.set_index('query')[to_extract_annotations].to_dict('index')
         for key in annotation_dict:
             yield key, annotation_dict[key]
