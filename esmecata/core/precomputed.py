@@ -33,6 +33,7 @@ from esmecata.utils import is_valid_dir
 from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit
 from esmecata.core.eggnog import compute_stat_annotation
 from esmecata.core.clustering import compute_stat_clustering
+from esmecata.core.annotation import create_dataset_annotation_file
 
 from esmecata import __version__ as esmecata_version
 
@@ -247,12 +248,13 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
         for observation_name in tax_id_obs_names[tax_id]:
             # Create an annotaiton_reference file for the observation name.
-            df_annotation_reference = df_annotation[['representative_protein', 'cluster_members', 'Preferred_name', 'GOs', 'EC', 'KEGG_Reaction']]
-            df_annotation_reference.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
             output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
-            df_annotation_reference.to_csv(output_path_annotation_file, sep='\t', index=None)
+            df_annotation.to_csv(output_path_annotation_file, sep='\t', index=None)
 
     archive.close()
+
+    dataset_annotation_file_path = os.path.join(output_folder, 'dataset_annotation_observation_name.tsv')
+    create_dataset_annotation_file(annotation_reference_output_folder, dataset_annotation_file_path, 'all')
 
     stat_file = os.path.join(clustering_output_folder, 'stat_number_clustering.tsv')
     compute_stat_clustering(clustering_output_folder, stat_file)
