@@ -127,9 +127,6 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     annotation_reference_output_folder = os.path.join(annotation_output_folder, 'annotation_reference')
     is_valid_dir(annotation_reference_output_folder)
 
-    eggnog_output_folder = os.path.join(annotation_output_folder, 'eggnog_output')
-    is_valid_dir(eggnog_output_folder)
-
     pathologic_folder = os.path.join(annotation_output_folder, 'pathologic')
     is_valid_dir(pathologic_folder)
 
@@ -173,15 +170,17 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     database_taxon_ids, proteomes_tax_id_names, taxon_data = get_taxon_database(archive)
 
     esmecata_metadata['precomputed_database'] = {}
-    with archive.open('esmecata_metadata_proteomes.json', 'r') as open_metadata_json:
+
+    with archive.open('esmecata_database_metadata.json', 'r') as open_metadata_json:
         json_data = json.load(open_metadata_json)
-    esmecata_metadata['precomputed_database']['esmecata_query_system'] = json_data['esmecata_query_system']
-    esmecata_metadata['precomputed_database']['uniprot_release'] = json_data['uniprot_release']
-    esmecata_metadata['precomputed_database']['access_time'] = json_data['access_time']
-    esmecata_metadata['precomputed_database']['swissprot_release_number'] = json_data['swissprot_release_number']
-    esmecata_metadata['precomputed_database']['swissprot_release_date'] = json_data['swissprot_release_date']
-    esmecata_metadata['precomputed_database']['trembl_release_number'] = json_data['trembl_release_number']
-    esmecata_metadata['precomputed_database']['trembl_release_date'] = json_data['trembl_release_date']
+    species_json_data = json_data['species_esmecata_metadata_proteomes']
+    esmecata_metadata['precomputed_database']['esmecata_query_system'] = species_json_data['esmecata_query_system']
+    esmecata_metadata['precomputed_database']['uniprot_release'] = species_json_data['uniprot_release']
+    esmecata_metadata['precomputed_database']['access_time'] = species_json_data['access_time']
+    esmecata_metadata['precomputed_database']['swissprot_release_number'] = species_json_data['swissprot_release_number']
+    esmecata_metadata['precomputed_database']['swissprot_release_date'] = species_json_data['swissprot_release_date']
+    esmecata_metadata['precomputed_database']['trembl_release_number'] = species_json_data['trembl_release_number']
+    esmecata_metadata['precomputed_database']['trembl_release_date'] = species_json_data['trembl_release_date']
 
     ncbi = NCBITaxa()
 
@@ -245,14 +244,6 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         # Create a computed threhsold file.
         output_computed_threshold_file = os.path.join(computed_threshold_folder, taxi_id_name+'.tsv')
         df_annotation[['representative_protein', 'cluster_ratio', 'proteomes']].to_csv(output_computed_threshold_file, sep='\t', index=None)
-
-        # Create an imitation of an eggnog output file.
-        df_annotation_eggnog = df_annotation[['representative_protein', 'seed_ortholog', 'evalue', 'score', 'COG_category',
-                                              'Preferred_name', 'GOs', 'EC', 'KEGG_ko', 'KEGG_Pathway', 'KEGG_Module', 'KEGG_Reaction',
-                                              'CAZy', 'BiGG_Reaction', 'PFAMs']]
-        output_eggnog_annotation_file = os.path.join(eggnog_output_folder, taxi_id_name+'.emapper.annotations')
-        if not os.path.exists(output_eggnog_annotation_file):
-            df_annotation_eggnog.to_csv(output_eggnog_annotation_file, sep='\t', index=None)
 
         for observation_name in tax_id_obs_names[tax_id]:
             # Create an annotaiton_reference file for the observation name.
