@@ -102,20 +102,38 @@ def copy_file(annotation_file, proteomes_taxa_names, output_database_folder, com
         shutil.copyfile(consensus_sequence_file_path, taxon_consensus_sequence_file_path)
 
 
+def concat_tsv_file(input_tsv_file_path, tsv_file_concat_path):
+    if not os.path.exists(tsv_file_concat_path):
+        shutil.copyfile(input_tsv_file_path, tsv_file_concat_path)
+    else:
+        df_proteomes_tax_id_file_path = pd.read_csv(input_tsv_file_path, sep='\t')
+        df_tsv_file_concat = pd.read_csv(tsv_file_concat_path, sep='\t')
+        df_concat = pd.concat([df_proteomes_tax_id_file_path, df_tsv_file_concat])
+        df_concat.to_csv(tsv_file_concat_path, sep='\t', index=False)
+
 def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, cpu_number=1):
     if not os.path.exists(output_database_folder):
         os.mkdir(output_database_folder)
 
+    # Create/merge proteome_tax_id file for each taxon level.
     proteomes_tax_id_file_path = os.path.join(esmecata_clustering_folder, 'proteome_tax_id.tsv')
-
     proteomes_tax_id_file_database_path = os.path.join(output_database_folder, 'proteome_tax_id.tsv')
-    if not os.path.exists(proteomes_tax_id_file_database_path):
-        shutil.copyfile(proteomes_tax_id_file_path, proteomes_tax_id_file_database_path)
-    else:
-        df_proteomes_tax_id_file_path = pd.read_csv(proteomes_tax_id_file_path, sep='\t')
-        df_proteomes_tax_id_file_database_path = pd.read_csv(proteomes_tax_id_file_database_path, sep='\t')
-        df_concat = pd.concat([df_proteomes_tax_id_file_path, df_proteomes_tax_id_file_database_path])
-        df_concat.to_csv(proteomes_tax_id_file_database_path, sep='\t')
+    concat_tsv_file(proteomes_tax_id_file_path, proteomes_tax_id_file_database_path)
+
+    # Create/merge stat_proteome file for each taxon level.
+    stat_number_proteome_file_path = os.path.join(esmecata_proteomes_folder, 'stat_number_proteome.tsv')
+    stat_number_proteome_database_path = os.path.join(output_database_folder, 'stat_number_proteome.tsv')
+    concat_tsv_file(stat_number_proteome_file_path, stat_number_proteome_database_path)
+
+    # Create/merge stat_number_clustering file for each taxon level.
+    stat_number_clustering_file_path = os.path.join(esmecata_clustering_folder, 'stat_number_clustering.tsv')
+    stat_number_clustering_database_path = os.path.join(output_database_folder, 'stat_number_clustering.tsv')
+    concat_tsv_file(stat_number_clustering_file_path, stat_number_clustering_database_path)
+
+    # Create/merge stat_proteome file for each taxon level.
+    stat_number_annotation_file_path = os.path.join(esmecata_annotation_folder, 'stat_number_annotation.tsv')
+    stat_number_annotation_database_path = os.path.join(output_database_folder, 'stat_number_annotation.tsv')
+    concat_tsv_file(stat_number_annotation_file_path, stat_number_annotation_database_path)
 
     proteomes_taxa_names = get_proteomes_tax_id_name(proteomes_tax_id_file_path)
 
@@ -125,6 +143,7 @@ def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmec
 
     annotation_reference_folder = os.path.join(esmecata_annotation_folder, 'annotation_reference')
 
+    # Use multiprocessing to copy fasta and annotation files.
     database_copy_pool = Pool(cpu_number)
 
     multiprocessing_data = []

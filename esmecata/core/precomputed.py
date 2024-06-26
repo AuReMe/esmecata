@@ -30,9 +30,9 @@ from ete3 import __version__ as ete3_version
 from ete3 import NCBITaxa
 
 from esmecata.utils import is_valid_dir
-from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit
+from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file
 from esmecata.core.eggnog import compute_stat_annotation
-from esmecata.core.clustering import compute_stat_clustering
+from esmecata.core.clustering import get_proteomes_tax_id_name
 from esmecata.core.annotation import create_dataset_annotation_file
 
 from esmecata import __version__ as esmecata_version
@@ -195,14 +195,16 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     if rank_limit:
         json_taxonomic_affiliations = filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit)
 
-    json_log = os.path.join(output_folder, 'association_taxon_taxID.json')
+    json_log = os.path.join(proteomes_output_folder, 'association_taxon_taxID.json')
     with open(json_log, 'w') as ouput_file:
         json.dump(json_taxonomic_affiliations, ouput_file, indent=4)
 
     association_taxon_database, observation_name_not_founds = find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, database_taxon_ids)
 
+    # Create proteome_tax_id file.
     proteome_tax_id_file = os.path.join(proteomes_output_folder, 'proteome_tax_id.tsv')
     tax_id_obs_names = {}
+    proteomes_ids = {}
     with open(proteome_tax_id_file, 'w') as out_file:
         csvwriter = csv.writer(out_file, delimiter='\t')
         csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_id_name', 'tax_rank', 'proteome'])
@@ -211,11 +213,35 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             tax_name = association_taxon_database[observation_name][1]
             tax_id_name = proteomes_tax_id_names[tax_id]
             tax_rank = taxon_data[tax_id][2]
+            proteome = taxon_data[tax_id][3]
+            proteomes_ids[observation_name] = (tax_id, proteome.split(','))
             if tax_id not in tax_id_obs_names:
                 tax_id_obs_names[tax_id] = [observation_name]
             else:
                 tax_id_obs_names[tax_id].append(observation_name)
             csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, taxon_data[tax_id][3]])
+
+    create_comp_taxonomy_file(json_taxonomic_affiliations, proteomes_ids, tax_id_names, proteomes_output_folder)
+
+    # Create stat_proteome.
+    run_proteome_tax_id_file = os.path.join(proteomes_output_folder, 'stat_number_proteome.tsv')
+    with open(run_proteome_tax_id_file, 'w') as out_file:
+        csvwriter = csv.writer(out_file, delimiter='\t')
+        csvwriter.writerow(['observation_name', 'Number_proteomes', 'Input_taxon_Name', 'Taxon_rank', 'EsMeCaTa_used_taxon', 'EsMeCaTa_used_rank', 'only_reference_proteome_used'])
+        for observation_name in association_taxon_database:
+            tax_name = association_taxon_database[observation_name][0]
+            tax_id = association_taxon_database[observation_name][1]
+            tax_rank = taxon_data[tax_id][2]
+            nb_tax_proteomes = len(taxon_data[tax_id][3].split(','))
+            reversed_affiliation_taxa = list(reversed(list(json_taxonomic_affiliations[observation_name].keys())))
+            lowest_tax_rank = None
+            for input_tax_name in reversed_affiliation_taxa:
+                if json_taxonomic_affiliations[observation_name][input_tax_name] != ['not_found']:
+                    if input_tax_name != 'unknown':
+                        lowest_tax_id = json_taxonomic_affiliations[observation_name][input_tax_name][0]
+                        lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
+                        break
+            csvwriter.writerow([observation_name, nb_tax_proteomes, input_tax_name, lowest_tax_rank, tax_name, tax_rank, ''])
 
     clustering_proteome_tax_id_file = os.path.join(clustering_output_folder, 'proteome_tax_id.tsv')
     shutil.copyfile(proteome_tax_id_file, clustering_proteome_tax_id_file)
@@ -256,8 +282,40 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     dataset_annotation_file_path = os.path.join(output_folder, 'dataset_annotation_observation_name.tsv')
     create_dataset_annotation_file(annotation_reference_output_folder, dataset_annotation_file_path, 'all')
 
-    stat_file = os.path.join(clustering_output_folder, 'stat_number_clustering.tsv')
-    compute_stat_clustering(clustering_output_folder, stat_file)
+    tax_name_clustering_numbers = {}
+    for clustering_file in os.listdir(computed_threshold_folder):
+        clustering_file_path = os.path.join(computed_threshold_folder, clustering_file)
+        with open(clustering_file_path, 'r') as open_clustering_file_path:
+            csvreader = csv.reader(open_clustering_file_path, delimiter='\t')
+            next(csvreader)
+            cluster_0 = []
+            cluster_0_5 = []
+            cluster_0_95 = []
+            for line in csvreader:
+                protein_cluster_threshold = float(line[1])
+                if protein_cluster_threshold >= 0.95:
+                    cluster_0_95.append(line[0])
+                if protein_cluster_threshold >= 0.5:
+                    cluster_0_5.append(line[0])
+                if protein_cluster_threshold >= 0:
+                    cluster_0.append(line[0])
+
+        tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = [cluster_0, cluster_0_5, cluster_0_95]
+    proteomes_taxa_id_names = get_proteomes_tax_id_name(clustering_proteome_tax_id_file)
+    clustering_numbers = {}
+    for observation_name in proteomes_taxa_id_names:
+        tax_name = proteomes_taxa_id_names[observation_name]
+        clustering_numbers[observation_name] = tax_name_clustering_numbers[tax_name]
+
+    clustering_stat_file = os.path.join(clustering_output_folder, 'stat_number_clustering.tsv')
+    with open(clustering_stat_file, 'w') as stat_file_open:
+        csvwriter = csv.writer(stat_file_open, delimiter='\t')
+        csvwriter.writerow(['observation_name', 'Number_protein_clusters_panproteome', 'Number_protein_clusters_kept', 'Number_protein_clusters_coreproteome'])
+        for observation_name in clustering_numbers:
+            cluster_0 = len(clustering_numbers[observation_name][0])
+            cluster_0_5 = len(clustering_numbers[observation_name][1])
+            cluster_0_95 = len(clustering_numbers[observation_name][2])
+            csvwriter.writerow([observation_name, cluster_0, cluster_0_5, cluster_0_95])
 
     stat_file = os.path.join(annotation_output_folder, 'stat_number_annotation.tsv')
     compute_stat_annotation(annotation_reference_output_folder, stat_file)
@@ -275,4 +333,15 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         with open(precomputed_metadata_file, 'w') as ouput_file:
             json.dump(esmecata_metadata, ouput_file, indent=4)
 
+    precomputed_metadata_file = os.path.join(proteomes_output_folder, 'esmecata_metadata_proteomes.json')
+    with open(precomputed_metadata_file, 'w') as ouput_file:
+        json.dump(esmecata_metadata, ouput_file, indent=4)
+    species_clustering_json_data = json_data['species_esmecata_metadata_clustering']
+    precomputed_metadata_file = os.path.join(clustering_output_folder, 'esmecata_metadata_clustering.json')
+    with open(precomputed_metadata_file, 'w') as ouput_file:
+        json.dump(species_clustering_json_data, ouput_file, indent=4)
+    species_annotation_json_data = json_data['species_esmecata_metadata_annotation']
+    precomputed_metadata_file = os.path.join(annotation_output_folder, 'esmecata_metadata_annotation.json')
+    with open(precomputed_metadata_file, 'w') as ouput_file:
+        json.dump(esmecata_metadata, ouput_file, indent=4)
     logger.info('|EsMeCaTa|precomputed| Extraction of data from database completed in {0}s.'.format(duration))
