@@ -212,21 +212,36 @@ def check_id_mapping_results_ready(session, job_id):
     Returns:
         bool: True if job is finished.
     """
+    nb_retry = 0
+    request_send = None
     while True:
-        request = session.get(f'{API_URL}/idmapping/status/{job_id}')
-        check_response(request)
-        json_response = request.json()
-        if 'jobStatus' in json_response:
-            if json_response['jobStatus'] == 'RUNNING':
-                time.sleep(POLLING_INTERVAL)
-            elif json_response['jobStatus'] == 'NEW':
-                time.sleep(POLLING_INTERVAL)
+        try:
+            request = session.get(f'{API_URL}/idmapping/status/{job_id}')
+            request_send = True
+        except Exception as request_exception:
+            nb_retry += 1
+            if nb_retry > 5:
+                logger.critical(request_exception)
+                sys.exit(f'|EsMeCaTa|annotation| Error when trying to fetch job {job_id}. Failed five times to have answer from it.')
             else:
-                raise Exception(json_response['jobStatus'])
-        elif 'results' in json_response or 'failedIds' in json_response:
-            return True
-        else:
-            return False
+                logger.critical(request_exception)
+                logger.critical(f'|EsMeCaTa|annotation| Retry, maybe job as not be launched on UniProt side.')
+                time.sleep(5)
+
+        if request_send is True:
+            check_response(request)
+            json_response = request.json()
+            if 'jobStatus' in json_response:
+                if json_response['jobStatus'] == 'RUNNING':
+                    time.sleep(POLLING_INTERVAL)
+                elif json_response['jobStatus'] == 'NEW':
+                    time.sleep(POLLING_INTERVAL)
+                else:
+                    raise Exception(json_response['jobStatus'])
+            elif 'results' in json_response or 'failedIds' in json_response:
+                return True
+            else:
+                return False
 
 
 def query_uniprot_bioservices(protein_queries):
