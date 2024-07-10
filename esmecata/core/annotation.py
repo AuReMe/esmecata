@@ -1150,7 +1150,7 @@ def create_dataset_annotation_file(annotation_reference_folder, dataset_annotati
                     intermediary_annots = line[content].split(',')
                 if content == 'all':
                     intermediary_annots = line['GO'].split(',')
-                    intermediary_annots.extend(line['EC'])
+                    intermediary_annots.extend(line['EC'].split(','))
                 annotations.extend(intermediary_annots)
         annotations = [annot for annot in annotations if annot != '']
         total_annotations.extend(annotations)
