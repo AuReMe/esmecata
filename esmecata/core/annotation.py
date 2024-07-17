@@ -841,6 +841,21 @@ def write_annotation_file(output_dict, annotation_file):
             csvwriter.writerow([protein, protein_name, protein_review_satus, go_terms, ec_numbers, interpros, rhea_ids, gene_name])
 
 
+def read_annotation_file(annotation_file):
+    """Read annotation file from annotated protein retrieved from UniProt
+
+    Args:
+        annotation_file (str): pathname to annotation tabulated file
+    """
+    output_dict = {}
+    with open(annotation_file, 'r') as open_input_tsv:
+        csvreader = csv.DictReader(open_input_tsv, delimiter='\t')
+        for line in csvreader:
+            output_dict[line['protein_id']] = [line['protein_name'], line['review'], line['GO'].split(','), line['EC'].split(','), line['InterPro'].split(','), line['Rhea'].split(','), line['gene_name']]
+
+    return output_dict
+
+
 def retrieve_annotation_from_uniref(proteomes, uniprot_sparql_endpoint, uniref_annotation_file):
     """Query UniProt uniref with SPARQL to find protein annotations
 
@@ -1284,54 +1299,68 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
                 uniprot_sprot_index = SeqIO.index(annotation_file, 'swiss')
 
     for index, base_filename in enumerate(input_files):
-        logger.info('|EsMeCaTa|annotation| Annotation of %s (%d on %d data to annotate).', base_filename, index+1, len(input_files))
-
         output_dict = {}
         reference_protein_pathname = os.path.join(reference_protein_path, base_filename+'.tsv')
         reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
-
-        # First method to handle protein already annotated
-        #protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
-        # Second method to handle protein already annotated
-        if annotation_files is None:
-            protein_to_search_on_uniprots, output_dict = search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict)
-        else:
-            # Do not use with annotation files.
-            protein_to_search_on_uniprots = set_proteins
-
-        # Extract protein annotations.
-        if annotation_files is None:
-            if uniprot_sparql_endpoint:
-                proteomes = input_proteomes[base_filename]
-                # Using SPARQL queries on UniProt endpoint.
-                output_dict = query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_dict)
-            else:
-                # Using REST query on UniProt servers.
-                output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict, option_bioservices)
-        else:
-            # Using annotation files.
-            output_dict = extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot_trembl_index, uniprot_sprot_index, output_dict)
-
-        # First method to handle protein already annotated
-        #already_annotated_proteins.update({protein: output_dict[protein] for protein in output_dict if protein not in already_annotated_proteins})
-
-        # Second method to handle protein already annotated
-        if annotation_files is not None:
-            for protein in output_dict:
-                already_annotated_proteins_in_file[protein] = base_filename
-
         annotation_file = os.path.join(annotation_folder, base_filename+'.tsv')
-        write_annotation_file(output_dict, annotation_file)
-        if uniref_annotation and uniprot_sparql_endpoint:
-            uniref_annotation_file = os.path.join(uniref_protein_path, base_filename+'.tsv')
-            uniref_output_dict = retrieve_annotation_from_uniref(proteomes, uniprot_sparql_endpoint, uniref_annotation_file)
+
+        if not os.path.exists(annotation_file):
+            logger.info('|EsMeCaTa|annotation| Annotation of %s (%d on %d data to annotate).', base_filename, index+1, len(input_files))
+            # First method to handle protein already annotated
+            #protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
+            # Second method to handle protein already annotated
+            if annotation_files is None:
+                protein_to_search_on_uniprots, output_dict = search_already_annotated_protein_in_file(set_proteins, already_annotated_proteins_in_file, annotation_folder, output_dict)
+            else:
+                # Do not use with annotation files.
+                protein_to_search_on_uniprots = set_proteins
+
+            # Extract protein annotations.
+            if annotation_files is None:
+                if uniprot_sparql_endpoint:
+                    proteomes = input_proteomes[base_filename]
+                    # Using SPARQL queries on UniProt endpoint.
+                    output_dict = query_uniprot_annotation_sparql(proteomes, uniprot_sparql_endpoint, output_dict)
+                else:
+                    # Using REST query on UniProt servers.
+                    output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict, option_bioservices)
+            else:
+                # Using annotation files.
+                output_dict = extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot_trembl_index, uniprot_sprot_index, output_dict)
+
+            # First method to handle protein already annotated
+            #already_annotated_proteins.update({protein: output_dict[protein] for protein in output_dict if protein not in already_annotated_proteins})
+
+            # Second method to handle protein already annotated
+            if annotation_files is not None:
+                for protein in output_dict:
+                    already_annotated_proteins_in_file[protein] = base_filename
+
+            write_annotation_file(output_dict, annotation_file)
+            if uniref_annotation and uniprot_sparql_endpoint:
+                uniref_annotation_file = os.path.join(uniref_protein_path, base_filename+'.tsv')
+                uniref_output_dict = retrieve_annotation_from_uniref(proteomes, uniprot_sparql_endpoint, uniref_annotation_file)
+            else:
+                uniref_output_dict = None
+            if expression_annotation and uniprot_sparql_endpoint:
+                expression_annotation_file = os.path.join(expression_protein_path, base_filename+'.tsv')
+                expression_output_dict = retrieve_expresion_from_uniprot(proteomes, uniprot_sparql_endpoint, expression_annotation_file)
+            else:
+                expression_output_dict = None
         else:
-            uniref_output_dict = None
-        if expression_annotation and uniprot_sparql_endpoint:
-            expression_annotation_file = os.path.join(expression_protein_path, base_filename+'.tsv')
-            expression_output_dict = retrieve_expresion_from_uniprot(proteomes, uniprot_sparql_endpoint, expression_annotation_file)
-        else:
-            expression_output_dict = None
+            logger.info('|EsMeCaTa|annotation| Annotation of %s already downloaded create annotation reference (%d on %d data to annotate).', base_filename, index+1, len(input_files))
+            if uniref_annotation and uniprot_sparql_endpoint:
+                uniref_annotation_file = os.path.join(uniref_protein_path, base_filename+'.tsv')
+                uniref_output_dict = retrieve_annotation_from_uniref(proteomes, uniprot_sparql_endpoint, uniref_annotation_file)
+            else:
+                uniref_output_dict = None
+            if expression_annotation and uniprot_sparql_endpoint:
+                expression_annotation_file = os.path.join(expression_protein_path, base_filename+'.tsv')
+                expression_output_dict = retrieve_expresion_from_uniprot(proteomes, uniprot_sparql_endpoint, expression_annotation_file)
+            else:
+                expression_output_dict = None
+            output_dict = read_annotation_file(annotation_file)
+
         protein_annotations = propagate_annotation_in_cluster(output_dict, reference_proteins, propagate_annotation, uniref_output_dict)
 
         gos = [go for protein in protein_annotations for go in protein_annotations[protein][1]]

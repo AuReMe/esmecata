@@ -527,6 +527,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             reference_protein_pathname = os.path.join(reference_protein_path, proteomes_tax_id_name+'.tsv')
             reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
 
+            # Check if there is conserved proteins in the consensus proteomes.
             if len(reference_proteins) > 0:
                 # Read eggnog output.
                 eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, proteomes_tax_id_name+'.emapper.annotations')
