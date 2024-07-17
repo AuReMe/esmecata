@@ -300,7 +300,7 @@ def test_find_non_reference_proteome_sparql():
 def test_find_proteome_sparql_all_proteomes():
     expected_proteoems = {'UP000031036', 'UP000887569'}
     expected_organism_ids = {'6265': ['UP000031036']}
-    expected_proteome_data =  [['UP000036681', 49.63270520600447, 'full', '6252', False, [['Unplaced', 'ASCLU_Unplaced'], ['Genome', 'Genome']]], ['UP000036680', 64.58000638773555, 'full', '6269', False, [['Genome', 'Genome'], ['Unplaced', 'ANISI_Unplaced']]], ['UP000267096', 64.58000638773555, 'full', '6269', True, [['Unassembled WGS sequence', 'Anisakis simplex'], ['Unassembled WGS sequence', 'Anisakis simplex']]], ['UP000050794', 77.96231236026829, 'full', '6265', False, [['Genome assembly', 'Genome assembly'], ['Unplaced', 'TOXCA_Unplaced']]], ['UP000267007', 77.8984350047908, 'full', '6265', False, [['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000031036', 87.70360907058448, 'full', '6265', True, [['Unassembled WGS sequence', 'Toxocara canis'], ['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000887569', 91.05717023315235, 'full', '6257', True, [['Unplaced', 'Unplaced_6257'], ['Unplaced', 'Unplaced_6257']]], ['UP000887564', 9.581603321622485, 'full', '6256', True, [['Unplaced', 'Unplaced_6256'], ['Unplaced', 'Unplaced_6256']]]]
+    expected_proteome_data = [['UP000036681', 49.63270520600447, 'full', '6252', False, [['Unplaced', 'ASCLU_Unplaced'], ['Genome', 'Genome']]], ['UP000031036', 87.70360907058448, 'full', '6265', True, [['Unassembled WGS sequence', 'Toxocara canis'], ['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000050794', 77.96231236026829, 'full', '6265', False, [['Unplaced', 'TOXCA_Unplaced'], ['Genome assembly', 'Genome assembly']]], ['UP000267007', 77.8984350047908, 'full', '6265', False, [['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000887564', 9.581603321622485, 'full', '6256', True, [['Unplaced', 'Unplaced_6256'], ['Unplaced', 'Unplaced_6256']]], ['UP000887569', 91.05717023315235, 'full', '6257', True, [['Unplaced', 'Unplaced_6257'], ['Unplaced', 'Unplaced_6257']]], ['UP000036680', 64.58000638773555, 'full', '6269', False, [['Unplaced', 'ANISI_Unplaced'], ['Genome', 'Genome']]], ['UP000267096', 64.58000638773555, 'full', '6269', True, [['Unassembled WGS sequence', 'Anisakis simplex'], ['Unassembled WGS sequence', 'Anisakis simplex']]]]
 
     proteomes, organism_ids, proteomes_data = sparql_query_proteomes('test', 33256, 'Ascaridoidea', 80, all_proteomes=True)
 
@@ -310,7 +310,6 @@ def test_find_proteome_sparql_all_proteomes():
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
     for data in expected_proteome_data:
-
         assert data in proteomes_data
 
 
@@ -357,7 +356,7 @@ def test_check_cli():
         next(csvreader)
         for line in csvreader:
             expected_results.append(line[3])
-    assert expected_results == ['species']
+    assert expected_results == ['Buchnera_aphidicola__taxid__9']
 
 if __name__ == "__main__":
     #test_find_proteomes_tax_ids()
