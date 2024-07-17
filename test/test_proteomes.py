@@ -352,11 +352,11 @@ def test_check_cli():
     expected_results = []
     output_stat_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
     with open(output_stat_file, 'r') as stat_file_read:
-        csvreader = csv.reader(stat_file_read, delimiter='\t')
-        next(csvreader)
+        csvreader = csv.DictReader(stat_file_read, delimiter='\t')
         for line in csvreader:
-            expected_results.append(line[3])
-    assert expected_results == ['Buchnera_aphidicola__taxid__9']
+            expected_results.append(line['tax_rank'])
+
+    assert expected_results == ['species']
 
 if __name__ == "__main__":
     #test_find_proteomes_tax_ids()
