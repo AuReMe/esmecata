@@ -341,41 +341,42 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
 
     # Create annotation reference and pathologic files for each observation name.
     for observation_name in proteomes_tax_names:
-        proteomes_tax_name = proteomes_tax_names[observation_name]
-        reference_protein_pathname = os.path.join(reference_protein_path, proteomes_tax_name+'.tsv')
-        reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
+        if observation_name in taxa_names:
+            proteomes_tax_name = proteomes_tax_names[observation_name]
+            reference_protein_pathname = os.path.join(reference_protein_path, proteomes_tax_name+'.tsv')
+            reference_proteins, set_proteins = extract_protein_cluster(reference_protein_pathname)
 
-        # Read eggnog output.
-        eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, proteomes_tax_name+'.emapper.annotations')
-        annotated_proteins = read_annotation(eggnog_mapper_annotation_file)
-        annotated_proteins = list(annotated_proteins)
+            # Read eggnog output.
+            eggnog_mapper_annotation_file = os.path.join(eggnog_output_folder, proteomes_tax_name+'.emapper.annotations')
+            annotated_proteins = read_annotation(eggnog_mapper_annotation_file)
+            annotated_proteins = list(annotated_proteins)
 
-        gos = [go for protein_id, protein_annot in annotated_proteins for go in protein_annot['GOs'].split(',') if go not in ['', '-']]
-        unique_gos = set(gos)
-        ecs = [ec for protein_id, protein_annot in annotated_proteins for ec in protein_annot['EC'].split(',') if ec not in ['', '-']]
-        unique_ecs = set(ecs)
-        logger.info('|EsMeCaTa|annotation| %d Go Terms (with %d unique GO Terms) and %d EC numbers (with %d unique EC) associated with %s.', len(gos),
-                                                                                                len(unique_gos), len(ecs), len(unique_ecs), observation_name)
+            gos = [go for protein_id, protein_annot in annotated_proteins for go in protein_annot['GOs'].split(',') if go not in ['', '-']]
+            unique_gos = set(gos)
+            ecs = [ec for protein_id, protein_annot in annotated_proteins for ec in protein_annot['EC'].split(',') if ec not in ['', '-']]
+            unique_ecs = set(ecs)
+            logger.info('|EsMeCaTa|annotation| %d Go Terms (with %d unique GO Terms) and %d EC numbers (with %d unique EC) associated with %s.', len(gos),
+                                                                                                    len(unique_gos), len(ecs), len(unique_ecs), observation_name)
 
-        # Create annotation reference file.
-        annotation_reference_file = os.path.join(annotation_reference_folder, observation_name+'.tsv')
-        if not os.path.exists(annotation_reference_file):
-            write_annotation_reference(annotated_proteins, reference_proteins, annotation_reference_file)
+            # Create annotation reference file.
+            annotation_reference_file = os.path.join(annotation_reference_folder, observation_name+'.tsv')
+            if not os.path.exists(annotation_reference_file):
+                write_annotation_reference(annotated_proteins, reference_proteins, annotation_reference_file)
 
-        # Create pathologic files.
-        pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
-        # Add _1 to pathologic file as genetic element cannot have the same name as the organism.
-        pathologic_file = os.path.join(pathologic_organism_folder, observation_name+'_1.pf')
+            # Create pathologic files.
+            pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
+            # Add _1 to pathologic file as genetic element cannot have the same name as the organism.
+            pathologic_file = os.path.join(pathologic_organism_folder, observation_name+'_1.pf')
 
-        if not os.path.exists(pathologic_file):
-            if len(annotated_proteins) > 0:
-                is_valid_dir(pathologic_organism_folder)
-                write_pathologic(observation_name, annotated_proteins, pathologic_file, reference_proteins)
-            elif len(annotated_proteins) == 0:
-                logger.critical('|EsMeCaTa|annotation-eggnog| No reference proteins for %s, esmecata will not create a pathologic folder for it.', observation_name)
+            if not os.path.exists(pathologic_file):
+                if len(annotated_proteins) > 0:
+                    is_valid_dir(pathologic_organism_folder)
+                    write_pathologic(observation_name, annotated_proteins, pathologic_file, reference_proteins)
+                elif len(annotated_proteins) == 0:
+                    logger.critical('|EsMeCaTa|annotation-eggnog| No reference proteins for %s, esmecata will not create a pathologic folder for it.', observation_name)
 
-        else:
-            logger.critical('|EsMeCaTa|annotation-eggnog| Annotation already performed for %s.', observation_name)
+            else:
+                logger.critical('|EsMeCaTa|annotation-eggnog| Annotation already performed for %s.', observation_name)
 
     # Create mpwt taxon ID file.
     clustering_taxon_id = {}
