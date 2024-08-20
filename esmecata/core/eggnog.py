@@ -58,7 +58,7 @@ def get_eggnog_version():
     return eggnog_version
 
 
-def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_database_path, nb_core, no_dbmem=False, multiple_nodes=False, taxon_id_scope=None):
+def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_database_path, nb_core, no_dbmem=False, taxon_id_scope=None):
     """ Calls eggnog-mapper on the protein clusters.
 
     Args:
@@ -69,71 +69,26 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
         eggnog_database_path (str): pathname to eggnog database folder.
         nb_core (int): number of CPU-cores to use with eggnog-mapper.
         no_dbmem (bool): Boolean to choose to not load eggnog database in memory.
-        multiple_nodes (bool): For multiprocessing on HPC, to handle multiprocessing with multiple nodes.
         taxon_id_scope (str): String of taxon IDs associated with query.
     """
-    if multiple_nodes is False:
-        # Use override to avoid issue if already present annotation (if there was a failed run for example).
-        eggnog_cmds = ['emapper.py', '--cpu', nb_core, '-i', input_path, '--output', taxon_name,
-                    '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
-                    '--temp_dir', temporary_dir, '--override']
-        # Use dbmem for faster run, except if the option --no-dbmem has been used.
-        if no_dbmem is False:
-            eggnog_cmds.append('--dbmem')
-        if taxon_id_scope is not None:
-            eggnog_cmds.append('--tax_scope')
-            eggnog_cmds.append(taxon_id_scope)
+    eggnog_starttime = time.time()
 
-        subprocess.call(eggnog_cmds)
-    else:
-        # First, run diamon using multiprocessing on multiple nodes.
-        # Command from https://github.com/bbuchfink/diamond/wiki/6.-Distributed-computing#diamond-distributed-memory-parallel-processing.
-        # Init diamond multiprocessing on multiple nodes.
-        diamond_starttime = time.time()
-        diamond_database = os.path.join(eggnog_database_path, 'eggnog_proteins.dmnd')
-        diamond_init_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path,
-                             '--multiprocessing', '--mp-init', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir,
-                             '--threads', nb_core,]
-        subprocess.call(diamond_init_cmds)
+    # Use override to avoid issue if already present annotation (if there was a failed run for example).
+    eggnog_cmds = ['emapper.py', '--cpu', nb_core, '-i', input_path, '--output', taxon_name,
+                '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
+                '--temp_dir', temporary_dir, '--override']
+    # Use dbmem for faster run, except if the option --no-dbmem has been used.
+    if no_dbmem is False:
+        eggnog_cmds.append('--dbmem')
+    if taxon_id_scope is not None:
+        eggnog_cmds.append('--tax_scope')
+        eggnog_cmds.append(taxon_id_scope)
 
-        # Parallel run.
-        eggnog_hits_output_file = os.path.join(output_dir, taxon_name + '.emapper.hits')
-        diamond_parallel_run_cmds = ['diamond', 'blastp', '--db', diamond_database, '--query', input_path, '-o', eggnog_hits_output_file,
-                                     '--multiprocessing', '--tmpdir', temporary_dir, '--parallel-tmpdir', temporary_dir,
-                                     '--top', '3', '--threads', nb_core,
-                                     '--outfmt', '6', 'qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore', 'qcovhsp', 'scovhsp']
-        subprocess.call(diamond_parallel_run_cmds)
-        diamond_endtime = time.time()
-        diamond_duration = diamond_endtime - diamond_starttime
-        logger.debug('|EsMeCaTa|annotation-eggnog| Diamond complete in {0}s.'.format(diamond_duration))
+    subprocess.call(eggnog_cmds)
 
-        # See this issue: https://github.com/bbuchfink/diamond/issues/549
-        # Suffixed files are created by diamond for each query chunk.
-        # Concat them in the final file.
-        diamond_result_files = [os.path.join(output_dir, output_file) for output_file in os.listdir(output_dir) if taxon_name + '.emapper.hits_' in output_file]
-        for diamond_result_file in diamond_result_files:
-            with open(diamond_result_file, 'r') as open_diamond_result_file:
-                with open(eggnog_hits_output_file, 'a') as open_diamond_output_hit_concat:
-                    open_diamond_output_hit_concat.write(open_diamond_result_file.read())
-            os.remove(diamond_result_file)
-
-        eggnog_starttime = time.time()
-        # Then resume run of eggnog-mapper.
-        eggnog_cmds = ['emapper.py', '--cpu', nb_core, '-i', input_path, '--output', taxon_name,
-                    '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
-                    '--temp_dir', temporary_dir, '--resume']
-        if taxon_id_scope is not None:
-            eggnog_cmds.append('--tax_scope')
-            eggnog_cmds.append(taxon_id_scope)
-
-        # Use dbmem for faster run, except if the option --no-dbmem has been used.
-        if no_dbmem is False:
-            eggnog_cmds.append('--dbmem')
-
-        subprocess.call(eggnog_cmds)
-        eggnog_endtime = time.time()
-        eggnog_duration = eggnog_endtime - eggnog_starttime
-        logger.debug('|EsMeCaTa|annotation-eggnog| Emapper compelte in {0}s.'.format(eggnog_duration))
+    eggnog_endtime = time.time()
+    eggnog_duration = eggnog_endtime - eggnog_starttime
+    logger.debug('|EsMeCaTa|annotation-eggnog| Emapper complete in {0}s.'.format(eggnog_duration))
 
 
 def compute_stat_annotation(annotation_reference_folder, stat_file=None):
@@ -419,7 +374,7 @@ def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eg
                 logger.critical('|EsMeCaTa|annotation-eggnog| No consensus proteins for %s, annotation will not be performed on it.', proteomes_tax_id_name)
 
 
-def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_core, eggnog_tmp_dir=None, no_dbmem=False, multiple_nodes=False, merge_fasta=False):
+def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_core, eggnog_tmp_dir=None, no_dbmem=False, merge_fasta=False):
     """Write the annotation associated with a cluster after propagation step into pathologic file for run on Pathway Tools.
 
     Args:
@@ -429,7 +384,6 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
         nb_core (int): number of CPU-cores to be used by eggnog-mapper.
         eggnog_tmp_dir (str): pathname to eggnog-mapper temporary folder.
         no_dbmem (bool): Boolean to choose to not load eggnog database in memory.
-        multiple_nodes (bool): For multiprocessing on HPC, to handle multiprocessing with multiple nodes.
         merge_fasta (bool): Merge fasta into bigger one (associated with superkingdom) to launch eggnog-mapper on few fasta files.
     """
     starttime = time.time()
@@ -473,7 +427,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     # Create a dictionary containing metadata.
     options = {'input_folder': input_folder, 'output_folder': output_folder, 'nb_core': nb_core,
                'eggnog_database_path': eggnog_database_path, 'eggnog_tmp_dir': eggnog_tmp_dir,
-               'no_dbmem': no_dbmem, 'multiple_nodes': multiple_nodes, 'merge_fasta': merge_fasta}
+               'no_dbmem': no_dbmem, 'merge_fasta': merge_fasta}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
@@ -506,9 +460,9 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
             if not os.path.exists(eggnog_mapper_annotation_file):
                 logger.info('|EsMeCaTa|annotation| Launch eggnog-mapper on %s.', taxon_name)
                 if merge_fasta is True:
-                    call_to_emapper(fasta_file_path, taxon_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_core, no_dbmem, multiple_nodes, taxon_name)
+                    call_to_emapper(fasta_file_path, taxon_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_core, no_dbmem, taxon_name)
                 else:
-                    call_to_emapper(fasta_file_path, taxon_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_core, no_dbmem, multiple_nodes)
+                    call_to_emapper(fasta_file_path, taxon_name, eggnog_output_folder, eggnog_temporary_dir, eggnog_database_path, nb_core, no_dbmem)
             else:
                 logger.info('|EsMeCaTa|annotation| Results of eggnog-mapper already present for %s.',  taxon_name)
 
