@@ -792,8 +792,8 @@ def ec_sunburst(ec_classes, output_folder, savefig=True):
         Returns:
             fig (plotly) : a plotly figure object 
     '''
-    fig = ontosunburst(ontology='ec',
-        metabolic_objects=ec_classes, 
+    fig = ontosunburst(interest_set=ec_classes,
+        ontology='ec',
         output=os.path.join(output_folder, "ec_classes_sunburst"),
         root_cut="total")
     
@@ -835,8 +835,8 @@ def ec_sunburst_per_model(ec_classes, output_folder, taxgroup, savefig=True):
     figpath = os.path.join(output_folder, f"{taxgroup}_ec_classes_sunburst")
     jsonpath = os.path.join(output_folder, f"{taxgroup}_ec_classes_sunburst.json")
 
-    fig = ontosunburst(ontology='ec',
-        metabolic_objects=ec_classes, 
+    fig = ontosunburst(interest_set=ec_classes,
+        ontology='ec',
         output=figpath,
         root_cut="total")
     
