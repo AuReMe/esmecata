@@ -186,7 +186,7 @@ def post_analysis_config(input_table, results_path):
         sep='\t',
         header=0,
         index_col='observation_name')
-    
+
     df_stats = stats_nb_proteomes.join([stats_nb_clustering, stats_nb_annotation])
     df_stats = df_stats.dropna()
 
@@ -257,7 +257,6 @@ def distributions_by_ranks(df_stats, output_folder, n_bins=15, rank='phylum', sa
         Returns:
             fig : a plotly html figure
     '''
-
     df_stats.sort_values(by=rank, ascending=False, inplace=True)
 
     fig = px.histogram(

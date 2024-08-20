@@ -223,6 +223,13 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     create_comp_taxonomy_file(json_taxonomic_affiliations, proteomes_ids, tax_id_names, proteomes_output_folder)
 
+    # Get only_reference_proteome_used.
+    only_reference_proteome_used = {}
+    with archive.open('stat_number_proteome.tsv') as open_stat_proteome_file:
+        csvreader = csv.DictReader(TextIOWrapper(open_stat_proteome_file), delimiter='\t')
+        for line in csvreader:
+            only_reference_proteome_used[line['EsMeCaTa_used_taxon']] = line['only_reference_proteome_used']
+
     # Create stat_proteome.
     run_proteome_tax_id_file = os.path.join(proteomes_output_folder, 'stat_number_proteome.tsv')
     with open(run_proteome_tax_id_file, 'w') as out_file:
@@ -241,7 +248,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
                         lowest_tax_id = json_taxonomic_affiliations[observation_name][input_tax_name][0]
                         lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
                         break
-            csvwriter.writerow([observation_name, nb_tax_proteomes, input_tax_name, lowest_tax_rank, tax_name, tax_rank, ''])
+            csvwriter.writerow([observation_name, nb_tax_proteomes, input_tax_name, lowest_tax_rank, tax_name, tax_rank, only_reference_proteome_used[tax_name]])
 
     clustering_proteome_tax_id_file = os.path.join(clustering_output_folder, 'proteome_tax_id.tsv')
     shutil.copyfile(proteome_tax_id_file, clustering_proteome_tax_id_file)

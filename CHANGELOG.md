@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.5.0 (2024-06-04)
+# EsMeCaTa v0.5.0 (2024-08-20)
 
 WARNING: changes of the structure of the python package of EsMeCaTa.
 If you previously use python import of the package, you will need to modify your import.
@@ -17,10 +17,10 @@ If you previously use python import of the package, you will need to modify your
 * New parameter `--multiple-nodes` for `workflow` and `annotation`: this parameter allows multiprocessing on multiple nodes when using a HPC (thanks to Loris Megy). Otherwise, only one node will be used.
 * New parameter `--merge-fasta` for `workflow` and `annotation`: this parameter merges protein sequences from clustering into bigger files (associated with superkingdom). This increases the performance of eggnog-mapper.
 * New optional dependencies for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
-* New optional dependencies for `esmecata_gseapy`: [gseap](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
+* New optional dependencies for `esmecata_gseapy`: [gseapy](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
 * New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
 * Check if proteome files are completly empty and could lead to issue with mmseqs2.
-* Use `--tax_scope` withh eggnog-mapper when using `--merge-fasta`.
+* Use `--tax_scope` with eggnog-mapper when using `--merge-fasta`.
 
 ## Fix
 

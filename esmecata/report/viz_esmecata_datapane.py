@@ -42,7 +42,6 @@ def create_datapane(esmecata_input_file, esmecata_core_output_folder, output_fol
         except OSError: pass
 
     print("Getting data")
-
     computed_threshold_folder = os.path.join(esmecata_core_output_folder, '1_clustering', 'computed_threshold')
     annotation_reference_folder = os.path.join(esmecata_core_output_folder, '2_annotation', 'annotation_reference')
     dataset_annotation_ec_file = os.path.join(output_folder, 'dataset_annotation_ec.tsv')
