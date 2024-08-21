@@ -297,15 +297,6 @@ def main():
         action='store_true',
         default=False)
 
-    parent_parser_merge_fasta = argparse.ArgumentParser(add_help=False)
-    parent_parser_merge_fasta.add_argument(
-        '--merge-fasta',
-        dest='merge_fasta',
-        help='Command to merge protein fasta files into bigger one (on the superkingdom level) during annotation, to speed-up annotation with eggnog-mapper.',
-        required=False,
-        action='store_true',
-        default=False)
-
     # subparsers
     subparsers = parser.add_subparsers(
         title='subcommands',
@@ -357,8 +348,7 @@ def main():
         help='Annotate protein clusters using eggnog-mapper.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_eggnog_database,
-            parent_parser_c, parent_parser_eggnog_tmp_dir, parent_parser_no_dbmem,
-            parent_parser_merge_fasta
+            parent_parser_c, parent_parser_eggnog_tmp_dir, parent_parser_no_dbmem
             ],
         allow_abbrev=False)
     workflow_uniprot_parser = subparsers.add_parser(
@@ -385,7 +375,7 @@ def main():
             parent_parser_limit_maximal_number_proteomes, parent_parser_thr, parent_parser_mmseqs_options,
             parent_parser_linclust, parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
             parent_parser_update_affiliation, parent_parser_bioservices, parent_parser_eggnog_tmp_dir,
-            parent_parser_no_dbmem, parent_parser_merge_fasta
+            parent_parser_no_dbmem
             ],
         allow_abbrev=False)
 
@@ -459,15 +449,14 @@ def main():
                             args.update_affiliations, args.option_bioservices)
     elif args.cmd == 'annotation':
         annotate_with_eggnog(args.input, args.output, args.eggnog_database, args.core,
-                             args.eggnog_tmp_dir, args.no_dbmem, args.merge_fasta)
+                             args.eggnog_tmp_dir, args.no_dbmem)
     elif args.cmd == 'workflow':
         perform_workflow_eggnog(args.input, args.output, args.eggnog_database, busco_score,
                                 args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint,
                                 args.remove_tmp, args.limit_maximal_number_proteomes, args.rank_limit,
                                 args.core, args.threshold_clustering, args.mmseqs_options,
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
-                                args.option_bioservices, args.eggnog_tmp_dir, args.no_dbmem,
-                                args.merge_fasta)
+                                args.option_bioservices, args.eggnog_tmp_dir, args.no_dbmem)
     elif args.cmd == 'precomputed':
         precomputed_parse_affiliation(args.input, args.database, args.output, args.rank_limit, args.update_affiliations)
 
