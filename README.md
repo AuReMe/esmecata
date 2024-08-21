@@ -16,6 +16,7 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
   - [Input](#input)
   - [EsMeCaTa commands](#esmecata-commands)
   - [EsMeCaTa functions](#esmecata-functions)
+    - [`esmecata precomputed`: Use precomputed database to run EsMeCaTa on an input file](#esmecata-precomputed-use-precomputed-database-to-run-esmecata-on-an-input-file)
     - [`esmecata check`: Estimate knowledge associated with taxonomic affiliation](#esmecata-check-estimate-knowledge-associated-with-taxonomic-affiliation)
     - [`esmecata proteomes`: Retrieve proteomes associated with taxonomic affiliation](#esmecata-proteomes-retrieve-proteomes-associated-with-taxonomic-affiliation)
     - [`esmecata clustering`: Proteins clustering](#esmecata-clustering-proteins-clustering)
@@ -124,7 +125,7 @@ A [jupyter notebook](https://github.com/AuReMe/esmecata/blob/master/tutorials/es
 ## EsMeCaTa commands
 
 ````
-usage: esmecata [-h] [--version] {check,proteomes,clustering,annotation_uniprot,annotation,workflow_uniprot,workflow,analysis} ...
+usage: esmecata [-h] [--version] {check,proteomes,clustering,annotation_uniprot,annotation,workflow_uniprot,workflow,precomputed} ...
 
 From taxonomic affiliation to metabolism using Uniprot. For specific help on each subcommand use: esmecata {cmd} --help
 
@@ -135,7 +136,7 @@ options:
 subcommands:
   valid subcommands:
 
-  {check,proteomes,clustering,annotation_uniprot,annotation,workflow_uniprot,workflow,analysis}
+  {check,proteomes,clustering,annotation_uniprot,annotation,workflow_uniprot,workflow,precomputed}
     check               Check proteomes associated with taxon in Uniprot Proteomes database.
     proteomes           Download proteomes associated with taxon from Uniprot Proteomes.
     clustering          Cluster the proteins of the different proteomes of a taxon into a single set of representative shared proteins.
@@ -143,11 +144,9 @@ subcommands:
     annotation          Annotate protein clusters using eggnog-mapper.
     workflow_uniprot    Run all esmecata steps (proteomes, clustering and annotation).
     workflow            Run all esmecata steps (proteomes, clustering and annotation with eggnog-mapper).
-    analysis            Create clustermap for EC.
+    precomputed         Use precomputed database to create estimated data for the run.
 
-Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
-Annotation can be performed with UniProt or eggnog-mapper (which is then a requirement if the option is selected).
-
+Steps proteomes and annotation by UniProt requires an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint). Step clustering requires mmseqs2. Annotation can be performed with UniProt or eggnog-mapper (which is then a requirement if the option is selected). Precomputed requires the esmecata_database.zip file.
 ````
 
 ## EsMeCaTa functions
@@ -161,6 +160,33 @@ EsMeCaTa is in three steps:
 The annotation step can be performed with two methods, either by retrieving annotation from UniProt or by using eggnog-mapper.
 The eggnog-mapper approach has been found to be the more accurate in association with a clustering threshold of 0.5 (`-t 0.5`).
 These options are the default options of EsMeCaTa.
+
+As these steps can required time, a precomputed database has been created containing taxa of `species`, `genus`, `family`, `order`, `class` and `phylum` having at least 5 proteomes in UniProt.
+This precomputed database can be used with the command `esmecata precomputed` to search the taxonomic affiliations from the input file into the database.
+
+### `esmecata precomputed`: Use precomputed database to run EsMeCaTa on an input file
+
+```
+usage: esmecata precomputed [-h] -i INPUT_FILE -d INPUT_FILE -o OUPUT_DIR [-r RANK_LIMIT] [--update-affiliations]
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT_FILE, --input INPUT_FILE
+                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic affiliation (separated by ;).
+  -d INPUT_FILE, --database INPUT_FILE
+                        EsMeCaTa precomputed database file path.
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  -r RANK_LIMIT, --rank-limit RANK_LIMIT
+                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more
+                        information (and a list of rank names).
+  --update-affiliations
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+```
+
+Using the precomputed database, esmecata searches for input taxon inside its database to make prediction. It requires an input file containing the taxonomic affiliations and the esmecata database. The latter can be found on Zenodo. It requires also an ouput folder.
+
+Two options can be used to limit the rank used when searching for proteomes and to update the taxonomic affiliations from the input file.
 
 ### `esmecata check`: Estimate knowledge associated with taxonomic affiliation
 
@@ -298,7 +324,6 @@ Some ranks (which are not non-hierarchical) are not used for the moment when usi
 
 * `--bioservices`: instead of using REST queries implemented in EsMeCaTa, relies on [bioservices](https://github.com/cokelaer/bioservices) API to query UniProt.
 This requires the bioservices package.
-
 
 ### `esmecata proteomes`: Retrieve proteomes associated with taxonomic affiliation
 
@@ -664,15 +689,19 @@ output_folder
 │   └── Cluster_1.tsv
 │   └── ...
 ├── eggnog_output
-│   └── Taxon_name_1.emapper.annotations
-│   └── Taxon_name_1.emapper.hits
-│   └── Taxon_name_1.emapper.seed_orthologs
+│   └── taxon_rank.emapper.annotations
+│   └── taxon_rank.emapper.hits
+│   └── taxon_rank.emapper.seed_orthologs
 │   └── ...
+├── merge_fasta
+│   └── taxon_rank.faa
+|   └── ...
 ├── pathologic
 │   └── Cluster_1
 │       └── Cluster_1.pf
 │   └── ...
 │   └── taxon_id.tsv
+├── dataset_annotation_observation_name.tsv
 ├── esmecata_annotation.log
 ├── esmecata_metadata_annotation.json
 ├── stat_number_annotation.tsv
@@ -682,7 +711,11 @@ The `eggnog_output` contains the resulting files of the eggnog-mapper run, three
 
 The `annotation_reference` contains the prediction of eggnog-mapper for the consensus protein of each `observation_name`. To create this file, EsMeCaTa finds the taxon name associated with the `observation_name` and extracts the annotation (EC numbers, GO termes, KEGG reaction).
 
-The `pathologic` contains one sub-folder for each `observation_name` in which there is one PathoLogic file. There is also a `taxon_id.tsv` file which corresponds to a modified version of `proteome_tax_id.tsv` with only the `observation_name` and the `taxon_id`. This folder can be used as input to [mpwt](https://github.com/AuReMe/mpwt) to reconstruct draft metabolic networks using Pathway Tools PathoLogic.
+The `merge_fasta` folder contains merged protein sequences of the clustering step to speed up the run of eggnog-mapper.
+
+The `pathologic` folder contains one sub-folder for each `observation_name` in which there is one PathoLogic file. There is also a `taxon_id.tsv` file which corresponds to a modified version of `proteome_tax_id.tsv` with only the `observation_name` and the `taxon_id`. This folder can be used as input to [mpwt](https://github.com/AuReMe/mpwt) to reconstruct draft metabolic networks using Pathway Tools PathoLogic.
+
+The file `dataset_annotation_observation_name.tsv` contains the EC numbers and GO Terms present in each observation name.
 
 The file `esmecata_annotation.log` contains the log associated with the command.
 
@@ -711,6 +744,7 @@ output_folder
 ├── uniref_annotation (if --uniref option)
 │   └── Cluster_1.tsv
 │   └── ...
+├── dataset_annotation_observation_name.tsv
 ├── esmecata_annotation.log
 ├── esmecata_metadata_annotation.json
 ├── stat_number_annotation.tsv
@@ -783,11 +817,15 @@ output_folder
   │   └── Taxon_name_1.emapper.hits
   │   └── Taxon_name_1.emapper.seed_orthologs
   │   └── ...
+  ├── merge_fasta
+  │   └── taxon_rank.faa
+  |   └── ...
   ├── pathologic
   │   └── Cluster_1
   │       └── Cluster_1.pf
   │   └── ...
   │   └── taxon_id.tsv
+  ├── dataset_annotation_observation_name.tsv
   ├── esmecata_annotation.log
   ├── esmecata_metadata_annotation.json
   ├── stat_number_annotation.tsv

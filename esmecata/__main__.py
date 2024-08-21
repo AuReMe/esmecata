@@ -32,8 +32,10 @@ MESSAGE = '''
 From taxonomic affiliation to metabolism using Uniprot.
 '''
 REQUIRES = '''
-Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
+Steps proteomes and annotation by UniProt requires an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
+Step clustering requires mmseqs2.
 Annotation can be performed with UniProt or eggnog-mapper (which is then a requirement if the option is selected).
+Precomputed requires the esmecata_database.zip file.
 '''
 
 logger = logging.getLogger()
