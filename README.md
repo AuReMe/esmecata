@@ -11,7 +11,7 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
   - [Table of contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Installation](#installation)
-- [With the precomputed database](#with-the-precomputed-database)
+    - [With the precomputed database](#with-the-precomputed-database)
     - [Core pipeline installation](#core-pipeline-installation)
     - [Optional dependencies](#optional-dependencies)
   - [Input](#input)
@@ -63,7 +63,7 @@ If you use the option `--bioservices`, EsMeCaTa will also require this package:
 
 ## Installation
 
-# With the precomputed database
+### With the precomputed database
 
 To query the precomputed database, it is only required to install EsMECaTa with pip:
 
