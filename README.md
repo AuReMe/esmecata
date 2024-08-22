@@ -35,6 +35,8 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
     - [EsMeCaTa annotation\_uniprot](#esmecata-annotation_uniprot)
     - [EsMeCaTa workflow](#esmecata-workflow)
     - [EsMeCaTa precomputed](#esmecata-precomputed)
+  - [EsMeCaTa report](#esmecata-report)
+  - [EsMeCaTa gseapy](#esmecata-gseapy)
   - [License](#license)
 
 ## Requirements
@@ -65,21 +67,11 @@ If you use the option `--bioservices`, EsMeCaTa will also require this package:
 
 ### With the precomputed database
 
-To query the precomputed database, it is only required to install EsMECaTa with pip:
-
-EsMeCata can be installed with pip command:
+To query the precomputed database, it is only required to install EsMeCaTa with pip:
 
 ```pip install esmecata ```
 
-It can also be installed using esmecata github directory:
-
-```git clone https://github.com/ArnaudBelcour/esmecata.git```
-
-```cd esmecata```
-
-```pip install -e .```
-
-All the required dependencies for the estimation from the precomptued database are performed with python package. 
+All the required dependencies for the estimation from the precomptued database are performed with python packages.
 
 ### Core pipeline installation
 
@@ -936,6 +928,72 @@ output_folder
 ├── esmecata_metadata_precomputed.json
 ├── stat_number_precomputed.tsv
 ````
+
+## EsMeCaTa report
+
+Using the command `esmecata_report`, it is possible to create an html report summarising the results from an esmecata run (either from `workflow` or `precomputed`).
+
+```
+usage: esmecata_report [-h] [--version] {create_report,create_report_proteomes,create_report_clustering,create_report_annotation} ...
+
+Create report files from esmecata output folder. For specific help on each subcommand use: esmecata {cmd} --help
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+
+subcommands:
+  valid subcommands:
+
+  {create_report,create_report_proteomes,create_report_clustering,create_report_annotation}
+    create_report       Create report from esmecata output folder of workflow or precomputed subcommands.
+    create_report_proteomes
+                        Create report from esmecata output folder of proteomes subcommand.
+    create_report_clustering
+                        Create report from esmecata output folder of clustering subcommand.
+    create_report_annotation
+                        Create report from esmecata output folder of annotation subcommand.
+
+Requires: datapane, plotly, kaleido, ontosunburst.
+```
+
+It can be used with this command:
+
+`esmecata_report create_report -i input_taxonomic_affiliations.tsv -f esmecata_precomputed_output_folder -o output_folder`
+
+It will create several files, especially a `esmecata_summary.html` showing several figures summarising the results of the EsMeCaTa run.
+
+For example:
+
+![](pictures/esmecata_report.png)
+
+## EsMeCaTa gseapy
+
+An enrichment analysis can be performed to identify functions specific to a phylum compared to the whole community of the input files by using gseapy and orsum.
+
+```
+usage: esmecata_gseapy [-h] [--version] {gseapy_taxon} ...
+
+Create enrichment analysis files from esmecata results. For specific help on each subcommand use: esmecata {cmd} --help
+
+options:
+  -h, --help      show this help message and exit
+  --version       show program's version number and exit
+
+subcommands:
+  valid subcommands:
+
+  {gseapy_taxon}
+    gseapy_taxon  Extract enriched functions from taxon using gseapy and orsum.
+
+Requires: gseapy and orsum
+```
+
+It can be used with this command:
+
+`esmecata_gseapy gseapy_taxon -i esmecata_annotation_output_folder -o output_folder`
+
+
 
 ## License
 

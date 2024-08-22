@@ -38,7 +38,7 @@ def main():
     start_time = time.time()
 
     parser = argparse.ArgumentParser(
-        'esmecata_analysis',
+        'esmecata_report',
         description=MESSAGE + ' For specific help on each subcommand use: esmecata {cmd} --help',
         epilog=REQUIRES
     )
@@ -90,7 +90,7 @@ def main():
 
     create_report_parser = subparsers.add_parser(
         'create_report',
-        help='Create report from esmecata output folder of workflow subcommand.',
+        help='Create report from esmecata output folder of workflow or precomputed subcommands.',
         parents=[
             parent_parser_i, parent_parser_f, parent_parser_o, parent_parser_svg
             ],
