@@ -11,10 +11,14 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
   - [Table of contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Installation](#installation)
+- [With the precomputed database](#with-the-precomputed-database)
     - [Core pipeline installation](#core-pipeline-installation)
     - [Optional dependencies](#optional-dependencies)
   - [Input](#input)
   - [EsMeCaTa commands](#esmecata-commands)
+  - [Usage](#usage)
+    - [Use the precomputed database](#use-the-precomputed-database)
+    - [Classical run of EsMeCaTa](#classical-run-of-esmecata)
   - [EsMeCaTa functions](#esmecata-functions)
     - [`esmecata precomputed`: Use precomputed database to run EsMeCaTa on an input file](#esmecata-precomputed-use-precomputed-database-to-run-esmecata-on-an-input-file)
     - [`esmecata check`: Estimate knowledge associated with taxonomic affiliation](#esmecata-check-estimate-knowledge-associated-with-taxonomic-affiliation)
@@ -30,6 +34,7 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
     - [EsMeCaTa annotation](#esmecata-annotation)
     - [EsMeCaTa annotation\_uniprot](#esmecata-annotation_uniprot)
     - [EsMeCaTa workflow](#esmecata-workflow)
+    - [EsMeCaTa precomputed](#esmecata-precomputed)
   - [License](#license)
 
 ## Requirements
@@ -58,9 +63,27 @@ If you use the option `--bioservices`, EsMeCaTa will also require this package:
 
 ## Installation
 
+# With the precomputed database
+
+To query the precomputed database, it is only required to install EsMECaTa with pip:
+
+EsMeCata can be installed with pip command:
+
+```pip install esmecata ```
+
+It can also be installed using esmecata github directory:
+
+```git clone https://github.com/ArnaudBelcour/esmecata.git```
+
+```cd esmecata```
+
+```pip install -e .```
+
+All the required dependencies for the estimation from the precomptued database are performed with python package. 
+
 ### Core pipeline installation
 
-The easiest way to install the dependencies of EsMeCaTa is by using conda (or mamba):
+For the whole workflow, the easiest way to install the dependencies of EsMeCaTa is by using conda (or mamba):
 
 ```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 eggnog-mapper -c conda-forge -c bioconda```
 
@@ -149,13 +172,41 @@ subcommands:
 Steps proteomes and annotation by UniProt requires an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint). Step clustering requires mmseqs2. Annotation can be performed with UniProt or eggnog-mapper (which is then a requirement if the option is selected). Precomputed requires the esmecata_database.zip file.
 ````
 
+## Usage
+
+### Use the precomputed database
+
+To ease the use of EsMeCaTa, a precomputed database has been created containing `species`, `genus`, `family`, `order`, `class` and `phylum` having at least 5 proteomes on UniProt. Then the default workflow of EsMECaTa have been done on these taxa (downlaoding proteomes on UniProt, clustering with mmseqs2, annotation with eggnog-mapper).
+
+Metadata of the precomputed database:
+
+| Database version | EsMeCaTa version | ete3 version | NCBI Taxonomy database | UniProt database  | eggnog database  |
+|------------------|------------------|--------------|------------------------|-------------------|------------------|
+| 0.1.0            | 0.5.0            | 3.1.3        | 04/2024                | 2024_02           | 5.0              |
+
+The database can be found on the Zenodo site.
+
+Input taxonomic affiliations file can be given to EsMeCaTa to query the database with the following command:
+
+```
+esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database.zip -o output_folder
+```
+
+For each observation name in the input file, it will returned the associated annotations. It will alos output the protein sequences for each taxa associated with the observation name.
+
+### Classical run of EsMeCaTa
+
+Otherwise, it is possible to run the whole workflow of EsMeCaTa but it will take times as it will search and download proteomes from UniProt, clsuter protein sequences with mmseqs2 and then annotate them with eggnog-mapper.
+
+These different steps are presented in the following section.
+
 ## EsMeCaTa functions
 
 EsMeCaTa is in three steps:
 
-- proteomes: search for proteomes associated with the taxonomic affiliations on UniProt (also done with `check` subcommand) and download them.
-- clustering: clusters the protein of the proteomes and filter them according to a threshold -option (`-t`).
-- annotation: annotate the protein cluster.
+- `proteomes`: search for proteomes associated with the taxonomic affiliations on UniProt (also done with `check` subcommand) and download them.
+- `clustering`: clusters the protein of the proteomes and filter them according to a threshold -option (`-t`).
+- `annotation`: annotate the protein cluster.
 
 The annotation step can be performed with two methods, either by retrieving annotation from UniProt or by using eggnog-mapper.
 The eggnog-mapper approach has been found to be the more accurate in association with a clustering threshold of 0.5 (`-t 0.5`).
@@ -659,6 +710,7 @@ output_folder
 ├── esmecata_clustering.log
 ├── esmecata_metadata_clustering.json
 ├── stat_number_clustering.tsv
+├── taxonomy_diff.tsv
 ````
 
 The `cluster_founds` contains one tsv file per taxon name used by EsMeCaTa. So multiple `observation_name` can be represented by a similar taxon name to avoid redundancy and limit the disk space used. These files contain the clustered proteins The first column contains the representative proteins of a cluster and the following columns correspond to the other proteins of the same cluster. The first protein occurs two time: one as the representative member o.f the cluster and a second time as a member of the cluster.
@@ -680,6 +732,8 @@ The file `esmecata_clustering.log` contains the log associated with the command.
 `esmecata_metadata_clustering.json` is a log about the the metadata associated with the command used with esmecata and the dependencies.
 
 `stat_number_clustering.tsv` is a tabulated file containing the number of shared proteins found for each observation name.
+
+`taxonomy_diff.tsv` is a tabulated file indicating the taxon selected by EsMeCaTa compared to the lowest taxon in the taxonomic affiliations.
 
 ### EsMeCaTa annotation
 
@@ -784,6 +838,7 @@ output_folder
   ├── proteome_tax_id.tsv
   ├── esmecata_metadata_proteomes.json
   ├── stat_number_proteome.tsv
+  ├── taxonomy_diff.tsv
 ├── 1_clustering
   ├── cluster_founds
   │   └── Taxon_name_1.tsv
@@ -843,6 +898,44 @@ The `esmecata_metadata_workflow.json` retrieves metadata about Uniprot release a
 `stat_number_workflow.tsv` is a tabulated file containing the number of proteomes, shared proteins, GO Terms and EC numbers found for each observation name.
 
 `esmecata workflow_uniprot` has the same output files except that the outputs of the annotation step corresponds to the output of `esmecata annotation_uniprot`.
+
+### EsMeCaTa precomputed
+
+````
+output_folder
+├── 0_proteomes
+  ├── association_taxon_taxID.json
+  ├── empty_proteome.tsv
+  ├── proteome_tax_id.tsv
+  ├── esmecata_metadata_proteomes.json
+  ├── stat_number_proteome.tsv
+  ├── taxonomy_diff.tsv
+├── 1_clustering
+  ├── computed_threshold
+  │   └── Taxon_name_1.tsv
+  │   └── ...
+  ├── reference_proteins_consensus_fasta
+  │   └── Taxon_name_1.faa
+  │   └── ...
+  ├── proteome_tax_id.tsv
+  ├── esmecata_metadata_clustering.json
+  ├── stat_number_clustering.tsv
+├── 2_annotation
+  ├── annotation_reference
+  │   └── Cluster_1.tsv
+  │   └── ...
+  ├── pathologic
+  │   └── Cluster_1
+  │       └── Cluster_1.pf
+  │   └── ...
+  │   └── taxon_id.tsv
+  ├── dataset_annotation_observation_name.tsv
+  ├── esmecata_metadata_annotation.json
+  ├── stat_number_annotation.tsv
+├── esmecata_precomputed.log
+├── esmecata_metadata_precomputed.json
+├── stat_number_precomputed.tsv
+````
 
 ## License
 

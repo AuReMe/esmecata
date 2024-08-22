@@ -39,6 +39,7 @@ from esmecata import __version__ as esmecata_version
 
 logger = logging.getLogger(__name__)
 
+
 def get_taxon_database(archive):
     """ Extract taxon ID contained in precomputed database.
 
@@ -270,7 +271,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             with archive.open(clustering_consensus_file) as zf, open(output_path_consensus_file, 'wb') as f:
                 shutil.copyfileobj(zf, f)
 
-        # Read annotaiton file
+        # Read annotation file
         annotation_file = os.path.join(taxi_id_name, taxi_id_name+'.tsv')
         with archive.open(annotation_file) as zf:
             df_annotation = pd.read_csv(zf, sep='\t')
@@ -286,7 +287,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     archive.close()
 
-    dataset_annotation_file_path = os.path.join(output_folder, 'dataset_annotation_observation_name.tsv')
+    dataset_annotation_file_path = os.path.join(annotation_output_folder, 'dataset_annotation_observation_name.tsv')
     create_dataset_annotation_file(annotation_reference_output_folder, dataset_annotation_file_path, 'all')
 
     tax_name_clustering_numbers = {}
@@ -324,8 +325,8 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             cluster_0_95 = len(clustering_numbers[observation_name][2])
             csvwriter.writerow([observation_name, cluster_0, cluster_0_5, cluster_0_95])
 
-    stat_file = os.path.join(annotation_output_folder, 'stat_number_annotation.tsv')
-    compute_stat_annotation(annotation_reference_output_folder, stat_file)
+    annotation_stat_file = os.path.join(annotation_output_folder, 'stat_number_annotation.tsv')
+    compute_stat_annotation(annotation_reference_output_folder, annotation_stat_file)
 
     endtime = time.time()
     duration = endtime - starttime
@@ -339,6 +340,16 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     else:
         with open(precomputed_metadata_file, 'w') as ouput_file:
             json.dump(esmecata_metadata, ouput_file, indent=4)
+
+    stat_precomputed_file = os.path.join(output_folder, 'stat_number_precomputed.tsv')
+    df_proteomes = pd.read_csv(run_proteome_tax_id_file, sep='\t')
+    df_proteomes.set_index('observation_name', inplace=True)
+    df_clustering = pd.read_csv(clustering_stat_file, sep='\t')
+    df_clustering.set_index('observation_name', inplace=True)
+    df_annotation = pd.read_csv(annotation_stat_file, sep='\t')
+    df_annotation.set_index('observation_name', inplace=True)
+    df_precomputed_stat = df_proteomes.join([df_clustering, df_annotation])
+    df_precomputed_stat.to_csv(stat_precomputed_file, sep='\t')
 
     precomputed_metadata_file = os.path.join(proteomes_output_folder, 'esmecata_metadata_proteomes.json')
     with open(precomputed_metadata_file, 'w') as ouput_file:
