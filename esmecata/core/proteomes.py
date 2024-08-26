@@ -459,8 +459,8 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
 
     if option_bioservices is None:
         # Find proteomes associated with taxon.
-        # Search for both representative and non-representative proteomes (with proteome_type%3A2 for non-representative proteome (or Other proteome) and proteome_type%3A1) for representative proteome).
-        # Remove redundant and excluded proteomes.
+        # Search for both representative and non-representative proteomes (with proteome_type%3A2 for non-representative proteome (or Other proteome) and proteome_type%3A1 for representative proteome).
+        # Remove redundant (proteome_type%3A3) and excluded proteomes (proteome_type%3A4) by not selecting these proteome types..
         httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND((proteome_type%3A2)OR(proteome_type%3A1))&format=json&size=500'.format(tax_id)
 
         data = {}
