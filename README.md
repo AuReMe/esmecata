@@ -102,13 +102,15 @@ To use eggnog-mapper, you have to setup it and install [its database](https://gi
 - [kaleido](https://github.com/plotly/Kaleido)
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
 
+**Warning**: due to the fact that datapane is no longer maintained, it requires a version of pandas lower than `2.0.0`. `esmecata_report` has been used with pandas `1.5.3`.
+
 `esmecata_gseapy` requires:
 - [gseapy](https://github.com/zqfang/GSEApy).
 - [orsum](https://github.com/ozanozisik/orsum).
 
 All dependencies can be installed with following command:
 
-```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 eggnog-mapper orsum gseapy plotly datapane python-kaleido -c conda-forge -c bioconda```
+```conda install mmseqs2 pandas=1.5.3 sparqlwrapper requests biopython ete3 eggnog-mapper orsum gseapy plotly datapane python-kaleido -c conda-forge -c bioconda```
 
 ## Input
 
