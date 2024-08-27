@@ -34,7 +34,7 @@ An OTU table from a biogas reactor experiment containing the taxonomic assignmen
 
 ### Algae symbionts
 
-Microbiotes from Metagenomes experiment ([Burgunter et al. 2020](https://doi.org/10.3389/fmars.2020.00085) and [KleinJan et al. 2023](https://doi.org/10.1111/mec.16766)). 34 MAGs were selected from KleinJan et al. 2023 with more than 90% completion.
+Microbiotes from Metagenomes experiment ([Burgunter et al. 2020](https://doi.org/10.3389/fmars.2020.00085) and [KleinJan et al. 2023](https://doi.org/10.1111/mec.16766)). 35 MAGs were selected from KleinJan et al. 2023 with more than 90% completion.
 
 ## Old Experiments
 
