@@ -26,9 +26,11 @@ A folder containing an input file for esmecata containing 13 manually selected t
 - [human oral v1.0](https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/human-oral/v1.0/)
 - [pig gut v1.0](https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/pig-gut/v1.0/)
 
+It contains the input files for esmecata (`*_esmecata.tsv` files) and metadata files (`*_genomes-all_metadata.tsv` files) indicating for each MAGs different measures (such as the completness and contamination).
+
 ### Biogas reactor
 
-An OTU table from a biogas reactor experiment.
+An OTU table from a biogas reactor experiment containing the taxonomic assignment and the abundance of each OTU in different samples (corresponding to time of measurements of the biogas reactor).
 
 ### Algae symbionts
 
