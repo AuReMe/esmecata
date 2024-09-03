@@ -175,14 +175,16 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     with archive.open('esmecata_database_metadata.json', 'r') as open_metadata_json:
         json_data = json.load(open_metadata_json)
-    species_json_data = json_data['species_esmecata_metadata_proteomes']
-    esmecata_metadata['precomputed_database']['esmecata_query_system'] = species_json_data['esmecata_query_system']
-    esmecata_metadata['precomputed_database']['uniprot_release'] = species_json_data['uniprot_release']
-    esmecata_metadata['precomputed_database']['access_time'] = species_json_data['access_time']
-    esmecata_metadata['precomputed_database']['swissprot_release_number'] = species_json_data['swissprot_release_number']
-    esmecata_metadata['precomputed_database']['swissprot_release_date'] = species_json_data['swissprot_release_date']
-    esmecata_metadata['precomputed_database']['trembl_release_number'] = species_json_data['trembl_release_number']
-    esmecata_metadata['precomputed_database']['trembl_release_date'] = species_json_data['trembl_release_date']
+    for json_key in json_data:
+        if json_key.endswith('_proteomes'):
+            proteomes_data_json = json_data[json_key]
+    esmecata_metadata['precomputed_database']['esmecata_query_system'] = proteomes_data_json['esmecata_query_system']
+    esmecata_metadata['precomputed_database']['uniprot_release'] = proteomes_data_json['uniprot_release']
+    esmecata_metadata['precomputed_database']['access_time'] = proteomes_data_json['access_time']
+    esmecata_metadata['precomputed_database']['swissprot_release_number'] = proteomes_data_json['swissprot_release_number']
+    esmecata_metadata['precomputed_database']['swissprot_release_date'] = proteomes_data_json['swissprot_release_date']
+    esmecata_metadata['precomputed_database']['trembl_release_number'] = proteomes_data_json['trembl_release_number']
+    esmecata_metadata['precomputed_database']['trembl_release_date'] = proteomes_data_json['trembl_release_date']
 
     ncbi = NCBITaxa()
 
@@ -211,16 +213,17 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_id_name', 'tax_rank', 'proteome'])
         for observation_name in association_taxon_database:
             tax_id = association_taxon_database[observation_name][1]
-            tax_name = association_taxon_database[observation_name][1]
-            tax_id_name = proteomes_tax_id_names[tax_id]
-            tax_rank = taxon_data[tax_id][2]
-            proteome = taxon_data[tax_id][3]
-            proteomes_ids[observation_name] = (tax_id, proteome.split(','))
-            if tax_id not in tax_id_obs_names:
-                tax_id_obs_names[tax_id] = [observation_name]
-            else:
-                tax_id_obs_names[tax_id].append(observation_name)
-            csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, taxon_data[tax_id][3]])
+            if tax_id != 'not_found':
+                tax_name = association_taxon_database[observation_name][1]
+                tax_id_name = proteomes_tax_id_names[tax_id]
+                tax_rank = taxon_data[tax_id][2]
+                proteome = taxon_data[tax_id][3]
+                proteomes_ids[observation_name] = (tax_id, proteome.split(','))
+                if tax_id not in tax_id_obs_names:
+                    tax_id_obs_names[tax_id] = [observation_name]
+                else:
+                    tax_id_obs_names[tax_id].append(observation_name)
+                csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, taxon_data[tax_id][3]])
 
     create_comp_taxonomy_file(json_taxonomic_affiliations, proteomes_ids, tax_id_names, proteomes_output_folder)
 
@@ -239,17 +242,18 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         for observation_name in association_taxon_database:
             tax_name = association_taxon_database[observation_name][0]
             tax_id = association_taxon_database[observation_name][1]
-            tax_rank = taxon_data[tax_id][2]
-            nb_tax_proteomes = len(taxon_data[tax_id][3].split(','))
-            reversed_affiliation_taxa = list(reversed(list(json_taxonomic_affiliations[observation_name].keys())))
-            lowest_tax_rank = None
-            for input_tax_name in reversed_affiliation_taxa:
-                if json_taxonomic_affiliations[observation_name][input_tax_name] != ['not_found']:
-                    if input_tax_name != 'unknown':
-                        lowest_tax_id = json_taxonomic_affiliations[observation_name][input_tax_name][0]
-                        lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
-                        break
-            csvwriter.writerow([observation_name, nb_tax_proteomes, input_tax_name, lowest_tax_rank, tax_name, tax_rank, only_reference_proteome_used[tax_name]])
+            if tax_id != 'not_found':
+                tax_rank = taxon_data[tax_id][2]
+                nb_tax_proteomes = len(taxon_data[tax_id][3].split(','))
+                reversed_affiliation_taxa = list(reversed(list(json_taxonomic_affiliations[observation_name].keys())))
+                lowest_tax_rank = None
+                for input_tax_name in reversed_affiliation_taxa:
+                    if json_taxonomic_affiliations[observation_name][input_tax_name] != ['not_found']:
+                        if input_tax_name != 'unknown':
+                            lowest_tax_id = json_taxonomic_affiliations[observation_name][input_tax_name][0]
+                            lowest_tax_rank = ncbi.get_rank([lowest_tax_id])[lowest_tax_id]
+                            break
+                csvwriter.writerow([observation_name, nb_tax_proteomes, input_tax_name, lowest_tax_rank, tax_name, tax_rank, only_reference_proteome_used[tax_name]])
 
     clustering_proteome_tax_id_file = os.path.join(clustering_output_folder, 'proteome_tax_id.tsv')
     shutil.copyfile(proteome_tax_id_file, clustering_proteome_tax_id_file)
@@ -354,12 +358,18 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     precomputed_metadata_file = os.path.join(proteomes_output_folder, 'esmecata_metadata_proteomes.json')
     with open(precomputed_metadata_file, 'w') as ouput_file:
         json.dump(esmecata_metadata, ouput_file, indent=4)
-    species_clustering_json_data = json_data['species_esmecata_metadata_clustering']
+
+    for json_key in json_data:
+        if json_key.endswith('_clustering'):
+            clustering_json_data = json_data[json_key]
     precomputed_metadata_file = os.path.join(clustering_output_folder, 'esmecata_metadata_clustering.json')
     with open(precomputed_metadata_file, 'w') as ouput_file:
-        json.dump(species_clustering_json_data, ouput_file, indent=4)
-    species_annotation_json_data = json_data['species_esmecata_metadata_annotation']
+        json.dump(clustering_json_data, ouput_file, indent=4)
+
+    for json_key in json_data:
+        if json_key.endswith('_annotation'):
+            annotation_json_data = json_data[json_key]
     precomputed_metadata_file = os.path.join(annotation_output_folder, 'esmecata_metadata_annotation.json')
     with open(precomputed_metadata_file, 'w') as ouput_file:
-        json.dump(esmecata_metadata, ouput_file, indent=4)
+        json.dump(annotation_json_data, ouput_file, indent=4)
     logger.info('|EsMeCaTa|precomputed| Extraction of data from database completed in {0}s.'.format(duration))

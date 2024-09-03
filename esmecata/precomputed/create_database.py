@@ -1,15 +1,27 @@
+# Copyright (C) 2024 Arnaud Belcour - Univ. Grenoble Alpes, Inria, Microcosme
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>
+
 import os
 import shutil
 import pandas as pd
-import zipfile
 import json
 import csv
 
 from esmecata.core.eggnog import get_proteomes_tax_id_name
-from esmecata.core.eggnog import read_annotation
-from esmecata.core.annotation import extract_protein_cluster
 
 from multiprocessing import Pool
+
 
 def get_proteomes_tax_id_name(proteomes_tax_id_file_path):
     """ Extract tax_name + tax_id associated with observation name.
@@ -32,6 +44,15 @@ def get_proteomes_tax_id_name(proteomes_tax_id_file_path):
 
 
 def create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, prefix=''):
+    """ Copy json metadata file.
+
+    Args:
+        esmecata_proteomes_folder (str): path to esmecata proteomes folder.
+        esmecata_clustering_folder (str): path to esmecata clustering folder.
+        esmecata_annotation_folder (str): path to esmecata anntoation folder.
+        output_database_folder (str): path to output folder containing zip database of esmecata.
+        prefix (str): add prefix to json file.
+    """
     output_database_json = os.path.join(output_database_folder, 'esmecata_database_metadata.json')
     if os.path.exists(output_database_json):
         with open(output_database_json, 'r') as open_json:
@@ -76,7 +97,17 @@ def create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_
         json.dump(database_json_data, dumpfile, indent=4)
 
 
-def copy_file(annotation_file, proteomes_taxa_names, output_database_folder, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder):
+def copy_file(annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder):
+    """ Copy file from esmecata run into esmecata database.
+
+    Args:
+        annotation_file (str): path to esmecata annotation reference file for a taxon.
+        proteomes_taxa_names (str): path to esmecata proteomes taxa file.
+        computed_threshold_folder (str): path to computed threshold folder.
+        annotation_reference_folder (str): path to esmecata annotation reference folder.
+        consensus_sequence_folder (str): path to esmecata consensus sequence folder.
+        output_database_folder (str): path to output folder containing zip database of esmecata.
+    """
     observation_name = os.path.splitext(annotation_file)[0]
     taxon_id_name = proteomes_taxa_names[observation_name]
 
@@ -103,6 +134,12 @@ def copy_file(annotation_file, proteomes_taxa_names, output_database_folder, com
 
 
 def concat_tsv_file(input_tsv_file_path, tsv_file_concat_path):
+    """ Concat tsv file for database.
+
+    Args:
+        input_tsv_file_path (str): path to input tsv file.
+        tsv_file_concat_path (str): path to tsv file containing concatenation.
+    """
     if not os.path.exists(tsv_file_concat_path):
         shutil.copyfile(input_tsv_file_path, tsv_file_concat_path)
     else:
@@ -111,7 +148,17 @@ def concat_tsv_file(input_tsv_file_path, tsv_file_concat_path):
         df_concat = pd.concat([df_proteomes_tax_id_file_path, df_tsv_file_concat])
         df_concat.to_csv(tsv_file_concat_path, sep='\t', index=False)
 
-def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, cpu_number=1):
+
+def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, nb_core=1):
+    """ Create esmecata database from a run of esmecata.
+
+    Args:
+        esmecata_proteomes_folder (str): path to esmecata proteomes folder.
+        esmecata_clustering_folder (str): path to esmecata clustering folder.
+        esmecata_annotation_folder (str): path to esmecata anntoation folder.
+        output_database_folder (str): path to output folder containing zip database of esmecata.
+        nb_core (int): number of core to use when creating database.
+    """
     if not os.path.exists(output_database_folder):
         os.mkdir(output_database_folder)
 
@@ -144,18 +191,27 @@ def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmec
     annotation_reference_folder = os.path.join(esmecata_annotation_folder, 'annotation_reference')
 
     # Use multiprocessing to copy fasta and annotation files.
-    database_copy_pool = Pool(cpu_number)
+    database_copy_pool = Pool(nb_core)
 
     multiprocessing_data = []
     for annotation_file in os.listdir(annotation_reference_folder):
-        multiprocessing_data.append([annotation_file, proteomes_taxa_names, output_database_folder, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder])
+        multiprocessing_data.append([annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder])
     database_copy_pool.starmap(copy_file, multiprocessing_data)
 
     database_copy_pool.close()
     database_copy_pool.join()
 
 
-def main(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder, cpu_number=1):
+def create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder, nb_core=1):
+    """ Extract data from esmecata runs and create an esmecata database from these.
+
+    Args:
+        esmecata_proteomes_folder (str): path to esmecata proteomes folder.
+        esmecata_clustering_folder (str): path to esmecata clustering folder.
+        esmecata_annotation_folder (str): path to esmecata anntoation folder.
+        output_folder (str): path to output folder containing zip database of esmecata.
+        nb_core (int): number of core to use when creating database.
+    """
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -164,7 +220,7 @@ def main(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotat
         os.mkdir(output_database_folder)
 
     create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder)
-    create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, cpu_number)
+    create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, nb_core)
 
     compress_database_file = os.path.join(output_folder, 'esmecata_database')
     if not os.path.exists(compress_database_file):
@@ -173,7 +229,16 @@ def main(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotat
     shutil.rmtree(output_database_folder)
 
 
-def main_multiple_folders(esmecata_proteomes_folders, esmecata_clustering_folders, esmecata_annotation_folders, output_folder, cpu_number=1):
+def create_database_from_multiple_esmecata_runs(esmecata_proteomes_folders, esmecata_clustering_folders, esmecata_annotation_folders, output_folder, cpu_number=1):
+    """ Extract data from esmecata runs and create an esmecata database from these.
+
+    Args:
+        esmecata_proteomes_folders (list): list of path to esmecata proteomes folder.
+        esmecata_clustering_folders (list): list of path to esmecata clustering folder.
+        esmecata_annotation_folders (list): list of path to esmecata anntoation folder.
+        output_folder (str): path to output folder containing zip database of esmecata.
+        nb_core (int): number of core to use when creating database.
+    """
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 

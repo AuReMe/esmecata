@@ -25,6 +25,7 @@ dependencies = [
 esmecata = "esmecata.__main__:main"
 esmecata_report = "esmecata.__main_report__:main"
 esmecata_gseapy = "esmecata.__main_gseapy__:main"
+esmecata_create_db = "esmecata.__main_create_database__:main"
 
 [project.urls]
 Homepage = "https://github.com/AuReMe/esmecata"

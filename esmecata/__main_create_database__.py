@@ -19,16 +19,15 @@ import os
 import sys
 import time
 
-from esmecata.report.create_report import run_create_workflow_report, run_proteomes_report_creation, run_clustering_report_creation, \
-                                                                    run_annotation_report_creation
+from esmecata.precomputed.create_database import create_database_from_esmecata_run
 from esmecata.utils import is_valid_dir
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''
-Create report files from esmecata output folder.
+Create database file from esmecata run.
 '''
 REQUIRES = '''
-Requires: datapane, plotly, kaleido, ontosunburst.
+Requires: esmecata, pandas.
 '''
 
 logger = logging.getLogger()
@@ -38,7 +37,7 @@ def main():
     start_time = time.time()
 
     parser = argparse.ArgumentParser(
-        'esmecata_report',
+        'esmecata_create_db',
         description=MESSAGE + ' For specific help on each subcommand use: esmecata {cmd} --help',
         epilog=REQUIRES
     )
@@ -53,15 +52,6 @@ def main():
         '--input',
         dest='input',
         required=True,
-        help='EsMeCaTa input file.',
-        metavar='INPUT_FILE')
-
-    parent_parser_f = argparse.ArgumentParser(add_help=False)
-    parent_parser_f.add_argument(
-        '-f',
-        '--folder',
-        dest='input_folder',
-        required=True,
         help='EsMeCaTa output folder.',
         metavar='INPUT_FOLDER')
 
@@ -74,13 +64,15 @@ def main():
         help='Output directory path.',
         metavar='OUPUT_DIR')
 
-    parent_parser_svg = argparse.ArgumentParser(add_help=False)
-    parent_parser_svg.add_argument(
-        '--svg',
-        dest='create_svg',
-        action='store_true',
+    parent_parser_c = argparse.ArgumentParser(add_help=False)
+    parent_parser_c.add_argument(
+        '-c',
+        '--core',
+        dest='core',
+        help='Number of CPU-cores for multiprocessing.',
         required=False,
-        help='Create SVG files of picture.')
+        type=int,
+        default=1)
 
     # subparsers
     subparsers = parser.add_subparsers(
@@ -88,35 +80,11 @@ def main():
         description='valid subcommands:',
         dest='cmd')
 
-    create_report_parser = subparsers.add_parser(
-        'create_report',
-        help='Create report from esmecata output folder of workflow or precomputed subcommands.',
+    from_workflow = subparsers.add_parser(
+        'from_workflow',
+        help='Create database from esmecata workflow output.',
         parents=[
-            parent_parser_i, parent_parser_f, parent_parser_o, parent_parser_svg
-            ],
-        allow_abbrev=False)
-
-    create_report_proteomes_parser = subparsers.add_parser(
-        'create_report_proteomes',
-        help='Create report from esmecata output folder of proteomes subcommand.',
-        parents=[
-            parent_parser_f, parent_parser_o, parent_parser_svg
-            ],
-        allow_abbrev=False)
-
-    create_report_clustering_parser = subparsers.add_parser(
-        'create_report_clustering',
-        help='Create report from esmecata output folder of clustering subcommand.',
-        parents=[
-            parent_parser_f, parent_parser_o, parent_parser_svg
-            ],
-        allow_abbrev=False)
-
-    create_report_annotation_parser = subparsers.add_parser(
-        'create_report_annotation',
-        help='Create report from esmecata output folder of annotation subcommand.',
-        parents=[
-            parent_parser_f, parent_parser_o, parent_parser_svg
+            parent_parser_i, parent_parser_o, parent_parser_c
             ],
         allow_abbrev=False)
 
@@ -131,7 +99,7 @@ def main():
 
     # add logger in file
     formatter = logging.Formatter('%(message)s')
-    log_file_path = os.path.join(args.output, f'esmecata_analysis_{args.cmd}.log')
+    log_file_path = os.path.join(args.output, f'esmecata_create_db_{args.cmd}.log')
     file_handler = logging.FileHandler(log_file_path, 'w+')
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
@@ -142,14 +110,11 @@ def main():
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    if args.cmd == 'create_report':
-        run_create_workflow_report(args.input, args.input_folder, args.output, args.create_svg)
-    elif args.cmd == 'create_report_proteomes':
-        run_proteomes_report_creation(args.input_folder, args.output, args.create_svg)
-    elif args.cmd == 'create_report_clustering':
-        run_clustering_report_creation(args.input_folder, args.output, args.create_svg)
-    elif args.cmd == 'create_report_annotation':
-        run_annotation_report_creation(args.input_folder, args.output, args.create_svg)
+    if args.cmd == 'from_workflow':
+        esmecata_proteomes_folder = os.path.join(args.input, '0_proteomes')
+        esmecata_clustering_folder = os.path.join(args.input, '1_clustering')
+        esmecata_annotation_folder = os.path.join(args.input, '2_annotation')
+        create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, args.output, args.core)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
