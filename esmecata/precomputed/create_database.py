@@ -21,6 +21,7 @@ import csv
 from esmecata.core.eggnog import get_proteomes_tax_id_name
 
 from multiprocessing import Pool
+from collections import Counter
 
 
 def get_proteomes_tax_id_name(proteomes_tax_id_file_path):
@@ -119,7 +120,6 @@ def copy_file(annotation_file, proteomes_taxa_names, computed_threshold_folder, 
         df_computed_threshold = pd.read_csv(computed_threshold_file_path, sep='\t')
         df_computed_threshold.set_index('representative_protein', inplace=True)
 
-
         annotation_data_file_path = os.path.join(annotation_reference_folder, annotation_file)
         df_annotation = pd.read_csv(annotation_data_file_path, sep='\t')
         df_annotation.set_index('protein_cluster', inplace=True)
@@ -193,9 +193,20 @@ def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmec
     # Use multiprocessing to copy fasta and annotation files.
     database_copy_pool = Pool(nb_core)
 
+    similar_tax_id_names = []
+    for observation_name in proteomes_taxa_names:
+        similar_tax_id_names.append(proteomes_taxa_names[observation_name])
+    similar_tax_id_names = Counter(similar_tax_id_names)
+
     multiprocessing_data = []
     for annotation_file in os.listdir(annotation_reference_folder):
-        multiprocessing_data.append([annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder])
+        observation_name = os.path.splitext(annotation_file)[0]
+        taxon_id_name = proteomes_taxa_names[observation_name]
+        # If more than 1 observation name associated with a similar tax_id_name, do not use multiprocessing as it leads error.
+        if similar_tax_id_names[taxon_id_name] > 1:
+            copy_file(annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder)
+        else:
+            multiprocessing_data.append([annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder])
     database_copy_pool.starmap(copy_file, multiprocessing_data)
 
     database_copy_pool.close()
