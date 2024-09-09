@@ -1175,12 +1175,13 @@ def create_comp_taxonomy_file(association_taxon_id_json, proteomes_ids, tax_id_n
                 break
 
     output = os.path.join(output_dir, 'taxonomy_diff.tsv')
-    with open(output, 'w') as f:
-        f.write('\t'.join(['Input Name', 'Esmecata Name', 'Input Rank', 'Esmecata Rank',
-                           'Input ID', 'Esmecata ID', 'Observation Names']))
+    with open(output, 'w') as open_output_file:
+        csvwriter = csv.writer(open_output_file, delimiter='\t')
+        csvwriter.writerow(['Input Name', 'Esmecata Name', 'Input Rank', 'Esmecata Rank',
+                           'Input ID', 'Esmecata ID', 'Observation Names'])
         for name, ref in d_tax.items():
-            f.write('\n' + '\t'.join([name, ref['Esmecata Name'], ref['Input Rank'], ref['Esmecata Rank'],
-                                      str(ref['Input ID']), str(ref['Esmecata ID']), ';'.join(ref['obs'])]))
+            csvwriter.writerow([name, ref['Esmecata Name'], ref['Input Rank'], ref['Esmecata Rank'],
+                                      str(ref['Input ID']), str(ref['Esmecata ID']), ';'.join(ref['obs'])])
 
 
 def get_taxon_obs_name(proteome_tax_id_file, selected_taxon_rank='family'):
