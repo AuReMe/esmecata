@@ -26,7 +26,8 @@ A folder containing an input file for esmecata containing 13 manually selected t
 - [human oral v1.0](https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/human-oral/v1.0/)
 - [pig gut v1.0](https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/pig-gut/v1.0/)
 
-It contains the input files for esmecata (`*_esmecata.tsv` files) and metadata files (`*_genomes-all_metadata.tsv` files) indicating for each MAGs different measures (such as the completness and contamination).
+For each dataset, it contains all the metadata associated with the genomes of the dataset. The columns `observation_name` and `taxonomic_affiliation` are added so the file can be used by EsMeCaTa.
+The column `Completness` is used to filter the genomes (for the article by using the threshold of at least 90% of Completness).
 
 ### Biogas reactor
 
