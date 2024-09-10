@@ -246,7 +246,7 @@ def convert_intermediate_results_to_0_5_0_all_folder(esmecata_proteomes_result_f
         tax_id_name = convert_tax_name + '__taxid__' + str(tax_id)
         tax_id_names.append(tax_id_name)
         observation_name_tax_ids[observation_name] = tax_id_name
-        observation_name_tax_names[tax_name] = tax_id_name
+        observation_name_tax_names[observation_name] = tax_name
 
     df['tax_id_name'] = tax_id_names
     df.to_csv(os.path.join(output_folder, '0_proteomes', 'proteome_tax_id.tsv'), sep='\t', index=None)
@@ -302,7 +302,7 @@ def convert_intermediate_results_to_0_5_0_all_folder(esmecata_proteomes_result_f
     for index, row in df_stat_clustering.iterrows():
         observation_name = row['observation_name']
         tax_id_name = observation_name_tax_ids[observation_name]
-        tax_name = observation_name_tax_names[observation_name]
+        tax_name = observation_name_tax_names[observation_name].replace(' ', '_')
 
         if tax_id_name not in  already_processed_tax_id_names:
             shutil.copyfile(os.path.join(esmecata_clustering_result_folder, 'computed_threshold', tax_name+'.tsv'), os.path.join(computed_threshold_folder, tax_id_name+'.tsv'))
