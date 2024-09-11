@@ -19,7 +19,7 @@ import os
 import sys
 import time
 
-from esmecata.precomputed.create_database import create_database_from_esmecata_run
+from esmecata.precomputed.create_database import create_database_from_esmecata_run, merge_db_files
 from esmecata.utils import is_valid_dir
 from esmecata import __version__ as VERSION
 
@@ -55,6 +55,15 @@ def main():
         help='EsMeCaTa output folder.',
         metavar='INPUT_FOLDER')
 
+    parent_parser_i_zip = argparse.ArgumentParser(add_help=False)
+    parent_parser_i_zip.add_argument(
+        '-i',
+        '--input',
+        dest='input',
+        required=True,
+        help='Multiple path of esmecata database zip files separated by ",".',
+        metavar='INPUT_FOLDER')
+
     parent_parser_o = argparse.ArgumentParser(add_help=False)
     parent_parser_o.add_argument(
         '-o',
@@ -88,6 +97,14 @@ def main():
             ],
         allow_abbrev=False)
 
+    merge_db = subparsers.add_parser(
+        'merge_db',
+        help='Merge multiple zip files corresponding to EsMeCaTa databases.',
+        parents=[
+            parent_parser_i_zip, parent_parser_o
+            ],
+        allow_abbrev=False)
+
     args = parser.parse_args()
 
     # If no argument print the help.
@@ -115,6 +132,8 @@ def main():
         esmecata_clustering_folder = os.path.join(args.input, '1_clustering')
         esmecata_annotation_folder = os.path.join(args.input, '2_annotation')
         create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, args.output, args.core)
+    elif args.cmd == 'merge_db':
+        merge_db_files(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, args.output, args.core)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

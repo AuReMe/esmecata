@@ -17,6 +17,7 @@ import shutil
 import pandas as pd
 import json
 import csv
+import zipfile
 
 from esmecata.core.eggnog import get_proteomes_tax_id_name
 
@@ -269,3 +270,13 @@ def create_database_from_multiple_esmecata_runs(esmecata_proteomes_folders, esme
         os.mkdir(compress_database_file)
     shutil.make_archive(compress_database_file, 'zip', output_database_folder)
     shutil.rmtree(output_database_folder)
+
+
+def merge_db_files(list_db_files, output_folder):
+    archive_name = os.path.join(output_folder, 'esmecata_database.zip')
+    with zipfile.ZipFile(archive_name, 'w') as open_database:
+        for database_file in list_db_files:
+            archive = zipfile.ZipFile(database_file, 'r')
+            for zip_file in archive.namelist():
+                open_database.write(archive.open(zip_file))
+            archive.close()
