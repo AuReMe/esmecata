@@ -62,7 +62,7 @@ def main():
         dest='input',
         required=True,
         help='Multiple path of esmecata database zip files separated by ",".',
-        metavar='INPUT_FOLDER')
+        metavar='INPUT_FILES')
 
     parent_parser_o = argparse.ArgumentParser(add_help=False)
     parent_parser_o.add_argument(
@@ -133,7 +133,11 @@ def main():
         esmecata_annotation_folder = os.path.join(args.input, '2_annotation')
         create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, args.output, args.core)
     elif args.cmd == 'merge_db':
-        merge_db_files(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, args.output, args.core)
+        if ',' in args.input:
+            list_db_files = args.input.split(',')
+        if ' ' in args.input:
+            list_db_files = args.input.split(' ')
+        merge_db_files(list_db_files, args.output)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
