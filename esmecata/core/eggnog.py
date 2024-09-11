@@ -76,7 +76,7 @@ def call_to_emapper(input_path, taxon_name, output_dir, temporary_dir, eggnog_da
     # Use override to avoid issue if already present annotation (if there was a failed run for example).
     eggnog_cmds = ['emapper.py', '--cpu', nb_core, '-i', input_path, '--output', taxon_name,
                 '--data_dir', eggnog_database_path, '--itype', 'proteins', '--output_dir', output_dir,
-                '--temp_dir', temporary_dir, '--override']
+                '--temp_dir', temporary_dir, '--override', '--go_evidence', 'non-electronic']
     # Use dbmem for faster run, except if the option --no-dbmem has been used.
     if no_dbmem is False:
         eggnog_cmds.append('--dbmem')
