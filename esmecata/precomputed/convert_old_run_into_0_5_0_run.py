@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import csv
 import os
+from esmecata.core.annotation import create_dataset_annotation_file
 from esmecata.core.proteomes import compute_stat_proteomes
 from esmecata.core.clustering import compute_stat_clustering
 from esmecata.core.workflow import compute_stat_workflow
@@ -82,8 +83,13 @@ def convert_old_results_to_0_5_0(esmecata_proteomes_result_folder, esmecata_clus
     compute_stat_clustering(os.path.join(output_folder, '1_clustering'), stat_file=os.path.join(output_folder, '1_clustering', 'stat_number_clustering.tsv'))
 
     shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'stat_number_annotation.tsv'), os.path.join(output_folder, '2_annotation', 'stat_number_annotation.tsv'))
-
     shutil.copytree(os.path.join(esmecata_annotation_result_folder, 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'annotation_reference'))
+
+    if os.path.exists(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv')):
+        shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'))
+    else:
+        create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'), content='all')
+
 
 def convert_old_results_from_workflow_to_0_5_0(esmecata_workflow_results_folder, output_folder):
     """ From old results of esmecata workflow (before 0.5.0) convert some part of the result folder into 0.5.0.
@@ -209,6 +215,10 @@ def convert_old_results_to_0_5_0_all_folder(esmecata_proteomes_result_folder, es
     shutil.copytree(os.path.join(esmecata_annotation_result_folder, 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'annotation_reference'))
     shutil.copytree(os.path.join(esmecata_annotation_result_folder, 'pathologic'), os.path.join(output_folder, '2_annotation', 'pathologic'))
     compute_stat_workflow(os.path.join(output_folder, '0_proteomes'), os.path.join(output_folder, '1_clustering'), os.path.join(output_folder, '2_annotation'), os.path.join(output_folder, 'stat_number_workflow.tsv'))
+    if os.path.exists(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv')):
+        shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'))
+    else:
+        create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'), content='all')
 
 
 def convert_intermediate_results_to_0_5_0_all_folder(esmecata_proteomes_result_folder, esmecata_clustering_result_folder, esmecata_annotation_result_folder,
@@ -326,3 +336,7 @@ def convert_intermediate_results_to_0_5_0_all_folder(esmecata_proteomes_result_f
     shutil.copytree(os.path.join(esmecata_annotation_result_folder, 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'annotation_reference'))
     shutil.copytree(os.path.join(esmecata_annotation_result_folder, 'pathologic'), os.path.join(output_folder, '2_annotation', 'pathologic'))
     compute_stat_workflow(os.path.join(output_folder, '0_proteomes'), os.path.join(output_folder, '1_clustering'), os.path.join(output_folder, '2_annotation'), os.path.join(output_folder, 'stat_number_workflow.tsv'))
+    if os.path.exists(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv')):
+        shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'))
+    else:
+        create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'), content='all')
