@@ -361,18 +361,24 @@ def create_database_from_multiple_esmecata_runs(esmecata_proteomes_folders, esme
 
 
 def merge_db_files(list_db_files, output_folder):
-    proteome_tax_id_df = pd.DataFrame()
     stat_number_proteome_df = pd.DataFrame()
     stat_number_clustering_df = pd.DataFrame()
     stat_number_annotation_df = pd.DataFrame()
+    proteome_tax_id_df_data = []
+    already_extracted_proteomes = []
     archive_name = os.path.join(output_folder, 'esmecata_database.zip')
+    already_processed_zip_files = []
     with zipfile.ZipFile(archive_name, 'w', compression=zipfile.ZIP_DEFLATED) as open_database:
         for database_file in list_db_files:
             archive = zipfile.ZipFile(database_file, 'r')
             for zip_file in archive.namelist():
                 if zip_file == 'proteome_tax_id.tsv':
-                    tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
-                    proteome_tax_id_df = pd.concat([proteome_tax_id_df, tmp_df])
+                    proteome_tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
+                    proteomes_lists = proteome_tmp_df.values.tolist()
+                    for proteomes_list in proteomes_lists:
+                        if proteomes_list[0] not in already_extracted_proteomes:
+                            proteome_tax_id_df_data.append(proteomes_list)
+                            already_extracted_proteomes.append(proteomes_list[0])
                 if zip_file == 'stat_number_annotation.tsv':
                     tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
                     stat_number_annotation_df = pd.concat([stat_number_annotation_df, tmp_df])
@@ -382,15 +388,15 @@ def merge_db_files(list_db_files, output_folder):
                 if zip_file == 'stat_number_proteome.tsv':
                     tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
                     stat_number_proteome_df = pd.concat([stat_number_proteome_df, tmp_df])
-                else:
-                    if not zip_file.endswith('/'):
-                        print(archive.open(zip_file))
+                if not zip_file.endswith('/') and zip_file not in ['proteome_tax_id.tsv', 'stat_number_annotation.tsv', 'stat_number_clustering.tsv', 'stat_number_proteome.tsv']:
+                    if zip_file not in already_processed_zip_files:
                         open_database.writestr(zip_file, archive.open(zip_file).read())
+                        already_processed_zip_files.append(zip_file)
 
             archive.close()
+        proteome_tax_id_df = pd.DataFrame(proteome_tax_id_df_data, columns=proteome_tmp_df.columns)
+
         open_database.writestr('proteome_tax_id.tsv', proteome_tax_id_df.to_string())
         open_database.writestr('stat_number_proteome.tsv', stat_number_proteome_df.to_string())
         open_database.writestr('stat_number_clustering.tsv', stat_number_clustering_df.to_string())
         open_database.writestr('stat_number_annotation.tsv', stat_number_annotation_df.to_string())
-
-    print(proteome_tax_id_df)
