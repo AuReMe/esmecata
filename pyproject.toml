@@ -42,7 +42,7 @@ GSEAPY = ['gseapy',
 ]
 
 [tool.setuptools]
-packages = ['esmecata']
+packages = ['esmecata', 'esmecata.core', 'esmecata.report', 'esmecata.gseapy']
 package-dir = {'esmecata' = 'esmecata', 'esmecata.core' = 'esmecata/core' , 'esmecata.report' = 'esmecata/report', 'esmecata.gseapy' = 'esmecata/gseapy'}
 
 [tool.setuptools.dynamic]
