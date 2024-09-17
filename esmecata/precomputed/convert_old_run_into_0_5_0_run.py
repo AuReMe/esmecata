@@ -86,9 +86,9 @@ def convert_old_results_to_0_5_0(esmecata_proteomes_result_folder, esmecata_clus
     shutil.copytree(os.path.join(esmecata_annotation_result_folder, 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'annotation_reference'))
 
     if os.path.exists(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv')):
-        shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'))
+        shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'function_table.tsv'))
     else:
-        create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'), content='all')
+        create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'function_table.tsv'), content='all')
 
 
 def convert_old_results_from_workflow_to_0_5_0(esmecata_workflow_results_folder, output_folder):
@@ -216,9 +216,9 @@ def convert_old_results_to_0_5_0_all_folder(esmecata_proteomes_result_folder, es
     shutil.copytree(os.path.join(esmecata_annotation_result_folder, 'pathologic'), os.path.join(output_folder, '2_annotation', 'pathologic'))
     compute_stat_workflow(os.path.join(output_folder, '0_proteomes'), os.path.join(output_folder, '1_clustering'), os.path.join(output_folder, '2_annotation'), os.path.join(output_folder, 'stat_number_workflow.tsv'))
     if os.path.exists(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv')):
-        shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'))
+        shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'function_table.tsv'))
     else:
-        create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'), content='all')
+        create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'function_table.tsv'), content='all')
 
 
 def convert_intermediate_results_to_0_5_0_all_folder(esmecata_proteomes_result_folder, esmecata_clustering_result_folder, esmecata_annotation_result_folder,
@@ -337,6 +337,6 @@ def convert_intermediate_results_to_0_5_0_all_folder(esmecata_proteomes_result_f
     shutil.copytree(os.path.join(esmecata_annotation_result_folder, 'pathologic'), os.path.join(output_folder, '2_annotation', 'pathologic'))
     compute_stat_workflow(os.path.join(output_folder, '0_proteomes'), os.path.join(output_folder, '1_clustering'), os.path.join(output_folder, '2_annotation'), os.path.join(output_folder, 'stat_number_workflow.tsv'))
     if os.path.exists(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv')):
-        shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'))
+        shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'function_table.tsv'))
     else:
-        create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'dataset_annotation_observation_name.tsv'), content='all')
+        create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'function_table.tsv'), content='all')

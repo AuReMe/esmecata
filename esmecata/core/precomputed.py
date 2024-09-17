@@ -291,8 +291,8 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     archive.close()
 
-    dataset_annotation_file_path = os.path.join(annotation_output_folder, 'dataset_annotation_observation_name.tsv')
-    create_dataset_annotation_file(annotation_reference_output_folder, dataset_annotation_file_path, 'all')
+    function_table_file_path = os.path.join(annotation_output_folder, 'function_table.tsv')
+    create_dataset_annotation_file(annotation_reference_output_folder, function_table_file_path, 'all')
 
     tax_name_clustering_numbers = {}
     for clustering_file in os.listdir(computed_threshold_folder):

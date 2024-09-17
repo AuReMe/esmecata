@@ -479,8 +479,8 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
         for species in clustering_taxon_id:
             taxon_id_csvwriter.writerow([species, clustering_taxon_id[species]])
 
-    dataset_annotation_file_path = os.path.join(output_folder, 'dataset_annotation_observation_name.tsv')
-    create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_file_path, 'all')
+    function_table_file_path = os.path.join(output_folder, 'function_table.tsv')
+    create_dataset_annotation_file(annotation_reference_folder, function_table_file_path, 'all')
 
     stat_file = os.path.join(output_folder, 'stat_number_annotation.tsv')
     compute_stat_annotation(annotation_reference_folder, stat_file)
