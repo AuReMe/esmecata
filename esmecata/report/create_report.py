@@ -19,12 +19,11 @@ import logging
 import pandas as pd
 
 from esmecata.core.annotation import create_dataset_annotation_file
-from esmecata.report.ec_sunburst_per_model import create_sunburst_ec
 from esmecata.report.viz_esmecata_datapane import create_datapane
 from esmecata.report.esmecata2taxontology import get_fig_parameters, generate_sunburst_fig
 from esmecata.report.stats_workflow_figures import distributions_by_ranks, compare_ranks_in_out, _format_taxo, create_proteome_representativeness_lineplot_px, \
                                                     data_proteome_representativeness, proteomes_representativeness_details, create_annot_obs_df,annot_frequencies_in_obs, \
-                                                    fraction_of_all_annot_in_obs, annot_frequencies_in_obs_hist, fraction_of_all_annot_in_obs_hist, ec_sunburst
+                                                    annot_frequencies_in_obs_hist, ec_sunburst
 from esmecata.report.esmecata_compression import esmecata_compression_taxonomy_file
 
 logger = logging.getLogger(__name__)
@@ -40,13 +39,6 @@ def run_create_workflow_report(input_file, input_folder, output_folder, create_s
         create_svg (bool): boolean to create svg files of the figure
     """
     logger.info("--- Launch creation of report for workflow ---")
-    annotation_referene_folder_path = os.path.join(input_folder, '2_annotation', 'annotation_reference')
-    dataset_annotation_ec_file_path = os.path.join(output_folder, 'dataset_annotation_ec.tsv')
-    create_dataset_annotation_file(annotation_referene_folder_path, dataset_annotation_ec_file_path, content='EC')
-
-    dataset_annotation_go_file_path = os.path.join(output_folder, 'dataset_annotation_go.tsv')
-    create_dataset_annotation_file(annotation_referene_folder_path, dataset_annotation_go_file_path, content='GO')
-
     create_datapane(input_file, input_folder, output_folder, create_svg)
 
 
