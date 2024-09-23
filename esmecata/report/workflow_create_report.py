@@ -19,7 +19,7 @@ import logging
 import pandas as pd
 
 from esmecata.core.annotation import create_dataset_annotation_file
-from esmecata.report.viz_esmecata_datapane import create_datapane
+from esmecata.report.report_creation import create_esmecata_report
 from esmecata.report.esmecata2taxontology import get_fig_parameters, generate_sunburst_fig
 from esmecata.report.stats_workflow_figures import distributions_by_ranks, compare_ranks_in_out, _format_taxo, create_proteome_representativeness_lineplot_px, \
                                                     data_proteome_representativeness, proteomes_representativeness_details, create_annot_obs_df,annot_frequencies_in_obs, \
@@ -39,7 +39,7 @@ def run_create_workflow_report(input_file, input_folder, output_folder, create_s
         create_svg (bool): boolean to create svg files of the figure
     """
     logger.info("--- Launch creation of report for workflow ---")
-    create_datapane(input_file, input_folder, output_folder, create_svg)
+    create_esmecata_report(input_file, input_folder, output_folder, create_svg)
 
 
 def run_proteomes_report_creation(input_folder, output_folder, create_svg=False):

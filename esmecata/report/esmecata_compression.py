@@ -99,7 +99,7 @@ X_POS = 'x_pos'
 Y_POS = 'y_pos'
 
 # SUFFIXES
-IN_OTU_SUFFIX = ' OTUs'
+IN_OTU_SUFFIX = ' Organisms'
 OUT_TAXA_SUFFIX = ' '
 
 
@@ -144,15 +144,14 @@ def get_input_data(input_file: str) -> Dict[str, Any]:
     """
     input_data = {IN_LST: [], OUT_LST: [], VAL_D: {}, RANK_D: {}}
     with open(input_file, 'r') as f:
-        reader = csv.reader(f, delimiter='\t')
-        reader.__next__()
+        reader = csv.DictReader(f, delimiter='\t')
         for line in reader:
-            input_data[IN_LST].append(line[0])
-            input_data[OUT_LST].append(line[1] + OUT_TAXA_SUFFIX)
-            input_data[VAL_D][line[0]] = len(line[6].split(';'))
-            input_data[RANK_D][line[0]] = line[2]
-            input_data[RANK_D][line[0] + IN_OTU_SUFFIX] = line[2]
-            input_data[RANK_D][line[1] + OUT_TAXA_SUFFIX] = line[3]
+            input_data[IN_LST].append(line['Input Name'])
+            input_data[OUT_LST].append(line['Esmecata Name'] + OUT_TAXA_SUFFIX)
+            input_data[VAL_D][line['Input Name']] = len(line['Observation Names'].split(';'))
+            input_data[RANK_D][line['Input Name']] = line['Input Rank']
+            input_data[RANK_D][line['Input Name'] + IN_OTU_SUFFIX] = line['Input Rank']
+            input_data[RANK_D][line['Esmecata Name'] + OUT_TAXA_SUFFIX] = line['Esmecata Rank']
     input_lst, output_lst = sort_tax_by_ranks(input_data)
     input_data[IN_LST] = input_lst
     input_data[OUT_LST] = output_lst
@@ -189,7 +188,7 @@ def get_fig_parameters(input_data: Dict[str, Any]) -> Dict[str, List[Any]]:
                 TARGETS: [],
                 VALUES: [],
                 LINK_COLORS: [],
-                TEXT_ANNOT: [f'Input : {nb_otu_input} OTU',
+                TEXT_ANNOT: [f'Input : {nb_otu_input} Organisms',
                              f'Input : {nb_input_div} taxonomic diversity',
                              f'Output : {nb_output_div} taxonomic diversity'],
                 X_POS: [0.01] * len(labels),
