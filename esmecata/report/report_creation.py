@@ -29,11 +29,12 @@ from esmecata.report.esmecata_compression import esmecata_compression
 
 def create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
                         fig7, fig7b, fig8, fig8b, fig9, fig10, fig11,
-                        fig12, fig12_details, metadata, output_file):
-    from bokeh.resources import INLINE
+                        fig12, fig12_details, metadata, output_file, reduce=None):
+    from bokeh.resources import INLINE, CDN
     import panel as pn
 
     pn.extension("plotly")
+    pn.extension('mathjax')
 
     styles = {
         'background-color': '#F6F6F6', 'border': '2px solid black',
@@ -41,18 +42,17 @@ def create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig
     }
 
     page_one = pn.Accordion(
-            pn.pane.HTML("""<h2>Reduction of taxonomic diversity between EsMeCaTa's inputs and outputs</h2>
-                        <p>The sunburst below displays the taxonomic diversity of inputs, i.e. all the taxonomic affiliations listed in the tsv input file. White cells indicates inputs whose ranks were not retained by EsMeCaTa, which went up to the superior taxonomic rank to find proteomes.</p>""", styles=styles),
-            pn.Column('## Sunburst of taxon selected by EsMeCaTa',
-                pn.pane.Plotly(fig9.update_layout(autosize=True)),
-                sizing_mode='scale_height'),
+        pn.pane.Markdown("""# Reduction of taxonomic diversity between EsMeCaTa's inputs and outputs
+                    The sunburst below displays the taxonomic diversity of inputs, i.e. all the taxonomic affiliations listed in the tsv input file. White cells indicates inputs whose ranks were not retained by EsMeCaTa, which went up to the superior taxonomic rank to find proteomes.""", styles=styles),
+        pn.Column('## Sunburst of taxon selected by EsMeCaTa',
+            pn.pane.Plotly(fig9.update_layout(autosize=True)),
+            sizing_mode='scale_height'),
 
-            pn.pane.HTML("""<h2>\"Compression\" of taxonomic diversity between inputs and outputs</h2>
-                        <p>The sankey diagram below also displays the initial taxonomic diversity of taxonomic affiliations given to EsMeCaTa as inputs. The first column details the content of the input file : one block is equivalent to one taxonomic affiliation, and the block height indicates the number of times this affiliation appears in the input file. The second column details which of these taxonomic affiliations were merged together (i.e. 'compressed') because their taxonomyies were identical in the input file. Finally, The first column displays the ranks EsMeCaTa attributed to each of them : at this step, some taxonomic affiliations can be merged because EsMeCaTa went up the taxonomic ranks to find proteomes.</p>""", styles=styles),
-            pn.Column('## Sankey diagram of taxonomic compression',
-                pn.pane.Plotly(fig10.update_layout(autosize=True)),
-                sizing_mode='scale_height'),
-
+        pn.pane.HTML("""<h2>\"Compression\" of taxonomic diversity between inputs and outputs</h2>
+                    <p>The sankey diagram below also displays the initial taxonomic diversity of taxonomic affiliations given to EsMeCaTa as inputs. The first column details the content of the input file : one block is equivalent to one taxonomic affiliation, and the block height indicates the number of times this affiliation appears in the input file. The second column details which of these taxonomic affiliations were merged together (i.e. 'compressed') because their taxonomyies were identical in the input file. Finally, The first column displays the ranks EsMeCaTa attributed to each of them : at this step, some taxonomic affiliations can be merged because EsMeCaTa went up the taxonomic ranks to find proteomes.</p>""", styles=styles),
+        pn.Column('## Sankey diagram of taxonomic compression',
+            pn.pane.Plotly(fig10.update_layout(autosize=True)),
+            sizing_mode='scale_height'),
     )
     page_two = pn.Column(
         pn.pane.HTML("""<h2>Proteomes summary</h2>
@@ -187,7 +187,10 @@ def create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig
         header_background='white'
     )
 
-    panel.save(output_file, resources=INLINE)
+    if reduce is True:
+        panel.save(output_file, resources=CDN)
+    else:
+        panel.save(output_file, resources=INLINE)
 
 
 def create_datapane_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
