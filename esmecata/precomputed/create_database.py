@@ -390,11 +390,13 @@ def merge_db_files(list_db_files, output_folder):
                     proteome_tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
                     proteomes_lists = proteome_tmp_df.values.tolist()
                     for proteomes_list in proteomes_lists:
+                        # If a tax_id_name will be found in several databases, use only the first occurence.
                         if proteomes_list[0] not in already_extracted_proteomes:
                             proteome_tax_id_df_data.append(proteomes_list)
                             already_extracted_proteomes.append(proteomes_list[0])
                 if zip_file == 'stat_number_proteome.tsv':
                     tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
+                    # To avoid adding redundant tax_id_name, remove all the ones already present.
                     tmp_df = tmp_df[~tmp_df['observation_name'].isin(stat_number_proteome_df['observation_name'])]
                     stat_number_proteome_df['only_reference_proteome_used'] = stat_number_proteome_df['only_reference_proteome_used'].astype(bool)
                     stat_number_proteome_df = pd.concat([stat_number_proteome_df, tmp_df])

@@ -7,7 +7,7 @@ If you previously use python import of the package, you will need to modify your
 
 ## Add
 
-* New subcommand to `esmecata` `precomputed`. This subcommand uses a precomputed database to make predictions from input file (using EsMeCaTa default parameters). It has been made to avoid recreating the same prediction at each run and to have a fast way to make prediction with EsMeCaTa. It requires to download the precomptued database before using it.
+* New subcommand to `esmecata` `precomputed`. This subcommand uses a precomputed database to make predictions from input file (using EsMeCaTa default parameters). It has been made to avoid recreating the same prediction at each run and to have a fast way to make prediction with EsMeCaTa. It requires to download the precomptued database before using it. AT the moment of this release, the database is not available, these scripts are present for testing purpose.
 * Several scripts are added in `esmecata/precomputed` folder to create the input and the precomputed database.
 * Test for precomputed database.
 * Command `esmecata_report` to create report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv` reports from EsMeCaTa (work done by @Mataivic and @PaulineGHG). This command has different subcommands:
@@ -20,7 +20,6 @@ If you previously use python import of the package, you will need to modify your
 * New optional dependencies for `esmecata_gseapy`: [gseapy](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
 * New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
 * Check if proteome files are completly empty and could lead to issue with mmseqs2.
-* Use `--tax_scope` with eggnog-mapper when using `--merge-fasta`.
 
 ## Fix
 
@@ -31,7 +30,7 @@ If you previously use python import of the package, you will need to modify your
 * Modification of the structure of EsMeCaTa package, now divided in 3 main folders: (1) `esmecata/core` (for scritp spreviously contained in EsMeCaTa folder) and used for the workflow, (2) `esmecata/esmecata_analysis` to create report from esmecata output folder and (3) `gseapy` to perform enrichment analysis of esmecata output.
 * Change the name of intermediary files in `clustering` and `annotation` to avoid issues with ambiguous taxon names.
 * Modify test according to changes of packaging structure.
-* Modify the behaviour of annotation by eggnog-mapper. Now it merges protein sequences from clustering into bigger files (associated with superkingdom). This increases the performance of eggnog-mapper. Modification made with @megyl.
+* Modify the behaviour of annotation by eggnog-mapper. Now it merges protein sequences from clustering into bigger files (associated with superkingdom). This increases the performance of eggnog-mapper. Modification made with @megyl. Use `--tax_scope` with eggnog-mapper.
 
 ## Remove
 

@@ -37,6 +37,7 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
     - [EsMeCaTa precomputed](#esmecata-precomputed)
   - [EsMeCaTa report](#esmecata-report)
   - [EsMeCaTa gseapy](#esmecata-gseapy)
+  - [EsMeCaTa create\_db](#esmecata-create_db)
   - [License](#license)
 
 ## Requirements
@@ -103,6 +104,7 @@ To use eggnog-mapper, you have to setup it and install [its database](https://gi
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
 
 **Warning**: due to the fact that datapane is no longer maintained, it requires a version of pandas lower than `2.0.0`. `esmecata_report` has been used with pandas `1.5.3`.
+The replacement of datapane by panel is under development to solve this issue.
 
 `esmecata_gseapy` requires:
 - [gseapy](https://github.com/zqfang/GSEApy).
@@ -141,6 +143,15 @@ A [jupyter notebook](https://github.com/AuReMe/esmecata/blob/master/tutorials/es
 
 ## EsMeCaTa commands
 
+Several command line are created after the isntallation:
+
+- `esmecata`: the main one to perform esmecata workflow from input file or with a precomputed database.
+- `esmecata_report`: another command to create HTML report showing different statistics on the predictions.
+- `esmecata_gseapy`: to perform enrichment analysis using gseapy and orsum to identify functions specific to some taxa compare to the all community.
+- `esmecata_create_db`: to create precomputed databases from an esmecata run or merge different precomputed databases.
+
+Here is the help for the main esmecata command:
+
 ````
 usage: esmecata [-h] [--version] {check,proteomes,clustering,annotation_uniprot,annotation,workflow_uniprot,workflow,precomputed} ...
 
@@ -169,6 +180,8 @@ Steps proteomes and annotation by UniProt requires an internet connection (for R
 ## Usage
 
 ### Use the precomputed database
+
+**WARNING**: Database is in development, it is not available yet.
 
 To ease the use of EsMeCaTa, a precomputed database has been created containing `species`, `genus`, `family`, `order`, `class` and `phylum` having at least 5 proteomes on UniProt. Then the default workflow of EsMECaTa have been done on these taxa (downlaoding proteomes on UniProt, clustering with mmseqs2, annotation with eggnog-mapper).
 
@@ -995,7 +1008,40 @@ It can be used with this command:
 
 `esmecata_gseapy gseapy_taxon -i esmecata_annotation_output_folder -o output_folder`
 
+## EsMeCaTa create_db
 
+Create precomputed database from esmecata output folders or merge already present precomputed databases.
+This command is mainly for the developers of esmecata to automatise the creation of the precomputed database.
+But if you want to create a precomputed database of your esmecata run for reproducibility it is also possible. 
+
+```
+usage: esmecata_create_db [-h] [--version] {from_workflow,merge_db} ...
+
+Create database file from esmecata run. For specific help on each subcommand use: esmecata {cmd} --help
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+
+subcommands:
+  valid subcommands:
+
+  {from_workflow,merge_db}
+    from_workflow       Create database from esmecata workflow output.
+    merge_db            Merge multiple zip files corresponding to EsMeCaTa databases.
+
+Requires: esmecata, pandas.
+```
+
+It can be used with this command:
+
+`esmecata_create_db from_workflow -i esmecata_workflow_output_folder -o output_folder -c 5`
+
+The precomputed database (in zip format) will be in the `output_folder` and named `esmecata_database.zip`.
+
+To merge several precomputed databases, you can use the following command:
+
+`esmecata_create_db from_workflow -i esmecata_database_1.zip,esmecata_database_2.zip,esmecata_database_3.zip -o output_folder`
 
 ## License
 
