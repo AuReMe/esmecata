@@ -375,9 +375,9 @@ def create_database_from_multiple_esmecata_runs(esmecata_proteomes_folders, esme
 
 
 def merge_db_files(list_db_files, output_folder):
-    stat_number_proteome_df = pd.DataFrame()
-    stat_number_clustering_df = pd.DataFrame()
-    stat_number_annotation_df = pd.DataFrame()
+    stat_number_proteome_df = pd.DataFrame(columns=['observation_name', 'Number_proteomes', 'Input_taxon_Name', 'Taxon_rank', 'EsMeCaTa_used_taxon', 'EsMeCaTa_used_rank', 'only_reference_proteome_used'])
+    stat_number_clustering_df = pd.DataFrame(columns=['observation_name', 'Number_protein_clusters_panproteome', 'Number_protein_clusters_kept', 'Number_protein_clusters_coreproteome'])
+    stat_number_annotation_df = pd.DataFrame(columns=['observation_name', 'Number_go_terms', 'Number_ecs'])
     proteome_tax_id_df_data = []
     already_extracted_proteomes = []
     archive_name = os.path.join(output_folder, 'esmecata_database.zip')
@@ -393,15 +393,19 @@ def merge_db_files(list_db_files, output_folder):
                         if proteomes_list[0] not in already_extracted_proteomes:
                             proteome_tax_id_df_data.append(proteomes_list)
                             already_extracted_proteomes.append(proteomes_list[0])
-                if zip_file == 'stat_number_annotation.tsv':
-                    tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
-                    stat_number_annotation_df = pd.concat([stat_number_annotation_df, tmp_df])
-                if zip_file == 'stat_number_clustering.tsv':
-                    tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
-                    stat_number_clustering_df = pd.concat([stat_number_clustering_df, tmp_df])
                 if zip_file == 'stat_number_proteome.tsv':
                     tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
+                    tmp_df = tmp_df[~tmp_df['observation_name'].isin(stat_number_proteome_df['observation_name'])]
+                    stat_number_proteome_df['only_reference_proteome_used'] = stat_number_proteome_df['only_reference_proteome_used'].astype(bool)
                     stat_number_proteome_df = pd.concat([stat_number_proteome_df, tmp_df])
+                if zip_file == 'stat_number_clustering.tsv':
+                    tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
+                    tmp_df= tmp_df[~tmp_df['observation_name'].isin(stat_number_clustering_df['observation_name'])]
+                    stat_number_clustering_df = pd.concat([stat_number_clustering_df, tmp_df])
+                if zip_file == 'stat_number_annotation.tsv':
+                    tmp_df = pd.read_csv(archive.open(zip_file), sep='\t')
+                    tmp_df = tmp_df[~tmp_df['observation_name'].isin(stat_number_annotation_df['observation_name'])]
+                    stat_number_annotation_df = pd.concat([stat_number_annotation_df, tmp_df])
                 if not zip_file.endswith('/') and zip_file not in ['proteome_tax_id.tsv', 'stat_number_annotation.tsv', 'stat_number_clustering.tsv', 'stat_number_proteome.tsv']:
                     if zip_file not in already_processed_zip_files:
                         open_database.writestr(zip_file, archive.open(zip_file).read())
@@ -409,8 +413,11 @@ def merge_db_files(list_db_files, output_folder):
 
             archive.close()
         proteome_tax_id_df = pd.DataFrame(proteome_tax_id_df_data, columns=proteome_tmp_df.columns)
-
-        open_database.writestr('proteome_tax_id.tsv', proteome_tax_id_df.to_string())
-        open_database.writestr('stat_number_proteome.tsv', stat_number_proteome_df.to_string())
-        open_database.writestr('stat_number_clustering.tsv', stat_number_clustering_df.to_string())
-        open_database.writestr('stat_number_annotation.tsv', stat_number_annotation_df.to_string())
+        proteome_tax_id_df_str = proteome_tax_id_df.to_csv(sep='\t', index=False)
+        open_database.writestr('proteome_tax_id.tsv', proteome_tax_id_df_str)
+        stat_number_proteome_df_str = stat_number_proteome_df.to_csv(sep='\t', index=False)
+        open_database.writestr('stat_number_proteome.tsv', stat_number_proteome_df_str)
+        stat_number_clustering_df_str = stat_number_clustering_df.to_csv(sep='\t', index=False)
+        open_database.writestr('stat_number_clustering.tsv', stat_number_clustering_df_str)
+        stat_number_annotation_df_str = stat_number_annotation_df.to_csv(sep='\t', index=False)
+        open_database.writestr('stat_number_annotation.tsv', stat_number_annotation_df_str)
