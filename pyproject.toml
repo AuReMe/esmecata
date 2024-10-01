@@ -40,6 +40,9 @@ ANALYSIS = ['datapane',
 GSEAPY = ['gseapy',
   'orsum'
 ]
+TEST = ['pytest',
+  'pytest-mock'
+]
 
 [tool.setuptools]
 packages = ['esmecata', 'esmecata.core', 'esmecata.report', 'esmecata.gseapy']

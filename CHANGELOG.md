@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.5.0 (2024-08-20)
+# EsMeCaTa v0.5.0 (2024-10-01)
 
 WARNING: changes of the structure of the python package of EsMeCaTa.
 If you previously use python import of the package, you will need to modify your import.
@@ -9,14 +9,14 @@ If you previously use python import of the package, you will need to modify your
 
 * New subcommand to `esmecata` `precomputed`. This subcommand uses a precomputed database to make predictions from input file (using EsMeCaTa default parameters). It has been made to avoid recreating the same prediction at each run and to have a fast way to make prediction with EsMeCaTa. It requires to download the precomptued database before using it. AT the moment of this release, the database is not available, these scripts are present for testing purpose.
 * Several scripts are added in `esmecata/precomputed` folder to create the input and the precomputed database.
-* Test for precomputed database.
+* Tests for precomputed database, report creation, database creation and eggnog annotation. Add mock on sevral functions to perform the test.
 * Command `esmecata_report` to create report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv` reports from EsMeCaTa (work done by @Mataivic and @PaulineGHG). This command has different subcommands:
     * (1) `create_report` to create a report from the output folder of the `esmecata workflow` subcommand.
     * (2) `create_report_proteomes` to create report files from output of `esmecata proteomes` subcommand.
     * (3) `create_report_clustering` to create report files from output of `esmecata clustering` subcommand.
     * (4) `create_report_annotation` to create report files from output of `esmecata annotation` subcommand.
 * Command `esmecata_gseapy` to create enrichment analysis of functions predicted by EsMeCaTa according to taxon rank.
-* New optional dependencies for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
+* New optional dependencies for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst). As `datapane` is no more maintained, an alternative with `panel` is currently developed.
 * New optional dependencies for `esmecata_gseapy`: [gseapy](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
 * New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
 * Check if proteome files are completly empty and could lead to issue with mmseqs2.

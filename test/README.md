@@ -2,7 +2,7 @@
 
 ## Requirements
 
-The test procedure has been made with `pytest` and `pytest-mock`, so it requries these python packages that can be isntalled with:
+The test procedure was made with `pytest` and `pytest-mock`, so it requires these python packages to be installed:
 
 ```
 pip install pytest pytest-mock
@@ -24,9 +24,9 @@ Furthermore, it requires `esmecata` and its following dependencies:
 
 ## Usage
 
-Due to the fact that EsMeCaTa queries UniProt, several of the tests can fail due to update of UniProt.
+As EsMeCaTa queries UniProt, some of the tests may fail due to UniProt updates.
 
-To avoid testing potentially these failed tests, it is possible to select only the test relying on already computed results or using mock. This will not test all of esmecata but cover some major part.
+To avoid potentially testing these failed tests, it is possible to select only the test that relies on already calculated results or uses a mock. This will not test all of esmecata, but will cover an important part.
 
 To assert the tests associated with offline data and mocked tests, you can use the following command:
 
@@ -34,7 +34,7 @@ To assert the tests associated with offline data and mocked tests, you can use t
 pytest -vv test*.py -k '_offline or _mocked'
 ```
 
-Using the `-k` parameter of `pytest` will select only functions containing `_offline` in their names which are functions that do not query UniProt.
+The `-k` parameter of `pytest` will only select functions with `_offline` or `_mocked` in their names, i.e. functions that do not query UniProt.
 
 And you can do the same to test only the test functions that query UniProt:
 
