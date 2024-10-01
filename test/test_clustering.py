@@ -9,7 +9,7 @@ RESULTS = {
     'Cluster_1': {'Number_protein_clusters_kept': 603}
 }
 
-def test_filter_protein_cluster():
+def test_filter_protein_cluster_offline():
     output_folder = 'output'
     remove_output_folder = False
     if not os.path.exists(output_folder):
@@ -45,7 +45,7 @@ def test_filter_protein_cluster():
         shutil.rmtree(output_folder)
 
 
-def test_make_clustering():
+def test_make_clustering_offline():
     output_folder = 'clustering_output'
     make_clustering('clustering_input', output_folder, nb_core=1, clust_threshold=0.5, mmseqs_options=None, linclust=None, remove_tmp=None)
 
@@ -64,7 +64,7 @@ def test_make_clustering():
     shutil.rmtree(output_folder)
 
 
-def test_clustering_cli():
+def test_clustering_cli_offline():
     output_folder = 'clustering_output'
     subprocess.call(['esmecata', 'clustering', '-i', 'clustering_input', '-o', output_folder, '-c', '1', '-t', '0.5'])
     expected_results = {}
@@ -83,4 +83,6 @@ def test_clustering_cli():
 
 
 if __name__ == "__main__":
-    test_make_clustering()
+    test_filter_protein_cluster_offline()
+    test_make_clustering_offline()
+    test_clustering_cli_offline()

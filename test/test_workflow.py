@@ -11,7 +11,7 @@ RESULTS = {
     'Cluster_1': {'proteomes': 2, 'protein_clusters': 603, 'GOs': 950, 'ECs': 313}
 }
 
-def test_workflow():
+def test_workflow_online():
     subprocess.call(['esmecata', 'workflow_uniprot', '-i', 'buchnera_workflow.tsv', '-o', 'test_output', '-p', '1', '--minimal-nb-proteomes', '2', '--bioservices'])
 
     output_stat_file = os.path.join('test_output', 'stat_number_workflow.tsv')
@@ -32,7 +32,7 @@ def test_workflow():
             assert expected_results[observation_name][data] == RESULTS[observation_name][data]
 
 
-def test_create_database_from_workflow():
+def test_create_database_from_workflow_online():
     esmecata_result_folder = 'test_output'
     esmecata_database_output_folder = 'output_database'
     create_database_from_esmecata_workflow_run(esmecata_result_folder, esmecata_database_output_folder)
@@ -49,7 +49,7 @@ def test_create_database_from_workflow():
     assert os.path.exists(html_report_file)
 
 
-def test_create_database_from_workflow_cli():
+def test_create_database_from_workflow_cli_online():
     esmecata_result_folder = 'test_output'
     esmecata_database_output_folder = 'output_database'
     subprocess.call(['esmecata_create_db', 'from_workflow', '-i', esmecata_result_folder, '-o', esmecata_database_output_folder])
@@ -71,4 +71,4 @@ def test_create_database_from_workflow_cli():
 
 
 if __name__ == "__main__":
-    test_workflow()
+    test_workflow_online()

@@ -51,8 +51,8 @@ def get_eggnog_version():
             eggnog_version = eggnog_line_decoded.split(' / ')[0].replace('emapper-', '')
 
     if eggnog_version is None:
-        logger.critical('esmecata could not find the version of eggnog-mapper.')
-        logger.critical('It is possibly an issue with the installation of eggnog-mapper (maybe it is not in the PATH). Or it can be due to a change in the output of emapper.py -v command.')
+        logger.critical('|EsMeCaTa|annotation-eggnog| esmecata could not find the version of eggnog-mapper.')
+        logger.critical('|EsMeCaTa|annotation-eggnog| It is possibly an issue with the installation of eggnog-mapper (maybe it is not in the PATH). Or it can be due to a change in the output of emapper.py -v command.')
         sys.exit()
 
     return eggnog_version
@@ -284,6 +284,8 @@ def merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_f
         obs_name_superkingdom (dict): superkingdom as value and the proteomes_tax_id_name associated with them
         taxa_names (dict): list of superkingdom
     """
+    if not os.path.exists(reference_protein_fasta_path):
+        sys.exit('|EsMeCaTa|annotation-eggnog| Error missing reference_proteins_consensus_fasta in esmecata clustering folder.')
     ncbi = NCBITaxa()
     obs_name_tax_ids = get_proteomes_tax_id_name(proteome_tax_id_file, 'tax_id')
     proteomes_tax_id_names = get_proteomes_tax_id_name(proteome_tax_id_file)
@@ -348,7 +350,7 @@ def merged_retrieve_annotation(proteomes_tax_id_names, obs_name_superkingdom, eg
                     unique_gos = set(gos)
                     ecs = [ec for protein_id, protein_annot in sub_annotated_proteins for ec in protein_annot['EC'].split(',') if ec not in ['', '-']]
                     unique_ecs = set(ecs)
-                    logger.info('|EsMeCaTa|annotation| %d Go Terms (with %d unique GO Terms) and %d EC numbers (with %d unique EC) associated with %s.', len(gos),
+                    logger.info('|EsMeCaTa|annotation-eggnog| %d Go Terms (with %d unique GO Terms) and %d EC numbers (with %d unique EC) associated with %s.', len(gos),
                                                                                                             len(unique_gos), len(ecs), len(unique_ecs), obs_name)
 
                     # Create annotation reference file.
@@ -429,7 +431,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     options['tool_dependencies']['python_package'] = {}
     options['tool_dependencies']['python_package']['Python_version'] = sys.version
     options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
-    options['tool_dependencies']['eggnog_mapper'] = get_eggnog_version()
+    #options['tool_dependencies']['eggnog_mapper'] = get_eggnog_version()
 
     esmecata_metadata = {}
     date = datetime.datetime.now().strftime('%d-%B-%Y %H:%M:%S')

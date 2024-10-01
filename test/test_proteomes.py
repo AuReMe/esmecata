@@ -15,7 +15,7 @@ from esmecata.core.proteomes import taxonomic_affiliation_to_taxon_id, associate
 TAXONOMIES = {'id_1': 'cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia;species not found'}
 
 
-def test_taxonomic_affiliation_to_taxon_id():
+def test_taxonomic_affiliation_to_taxon_id_offline():
     expected_tax_id_names = {2: 'Bacteria', 131567: 'cellular organisms', 91347: 'Enterobacterales', 1236: 'Gammaproteobacteria', 1224: 'Proteobacteria', 629: 'Yersinia', 444888: 'Yersinia', 1903411: 'Yersiniaceae'}
     expected_json_taxonomic_affiliations = OrderedDict([('cellular organisms', [131567]), ('Bacteria', [2]), ('Proteobacteria', [1224]), ('Gammaproteobacteria', [1236]), ('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]), ('Yersinia', [629, 444888]), ('species not found', ['not_found'])])
 
@@ -26,7 +26,7 @@ def test_taxonomic_affiliation_to_taxon_id():
         assert expected_json_taxonomic_affiliations[taxon] == taxon_ids[taxon]
 
 
-def test_associate_taxon_to_taxon_id():
+def test_associate_taxon_to_taxon_id_offline():
     ncbi = NCBITaxa()
     update_affiliations = None
     tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, update_affiliations, ncbi)
@@ -39,7 +39,7 @@ def test_associate_taxon_to_taxon_id():
         assert expected_json_taxonomic_affiliations[taxon] == json_taxonomic_affiliations[taxon]
 
 
-def test_disambiguate_taxon():
+def test_disambiguate_taxon_offline():
     ncbi = NCBITaxa()
     update_affiliations = None
     tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, update_affiliations, ncbi)
@@ -50,7 +50,7 @@ def test_disambiguate_taxon():
         assert expected_json_taxonomic_affiliations[taxon] == json_taxonomic_affiliations[taxon]
 
 
-def test_filter_rank_limit():
+def test_filter_rank_limit_offline():
     ncbi = NCBITaxa()
     update_affiliations = None
     tax_id_names, input_json_taxonomic_affiliations = associate_taxon_to_taxon_id(TAXONOMIES, update_affiliations, ncbi)
@@ -99,7 +99,7 @@ def test_filter_rank_limit():
         assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
 
 
-def test_organism_ids():
+def test_organism_ids_online():
     ncbi = NCBITaxa()
     proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', '9', 'Buchnera aphidicola', 80, None, None)
 
@@ -109,7 +109,7 @@ def test_organism_ids():
         assert organism_ids[org_id] == expected_organism_ids[org_id]
 
 
-def test_subsampling_proteomes():
+def test_subsampling_proteomes_offline():
     ncbi = NCBITaxa()
     organism_ids = {'2562891': ['UP000477739'], '208962': ['UP000292187', 'UP000193938', 'UP000650750', 'UP000407502', 'UP000003042'],
                     '562': ['UP000000625', 'UP000000558', 'UP000464341', 'UP000219757', 'UP000092491',
@@ -133,7 +133,7 @@ def test_subsampling_proteomes():
         assert Counter(selected_organisms)[org_id] == expected_proteomes_representation[org_id]
 
 
-def test_update_taxonomy():
+def test_update_taxonomy_bacillus_offline():
     outdated_taxonomic_affiliation = 'Firmicutes;Bacilli;Bacillales;Bacilliaceae;Bacillus'
     new_taxonomic_affiliation = update_taxonomy('test', outdated_taxonomic_affiliation)
 
@@ -142,7 +142,7 @@ def test_update_taxonomy():
     assert new_taxonomic_affiliation == expected_taconomic_affiliation
 
 
-def test_update_taxonomy():
+def test_update_taxonomy_yersinia_offline():
     outdated_taxonomic_affiliation = 'Bacteria;Yersinia'
     new_taxonomic_affiliation = update_taxonomy('test', outdated_taxonomic_affiliation)
 
@@ -151,7 +151,7 @@ def test_update_taxonomy():
     assert new_taxonomic_affiliation == expected_taconomic_affiliation
 
 
-def test_rest_query_proteomes():
+def test_rest_query_proteomes_online():
     expected_proteoems = ['UP000255169', 'UP000000815']
     expected_organism_ids = {'632': ['UP000000815'], '29486': ['UP000255169']}
     expected_proteome_data = [['UP000000815', 94.54545454545455, 'full', '632', True, [['Chromosome', 'Yersinia pestis CO92 complete genome'], 
@@ -176,7 +176,7 @@ def test_rest_query_proteomes():
         assert data in proteomes_data
 
 
-def test_rest_query_proteomes_bioservices():
+def test_rest_query_proteomes_bioservices_online():
     expected_proteoems = ['UP000255169', 'UP000000815']
     expected_organism_ids = {'632': ['UP000000815'], '29486': ['UP000255169']}
     expected_proteome_data = [['UP000000815', 94.54545454545455, 'full', '632', True, [['Chromosome', 'Yersinia pestis CO92 complete genome'], 
@@ -202,7 +202,7 @@ def test_rest_query_proteomes_bioservices():
         assert data in proteomes_data
 
 
-def test_find_non_reference_proteome_rest():
+def test_find_non_reference_proteome_rest_online():
     expected_proteoems = ['UP000829720']
     expected_organism_ids = {'1534307': ['UP000829720']}
     expected_proteome_data = ['UP000824540', 67.91208791208791, 'full', '121402', True, [['Unassembled WGS sequence', 'Albula glossodonta']]], ['UP000829720', 85.71428571428571, 'full', '1534307', True, [['Chromosome 1', 'Albula goreensis ecotype Florida chromosome 1, whole genome shotgun sequence.'], ['Chromosome 2', 'Albula goreensis ecotype Florida chromosome 2, whole genome shotgun sequence.'], ['Chromosome 3', 'Albula goreensis ecotype Florida chromosome 3, whole genome shotgun sequence.'], ['Chromosome 4', 'Albula goreensis ecotype Florida chromosome 4, whole genome shotgun sequence.'], ['Chromosome 5', 'Albula goreensis ecotype Florida chromosome 5, whole genome shotgun sequence.'], ['Chromosome 6', 'Albula goreensis ecotype Florida chromosome 6, whole genome shotgun sequence.'], ['Chromosome 7', 'Albula goreensis ecotype Florida chromosome 7, whole genome shotgun sequence.'], ['Chromosome 8', 'Albula goreensis ecotype Florida chromosome 8, whole genome shotgun sequence.'], ['Chromosome 9', 'Albula goreensis ecotype Florida chromosome 9, whole genome shotgun sequence.'], ['Chromosome 10', 'Albula goreensis ecotype Florida chromosome 10, whole genome shotgun sequence.'], ['Chromosome 11', 'Albula goreensis ecotype Florida chromosome 11, whole genome shotgun sequence.'], ['Chromosome 12', 'Albula goreensis ecotype Florida chromosome 12, whole genome shotgun sequence.'], ['Chromosome 13', 'Albula goreensis ecotype Florida chromosome 13, whole genome shotgun sequence.'], ['Chromosome 14', 'Albula goreensis ecotype Florida chromosome 14, whole genome shotgun sequence.'], ['Chromosome 15', 'Albula goreensis ecotype Florida chromosome 15, whole genome shotgun sequence.'], ['Chromosome 16', 'Albula goreensis ecotype Florida chromosome 16, whole genome shotgun sequence.'], ['Chromosome 17', 'Albula goreensis ecotype Florida chromosome 17, whole genome shotgun sequence.'], ['Chromosome 18', 'Albula goreensis ecotype Florida chromosome 18, whole genome shotgun sequence.'], ['Chromosome 19', 'Albula goreensis ecotype Florida chromosome 19, whole genome shotgun sequence.'], ['Chromosome 20', 'Albula goreensis ecotype Florida chromosome 20, whole genome shotgun sequence.'], ['Chromosome 21', 'Albula goreensis ecotype Florida chromosome 21, whole genome shotgun sequence.'], ['Chromosome 22', 'Albula goreensis ecotype Florida chromosome 22, whole genome shotgun sequence.'], ['Chromosome 23', 'Albula goreensis ecotype Florida chromosome 23, whole genome shotgun sequence.'], ['Chromosome 24', 'Albula goreensis ecotype Florida chromosome 24, whole genome shotgun sequence.'], ['Chromosome 25', 'Albula goreensis ecotype Florida chromosome 25, whole genome shotgun sequence.'], ['Unassembled WGS sequence', 'Albula goreensis']]]
@@ -218,7 +218,7 @@ def test_find_non_reference_proteome_rest():
         assert data in proteomes_data
 
 
-def test_find_proteome_rest_all_proteomes():
+def test_find_proteome_rest_all_proteomes_online():
     expected_proteoems = {'UP000036680', 'UP000267096', 'UP000036681', 'UP000267007', 'UP000050794', 'UP000031036', 'UP000887564', 'UP000887569'}
     expected_organism_ids = {'6252': ['UP000036681'], '6265': ['UP000050794', 'UP000031036', 'UP000267007'], '6269': ['UP000267096', 'UP000267096', 'UP000036680']}
     expected_proteome_data =  [['UP000031036', 87.70360907058448, 'full', '6265', True, [['Unassembled WGS sequence', 'Toxocara canis']]],
@@ -238,7 +238,7 @@ def test_find_proteome_rest_all_proteomes():
         assert data in proteomes_data
 
 
-def test_find_non_reference_proteome_sparql():
+def test_find_non_reference_proteome_sparql_online():
     expected_proteoems = ['UP000829720']
     expected_organism_ids = {'1534307': ['UP000829720']}
     expected_proteome_data = [['UP000824540', 67.91208791208791, 'full', '121402', True, [['Unassembled WGS sequence', 'Albula glossodonta'], ['Unassembled WGS sequence', 'Albula glossodonta']]],
@@ -307,7 +307,7 @@ def test_find_non_reference_proteome_sparql():
         assert data in proteomes_data
 
 
-def test_find_proteome_sparql_all_proteomes():
+def test_find_proteome_sparql_all_proteomes_online():
     expected_proteoems = {'UP000031036', 'UP000887569'}
     expected_organism_ids = {'6265': ['UP000031036']}
     expected_proteome_data = [['UP000036681', 49.63270520600447, 'full', '6252', False, [['Unplaced', 'ASCLU_Unplaced'], ['Genome', 'Genome']]], ['UP000031036', 87.70360907058448, 'full', '6265', True, [['Unassembled WGS sequence', 'Toxocara canis'], ['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000050794', 77.96231236026829, 'full', '6265', False, [['Unplaced', 'TOXCA_Unplaced'], ['Genome assembly', 'Genome assembly']]], ['UP000267007', 77.8984350047908, 'full', '6265', False, [['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000887564', 9.581603321622485, 'full', '6256', True, [['Unplaced', 'Unplaced_6256'], ['Unplaced', 'Unplaced_6256']]], ['UP000887569', 91.05717023315235, 'full', '6257', True, [['Unplaced', 'Unplaced_6257'], ['Unplaced', 'Unplaced_6257']]], ['UP000036680', 64.58000638773555, 'full', '6269', False, [['Unplaced', 'ANISI_Unplaced'], ['Genome', 'Genome']]], ['UP000267096', 64.58000638773555, 'full', '6269', True, [['Unassembled WGS sequence', 'Anisakis simplex'], ['Unassembled WGS sequence', 'Anisakis simplex']]]]
@@ -323,7 +323,7 @@ def test_find_proteome_sparql_all_proteomes():
         assert data in proteomes_data
 
 
-def test_find_proteomes_tax_ids():
+def test_find_proteomes_tax_ids_online():
     expected_proteomes_ids = {'id_1': (629, ['UP000000815', 'UP000255169'])}
     ncbi = NCBITaxa()
     update_affiliations = None
@@ -340,7 +340,7 @@ def test_find_proteomes_tax_ids():
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])
 
 
-def test_sparql_find_proteomes_tax_ids():
+def test_sparql_find_proteomes_tax_ids_online():
     expected_proteomes_ids = {'id_1': (629, ['UP000000815', 'UP000255169'])}
     ncbi = NCBITaxa()
     update_affiliations = None
@@ -356,7 +356,7 @@ def test_sparql_find_proteomes_tax_ids():
         assert set(expected_proteomes_ids[taxon][1]) == set(proteomes_ids[taxon][1])
 
 
-def test_check_cli():
+def test_check_cli_online():
     output_folder = 'proteomes_output'
     subprocess.call(['esmecata', 'check', '-i', 'buchnera_workflow.tsv', '-o', output_folder])
     expected_results = []
@@ -369,14 +369,15 @@ def test_check_cli():
     assert expected_results == ['species']
 
 if __name__ == "__main__":
-    #test_find_proteomes_tax_ids()
-    #test_disambiguate_taxon()
-    #test_subsampling_proteomes()
-    #test_organism_ids()
-    #test_sparql_find_proteomes_tax_ids()
-    #test_rest_query_proteomes()
-    #test_find_non_reference_proteome_rest()
-    #test_find_proteome_rest_all_proteomes()
-    #test_find_proteome_sparql_all_proteomes()
-    #test_filter_rank_limit()
-    test_update_taxonomy()
+    #test_find_proteomes_tax_ids_online()
+    #test_disambiguate_taxon_offline()
+    #test_subsampling_proteomes_offline()
+    #test_organism_ids_online()
+    #test_sparql_find_proteomes_tax_ids_online()
+    #test_rest_query_proteomes_online()
+    #test_find_non_reference_proteome_rest_online()
+    #test_find_proteome_rest_all_proteomes_online()
+    #test_find_proteome_sparql_all_proteomes_online()
+    #test_filter_rank_limit_offline()
+    test_update_taxonomy_bacillus_offline()
+    test_update_taxonomy_yersinia_offline()
