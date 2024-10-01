@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import json
 import os
 import csv
 from esmecata.core.eggnog import annotate_with_eggnog
@@ -21,8 +22,9 @@ def fake_creation_eggnog(input_path, taxon_name, output_dir, temporary_dir, eggn
 
 
 def test_annotate_with_eggnog_mocked(mocker):
+    eggnog_version = "2.1.9"
     # Mock call to eggnog-mapper by creating expected files.
-    mocker.patch("esmecata.core.eggnog.get_eggnog_version", return_value="2.1.12")
+    mocker.patch("esmecata.core.eggnog.get_eggnog_version", return_value=eggnog_version)
     mocker.patch("esmecata.core.eggnog.call_to_emapper", wraps=fake_creation_eggnog)
     annotate_with_eggnog('annotation_input', 'output_folder', 'eggnog_database', 1)
 
@@ -40,4 +42,8 @@ def test_annotate_with_eggnog_mocked(mocker):
         for data in results[observation_name]:
             assert results[observation_name][data] == EXPECTED_RESULTS[observation_name][data]
 
+    eggnog_metadata_file = os.path.join('output_folder', 'esmecata_metadata_annotation.json')
+    with open(eggnog_metadata_file, 'r') as open_json_file:
+        json_data = json.load(open_json_file)
+        assert json_data['tool_options']['tool_dependencies']['eggnog_mapper'] == eggnog_version
     shutil.rmtree('output_folder')

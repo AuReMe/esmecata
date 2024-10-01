@@ -431,7 +431,7 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     options['tool_dependencies']['python_package'] = {}
     options['tool_dependencies']['python_package']['Python_version'] = sys.version
     options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
-    #options['tool_dependencies']['eggnog_mapper'] = get_eggnog_version()
+    options['tool_dependencies']['eggnog_mapper'] = get_eggnog_version()
 
     esmecata_metadata = {}
     date = datetime.datetime.now().strftime('%d-%B-%Y %H:%M:%S')
