@@ -2,24 +2,24 @@
 
 # EsMeCaTa v0.5.0 (2024-10-01)
 
-WARNING: changes of the structure of the python package of EsMeCaTa.
-If you previously use python import of the package, you will need to modify your import.
+WARNING: Changes in the structure of the python package of EsMeCaTa.
+If you have been using the Python import of the package, you will need to modify your import.
 
 ## Add
 
-* New subcommand to `esmecata` `precomputed`. This subcommand uses a precomputed database to make predictions from input file (using EsMeCaTa default parameters). It has been made to avoid recreating the same prediction at each run and to have a fast way to make prediction with EsMeCaTa. It requires to download the precomptued database before using it. AT the moment of this release, the database is not available, these scripts are present for testing purpose.
-* Several scripts are added in `esmecata/precomputed` folder to create the input and the precomputed database.
-* Tests for precomputed database, report creation, database creation and eggnog annotation. Add mock on sevral functions to perform the test.
-* Command `esmecata_report` to create report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv` reports from EsMeCaTa (work done by @Mataivic and @PaulineGHG). This command has different subcommands:
-    * (1) `create_report` to create a report from the output folder of the `esmecata workflow` subcommand.
+* New command `esmecata_report` to create a report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv` reports from EsMeCaTa (work of @Mataivic and @PaulineGHG). This command has several subcommands:
+    * (1) `create_report` to create a report from the output folder of the `esmecata workflow` subcommand (only way to have the complete HTML report).
     * (2) `create_report_proteomes` to create report files from output of `esmecata proteomes` subcommand.
     * (3) `create_report_clustering` to create report files from output of `esmecata clustering` subcommand.
     * (4) `create_report_annotation` to create report files from output of `esmecata annotation` subcommand.
-* Command `esmecata_gseapy` to create enrichment analysis of functions predicted by EsMeCaTa according to taxon rank.
-* New optional dependencies for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst). As `datapane` is no more maintained, an alternative with `panel` is currently developed.
-* New optional dependencies for `esmecata_gseapy`: [gseapy](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
+* New command `esmecata_gseapy` to create enrichment analysis of functions predicted by EsMeCaTa according to taxon rank.
+* New optional dependencies required for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst). As `datapane` is no more maintained, an alternative with [panel](https://github.com/holoviz/panel) is currently developed.
+* New optional dependencies required for `esmecata_gseapy`: [gseapy](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
 * New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
+* New subcommand `esmecata precomputed`. This subcommand uses a precomputed database to make predictions from the input file (using EsMeCaTa default parameters). It has been added to avoid creating the same prediction every run and to have a fast way to make predictions with EsMeCaTa. It is necessary to download the precompiled database before using it. At the moment of this release, the database is not available, these scripts are present for testing purposes.
+* Several scripts are added in `esmecata/precomputed` folder to create the input and the precomputed database.
 * Check if proteome files are completly empty and could lead to issue with mmseqs2.
+* Tests for precomputed database, report creation, database creation and eggnog annotation. Add mock on sevral functions to perform the test. Required `pytest-mock`.
 
 ## Fix
 
@@ -27,10 +27,11 @@ If you previously use python import of the package, you will need to modify your
 
 ## Modify
 
-* Modification of the structure of EsMeCaTa package, now divided in 3 main folders: (1) `esmecata/core` (for scritp spreviously contained in EsMeCaTa folder) and used for the workflow, (2) `esmecata/esmecata_analysis` to create report from esmecata output folder and (3) `gseapy` to perform enrichment analysis of esmecata output.
+* Modification of the structure of the EsMeCaTa package, now divided into 4 main folders: (1) `esmecata/core` (for the script previously contained in the EsMeCaTa folder) and used for the workflow, (2) `esmecata/report` to generate a report from the esmecata output folder, (3) `esmecata/gseapy` to perform enrichment analysis on the esmecata output, and (4) `esmecata/precomputed` to create precomputed database.
 * Change the name of intermediary files in `clustering` and `annotation` to avoid issues with ambiguous taxon names.
 * Modify test according to changes of packaging structure.
 * Modify the behaviour of annotation by eggnog-mapper. Now it merges protein sequences from clustering into bigger files (associated with superkingdom). This increases the performance of eggnog-mapper. Modification made with @megyl. Use `--tax_scope` with eggnog-mapper.
+* Update article_data folder.
 
 ## Remove
 
