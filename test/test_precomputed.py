@@ -7,12 +7,12 @@ from esmecata.core.precomputed import precomputed_parse_affiliation
 
 
 RESULTS = {
-    'Cluster_1': {'proteomes': 36, 'protein_clusters': 570, 'GOs': 2385, 'ECs': 303}
+    'Cluster_1': {'proteomes': 18, 'protein_clusters': 573, 'GOs': 2557, 'ECs': 367}
 }
 
 def test_precomputed_parse_affiliation():
     output_folder = 'output_folder'
-    precomputed_parse_affiliation('buchnera_workflow.tsv', 'esmecata_database.zip', output_folder)
+    precomputed_parse_affiliation('buchnera_workflow.tsv', 'buchnera_database.zip', output_folder)
 
     proteome_tax_id_file = os.path.join(output_folder, '1_clustering', 'proteome_tax_id.tsv')
     clustering_stat_file = os.path.join(output_folder, '1_clustering', 'stat_number_clustering.tsv')
@@ -48,7 +48,7 @@ def test_precomputed_parse_affiliation():
 
 def test_precomputed_parse_affiliation_cli():
     output_folder = 'output_folder'
-    subprocess.call(['esmecata', 'precomputed', '-i', 'buchnera_workflow.tsv', '-d', 'esmecata_database.zip', '-o', output_folder])
+    subprocess.call(['esmecata', 'precomputed', '-i', 'buchnera_workflow.tsv', '-d', 'buchnera_database.zip', '-o', output_folder])
 
     proteome_tax_id_file = os.path.join(output_folder, '1_clustering', 'proteome_tax_id.tsv')
     clustering_stat_file = os.path.join(output_folder, '1_clustering', 'stat_number_clustering.tsv')

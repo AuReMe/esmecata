@@ -304,7 +304,6 @@ def test_find_non_reference_proteome_sparql():
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
     for data in expected_proteome_data:
-
         assert data in proteomes_data
 
 
