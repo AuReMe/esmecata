@@ -42,7 +42,7 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
 
 ## Requirements
 
-EsMeCaTa needs the following python packages:
+EsMeCaTa is developed in Python, it is tested with Python 3.8. It needs the following python packages:
  
 - [biopython](https://pypi.org/project/biopython/): To create fasta files and used by the option `--annotation-files` to index UniProt flat files.
 - [pandas](https://pypi.org/project/pandas/): To read the input files.
@@ -62,7 +62,7 @@ So it is recommended to use it in a cluster.
 
 If you use the option `--bioservices`, EsMeCaTa will also require this package:
 
-- [bioservices](https://github.com/cokelaer/bioservices): To query Uniprot instead of using the query functions of EsMeCaTa (more robust overtime).
+- [bioservices](https://github.com/cokelaer/bioservices): To query Uniprot instead of using the query functions of EsMeCaTa (potentially more robust overtime).
 
 ## Installation
 
@@ -72,7 +72,7 @@ To query the precomputed database, it is only required to install EsMeCaTa with 
 
 ```pip install esmecata ```
 
-All the required dependencies for the estimation from the precomptued database are performed with python packages.
+All the required dependencies for the estimation from the precomputed database are performed with python packages.
 
 ### Core pipeline installation
 
@@ -80,7 +80,7 @@ For the whole workflow, the easiest way to install the dependencies of EsMeCaTa 
 
 ```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 eggnog-mapper -c conda-forge -c bioconda```
 
-EsMeCata can be installed with pip command:
+EsMeCaTa is available on [PyPI](https://pypi.org/project/esmecata/) and can be installed with pip:
 
 ```pip install esmecata ```
 
@@ -104,7 +104,7 @@ To use eggnog-mapper, you have to setup it and install [its database](https://gi
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
 
 **Warning**: due to the fact that datapane is no longer maintained, it requires a version of pandas lower than `2.0.0`. `esmecata_report` has been used with pandas `1.5.3`.
-The replacement of datapane by panel is under development to solve this issue.
+The replacement of datapane by [panel](https://github.com/holoviz/panel) is under development to solve this issue.
 
 `esmecata_gseapy` requires:
 - [gseapy](https://github.com/zqfang/GSEApy).
@@ -145,7 +145,7 @@ A [jupyter notebook](https://github.com/AuReMe/esmecata/blob/master/tutorials/es
 
 Several command line are created after the isntallation:
 
-- `esmecata`: the main one to perform esmecata workflow from input file or with a precomputed database.
+- `esmecata`: the main command to perform esmecata workflow from input file or with a precomputed database.
 - `esmecata_report`: another command to create HTML report showing different statistics on the predictions.
 - `esmecata_gseapy`: to perform enrichment analysis using gseapy and orsum to identify functions specific to some taxa compare to the all community.
 - `esmecata_create_db`: to create precomputed databases from an esmecata run or merge different precomputed databases.
@@ -907,6 +907,8 @@ The `esmecata_metadata_workflow.json` retrieves metadata about Uniprot release a
 `esmecata workflow_uniprot` has the same output files except that the outputs of the annotation step corresponds to the output of `esmecata annotation_uniprot`.
 
 ### EsMeCaTa precomputed
+
+The output of `esmecata precomputed` is similar to the output of `esmecata workflow` but with fewer results as the database does not ocntain all the files created by esmecata:
 
 ````
 output_folder
