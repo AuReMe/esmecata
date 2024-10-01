@@ -21,6 +21,20 @@ Furthermore, it requires `esmecata` and its following dependencies:
 - [kaleido](https://github.com/plotly/Kaleido)
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
 
+## Files
+
+This folder contains several files:
+
+- `buchnera_workflow.tsv`: the test data file (that can be given as input to esmecata) used in most tests. It contains a taxonomic affiliation associated with the species `Buchnera aphidicola` (a symbiont of the pea aphid with a reduced genome, very useful to limit the time taken by the tests).
+- `Example.tsv`: another example of input file for esmecata.
+- `test_*.py`: scripts testing esmecata code.
+- `annotation_input`: input folder for test on esmecata annotation part.
+- `clustering_input`: input folder for test on esmecata clustering part.
+- `annotation_expected`: eggnog-mapper predictions on test data for mocking the call to eggnog-mapper.
+- `buchnera_database.zip`: precomputed database of esmecata for `Buchnera aphidicola` (used in `esmecata precomputed`).
+- `uniprot_sprot.txt`: Swissprot annotation file for proteins of `Buchnera aphidicola` (used in `annotation_uniprot` with parameter `-annotation-files`).
+- `uniprot_trembl.txt`: TrEMBL annotation file for proteins of `Buchnera aphidicola` (used in `annotation_uniprot` with parameter `-annotation-files`).
+
 
 ## Usage
 
