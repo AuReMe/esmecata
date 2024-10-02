@@ -3,7 +3,7 @@
 # EsMeCaTa v0.5.0 (2024-10-02)
 
 **WARNING**: Changes in the structure of the python package of EsMeCaTa.
-If you have been using the Python import of the package, you will need to modify your import.
+If you have been importing the package in Python, you will need to modify your import.
 
 ## Add
 
