@@ -183,15 +183,7 @@ Steps proteomes and annotation by UniProt requires an internet connection (for R
 
 **WARNING**: Database is in development, it is not available yet.
 
-To ease the use of EsMeCaTa, a precomputed database has been created containing `species`, `genus`, `family`, `order`, `class` and `phylum` having at least 5 proteomes on UniProt. Then the default workflow of EsMECaTa have been done on these taxa (downlaoding proteomes on UniProt, clustering with mmseqs2, annotation with eggnog-mapper).
-
-Metadata of the precomputed database:
-
-| Database version | EsMeCaTa version | ete3 version | NCBI Taxonomy database | UniProt database  | eggnog database  |
-|------------------|------------------|--------------|------------------------|-------------------|------------------|
-| 0.1.0            | 0.5.0            | 3.1.3        | 04/2024                | 2024_02           | 5.0              |
-
-The database can be found on the Zenodo site.
+But there are several precomputed databases associated with the article dataset available in the Zenodo archive of EsMeCaTa.
 
 Input taxonomic affiliations file can be given to EsMeCaTa to query the database with the following command:
 
@@ -1014,7 +1006,8 @@ It can be used with this command:
 
 Create precomputed database from esmecata output folders or merge already present precomputed databases.
 This command is mainly for the developers of esmecata to automatise the creation of the precomputed database.
-But if you want to create a precomputed database of your esmecata run for reproducibility it is also possible. 
+But if you want to create a precomputed database of your esmecata run for reproducibility it is also possible.
+For exmaple, it was used to create the precomputed databases for the dataset of the article of EsMeCaTa.
 
 ```
 usage: esmecata_create_db [-h] [--version] {from_workflow,merge_db} ...
