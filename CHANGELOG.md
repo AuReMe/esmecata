@@ -33,6 +33,7 @@ If you have been using the Python import of the package, you will need to modify
 * Modify test according to changes of packaging structure.
 * Modify the behaviour of annotation by eggnog-mapper. Now it merges protein sequences from clustering into bigger files (associated with superkingdom). This increases the performance of eggnog-mapper. Modification made with @megyl. Use `--tax_scope` with eggnog-mapper.
 * Update article_data folder.
+* Update CI test with github workflow according to the new tests and the new dependencies. 
 
 ## Remove
 
