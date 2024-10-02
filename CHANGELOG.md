@@ -17,9 +17,10 @@ If you have been using the Python import of the package, you will need to modify
 * New optional dependencies required for `esmecata_gseapy`: [gseapy](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
 * New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `function_table.tsv`).
 * New subcommand `esmecata precomputed`. This subcommand uses a precomputed database to make predictions from the input file (using EsMeCaTa default parameters). It has been added to avoid creating the same prediction every run and to have a fast way to make predictions with EsMeCaTa. It is necessary to download the precompiled database before using it. At the moment of this release, the database is not available, these scripts are present for testing purposes.
-* Prototype for precomptued database creation: several scripts are added in `esmecata/precomputed` folder to create the input and the precomputed database.
-* Check if proteome files are completly empty and could lead to issue with mmseqs2.
+* Prototype for precomputed database creation: several scripts are added in `esmecata/precomputed` folder to create the input and the precomputed database.
+* Check that the proteome files are not completely empty, which could cause problems with mmseqs2.
 * Tests for precomputed database, report creation, database creation and eggnog annotation. Add mock on sevral functions to perform the test. Required `pytest-mock`.
+* Add readme in test folder.
 
 ## Fix
 
@@ -27,7 +28,7 @@ If you have been using the Python import of the package, you will need to modify
 
 ## Modify
 
-* Modification of the structure of the EsMeCaTa package, now divided into 4 main folders: (1) `esmecata/core` (for the script previously contained in the EsMeCaTa folder) and used for the workflow, (2) `esmecata/report` to generate a report from the esmecata output folder, (3) `esmecata/gseapy` to perform enrichment analysis on the esmecata output, and (4) `esmecata/precomputed` to create precomputed database.
+* Modification of the structure of the EsMeCaTa package, now divided into 4 main folders: (1) `esmecata/core` (for the script previously contained in the EsMeCaTa folder) and used for the workflow, (2) `esmecata/report` to generate a report from the esmecata output folder, (3) `esmecata/gseapy` to perform enrichment analysis on the esmecata output, and (4) `esmecata/precomputed` to create precomputed database (in development).
 * Change the name of intermediary files in `clustering` and `annotation` to avoid issues with ambiguous taxon names.
 * Modify test according to changes of packaging structure.
 * Modify the behaviour of annotation by eggnog-mapper. Now it merges protein sequences from clustering into bigger files (associated with superkingdom). This increases the performance of eggnog-mapper. Modification made with @megyl. Use `--tax_scope` with eggnog-mapper.
