@@ -41,7 +41,7 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
 
 ## Requirements
 
-EsMeCaTa is developed in Python, it is tested with Python 3.8. It needs the following python packages:
+EsMeCaTa is developed in Python, it is tested with Python 3.10. It needs the following python packages:
  
 - [biopython](https://pypi.org/project/biopython/): To create fasta files and used by the option `--annotation-files` to index UniProt flat files.
 - [pandas](https://pypi.org/project/pandas/): To read the input files.
