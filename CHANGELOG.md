@@ -15,7 +15,7 @@ If you have been using the Python import of the package, you will need to modify
 * New command `esmecata_gseapy` to create enrichment analysis of functions predicted by EsMeCaTa according to taxon rank.
 * New optional dependencies required for `esmecata_report`: [datapane](https://github.com/datapane/datapane), [plotly](https://github.com/plotly/plotly.py), [kaleido](https://github.com/plotly/Kaleido), [ontosunburst](https://github.com/AuReMe/Ontology_sunburst). As `datapane` is no more maintained, an alternative with [panel](https://github.com/holoviz/panel) is currently developed.
 * New optional dependencies required for `esmecata_gseapy`: [gseapy](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
-* New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
+* New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `function_table.tsv`).
 * New subcommand `esmecata precomputed`. This subcommand uses a precomputed database to make predictions from the input file (using EsMeCaTa default parameters). It has been added to avoid creating the same prediction every run and to have a fast way to make predictions with EsMeCaTa. It is necessary to download the precompiled database before using it. At the moment of this release, the database is not available, these scripts are present for testing purposes.
 * Prototype for precomptued database creation: several scripts are added in `esmecata/precomputed` folder to create the input and the precomputed database.
 * Check if proteome files are completly empty and could lead to issue with mmseqs2.
