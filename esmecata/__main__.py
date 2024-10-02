@@ -19,21 +19,23 @@ import os
 import sys
 import time
 
-from esmecata.proteomes import check_proteomes, retrieve_proteomes
-from esmecata.clustering import make_clustering
-from esmecata.annotation import annotate_proteins
-from esmecata.workflow import perform_workflow, perform_workflow_eggnog
-from esmecata.eggnog import annotate_with_eggnog
+from esmecata.core.proteomes import check_proteomes, retrieve_proteomes
+from esmecata.core.clustering import make_clustering
+from esmecata.core.annotation import annotate_proteins
+from esmecata.core.workflow import perform_workflow, perform_workflow_eggnog
+from esmecata.core.eggnog import annotate_with_eggnog
+from esmecata.core.precomputed import precomputed_parse_affiliation
 from esmecata.utils import limited_integer_type, range_limited_float_type, is_valid_dir
-from esmecata.analysis import perform_analysis
 from esmecata import __version__ as VERSION
 
 MESSAGE = '''
 From taxonomic affiliation to metabolism using Uniprot.
 '''
 REQUIRES = '''
-Requires: mmseqs2 and an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
+Steps proteomes and annotation by UniProt requires an internet connection (for REST and SPARQL queries, except if you have a local Uniprot SPARQL endpoint).
+Step clustering requires mmseqs2.
 Annotation can be performed with UniProt or eggnog-mapper (which is then a requirement if the option is selected).
+Precomputed requires the esmecata_database.zip file.
 '''
 
 logger = logging.getLogger()
@@ -144,9 +146,9 @@ def main():
     parent_parser_c = argparse.ArgumentParser(add_help=False)
     parent_parser_c.add_argument(
         '-c',
-        '--cpu',
-        dest='cpu',
-        help='CPU number for multiprocessing.',
+        '--core',
+        dest='core',
+        help='Number of CPU-cores for multiprocessing.',
         required=False,
         type=int,
         default=1)
@@ -164,7 +166,7 @@ def main():
         '-m',
         '--mmseqs',
         dest='mmseqs_options',
-        help='String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"',
+        help='String containing mmseqs options for cluster command (except --threads which is already set by --core command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"',
         required=False,
         type=str,
         default=None)
@@ -279,6 +281,24 @@ def main():
         required=False,
         default=None)
 
+    parent_parser_d = argparse.ArgumentParser(add_help=False)
+    parent_parser_d.add_argument(
+        '-d',
+        '--database',
+        dest='database',
+        required=True,
+        help='EsMeCaTa precomputed database file path.',
+        metavar='INPUT_FILE')
+
+    parent_parser_no_dbmem = argparse.ArgumentParser(add_help=False)
+    parent_parser_no_dbmem.add_argument(
+        '--no-dbmem',
+        dest='no_dbmem',
+        help='Do not load eggnog database into memory.',
+        required=False,
+        action='store_true',
+        default=False)
+
     # subparsers
     subparsers = parser.add_subparsers(
         title='subcommands',
@@ -330,7 +350,7 @@ def main():
         help='Annotate protein clusters using eggnog-mapper.',
         parents=[
             parent_parser_i_annotation_folder, parent_parser_o, parent_parser_eggnog_database,
-            parent_parser_c, parent_parser_eggnog_tmp_dir
+            parent_parser_c, parent_parser_eggnog_tmp_dir, parent_parser_no_dbmem
             ],
         allow_abbrev=False)
     workflow_uniprot_parser = subparsers.add_parser(
@@ -356,15 +376,17 @@ def main():
             parent_parser_all_proteomes, parent_parser_sparql, parent_parser_remove_tmp,
             parent_parser_limit_maximal_number_proteomes, parent_parser_thr, parent_parser_mmseqs_options,
             parent_parser_linclust, parent_parser_rank_limit, parent_parser_minimal_number_proteomes,
-            parent_parser_update_affiliation, parent_parser_bioservices, parent_parser_eggnog_tmp_dir
+            parent_parser_update_affiliation, parent_parser_bioservices, parent_parser_eggnog_tmp_dir,
+            parent_parser_no_dbmem
             ],
         allow_abbrev=False)
-    analysis_parser = subparsers.add_parser(
-        'analysis',
-        help='Create clustermap for EC.',
+
+    precomputed_parser = subparsers.add_parser(
+        'precomputed',
+        help='Use precomputed database to create estimated data for the run.',
         parents=[
-            parent_parser_i_analysis_folder, parent_parser_o, parent_parser_taxon_rank,
-            parent_parser_nb_digit
+            parent_parser_i_taxon, parent_parser_d, parent_parser_o,
+            parent_parser_rank_limit, parent_parser_update_affiliation
             ],
         allow_abbrev=False)
 
@@ -413,7 +435,8 @@ def main():
                             args.rank_limit, args.minimal_number_proteomes, args.update_affiliations,
                             args.option_bioservices)
     elif args.cmd == 'clustering':
-        make_clustering(args.input, args.output, args.cpu, args.threshold_clustering, args.mmseqs_options, args.linclust, args.remove_tmp)
+        make_clustering(args.input, args.output, args.core, args.threshold_clustering, args.mmseqs_options,
+                        args.linclust, args.remove_tmp)
     elif args.cmd == 'annotation_uniprot':
         annotate_proteins(args.input, args.output, uniprot_sparql_endpoint,
                         args.propagate_annotation, args.uniref, args.expression,
@@ -422,22 +445,22 @@ def main():
         perform_workflow(args.input, args.output, busco_score, args.ignore_taxadb_update,
                             args.all_proteomes, uniprot_sparql_endpoint, args.remove_tmp,
                             args.limit_maximal_number_proteomes, args.rank_limit,
-                            args.cpu, args.threshold_clustering, args.mmseqs_options,
+                            args.core, args.threshold_clustering, args.mmseqs_options,
                             args.linclust, args.propagate_annotation, args.uniref,
                             args.expression, args.minimal_number_proteomes, args.annotation_files,
                             args.update_affiliations, args.option_bioservices)
     elif args.cmd == 'annotation':
-        annotate_with_eggnog(args.input, args.output, args.eggnog_database, args.cpu,
-                             args.eggnog_tmp_dir)
+        annotate_with_eggnog(args.input, args.output, args.eggnog_database, args.core,
+                             args.eggnog_tmp_dir, args.no_dbmem)
     elif args.cmd == 'workflow':
         perform_workflow_eggnog(args.input, args.output, args.eggnog_database, busco_score,
                                 args.ignore_taxadb_update, args.all_proteomes, uniprot_sparql_endpoint,
                                 args.remove_tmp, args.limit_maximal_number_proteomes, args.rank_limit,
-                                args.cpu, args.threshold_clustering, args.mmseqs_options,
+                                args.core, args.threshold_clustering, args.mmseqs_options,
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
-                                args.option_bioservices, args.eggnog_tmp_dir)
-    elif args.cmd == 'analysis':
-        perform_analysis(args.input, args.output, args.taxon_rank, args.nb_digit)
+                                args.option_bioservices, args.eggnog_tmp_dir, args.no_dbmem)
+    elif args.cmd == 'precomputed':
+        precomputed_parse_affiliation(args.input, args.database, args.output, args.rank_limit, args.update_affiliations)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

@@ -1,2 +1,2 @@
-observation_name	name	tax_id	tax_rank	proteome
-Cluster_1	Buchnera aphidicola	9	species	UP000001806,UP000000601
+observation_name	name	tax_id	tax_id_name	tax_rank	proteome
+Cluster_1	Buchnera aphidicola	9	Buchnera_aphidicola__taxid__9	species	UP000001806,UP000000601

@@ -1,10 +1,12 @@
-from esmecata.annotation import extract_protein_cluster, search_already_annotated_protein, query_uniprot_annotation_rest, \
+import os
+
+from esmecata.core.annotation import extract_protein_cluster, search_already_annotated_protein, query_uniprot_annotation_rest, \
                                 query_uniprot_annotation_sparql, propagate_annotation_in_cluster, extract_protein_annotation_from_files
 
 from Bio import SeqIO
 
 ANOTATIONS = {'Q7CGB6': ['Protein translocase subunit SecA', 'UniProtKB reviewed (Swiss-Prot)',
-            ['GO:0008564', 'GO:0006605', 'GO:0005886', 'GO:0031522', 'GO:0043952', 'GO:0046872', 'GO:0005829', 'GO:0065002', 'GO:0017038', 'GO:0005524'],
+            ['GO:0008564', 'GO:0006605', 'GO:0005886', 'GO:0031522', 'GO:0043952', 'GO:0046872', 'GO:0005737', 'GO:0065002', 'GO:0017038', 'GO:0005524'],
             ['7.4.2.8'],
             ['IPR027417','IPR004027','IPR000185','IPR020937','IPR011115','IPR014018','IPR011130','IPR011116','IPR036266','IPR036670','IPR014001','IPR044722'],
             [],
@@ -12,7 +14,7 @@ ANOTATIONS = {'Q7CGB6': ['Protein translocase subunit SecA', 'UniProtKB reviewed
 
 UP000119554_ANOTATIONS = {'O91464': ['Genome polyprotein', 'UniProtKB reviewed (Swiss-Prot)',
                             ['GO:0039618', 'GO:0005216', 'GO:0044162', 'GO:0006508', 'GO:0003723', 'GO:0039694', 'GO:0051259', 'GO:0016020', 'GO:0019062',
-                             'GO:0003968', 'GO:0016887', 'GO:0005524', 'GO:0044178', 'GO:0046718', 'GO:0039657', 'GO:0003724', 'GO:0005198',
+                             'GO:0003968', 'GO:0016887', 'GO:0005524', 'GO:0044178', 'GO:0046718', 'GO:0003724', 'GO:0005198',
                              'GO:0039522', 'GO:0006351', 'GO:0004197'],
                             ['2.7.7.48', '3.6.4.13'],
                             ['IPR000199', 'IPR000605', 'IPR001205', 'IPR001676', 'IPR004004',
@@ -57,36 +59,66 @@ def compare_annotation_dict(expected_dict, result_dict, propagate_test=None):
             assert expected_dict[protein][6] == result_dict[protein][6]
 
 
-def test_extract_protein_cluster():
-    reference_proteins, set_proteins = extract_protein_cluster('annotation_input/reference_proteins/Cluster_1.tsv')
-    assert len(reference_proteins) == 460
-    assert len(set_proteins) == 936
+def test_extract_protein_cluster_offline():
+    reference_proteins, set_proteins = extract_protein_cluster(os.path.join('annotation_input', 'reference_proteins', 'Buchnera_c32_aphidicola__taxid__9.tsv'))
+    assert len(reference_proteins) == 573
+    assert len(set_proteins) == 9854
 
 
-def test_search_already_annotated_protein():
+def test_search_already_annotated_protein_offline():
     output_dict = {}
     already_annotated_proteins = {'P59488': ['Shikimate kinase', True, ['GO:0000287', 'GO:0004765', 'GO:0005524', 'GO:0005737', 'GO:0008652', 'GO:0009073', 'GO:0009423'], ['2.7.1.71'],
                                     ['IPR000623', 'IPR023000', 'IPR027417', 'IPR031322'], ['RHEA:13121'], ['aroK']]}
-    reference_proteins, set_proteins = extract_protein_cluster('annotation_input/reference_proteins/Cluster_1.tsv') 
+    reference_proteins, set_proteins = extract_protein_cluster(os.path.join('annotation_input', 'reference_proteins', 'Buchnera_c32_aphidicola__taxid__9.tsv')) 
     protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
 
     assert len(set_proteins)-1 == len(protein_to_search_on_uniprots)
 
-def test_query_uniprot_annotation_rest():
+def test_query_uniprot_annotation_rest_online():
     protein_to_search_on_uniprots = ['Q7CGB6', 'NOTAGOODIDEAOFPROTEIN']
     output_dict = {}
     output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict)
     compare_annotation_dict(ANOTATIONS, output_dict)
 
 
-def test_query_uniprot_annotation_rest_bioservices():
+def test_query_uniprot_annotation_rest_mocked(mocker):
+    mock_data = ANOTATIONS
+
+    # Create a mock response object with a .json() method that returns the mock data
+    mock_response = mocker.MagicMock()
+    mock_response.json.return_value = mock_data
+
+    # Patch 'requests.get' to return the mock response
+    mocker.patch("requests.get", return_value=mock_response)
+    protein_to_search_on_uniprots = ['Q7CGB6', 'NOTAGOODIDEAOFPROTEIN']
+    output_dict = {}
+    output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict)
+    compare_annotation_dict(ANOTATIONS, output_dict)
+
+
+def test_query_uniprot_annotation_rest_bioservices_online():
     protein_to_search_on_uniprots = ['Q7CGB6', 'NOTAGOODIDEAOFPROTEIN']
     output_dict = {}
     output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict, option_bioservices=True)
     compare_annotation_dict(ANOTATIONS, output_dict)
 
 
-def test_query_uniprot_annotation_sparql():
+def test_query_uniprot_annotation_rest_bioservices_mocked(mocker):
+    mock_data = ANOTATIONS
+
+    # Create a mock response object with a .json() method that returns the mock data
+    mock_response = mocker.MagicMock()
+    mock_response.json.return_value = mock_data
+
+    # Patch 'requests.get' to return the mock response
+    mocker.patch("requests.get", return_value=mock_response)
+    protein_to_search_on_uniprots = ['Q7CGB6', 'NOTAGOODIDEAOFPROTEIN']
+    output_dict = {}
+    output_dict = query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict, option_bioservices=True)
+    compare_annotation_dict(ANOTATIONS, output_dict)
+
+
+def test_query_uniprot_annotation_sparql_online():
     proteomes = ['UP000119554']
     uniprot_sparql_endpoint = 'https://sparql.uniprot.org/sparql'
     output_dict = {}
@@ -94,7 +126,7 @@ def test_query_uniprot_annotation_sparql():
     compare_annotation_dict(UP000119554_ANOTATIONS, output_dict)
 
 
-def test_propagate_annotation_in_cluster():
+def test_propagate_annotation_in_cluster_offline():
     output_dict = {'prot_1': ['function_1', True, ['GO:0031522', 'GO:0004765'], ['7.4.2.8'], ['IPR027417'], [], 'gene_1'],
                     'prot_2': ['function_2', True, ['GO:0031522', 'GO:0005737'], ['7.4.2.8', '2.7.1.71'], ['IPR027417'], [], 'gene_1'],
                     'prot_3': ['function_1', True, ['GO:0031522', 'GO:0005737'], ['7.4.2.8'], [], [], 'gene_3']}
@@ -126,7 +158,7 @@ def test_propagate_annotation_in_cluster():
     compare_annotation_dict(expected_result_propagation_1_intersection, protein_annotations, True)
 
 
-def test_annotation_from_files():
+def test_annotation_from_files_offline():
     uniprot_trembl_index = SeqIO.index('uniprot_trembl.txt', 'swiss')
 
     uniprot_sprot_index = SeqIO.index('uniprot_sprot.txt', 'swiss')
@@ -143,9 +175,10 @@ def test_annotation_from_files():
 
 
 if __name__ == "__main__":
-    test_extract_protein_cluster()
-    test_search_already_annotated_protein()
-    test_propagate_annotation_in_cluster()
-    test_query_uniprot_annotation_rest()
-    test_query_uniprot_annotation_sparql()
-    test_annotation_from_files()
+    test_extract_protein_cluster_offline()
+    test_search_already_annotated_protein_offline()
+    test_query_uniprot_annotation_rest_online()
+    test_query_uniprot_annotation_rest_bioservices_online()
+    test_query_uniprot_annotation_sparql_online()
+    test_propagate_annotation_in_cluster_offline()
+    test_annotation_from_files_offline()

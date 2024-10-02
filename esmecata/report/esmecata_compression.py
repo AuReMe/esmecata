@@ -1,3 +1,18 @@
+# Copyright (C) 2023-2024  Victor Mataigne and Pauline Hamon-Giraud - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Arnaud Belcour - Univ. Grenoble Alpes, Inria, Microcosme
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>
+
 import os
 import csv
 
@@ -84,14 +99,14 @@ X_POS = 'x_pos'
 Y_POS = 'y_pos'
 
 # SUFFIXES
-IN_OTU_SUFFIX = ' OTUs'
+IN_OTU_SUFFIX = ' Organisms'
 OUT_TAXA_SUFFIX = ' '
 
 
 # FUNCTIONS
 # ======================================================================================================================
 def sort_tax_by_ranks(input_data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
-    """ Sort the 'input_lst' and 'output_lst' lists of 'input_data' according to taxonomic rank : more specific to
+    """ Sort the 'input_lst' and 'output_list' lists of 'input_data' according to taxonomic rank : more specific to
     less specific (~ species --> kingdom)
 
     Parameters
@@ -129,15 +144,14 @@ def get_input_data(input_file: str) -> Dict[str, Any]:
     """
     input_data = {IN_LST: [], OUT_LST: [], VAL_D: {}, RANK_D: {}}
     with open(input_file, 'r') as f:
-        reader = csv.reader(f, delimiter='\t')
-        reader.__next__()
+        reader = csv.DictReader(f, delimiter='\t')
         for line in reader:
-            input_data[IN_LST].append(line[0])
-            input_data[OUT_LST].append(line[1] + OUT_TAXA_SUFFIX)
-            input_data[VAL_D][line[0]] = len(line[6].split(';'))
-            input_data[RANK_D][line[0]] = line[2]
-            input_data[RANK_D][line[0] + IN_OTU_SUFFIX] = line[2]
-            input_data[RANK_D][line[1] + OUT_TAXA_SUFFIX] = line[3]
+            input_data[IN_LST].append(line['Input Name'])
+            input_data[OUT_LST].append(line['Esmecata Name'] + OUT_TAXA_SUFFIX)
+            input_data[VAL_D][line['Input Name']] = len(line['Observation Names'].split(';'))
+            input_data[RANK_D][line['Input Name']] = line['Input Rank']
+            input_data[RANK_D][line['Input Name'] + IN_OTU_SUFFIX] = line['Input Rank']
+            input_data[RANK_D][line['Esmecata Name'] + OUT_TAXA_SUFFIX] = line['Esmecata Rank']
     input_lst, output_lst = sort_tax_by_ranks(input_data)
     input_data[IN_LST] = input_lst
     input_data[OUT_LST] = output_lst
@@ -174,7 +188,7 @@ def get_fig_parameters(input_data: Dict[str, Any]) -> Dict[str, List[Any]]:
                 TARGETS: [],
                 VALUES: [],
                 LINK_COLORS: [],
-                TEXT_ANNOT: [f'Input : {nb_otu_input} OTU',
+                TEXT_ANNOT: [f'Input : {nb_otu_input} Organisms',
                              f'Input : {nb_input_div} taxonomic diversity',
                              f'Output : {nb_output_div} taxonomic diversity'],
                 X_POS: [0.01] * len(labels),
@@ -466,6 +480,36 @@ def draw_sankey_fig(fig_data: Dict[str, List[Any]], output: str, show_fig: bool)
 
 # MAIN FUNCTION
 # ======================================================================================================================
+def esmecata_compression_taxonomy_file(input_file, output, show_fig):
+    """ Draw a Sankey graph showing compression and taxonomic ranks rearrangement between input and output taxa of an
+    Esmecata run.
+
+    Parameters
+    ----------
+    input_file: str
+        Path to the taxonomy_diff file in proteomes folder
+    output: str
+        Name of the output file
+    show_fig: bool (default=False)
+        True to show figure, False to only save in html
+    """
+    input_data = get_input_data(input_file)
+    fig_data = get_fig_parameters(input_data)
+    
+    fig_height = 10*len(fig_data[LABELS]) # bug report : Datapane does not uses height correctly if coded inside draw_sankey_fig. Code here instead works (why ?)
+    if fig_height < 600:
+        fig_height = 600
+    
+    fig = draw_sankey_fig(fig_data, f'{output}.html', show_fig)
+    fig.update_layout(height=fig_height, 
+                      font=dict(family="Courier New, monospace",
+                                size=14,
+                                color="black"))
+    fig.write_html(f'{output}.html')
+
+    return fig
+
+
 def esmecata_compression(run_name: str, output: str, show_fig: bool = False):
     """ Draw a Sankey graph showing compression and taxonomic ranks rearrangement between input and output taxa of an
     Esmecata run.
@@ -480,18 +524,5 @@ def esmecata_compression(run_name: str, output: str, show_fig: bool = False):
         True to show figure, False to only save in html
     """
     tax_diff_file = os.path.join(run_name, '0_proteomes', 'taxonomy_diff.tsv')
-    input_data = get_input_data(tax_diff_file)
-    fig_data = get_fig_parameters(input_data)
-    
-    fig_height = 10*len(fig_data[LABELS]) # bug report : Datapane does not uses height correctly if coded inside draw_sankey_fig. Code here instead works (why ?)
-    if fig_height < 600:
-        fig_height = 600
-    
-    fig = draw_sankey_fig(fig_data, f'{output}.html', show_fig)
-    fig.update_layout(height=fig_height, 
-                      font=dict(family="Courier New, monospace",
-                                size=14,
-                                color="black"))
-    fig.write_html(f'{output}.html')
-
+    fig = esmecata_compression_taxonomy_file(tax_diff_file, output, show_fig)
     return fig

@@ -23,14 +23,30 @@ dependencies = [
 
 [project.scripts]
 esmecata = "esmecata.__main__:main"
+esmecata_report = "esmecata.__main_report__:main"
+esmecata_gseapy = "esmecata.__main_gseapy__:main"
+esmecata_create_db = "esmecata.__main_create_database__:main"
 
 [project.urls]
 Homepage = "https://github.com/AuReMe/esmecata"
 Changelog = "https://github.com/AuReMe/esmecata/blob/main/CHANGELOG.md"
 
+[project.optional-dependencies]
+ANALYSIS = ['datapane',
+  'plotly',
+  'kaleido',
+  'ontosunburst'
+]
+GSEAPY = ['gseapy',
+  'orsum'
+]
+TEST = ['pytest',
+  'pytest-mock'
+]
+
 [tool.setuptools]
-packages = ['esmecata']
-package-dir = {'esmecata'= 'esmecata'}
+packages = ['esmecata', 'esmecata.core', 'esmecata.report', 'esmecata.gseapy']
+package-dir = {'esmecata' = 'esmecata', 'esmecata.core' = 'esmecata/core' , 'esmecata.report' = 'esmecata/report', 'esmecata.gseapy' = 'esmecata/gseapy'}
 
 [tool.setuptools.dynamic]
 version = { attr = "esmecata.__version__" }

@@ -24,9 +24,8 @@ import time
 import sys
 import urllib.parse
 import urllib.request
-import pandas as pd
 
-
+from collections import Counter
 from Bio import SeqIO
 from SPARQLWrapper import __version__ as sparqlwrapper_version
 from urllib.parse import urlparse, parse_qs, urlencode
@@ -42,6 +41,10 @@ API_URL = "https://rest.uniprot.org"
 
 logger = logging.getLogger(__name__)
 
+# Increase field limit when reading CSV file to avoid error:
+# csv.Error: field larger than field limit
+# This happens when annotating some high-rank taxa.
+csv.field_size_limit(sys.maxsize)
 
 # Set of Python functions from https://www.uniprot.org/help/id_mapping
 
@@ -1134,6 +1137,53 @@ def extract_protein_annotation_from_files(protein_to_search_on_uniprots, uniprot
     return output_dict
 
 
+def create_dataset_annotation_file(annotation_reference_folder, dataset_annotation_file_path, content="EC"):
+    """ From annotation reference folder, creates a file resuming the number of ECs for each observation names.
+
+    Args:
+        annotation_reference_folder (str): path to annotation reference folder
+        dataset_annotation_file_path (str): path to output dataset annotation file
+        content (str): indicates which data to parse (default 'EC' other possible value is 'GO' or 'all')
+
+    Returns:
+        dataset_annotation (dict): annotation dict: observation_name as key and EC number as value
+    """
+    if content not in ['EC', 'GO', 'all']:
+        raise ValueError("Wrong content. Authorized values are 'EC', 'GO' or 'all.")
+
+    dataset_annotation = {}
+    total_annotations = []
+    for annotation_file in os.listdir(annotation_reference_folder):
+        annotation_file_name = os.path.splitext(annotation_file)[0]
+        annotation_file_path = os.path.join(annotation_reference_folder, annotation_file)
+
+        annotations = []
+        with open(annotation_file_path, 'r') as open_annotation_input_file_path:
+            csvreader = csv.DictReader(open_annotation_input_file_path, delimiter='\t')
+            for line in csvreader:
+                if content in ['EC', 'GO']:
+                    intermediary_annots = line[content].split(',')
+                if content == 'all':
+                    intermediary_annots = line['GO'].split(',')
+                    intermediary_annots.extend(line['EC'].split(','))
+                annotations.extend(intermediary_annots)
+        annotations = [annot for annot in annotations if annot != '']
+        total_annotations.extend(annotations)
+        dataset_annotation[annotation_file_name] = annotations
+
+    total_annotations = list(set(total_annotations))
+
+    with open(dataset_annotation_file_path, 'w') as dataset_annotation_file:
+        csvwriter = csv.writer(dataset_annotation_file, delimiter='\t')
+        csvwriter.writerow(['observation_name'] + total_annotations)
+        for observation_name in dataset_annotation:
+            occurrence_annotations = Counter(dataset_annotation[observation_name])
+            observation_name_annotations = [occurrence_annotations[annot] for annot in total_annotations]
+            csvwriter.writerow([observation_name] + observation_name_annotations)
+
+    return dataset_annotation
+
+
 def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
                         propagate_annotation, uniref_annotation, expression_annotation,
                         annotation_files=None, option_bioservices=None):
@@ -1216,7 +1266,7 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
     with open(proteome_tax_id_file, 'r') as tax_id_file:
         csvreader = csv.DictReader(tax_id_file, delimiter='\t')
         for line in csvreader:
-            taxon_name = line['name'].replace(' ', '_')
+            taxon_name = line['tax_id_name']
             if taxon_name not in taxon_name_to_observation_name:
                 taxon_name_to_observation_name[taxon_name] = [line['observation_name']]
             else:
@@ -1338,6 +1388,9 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
         taxon_id_csvwriter.writerow(['species', 'taxon_id'])
         for species in clustering_taxon_id:
             taxon_id_csvwriter.writerow([species, clustering_taxon_id[species]])
+
+    function_table_file_path = os.path.join(output_folder, 'function_table.tsv')
+    create_dataset_annotation_file(annotation_reference_folder, function_table_file_path, 'all')
 
     stat_file = os.path.join(output_folder, 'stat_number_annotation.tsv')
     compute_stat_annotation(annotation_reference_folder, stat_file)

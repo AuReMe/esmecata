@@ -333,7 +333,7 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
 
 def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
     """Using the rank_limit specificied, remove the taxon superior to this rank.
-    For example, if rank_limit == 'family', taxa associated to rank superior to family will be removed.
+    For example, if rank_limit == 'family', taxa associated with rank superior to family will be removed.
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
@@ -459,8 +459,8 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
 
     if option_bioservices is None:
         # Find proteomes associated with taxon.
-        # Search for both representative and non-representative proteomes (with proteome_type%3A2 for non-representative proteome (or Other proteome) and proteome_type%3A1) for representative proteome).
-        # Remove redundant and excluded proteomes.
+        # Search for both representative and non-representative proteomes (with proteome_type%3A2 for non-representative proteome (or Other proteome) and proteome_type%3A1 for representative proteome).
+        # Remove redundant (proteome_type%3A3) and excluded proteomes (proteome_type%3A4) by not selecting these proteome types..
         httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND((proteome_type%3A2)OR(proteome_type%3A1))&format=json&size=500'.format(tax_id)
 
         data = {}
@@ -950,7 +950,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
             # If tax_id has already been found use the corresponding proteomes without new requests.
             if tax_id in tax_id_founds:
                 proteomes_ids[observation_name] = (tax_id, tax_id_founds[tax_id])
-                proteomes_descriptions.append(proteome_data[tax_id])
+                proteomes_descriptions.extend(proteome_data[tax_id])
                 if len(tax_id_founds[tax_id]) == 1:
                     single_proteomes[observation_name] = (tax_id, tax_id_founds[tax_id])
                 logger.info('|EsMeCaTa|proteomes| "%s" already associated with proteomes, %s will be associated with the taxon "%s" with %d proteomes.', tax_name, observation_name, tax_name, len(tax_id_founds[tax_id]))
@@ -1134,7 +1134,7 @@ def compute_stat_proteomes(proteomes_folder, stat_file=None):
             csvwriter = csv.writer(stat_file_open, delimiter='\t')
             csvwriter.writerow(['observation_name', 'Number_proteomes', 'Input_taxon_Name', 'Taxon_rank', 'EsMeCaTa_used_taxon', 'EsMeCaTa_used_rank', 'only_reference_proteome_used'])
             for observation_name in proteome_numbers:
-                csvwriter.writerow([observation_name, proteome_numbers[observation_name]])
+                csvwriter.writerow([observation_name, *proteome_numbers[observation_name]])
 
     return proteome_numbers
 
@@ -1175,12 +1175,70 @@ def create_comp_taxonomy_file(association_taxon_id_json, proteomes_ids, tax_id_n
                 break
 
     output = os.path.join(output_dir, 'taxonomy_diff.tsv')
-    with open(output, 'w') as f:
-        f.write('\t'.join(['Input Name', 'Esmecata Name', 'Input Rank', 'Esmecata Rank',
-                           'Input ID', 'Esmecata ID', 'Observation Names']))
+    with open(output, 'w') as open_output_file:
+        csvwriter = csv.writer(open_output_file, delimiter='\t')
+        csvwriter.writerow(['Input Name', 'Esmecata Name', 'Input Rank', 'Esmecata Rank',
+                           'Input ID', 'Esmecata ID', 'Observation Names'])
         for name, ref in d_tax.items():
-            f.write('\n' + '\t'.join([name, ref['Esmecata Name'], ref['Input Rank'], ref['Esmecata Rank'],
-                                      str(ref['Input ID']), str(ref['Esmecata ID']), ';'.join(ref['obs'])]))
+            csvwriter.writerow([name, ref['Esmecata Name'], ref['Input Rank'], ref['Esmecata Rank'],
+                                      str(ref['Input ID']), str(ref['Esmecata ID']), ';'.join(ref['obs'])])
+
+
+def get_taxon_obs_name(proteome_tax_id_file, selected_taxon_rank='family'):
+    """ From proteome tax id file, reads it and extract the taxonomic name associated with the observation name.
+    To achieve this, it searches for observation name with taxon rank equal to selected_taxon_rank.
+    To homogenise taxon names, the first extraction is performed with taxon ID and then the taxon IDs are translated into names.
+
+    Args:
+        proteome_tax_id_file (str): path to the proteome fax id file
+        selected_taxon_rank (str): taxonomic rank selected
+
+    Returns:
+        taxa_name (dict): annotation dict: taxon_name as key and observation_name as value
+    """
+    ncbi = NCBITaxa()
+    taxa_name_ids = {}
+    total_obs_name = []
+    selected_obs_name = []
+
+    # Parse proteome_tax_id_file to find observation name with taxon rank equal to selected_taxon_rank.
+    with open(proteome_tax_id_file, 'r') as proteome_tax_file:
+        csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
+        for line in csvreader:
+            observation_name = line['observation_name']
+            total_obs_name.append(observation_name)
+
+            tax_id = line['tax_id']
+            tax_rank = line['tax_rank']
+
+            found_taxon_id = None
+            if tax_rank == selected_taxon_rank:
+                found_taxon_id = tax_id
+            else:
+                tax_id_lineages = ncbi.get_lineage(tax_id)
+                for tax_id in tax_id_lineages:
+                    if ncbi.get_rank([tax_id])[tax_id] == selected_taxon_rank:
+                        found_taxon_id = tax_id
+
+            if found_taxon_id is not None:
+                if found_taxon_id not in taxa_name_ids:
+                    taxa_name_ids[found_taxon_id] = [observation_name]
+                    selected_obs_name.append(observation_name)
+                else:
+                    taxa_name_ids[found_taxon_id].append(observation_name)
+                    selected_obs_name.append(observation_name)
+
+    selected_obs_name = set(selected_obs_name)
+
+    logger.info('|EsMeCaTa|analysis| {0} of {1} could been associated with taxon rank {2}.'.format(len(selected_obs_name), len(total_obs_name), selected_taxon_rank))
+
+    # Translate taxon IDs into names.
+    taxa_names = {}
+    for tax_id in taxa_name_ids:
+        taxid2name = ncbi.get_taxid_translator([tax_id])[int(tax_id)]
+        taxa_names[taxid2name] = taxa_name_ids[tax_id]
+
+    return taxa_names
 
 
 def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
@@ -1277,12 +1335,15 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
         # Write for each taxon the corresponding tax ID, the name of the taxon and the proteome associated with them.
         with open(proteome_tax_id_file, 'w') as out_file:
             csvwriter = csv.writer(out_file, delimiter='\t')
-            csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_rank', 'proteome'])
+            csvwriter.writerow(['observation_name', 'name', 'tax_id', 'tax_id_name', 'tax_rank', 'proteome'])
             for observation_name in proteomes_ids:
                 tax_id = int(proteomes_ids[observation_name][0])
                 tax_name = tax_id_names[tax_id]
+                # Convert characters in tax_name into unicode code.
+                convert_tax_name = ''.join(c if c.isalnum() or c in '-_' else ('_c' + str(ord(c)) + '_') for c in tax_name)
+                tax_id_name = convert_tax_name + '__taxid__' + str(tax_id)
                 tax_rank = ncbi.get_rank([tax_id])[tax_id]
-                csvwriter.writerow([observation_name, tax_name, tax_id, tax_rank, ','.join(proteomes_ids[observation_name][1])])
+                csvwriter.writerow([observation_name, tax_name, tax_id, tax_id_name, tax_rank, ','.join(proteomes_ids[observation_name][1])])
 
         create_comp_taxonomy_file(association_taxon_id_json=json_taxonomic_affiliations,
                                   proteomes_ids=proteomes_ids,
@@ -1319,6 +1380,33 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
     logger.info('|EsMeCaTa|proteomes| Check step complete in {0}s.'.format(check_duration))
 
     return proteome_to_download, session
+
+
+def download_proteome_file(proteome, output_proteome_file, option_bioservices=None, session=None, uniprot_sparql_endpoint=None):
+    """Download proteome file.
+
+    Args:
+        proteome (str): UniProt identifier of the proteome.
+        output_proteome_file (str): pathname to the output proteome file.
+        option_bioservices (bool): use bioservices instead of manual queries.
+        session: request session object
+        uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint).
+    """
+    if uniprot_sparql_endpoint is not None:
+        sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
+    else:
+        if option_bioservices is None:
+            http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
+            proteome_response = session.get(http_str)
+            with open(output_proteome_file, 'wb') as f:
+                f.write(proteome_response.content)
+        else:
+            import bioservices
+            uniprot_bioservices = bioservices.UniProt()
+            data_fasta = uniprot_bioservices.search(f'(proteome:{proteome})', database='uniprot',
+                                                    frmt='fasta', compress=True, progress=False)
+            with open(output_proteome_file, 'wb') as f:
+                f.write(data_fasta)
 
 
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
@@ -1361,33 +1449,44 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     else:
         logger.info('|EsMeCaTa|proteomes| Downloading %d proteomes', len(proteome_to_download))
 
+    empty_proteomes = []
     for index, proteome in enumerate(proteome_to_download):
         output_proteome_file = os.path.join(proteomes_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
-            if uniprot_sparql_endpoint is not None:
-                sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoint)
-            else:
-                if option_bioservices is None:
-                    http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
-                    proteome_response = session.get(http_str)
-                    with open(output_proteome_file, 'wb') as f:
-                        f.write(proteome_response.content)
-                else:
-                    import bioservices
-                    uniprot_bioservices = bioservices.UniProt()
-                    data_fasta = uniprot_bioservices.search(f'(proteome:{proteome})', database='uniprot',
-                                                            frmt='fasta', compress=True, progress=False)
-                    with open(output_proteome_file, 'wb') as f:
-                        f.write(data_fasta)
-
+            download_proteome_file(proteome, output_proteome_file, option_bioservices, session, uniprot_sparql_endpoint)
+            # Check if downloaded file is empty.
+            if os.path.getsize(output_proteome_file) <= 20:
+                logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be empty, it seems that there is an issue with this proteome on UniProt.', proteome)
+                empty_proteomes.append(proteome)
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
+
+    logger.info('|EsMeCaTa|proteomes| Check downloaded protoeme files.')
+    # Check for completly empty file that could block mmseqs2.
+    for proteome_file in os.listdir(proteomes_folder):
+        proteome_file_path = os.path.join(proteomes_folder, proteome_file)
+        proteome = os.path.splitext(os.path.splitext(proteome_file_path)[0])[0] # Remove .gz then .faa extensions.
+        if os.path.getsize(proteome_file_path) == 0:
+            logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be completly empty (0 octet), it could lead to an issue with mmseqs2, try to download it again.', proteome)
+            download_proteome_file(proteome, proteome_file_path, option_bioservices, session, uniprot_sparql_endpoint)
+            if os.path.getsize(proteome_file_path) == 0:
+                logger.info('|EsMeCaTa|proteomes| Proteome file %s is still completly empty (0 octet), remove it to avoid issue with mmseqs2.', proteome)
+                os.remove(proteome_file_path)
+
 
     # Download Uniprot metadata and create a json file containing them.
     options = {'input_file': input_file, 'output_folder': output_folder, 'busco_percentage_keep': busco_percentage_keep,
                     'ignore_taxadb_update': ignore_taxadb_update, 'all_proteomes': all_proteomes, 'uniprot_sparql_endpoint': uniprot_sparql_endpoint,
                     'limit_maximal_number_proteomes': limit_maximal_number_proteomes, 'rank_limit': rank_limit,
                     'minimal_number_proteomes': minimal_number_proteomes}
+
+    # Create file containing empty proteomes.
+    empty_proteome_file = os.path.join(output_folder, 'empty_proteome.tsv')
+    with open(empty_proteome_file, 'w') as empty_proteome_file_open:
+        csvwriter = csv.writer(empty_proteome_file_open, delimiter='\t')
+        csvwriter.writerow(['empty_proteome_id'])
+        for empty_proteome in empty_proteomes:
+            csvwriter.writerow([empty_proteome])
 
     # Collect dependencies metadata.
     options['tool_dependencies'] = {}
