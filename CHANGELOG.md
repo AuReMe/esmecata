@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.5.0 (2024-10-01)
+# EsMeCaTa v0.5.0 (2024-10-02)
 
 WARNING: Changes in the structure of the python package of EsMeCaTa.
 If you have been using the Python import of the package, you will need to modify your import.
@@ -17,7 +17,7 @@ If you have been using the Python import of the package, you will need to modify
 * New optional dependencies required for `esmecata_gseapy`: [gseapy](https://github.com/zqfang/GSEApy) and [orsum](https://github.com/ozanozisik/orsum).
 * New file indicating the EC numbers and GO Terms for the different observation name of the dataset (file `dataset_annotation_observation_name.tsv`).
 * New subcommand `esmecata precomputed`. This subcommand uses a precomputed database to make predictions from the input file (using EsMeCaTa default parameters). It has been added to avoid creating the same prediction every run and to have a fast way to make predictions with EsMeCaTa. It is necessary to download the precompiled database before using it. At the moment of this release, the database is not available, these scripts are present for testing purposes.
-* Several scripts are added in `esmecata/precomputed` folder to create the input and the precomputed database.
+* Prototype for precomptued database creation: several scripts are added in `esmecata/precomputed` folder to create the input and the precomputed database.
 * Check if proteome files are completly empty and could lead to issue with mmseqs2.
 * Tests for precomputed database, report creation, database creation and eggnog annotation. Add mock on sevral functions to perform the test. Required `pytest-mock`.
 
