@@ -20,7 +20,6 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
     - [Use the precomputed database](#use-the-precomputed-database)
     - [Classical run of EsMeCaTa](#classical-run-of-esmecata)
   - [EsMeCaTa functions](#esmecata-functions)
-    - [`esmecata precomputed`: Use precomputed database to run EsMeCaTa on an input file](#esmecata-precomputed-use-precomputed-database-to-run-esmecata-on-an-input-file)
     - [`esmecata check`: Estimate knowledge associated with taxonomic affiliation](#esmecata-check-estimate-knowledge-associated-with-taxonomic-affiliation)
     - [`esmecata proteomes`: Retrieve proteomes associated with taxonomic affiliation](#esmecata-proteomes-retrieve-proteomes-associated-with-taxonomic-affiliation)
     - [`esmecata clustering`: Proteins clustering](#esmecata-clustering-proteins-clustering)
@@ -182,16 +181,38 @@ Steps proteomes and annotation by UniProt requires an internet connection (for R
 ### Use the precomputed database
 
 **WARNING**: Database is in development, it is not available yet.
+But there are several precomputed databases associated with the article datasets available in the Zenodo archive of EsMeCaTa.
 
-But there are several precomputed databases associated with the article dataset available in the Zenodo archive of EsMeCaTa.
+Using the precomputed database, esmecata searches for input taxon inside the precomputed database to make prediction.
+It requires an input file containing the taxonomic affiliations and a precomputed esmecata database.
+For each observation name in the input file, it will returned the associated annotations.
+It will also output the protein sequences for each taxa associated with the observation name.
 
-Input taxonomic affiliations file can be given to EsMeCaTa to query the database with the following command:
+```
+usage: esmecata precomputed [-h] -i INPUT_FILE -d INPUT_FILE -o OUPUT_DIR [-r RANK_LIMIT] [--update-affiliations]
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT_FILE, --input INPUT_FILE
+                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic affiliation (separated by ;).
+  -d INPUT_FILE, --database INPUT_FILE
+                        EsMeCaTa precomputed database file path.
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  -r RANK_LIMIT, --rank-limit RANK_LIMIT
+                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more
+                        information (and a list of rank names).
+  --update-affiliations
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+```
+
+Two options can be used to limit the rank used when searching for proteomes and to update the taxonomic affiliations from the input file.
+
+Example of use:
 
 ```
 esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database.zip -o output_folder
 ```
-
-For each observation name in the input file, it will returned the associated annotations. It will alos output the protein sequences for each taxa associated with the observation name.
 
 ### Classical run of EsMeCaTa
 
@@ -213,30 +234,6 @@ These options are the default options of EsMeCaTa.
 
 As these steps can required time, a precomputed database has been created containing taxa of `species`, `genus`, `family`, `order`, `class` and `phylum` having at least 5 proteomes in UniProt.
 This precomputed database can be used with the command `esmecata precomputed` to search the taxonomic affiliations from the input file into the database.
-
-### `esmecata precomputed`: Use precomputed database to run EsMeCaTa on an input file
-
-```
-usage: esmecata precomputed [-h] -i INPUT_FILE -d INPUT_FILE -o OUPUT_DIR [-r RANK_LIMIT] [--update-affiliations]
-
-options:
-  -h, --help            show this help message and exit
-  -i INPUT_FILE, --input INPUT_FILE
-                        Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic affiliation (separated by ;).
-  -d INPUT_FILE, --database INPUT_FILE
-                        EsMeCaTa precomputed database file path.
-  -o OUPUT_DIR, --output OUPUT_DIR
-                        Output directory path.
-  -r RANK_LIMIT, --rank-limit RANK_LIMIT
-                        This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more
-                        information (and a list of rank names).
-  --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
-```
-
-Using the precomputed database, esmecata searches for input taxon inside its database to make prediction. It requires an input file containing the taxonomic affiliations and the esmecata database. The latter can be found on Zenodo. It requires also an ouput folder.
-
-Two options can be used to limit the rank used when searching for proteomes and to update the taxonomic affiliations from the input file.
 
 ### `esmecata check`: Estimate knowledge associated with taxonomic affiliation
 
