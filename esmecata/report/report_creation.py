@@ -482,11 +482,12 @@ def create_esmecata_report(esmecata_input_file, esmecata_core_output_folder, out
     # ======
     # Report
     # ======
+    """
     esmecata_summary_panel = os.path.join(output_folder, 'esmecata_summary_panel.html')
     create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
                             fig7, fig7b, fig8, fig8b, fig9, fig10, fig11,
                             fig12, fig12_details, metadata, esmecata_summary_panel, True)
-
+    """
     esmecata_summary = os.path.join(output_folder, 'esmecata_summary.html')
     create_datapane_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
                             fig7, fig7b, fig8, fig8b, fig9, fig10, fig11,
