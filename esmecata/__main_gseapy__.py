@@ -27,7 +27,7 @@ MESSAGE = '''
 Create enrichment analysis files from esmecata results.
 '''
 REQUIRES = '''
-Requires: gseapy and orsum
+Requires: pronto, gseapy and orsum
 '''
 
 logger = logging.getLogger()

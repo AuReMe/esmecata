@@ -38,7 +38,8 @@ ANALYSIS = ['datapane',
   'ontosunburst'
 ]
 GSEAPY = ['gseapy',
-  'orsum'
+  'orsum',
+  'pronto'
 ]
 TEST = ['pytest',
   'pytest-mock'

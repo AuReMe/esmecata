@@ -1,5 +1,20 @@
 # Changelog
 
+# EsMeCaTa v0.5.1 (2024-10-04)
+
+## Add
+
+* Metadata file for `esmecata_gseapy gseapy_taxon`.
+
+## Fix
+
+* Several issues in `esmecata_gseapy gseapy_taxon`.
+* Issues in tests due to UniProt updates.
+
+## Modify
+
+* Update metadata files for annotation and eggnog by adding missing dependencies.
+
 # EsMeCaTa v0.5.0 (2024-10-02)
 
 **WARNING**: Changes in the structure of the python package of EsMeCaTa.

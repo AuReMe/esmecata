@@ -106,8 +106,9 @@ To use eggnog-mapper, you have to setup it and install [its database](https://gi
 The replacement of datapane by [panel](https://github.com/holoviz/panel) is under development to solve this issue.
 
 `esmecata_gseapy` requires:
-- [gseapy](https://github.com/zqfang/GSEApy).
-- [orsum](https://github.com/ozanozisik/orsum).
+- [pronto](https://github.com/althonos/pronto): to get Gene Ontology names.
+- [gseapy](https://github.com/zqfang/GSEApy): to perform enrichment analysis.
+- [orsum](https://github.com/ozanozisik/orsum): to visualize the results of enrichment analysis.
 
 All dependencies can be installed with following command:
 
@@ -997,7 +998,9 @@ Requires: gseapy and orsum
 
 It can be used with this command:
 
-`esmecata_gseapy gseapy_taxon -i esmecata_annotation_output_folder -o output_folder`
+`esmecata_gseapy gseapy_taxon -f esmecata_annotation_output_folder -o output_folder`
+
+The `-f` option takes as input the annotation folder of esmecata (either the output folder of `esmecata annotation` or the `2_annotation` of `esmecata workflow`).
 
 ## EsMeCaTa create_db
 

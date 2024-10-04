@@ -27,6 +27,7 @@ import urllib.request
 
 from collections import Counter
 from Bio import SeqIO
+from Bio import __version__ as biopython_version
 from SPARQLWrapper import __version__ as sparqlwrapper_version
 from urllib.parse import urlparse, parse_qs, urlencode
 from requests.adapters import HTTPAdapter, Retry
@@ -1239,6 +1240,8 @@ def annotate_proteins(input_folder, output_folder, uniprot_sparql_endpoint,
     options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
     options['tool_dependencies']['python_package']['SPARQLWrapper'] = sparqlwrapper_version
     options['tool_dependencies']['python_package']['urllib'] = urllib.request.__version__
+    if annotation_files is not None:
+        options['tool_dependencies']['python_package']['biopython'] = biopython_version
 
     if annotation_files is None:
         if uniprot_sparql_endpoint:
