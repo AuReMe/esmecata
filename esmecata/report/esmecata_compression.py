@@ -18,6 +18,7 @@ import csv
 
 from typing import Dict, List, Tuple, Any
 import plotly.graph_objects as go
+import plotly.express as px
 import pandas as pd
 
 # CONSTANTS
@@ -525,4 +526,26 @@ def esmecata_compression(run_name: str, output: str, show_fig: bool = False):
     """
     tax_diff_file = os.path.join(run_name, '0_proteomes', 'taxonomy_diff.tsv')
     fig = esmecata_compression_taxonomy_file(tax_diff_file, output, show_fig)
+    return fig
+
+
+def create_proteomes_barplot(proteomes_df, output_file=None):
+    """ Draw a barplot showing the number proteomes according to the taxonomic rank.
+
+    Parameters
+    ----------
+    df: pandas DataFrame
+        Pandas dataframe of the proteomes_tyax_id file.
+    output_file: str
+        Name of the output file
+    """
+    df = proteomes_df.drop_duplicates('tax_id_name')
+    df['nb_proteomes'] = [len(proteomes.split(',')) for proteomes in df['proteome']]
+    tax_rank_in_dataset = df['tax_rank'].tolist()
+    order_taxonomic_rank = [taxonomic_rank for taxonomic_rank in RANK_SORTED if taxonomic_rank in tax_rank_in_dataset]
+    fig = px.bar(df, x="tax_rank", y="nb_proteomes", category_orders={'tax_rank': order_taxonomic_rank},
+                 labels={'x': 'Taxonomic ranks', 'y': 'Number of proteomes'})
+    if output_file is not None:
+        fig.write_image(output_file)
+
     return fig

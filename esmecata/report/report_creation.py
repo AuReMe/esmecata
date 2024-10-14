@@ -24,11 +24,11 @@ from plotly.io import write_json
 from esmecata.core.annotation import create_dataset_annotation_file
 from esmecata.report import stats_workflow_figures as swf
 from esmecata.report.esmecata2taxontology import esmecata2taxonomy
-from esmecata.report.esmecata_compression import esmecata_compression
+from esmecata.report.esmecata_compression import esmecata_compression, create_proteomes_barplot
 
 
 def create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
-                        fig7, fig7b, fig8, fig8b, fig9, fig10, fig11,
+                        fig7, fig7b, fig8, fig8b, fig9, fig10, fig10a, fig11,
                         fig12, fig12_details, metadata, output_file, reduce=None):
     from bokeh.resources import INLINE, CDN
     import panel as pn
@@ -61,6 +61,9 @@ def create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig
         pn.pane.HTML("""<p>The barplot belows details how many proteomes were assigned to inputs taxonomic affiliations (grouped and colored by phylum). The number of proteomes found can vary from only a few to dozens or hundreds, depending on the data available on UniProt for each taxonomic group.</p>""", styles=styles),
         pn.Column('## Distribution of the number of proteomes found',
             pn.pane.Plotly(fig1.update_layout(modebar=CONFIG, autosize=True)),
+            sizing_mode='scale_both'),
+        pn.Column('## Distribution of proteomes according to taxonomic ranks',
+            pn.pane.Plotly(fig10a.update_layout(modebar=CONFIG, autosize=True)),
             sizing_mode='scale_both'),
     )
     page_three = pn.Column(
@@ -194,7 +197,7 @@ def create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig
 
 
 def create_datapane_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
-                        fig7, fig7b, fig8, fig8b, fig9, fig10, fig11,
+                        fig7, fig7b, fig8, fig8b, fig9, fig10, fig10a, fig11,
                         fig12, fig12_details, metadata, output_file):
     print("Formatting summary dataframes")
     if not DATA["DISCARDED"].empty:    
@@ -225,7 +228,9 @@ def create_datapane_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, 
                     dp.HTML("<p>When proteomes of the lowest taxonomic rank of an input taxa are not found, EsMeCaTa goes up in the taxonomic levels to found suited proteomes. In complement to the figures in the first panel, the heatmap below details the difference between the lowest taxonomic rank of all input taxonomic observations (y-axis) and the lowest rank atributed by EsMeCaTa (x-axis).</p>"),
                     dp.HTML("<p>The barplot belows details how many proteomes were assigned to inputs taxonomic affiliations (grouped and colored by phylum). The number of proteomes found can vary from only a few to dozens or hundreds, depending on the data available on UniProt for each taxonomic group.</p>"),
                     dp.Plot(fig4.update_layout(modebar=CONFIG), label='Input and output ranks difference'),
-                    dp.Plot(fig1.update_layout(modebar=CONFIG), label='Distribution of the number of proteomes found'),                
+                    dp.Plot(fig1.update_layout(modebar=CONFIG), label='Distribution of the number of proteomes found'),
+                    dp.HTML("<h2>Distribution of proteomes according to taxonomic ranks</h2>"),
+                    dp.Plot(fig10a.update_layout(modebar=CONFIG), label='Distribution of proteomes according to taxonomic ranks'),
                     columns=2,
                 )
             ],
@@ -399,6 +404,8 @@ def create_esmecata_report(esmecata_input_file, esmecata_core_output_folder, out
     esmecata_compression_output_folder = os.path.join(output_folder, 'inputs_outputs_figures', 'esmecata_compression')
     fig10 = esmecata_compression(esmecata_core_output_folder, esmecata_compression_output_folder, False)
 
+    fig10a = create_proteomes_barplot(DATA["PROTEOME_TAX_ID"])
+
     esmecata2taxonomy_json_file_path = os.path.join(output_folder, 'inputs_outputs_figures', 'esmecata2taxonomy.json')
     write_json(fig9, esmecata2taxonomy_json_file_path, pretty=True)
     if create_svg is True:
@@ -485,10 +492,10 @@ def create_esmecata_report(esmecata_input_file, esmecata_core_output_folder, out
     """
     esmecata_summary_panel = os.path.join(output_folder, 'esmecata_summary_panel.html')
     create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
-                            fig7, fig7b, fig8, fig8b, fig9, fig10, fig11,
+                            fig7, fig7b, fig8, fig8b, fig9, fig10, fig10a, fig11,
                             fig12, fig12_details, metadata, esmecata_summary_panel, True)
     """
     esmecata_summary = os.path.join(output_folder, 'esmecata_summary.html')
     create_datapane_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
-                            fig7, fig7b, fig8, fig8b, fig9, fig10, fig11,
+                            fig7, fig7b, fig8, fig8b, fig9, fig10, fig10a, fig11,
                             fig12, fig12_details, metadata, esmecata_summary)
