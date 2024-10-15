@@ -216,7 +216,7 @@ def main():
         '-s',
         '--sparql',
         dest='sparql',
-        help='Use sparql endpoint instead of REST queries on Uniprot.',
+        help='Use sparql endpoint instead of REST queries on Uniprot (to use UniProt PARQL Endpoint, give "uniprot" to this parameter).',
         required=False)
     parent_parser_rank_limit = argparse.ArgumentParser(add_help=False)
     parent_parser_rank_limit.add_argument(

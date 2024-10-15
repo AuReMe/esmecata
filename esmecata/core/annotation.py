@@ -256,18 +256,31 @@ def query_uniprot_bioservices(protein_queries):
     """
     import bioservices
     uniprot_bioservices = bioservices.UniProt(verbose=False)
-    data = uniprot_bioservices.mapping(fr='UniProtKB_AC-ID', to='UniProtKB', query=protein_queries.split(','),
+    list_protein_queries = protein_queries.split(',')
+    uniparc_protein_queries = [protein for protein in list_protein_queries if protein.startswith('UPI')]
+    if len(uniparc_protein_queries) > 0:
+        list_protein_queries = list(set(list_protein_queries) - set(uniparc_protein_queries))
+
+    data = uniprot_bioservices.mapping(fr='UniProtKB_AC-ID', to='UniProtKB', query=list_protein_queries,
                                        max_waiting_time=3600, progress=False)
 
+    # TODO: Investigate and solve issue with memory leaking in bioservices when mapping from UniParc.
+    """
+    if len(uniparc_protein_queries) > 0:
+        uniparc_data = uniprot_bioservices.mapping(fr='UniParc', to='UniProtKB', query=uniparc_protein_queries,
+                                    max_waiting_time=3600, progress=False)
+        data.update(uniparc_data)
+    """
     return data
 
 
-def rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices):
+def rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices, from_db='UniProtKB_AC-ID'):
     """REST query to get annotation from proteins.
 
     Args:
         protein_queries (str): list of proteins sperated by ','.
         option_bioservices (bool): use bioservices instead of manual queries.
+        from_db (str): database from which the Ids are coming.
 
     Returns:
         output_dict (dict): annotation dict: protein as key and annotation as value ([function_name, review_status, [go_terms], [ec_numbers], [interpros], [rhea_ids], gene_name])
@@ -281,7 +294,7 @@ def rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices)
         session = requests.Session()
         session.mount("https://", HTTPAdapter(max_retries=retries))
 
-        job_id = submit_id_mapping(from_db="UniProtKB_AC-ID", to_db="UniProtKB", ids=protein_queries, session=session)
+        job_id = submit_id_mapping(from_db=from_db, to_db="UniProtKB", ids=protein_queries, session=session)
 
         check_status = check_id_mapping_results_ready(session, job_id)
 
@@ -778,17 +791,39 @@ def query_uniprot_annotation_rest(protein_to_search_on_uniprots, output_dict, op
     # The limit of 10 000 proteins per query comes from the help of Uniprot:
     # https://www.uniprot.org/help/id_mapping
     if len(protein_to_search_on_uniprots) < 10000:
+        # Check for protein from UniParc.
+        uniparc_protein_queries = [protein for protein in protein_to_search_on_uniprots if protein.startswith('UPI')]
+        if len(uniparc_protein_queries) > 0:
+            protein_to_search_on_uniprots = list(set(protein_to_search_on_uniprots) - set(uniparc_protein_queries))
+
+        # Query UniProt.
         protein_queries = ','.join(protein_to_search_on_uniprots)
-        tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices)
+        tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices, 'UniProtKB_AC-ID')
         output_dict.update(tmp_output_dict)
         time.sleep(1)
+        # Query UniParc.
+        if len(uniparc_protein_queries) > 0:
+            protein_queries = ','.join(uniparc_protein_queries)
+            tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices, 'UniParc')
+            output_dict.update(tmp_output_dict)
     else:
         protein_chunks = chunks(list(protein_to_search_on_uniprots), 10000)
         for chunk in protein_chunks:
+            # Check for protein from UniParc.
+            uniparc_protein_queries = [protein for protein in chunk if protein.startswith('UPI')]
+            if len(uniparc_protein_queries) > 0:
+                chunk = list(set(chunk) - set(uniparc_protein_queries))
+
+            # Query UniProt.
             protein_queries = ','.join(chunk)
-            tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices)
+            tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices, 'UniProtKB_AC-ID')
             output_dict.update(tmp_output_dict)
             time.sleep(1)
+            # Query UniParc.
+            if len(uniparc_protein_queries) > 0:
+                protein_queries = ','.join(uniparc_protein_queries)
+                tmp_output_dict = rest_query_uniprot_to_retrieve_function(protein_queries, option_bioservices, 'UniParc')
+                output_dict.update(tmp_output_dict)
 
     return output_dict
 

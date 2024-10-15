@@ -1079,6 +1079,53 @@ def sparql_get_protein_seq(proteome, output_proteome_file, uniprot_sparql_endpoi
             shutil.copyfileobj(input_file, output_file)
     os.remove(intermediary_file)
 
+    if len(records) == 0:
+        logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be empty, it seems that there is an issue with this proteome on UniProt. Try Uniparc.', proteome)
+
+        uniparc_sparql_query= """PREFIX up: <http://purl.uniprot.org/core/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX proteome: <http://purl.uniprot.org/proteomes/>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        PREFIX uniparc: <http://purl.uniprot.org/uniparc/>
+
+            SELECT DISTINCT ?sequence ?name ?sequenceaa
+
+            WHERE
+            {{
+                    ?proteome skos:narrower ?genomicComponent .
+                    ?sequence up:sequenceFor ?entry ;
+                                rdfs:label ?name .
+                    ?sequence rdf:value ?sequenceaa .
+                    ?entry up:proteome ?genomicComponent .
+            VALUES (?proteome) {{ (proteome:{0}) }}
+            }}""".format(proteome)
+
+        csvreader = send_uniprot_sparql_query(uniparc_sparql_query, uniprot_sparql_endpoint)
+
+        records = []
+        already_added_proteins = []
+        for line in csvreader:
+            protein_id = line[0].split('/')[-1]
+            protein_name = line[1]
+            protein_seq = line[2]
+            prefix_record = 'tr'
+
+            record_id = f'{prefix_record}|{protein_id}|{protein_name}'
+            records.append(SeqRecord(Seq(protein_seq), id=record_id, description=''))
+            already_added_proteins.append(protein_id)
+
+        if len(records) == 0:
+            logger.info('|EsMeCaTa|proteomes| Proteome file %s still empty.', proteome)
+            os.remove(output_file)
+        else:
+            logger.info('|EsMeCaTa|proteomes| Proteome file %s found in UniParc.', proteome)
+            intermediary_file = output_proteome_file[:-3]
+            SeqIO.write(records, intermediary_file, 'fasta')
+            with open(intermediary_file, 'rb') as input_file:
+                with gzip.open(output_proteome_file, 'wb') as output_file:
+                    shutil.copyfileobj(input_file, output_file)
+            os.remove(intermediary_file)
+
 
 def compute_stat_proteomes(proteomes_folder, stat_file=None):
     """Compute stat associated with the number of proteome for each taxonomic affiliations.
@@ -1382,7 +1429,7 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
     return proteome_to_download, session
 
 
-def download_proteome_file(proteome, output_proteome_file, option_bioservices=None, session=None, uniprot_sparql_endpoint=None):
+def download_proteome_file(proteome, output_proteome_file, empty_proteomes, option_bioservices=None, session=None, uniprot_sparql_endpoint=None):
     """Download proteome file.
 
     Args:
@@ -1407,7 +1454,27 @@ def download_proteome_file(proteome, output_proteome_file, option_bioservices=No
                                                     frmt='fasta', compress=True, progress=False)
             with open(output_proteome_file, 'wb') as f:
                 f.write(data_fasta)
-
+        # Check if downloaded file is empty, if yes, try with UniParc.
+        if os.path.getsize(output_proteome_file) <= 20:
+            time.sleep(1)
+            logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be empty, it seems that there is an issue with this proteome on UniProt. Try Uniparc.', proteome)
+            if option_bioservices is None:
+                http_str = 'https://rest.uniprot.org/uniparc/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
+                proteome_response = session.get(http_str)
+                with open(output_proteome_file, 'wb') as f:
+                    f.write(proteome_response.content)
+            else:
+                import bioservices
+                uniprot_bioservices = bioservices.UniProt()
+                data_fasta = uniprot_bioservices.search(f'(proteome:{proteome})', database='uniparc',
+                                                        frmt='fasta', compress=True, progress=False)
+                with open(output_proteome_file, 'wb') as f:
+                    f.write(data_fasta)
+            if os.path.getsize(output_proteome_file) <= 20:
+                logger.info('|EsMeCaTa|proteomes| Proteome file %s is still empty even after using UniParc.', proteome)
+                empty_proteomes.append(proteome)
+            else:
+                logger.info('|EsMeCaTa|proteomes| Proteome file %s has been downloaded with proteins from Uniparc.', proteome)
 
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
@@ -1453,11 +1520,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     for index, proteome in enumerate(proteome_to_download):
         output_proteome_file = os.path.join(proteomes_folder, proteome+'.faa.gz')
         if not os.path.exists(output_proteome_file):
-            download_proteome_file(proteome, output_proteome_file, option_bioservices, session, uniprot_sparql_endpoint)
-            # Check if downloaded file is empty.
-            if os.path.getsize(output_proteome_file) <= 20:
-                logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be empty, it seems that there is an issue with this proteome on UniProt.', proteome)
-                empty_proteomes.append(proteome)
+            download_proteome_file(proteome, output_proteome_file, empty_proteomes, option_bioservices, session, uniprot_sparql_endpoint)
             logger.info('|EsMeCaTa|proteomes| Downloaded %d on %d proteomes',index+1, len(proteome_to_download))
         time.sleep(1)
 
@@ -1468,7 +1531,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         proteome = os.path.splitext(os.path.splitext(proteome_file_path)[0])[0] # Remove .gz then .faa extensions.
         if os.path.getsize(proteome_file_path) == 0:
             logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be completly empty (0 octet), it could lead to an issue with mmseqs2, try to download it again.', proteome)
-            download_proteome_file(proteome, proteome_file_path, option_bioservices, session, uniprot_sparql_endpoint)
+            download_proteome_file(proteome, proteome_file_path, empty_proteomes, option_bioservices, session, uniprot_sparql_endpoint)
             if os.path.getsize(proteome_file_path) == 0:
                 logger.info('|EsMeCaTa|proteomes| Proteome file %s is still completly empty (0 octet), remove it to avoid issue with mmseqs2.', proteome)
                 os.remove(proteome_file_path)

@@ -103,6 +103,7 @@ def convert_old_results_from_workflow_to_0_5_0(esmecata_workflow_results_folder,
     esmecata_annotation_result_folder = os.path.join(esmecata_workflow_results_folder, '2_annotation')
     convert_old_results_to_0_5_0(esmecata_proteomes_result_folder, esmecata_clustering_result_folder, esmecata_annotation_result_folder,
                                  output_folder)
+    shutil.copyfile(os.path.join(esmecata_workflow_results_folder, 'esmecata_metadata_workflow.json'), os.path.join(output_folder, 'esmecata_metadata_workflow.json'))
 
 
 def convert_old_results_to_0_5_0_all_folder(esmecata_proteomes_result_folder, esmecata_clustering_result_folder, esmecata_annotation_result_folder,
@@ -221,10 +222,25 @@ def convert_old_results_to_0_5_0_all_folder(esmecata_proteomes_result_folder, es
         create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'function_table.tsv'), content='all')
 
 
+def convert_old_results_from_workflow_to_0_5_0_all_folder(esmecata_workflow_results_folder, output_folder):
+    """ From old results of esmecata workflow (before 0.5.0) convert the result folder into 0.5.0.
+
+    Args:
+        esmecata_workflow_results_folder (str): pathname to esmecata workflow output folder
+        output_folder (str): pathanme to ouput folder
+    """
+    esmecata_proteomes_result_folder = os.path.join(esmecata_workflow_results_folder, '0_proteomes')
+    esmecata_clustering_result_folder = os.path.join(esmecata_workflow_results_folder, '1_clustering')
+    esmecata_annotation_result_folder = os.path.join(esmecata_workflow_results_folder, '2_annotation')
+    convert_old_results_to_0_5_0_all_folder(esmecata_proteomes_result_folder, esmecata_clustering_result_folder, esmecata_annotation_result_folder,
+                                 output_folder)
+    shutil.copyfile(os.path.join(esmecata_workflow_results_folder, 'esmecata_metadata_workflow.json'), os.path.join(output_folder, 'esmecata_metadata_workflow.json'))
+
+
 def convert_intermediate_results_to_0_5_0_all_folder(esmecata_proteomes_result_folder, esmecata_clustering_result_folder, esmecata_annotation_result_folder,
                                  output_folder):
     """ From intemerdiary results of esmecata (during 0.5.0) convert all the result folder into 0.5.0.
-    The principal changes in these fodler is the fact that the taxon name was used as filename in several intermediary files.
+    The principal changes in these folder is the fact that the taxon name was used as filename in several intermediary files.
 
     Args:
         esmecata_proteomes_result_folder (str): pathname to esmecata proteomes output folder
@@ -340,3 +356,19 @@ def convert_intermediate_results_to_0_5_0_all_folder(esmecata_proteomes_result_f
         shutil.copyfile(os.path.join(esmecata_annotation_result_folder, 'dataset_annotation_observation_name.tsv'), os.path.join(output_folder, '2_annotation', 'function_table.tsv'))
     else:
         create_dataset_annotation_file(os.path.join(output_folder, '2_annotation', 'annotation_reference'), os.path.join(output_folder, '2_annotation', 'function_table.tsv'), content='all')
+
+
+def convert_intermediate_results_from_workflow_to_0_5_0_all_folder(esmecata_workflow_results_folder, output_folder):
+    """ From intemerdiary results of esmecata (during 0.5.0) convert the result folder into 0.5.0.
+
+    Args:
+        esmecata_workflow_results_folder (str): pathname to esmecata workflow output folder
+        output_folder (str): pathanme to ouput folder
+    """
+    esmecata_proteomes_result_folder = os.path.join(esmecata_workflow_results_folder, '0_proteomes')
+    esmecata_clustering_result_folder = os.path.join(esmecata_workflow_results_folder, '1_clustering')
+    esmecata_annotation_result_folder = os.path.join(esmecata_workflow_results_folder, '2_annotation')
+    convert_intermediate_results_to_0_5_0_all_folder(esmecata_proteomes_result_folder, esmecata_clustering_result_folder, esmecata_annotation_result_folder,
+                                 output_folder)
+    shutil.copyfile(os.path.join(esmecata_workflow_results_folder, 'esmecata_metadata_workflow.json'), os.path.join(output_folder, 'esmecata_metadata_workflow.json'))
+

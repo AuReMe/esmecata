@@ -1,5 +1,21 @@
 # Changelog
 
+# EsMeCaTa v0.5.2 (2024-10-15)
+
+## Add
+
+* New way to search proteomes by using UniParc. Some proteomes, when downloaded directly from UniProt are empty. A solution is to search for them in UniParc and retrieved the associated protein sequences.
+* New plot in report showing proteomes according to tax_rank.
+
+## Modify
+
+* Update parameter text for sparql option to indicate the value to query SPARQL UniProt Endpoint.
+
+## TODO
+
+* Investigate and solve memory leak when mapping UniParc IDs to UniProt with bioservices.
+* Add handling of UniParc IDs with SPARQL queries.
+
 # EsMeCaTa v0.5.1 (2024-10-04)
 
 ## Add
