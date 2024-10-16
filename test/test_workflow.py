@@ -35,7 +35,7 @@ def test_workflow_online():
 def test_create_database_from_workflow_online():
     esmecata_result_folder = 'test_output'
     esmecata_database_output_folder = 'output_database'
-    create_database_from_esmecata_workflow_run(esmecata_result_folder, esmecata_database_output_folder)
+    create_database_from_esmecata_workflow_run(esmecata_result_folder, esmecata_database_output_folder, '0.1.0')
 
     esmecata_database = os.path.join(esmecata_database_output_folder, 'esmecata_database.zip')
     output_folder = 'output_folder'
@@ -54,7 +54,7 @@ def test_create_database_from_workflow_cli_online():
     esmecata_database_output_folder = 'output_database'
     subprocess.call(['esmecata_create_db', 'from_workflow', '-i', esmecata_result_folder, '-o', esmecata_database_output_folder])
 
-    create_database_from_esmecata_workflow_run(esmecata_result_folder, esmecata_database_output_folder)
+    create_database_from_esmecata_workflow_run(esmecata_result_folder, esmecata_database_output_folder, '0.1.0')
 
     esmecata_database = os.path.join(esmecata_database_output_folder, 'esmecata_database.zip')
     output_folder = 'output_folder'

@@ -45,7 +45,7 @@ def get_proteomes_tax_id_name(proteomes_tax_id_file_path):
     return proteomes_taxa_id_names
 
 
-def create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, prefix=''):
+def create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, database_version, prefix=''):
     """ Copy json metadata file.
 
     Args:
@@ -95,6 +95,7 @@ def create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_
                     json_name = input_file.replace('.json', '')
                 database_json_data[json_name] = json_data
 
+    database_json_data['database_version'] = database_version
     with open(output_database_json, 'w') as dumpfile:
         json.dump(database_json_data, dumpfile, indent=4)
 
@@ -302,13 +303,14 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
     pd.DataFrame(stat_number_annotation_data, columns=['observation_name', *df_stat_number_annotation.columns]).to_csv(stat_number_annotation_database_path, sep='\t', index=None)
 
 
-def create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder, nb_core=1):
+def create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder, database_version, nb_core=1):
     """ Extract data from esmecata run and create an esmecata database from these.
 
     Args:
         esmecata_proteomes_folder (str): path to esmecata proteomes folder.
         esmecata_clustering_folder (str): path to esmecata clustering folder.
         esmecata_annotation_folder (str): path to esmecata anntoation folder.
+        database_version (str): database version number.
         output_folder (str): path to output folder containing zip database of esmecata.
         nb_core (int): number of core to use when creating database.
     """
@@ -319,7 +321,7 @@ def create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_cluste
     if not os.path.exists(output_database_folder):
         os.mkdir(output_database_folder)
 
-    create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder)
+    create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, database_version)
     create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, nb_core)
 
     compress_database_file = os.path.join(output_folder, 'esmecata_database')
@@ -329,21 +331,22 @@ def create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_cluste
     shutil.rmtree(output_database_folder)
 
 
-def create_database_from_esmecata_workflow_run(esmecata_workflow_folder, output_folder, nb_core=1):
+def create_database_from_esmecata_workflow_run(esmecata_workflow_folder, output_folder, database_version, nb_core=1):
     """ Extract data from esmecata workflow run and create an esmecata database from these.
 
     Args:
         esmecata_workflow_folder (str): path to esmecata workflow folder.
         output_folder (str): path to output folder containing zip database of esmecata.
+        database_version (str): database version number.
         nb_core (int): number of core to use when creating database.
     """
     esmecata_proteomes_folder = os.path.join(esmecata_workflow_folder, '0_proteomes')
     esmecata_clustering_folder = os.path.join(esmecata_workflow_folder, '1_clustering')
     esmecata_annotation_folder = os.path.join(esmecata_workflow_folder, '2_annotation')
-    create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder, nb_core)
+    create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder, database_version, nb_core)
 
 
-def create_database_from_multiple_esmecata_runs(esmecata_proteomes_folders, esmecata_clustering_folders, esmecata_annotation_folders, output_folder, cpu_number=1):
+def create_database_from_multiple_esmecata_runs(esmecata_proteomes_folders, esmecata_clustering_folders, esmecata_annotation_folders, output_folder, database_version, cpu_number=1):
     """ Extract data from esmecata runs and create an esmecata database from these.
 
     Args:
@@ -364,7 +367,7 @@ def create_database_from_multiple_esmecata_runs(esmecata_proteomes_folders, esme
         taxon_level = os.path.basename(esmecata_proteomes_folder).split('_')[0]
         esmecata_clustering_folder = esmecata_clustering_folders[index]
         esmecata_annotation_folder = esmecata_annotation_folders[index]
-        create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, taxon_level)
+        create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, database_version, taxon_level)
         create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, cpu_number)
 
     compress_database_file = os.path.join(output_folder, 'esmecata_database')

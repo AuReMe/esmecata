@@ -28,7 +28,7 @@ from plotly.io import write_json
 from plotly.subplots import make_subplots
 
 from ontosunburst.ontosunburst import ontosunburst
-from esmecata.report.esmecata_compression import RANK2COL
+from esmecata.report.esmecata_compression import RANK2COL, RANK_SORTED
 
 # from statistics import NormalDist
 # import matplotlib.pyplot as plt
@@ -382,7 +382,7 @@ def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, output_folde
         Returns:
             fig : a plotly figure
     '''
-    rank_list = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom', 'clade', 'no rank']
+    rank_list = RANK_SORTED
 
     d_in = dict()
     ncbi = NCBITaxa()
