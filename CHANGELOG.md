@@ -1,11 +1,16 @@
 # Changelog
 
-# EsMeCaTa v0.5.2 (2024-10-15)
+# EsMeCaTa v0.5.2 (2024-10-16)
 
 ## Add
 
 * New way to search proteomes by using UniParc. Some proteomes, when downloaded directly from UniProt are empty. A solution is to search for them in UniParc and retrieved the associated protein sequences.
 * New plot in report showing proteomes according to tax_rank.
+* Database number version when creating precomputed database.
+
+## Fix
+
+* Fix issue in creating heatmap of proteomes (missing taxon rank) in report creation.
 
 ## Modify
 
