@@ -73,8 +73,8 @@ def main():
         help='Output directory path.',
         metavar='OUPUT_DIR')
 
-    parent_parser_c = argparse.ArgumentParser(add_help=False)
-    parent_parser_c.add_argument(
+    parent_parser_database_version = argparse.ArgumentParser(add_help=False)
+    parent_parser_database_version.add_argument(
         '--create-version',
         dest='create_version',
         help='Version number for EsMeCaTa precomputed database.',
@@ -101,7 +101,7 @@ def main():
         'from_workflow',
         help='Create database from esmecata workflow output.',
         parents=[
-            parent_parser_i, parent_parser_o, parent_parser_c
+            parent_parser_i, parent_parser_o, parent_parser_database_version, parent_parser_c
             ],
         allow_abbrev=False)
 
