@@ -7,6 +7,7 @@
 * New way to search proteomes by using UniParc. Some proteomes, when downloaded directly from UniProt are empty. A solution is to search for them in UniParc and retrieved the associated protein sequences.
 * New plot in report showing proteomes according to tax_rank.
 * Database number version when creating precomputed database.
+* The possibility to give a file containing manually selected groups of observation names for `esmecata_gseapy gseapy_enrichr`.
 
 ## Fix
 
@@ -15,6 +16,9 @@
 ## Modify
 
 * Update parameter text for sparql option to indicate the value to query SPARQL UniProt Endpoint.
+* Rename `esmecata_gseapy gseapy_taxon` into `esmecata_gseapy gseapy_enrichr` to reflect the changes in the command.
+* Modify how `esmecata_gseapy gseapy_enrichr` works by adding a grouping parameters allowing to choose either groups according to taxon_rank or with a file created by the user and containing manually selected groups of observation names.
+* Update readme according to the different changes made in this release.
 
 ## TODO
 

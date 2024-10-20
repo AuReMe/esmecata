@@ -990,17 +990,35 @@ options:
 subcommands:
   valid subcommands:
 
-  {gseapy_taxon}
-    gseapy_taxon  Extract enriched functions from taxon using gseapy and orsum.
+  {gseapy_enrichr}
+    gseapy_enrichr  Extract enriched functions from taxon using gseapy and orsum.
 
 Requires: gseapy and orsum
 ```
 
-It can be used with this command:
+`gseapy_enrichr` has currently two ways of use:
 
-`esmecata_gseapy gseapy_taxon -f esmecata_annotation_output_folder -o output_folder`
+- by grouping observation names according to their taxonomic ranks (by default `phylum`) with the parameter `--grouping tax_rank`.
+- by grouping observation names into groups defined by the user with a tsv file with the parameter `--grouping selected`. The input file is given by  the suer with the parameter `--taxa-list` and should look like this:
 
-The `-f` option takes as input the annotation folder of esmecata (either the output folder of `esmecata annotation` or the `2_annotation` of `esmecata workflow`).
+| Group 1    | Group 2   | Group 3   |
+|------------|-----------|-----------|
+| Cluster_1  | Cluster_2 | Cluster_6 |
+| Cluster_5  | Cluster_3 | Cluster_7 |
+| Cluster_10 | Cluster_4 | Cluster_8 |
+
+There are two parameters mandatory for both modes:
+
+- the `-f` parameter takes as input the annotation folder of esmecata (either the output folder of `esmecata annotation` or the `2_annotation` of `esmecata workflow`).
+- the `-o` parameter corresponds to the path to the output folder.
+
+ So you can either call `esmecata_gseapy gseapy_enrichr` with:
+
+`esmecata_gseapy gseapy_enrichr -f esmecata_annotation_output_folder -o output_folder --grouping tax_rank --taxon-rank phylum`
+
+Or by using one input file with:
+
+`esmecata_gseapy gseapy_enrichr -f esmecata_annotation_output_folder -o output_folder --grouping selected --taxa-list manually_selected_groups.tsv`
 
 ## EsMeCaTa create_db
 

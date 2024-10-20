@@ -134,25 +134,56 @@ def get_orsum_version():
     return orsum_version
 
 
-def taxon_rank_annotation_enrichment(annotation_folder, output_folder, enzyme_data_file=None, go_basic_obo_file=None, taxon_rank='phylum'):
+def extract_organisms_selected(taxa_lists_file):
+    """ Extract observation names from input file (each column corresponds to a set of observation name to search for enrichment).
+
+    Args:
+        taxa_lists_file (str): path to taxa list file
+
+    Returns:
+        taxa_lists (dict): dictionary containing as key the column name of the file and as value the list of observation names
+    """
+    taxa_lists = {}
+    df = pd.read_csv(taxa_lists_file, sep='\t')
+    for col in df.columns:
+        taxa_lists[col] = df[col].tolist()
+    return taxa_lists
+
+
+def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping="tax_rank",
+                                     taxon_rank='phylum', taxa_lists_file=None,
+                                     enzyme_data_file=None, go_basic_obo_file=None):
     """ Run an enrichment analysis on taxon from annotation results of esmecata using gseapy.
     Then filter this list with orsum.
 
     Args:
         annotation_folder (str): path to esmecata annotation folder
         output_folder (str): path to output folder
+        grouping (str): grouping factor, either "tax_rank" or "selected"
+        taxon_rank (str): taxon rank to cluster the observation name together (by default, phylum) when selecting grouping "tax_rank"
+        taxa_lists_file (str): path to manually created groups of observation names when selecting grouping "selected"
         enzyme_data_file (str): path to expasy enzyme.dat file, if not given, download it
         go_basic_obo_file (str): path to Gene Ontology go-basic.obo file, if not given, download it
-        taxon_rank (str): taxon rank to cluster the observation name together (by default, phylum)
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|gseapy_taxon| Begin enrichment analysis.')
-    taxon_ranks = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']
 
-    if taxon_rank != 'phylum':
-        if taxon_rank not in taxon_ranks:
-            logger.critical('Incorrect taxon given {0}, possible ranks are: {1}'.format(taxon_rank, ','.join(taxon_ranks)))
+    if grouping == "tax_rank":
+        if taxon_rank is None:
+            logger.critical('|EsMeCaTa|gseapy_taxon| You have to specify a taxon rank for this analysis with --taxon-rank')
             sys.exit()
+        taxon_ranks = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']
+        if taxon_rank != 'phylum':
+            if taxon_rank not in taxon_ranks:
+                logger.critical('|EsMeCaTa|gseapy_taxon| Incorrect taxon given {0}, possible ranks are: {1}'.format(taxon_rank, ','.join(taxon_ranks)))
+                sys.exit()
+    elif grouping == "selected":
+        if taxa_lists_file is None:
+            logger.critical('|EsMeCaTa|gseapy_taxon| You have to specify a taxa lists file for this analysis with --taxa-list')
+            sys.exit()
+    elif grouping is None:
+        logger.critical('|EsMeCaTa|gseapy_taxon| You have to choose a grouping factor either "tax_rank" or "selected".')
+        sys.exit()
 
     # Get metadata associated with run.
     options = {'annotation_folder': annotation_folder, 'output_folder': output_folder, 'enzyme_data_file': enzyme_data_file,
@@ -186,7 +217,11 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, enzyme_da
     enzyme_names, go_names = get_annot_name(enzyme_data_file, go_basic_obo_file)
 
     proteome_tax_id_file_path = os.path.join(annotation_folder, 'proteome_tax_id.tsv')
-    taxa_name = get_taxon_obs_name(proteome_tax_id_file_path, taxon_rank)
+
+    if grouping == "tax_rank":
+        taxa_name = get_taxon_obs_name(proteome_tax_id_file_path, taxon_rank)
+    elif grouping == "selected":
+        taxa_name = extract_organisms_selected(taxa_lists_file)
 
     annotation_reference_path = os.path.join(annotation_folder, 'annotation_reference')
     annotation_sets = extract_annotation(annotation_reference_path)
@@ -253,6 +288,8 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, enzyme_da
 
     endtime = time.time()
     duration = endtime - starttime
+    logger.info('|EsMeCaTa|gseapy_taxon| Enrichment analysis took {0}.'.format(duration))
+
     esmecata_metadata['esmecata_gseapy_taxon_duration'] = duration
     gseapy_taxon_metadata_file = os.path.join(output_folder, 'esmecata_metadata_gseapy_taxon.json')
     if os.path.exists(gseapy_taxon_metadata_file):
