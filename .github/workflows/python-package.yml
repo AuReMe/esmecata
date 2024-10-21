@@ -36,24 +36,24 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-    - uses: actions/checkout@v2
+    - uses: mamba-org/setup-micromamba@v1
+      with:
+        micromamba-version: '1.5.6-0' # any version from https://github.com/mamba-org/micromamba-releases
+        environment-file: environment.yml
+        init-shell: >-
+          bash
+        cache-environment: true
+        post-cleanup: 'all'
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Path to brew
-      run: |
-        echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        brew update
-        brew install mmseqs2
-        mmseqs -h
         pip install -e . --config-settings editable_mode=compat
-        pip install datapane plotly ontosunburst kaleido numpy==1.26.4
+        pip install ontosunburst
     - name: Test with pytest
       run: |
-        pip install pytest pytest-mock
         cd test
         pytest test_proteomes.py
         pytest test_clustering.py

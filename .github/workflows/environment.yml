@@ -1,0 +1,20 @@
+name: test_env
+channels:
+  - defaults
+  - bioconda
+  - conda-forge
+dependencies:
+  - mmseqs2
+  - pandas=1.5.3
+  - sparqlwrapper
+  - requests
+  - biopython
+  - ete3
+  - eggnog-mapper
+  - orsum
+  - gseapy
+  - plotly
+  - datapane
+  - python-kaleido
+  - pytest
+  - pytest-mock
