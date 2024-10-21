@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.5.2 (2024-10-16)
+# EsMeCaTa v0.5.2 (2024-10-21)
 
 ## Add
 
@@ -8,14 +8,16 @@
 * New plot in report showing proteomes according to tax_rank.
 * Database number version when creating precomputed database.
 * The possibility to give a file containing manually selected groups of observation names for `esmecata_gseapy gseapy_enrichr`.
+* Tests for `esmecata_gseapy gseapy_enrichr`.
 
 ## Fix
 
-* Fix issue in creating heatmap of proteomes (missing taxon rank) in report creation.
+* Issue in creating heatmap of proteomes (missing taxon rank) in report creation.
+* Issue when creating database: there was a possibility that a taxon without consensus proteomes and associated annotations was kept.
 
 ## Modify
 
-* Update parameter text for sparql option to indicate the value to query SPARQL UniProt Endpoint.
+* Update parameter description for SPARQL option to indicate the value to query SPARQL UniProt Endpoint.
 * Rename `esmecata_gseapy gseapy_taxon` into `esmecata_gseapy gseapy_enrichr` to reflect the changes in the command.
 * Modify how `esmecata_gseapy gseapy_enrichr` works by adding a grouping parameters allowing to choose either groups according to taxon_rank or with a file created by the user and containing manually selected groups of observation names.
 * Update readme according to the different changes made in this release.

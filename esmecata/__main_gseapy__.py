@@ -110,6 +110,15 @@ def main():
         metavar='INPUT_FILE',
         default=None)
 
+    parent_parser_orsumMinTermSize = argparse.ArgumentParser(add_help=False)
+    parent_parser_orsumMinTermSize.add_argument(
+        '--orsumMinTermSize',
+        dest='orsumMinTermSize',
+        required=False,
+        help='MinTermSize of orsum.',
+        metavar='INT',
+        default=None)
+
     # subparsers
     subparsers = parser.add_subparsers(
         title='subcommands',
@@ -121,7 +130,7 @@ def main():
         help='Extract enriched functions from groups (either chosen from tax_rank or manually selected) using gseapy enrichr and orsum.',
         parents=[
             parent_parser_f, parent_parser_o, parent_parser_grouping, parent_parser_t, parent_parser_taxa_list,
-            parent_parser_e, parent_parser_g
+            parent_parser_e, parent_parser_g, parent_parser_orsumMinTermSize
             ],
         allow_abbrev=False)
 
@@ -147,9 +156,9 @@ def main():
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    if args.cmd == 'gseapy_taxon':
+    if args.cmd == 'gseapy_enrichr':
         taxon_rank_annotation_enrichment(args.input_folder, args.output, args.grouping, taxon_rank=args.taxon_rank, taxa_lists_file=args.taxa_list,
-                                         enzyme_data_file=args.enzyme_file, go_basic_obo_file=args.go_file)
+                                         enzyme_data_file=args.enzyme_file, go_basic_obo_file=args.go_file, orsum_minterm_size=args.orsumMinTermSize)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

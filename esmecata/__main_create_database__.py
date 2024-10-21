@@ -75,8 +75,8 @@ def main():
 
     parent_parser_database_version = argparse.ArgumentParser(add_help=False)
     parent_parser_database_version.add_argument(
-        '--create-version',
-        dest='create_version',
+        '--db-version',
+        dest='database_version',
         help='Version number for EsMeCaTa precomputed database.',
         required=True,
         type=str)
@@ -139,7 +139,7 @@ def main():
         esmecata_proteomes_folder = os.path.join(args.input, '0_proteomes')
         esmecata_clustering_folder = os.path.join(args.input, '1_clustering')
         esmecata_annotation_folder = os.path.join(args.input, '2_annotation')
-        create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, args.output, args.create_version, args.core)
+        create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, args.output, args.database_version, args.core)
     elif args.cmd == 'merge_db':
         if ',' in args.input:
             list_db_files = args.input.split(',')

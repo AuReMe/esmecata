@@ -135,17 +135,28 @@ def copy_file(annotation_file, proteomes_taxa_names, computed_threshold_folder, 
         shutil.copyfile(consensus_sequence_file_path, taxon_consensus_sequence_file_path)
 
 
-def concat_tsv_file(input_tsv_file_path, tsv_file_concat_path):
-    """ Concat tsv file for database.
+def concat_tsv_file(input_tsv_file_path, tsv_file_concat_path, consensus_sequence_folder, annotation_reference_folder):
+    """ Concat tsv file for database by checking that fasta and tsv files exist.
 
     Args:
         input_tsv_file_path (str): path to input tsv file.
         tsv_file_concat_path (str): path to tsv file containing concatenation.
+        consensus_sequence_folder (str): path to consensus folder.
+        annotation_reference_folder (str): path to annotation reference folder.
     """
     if not os.path.exists(tsv_file_concat_path):
-        shutil.copyfile(input_tsv_file_path, tsv_file_concat_path)
+        df_proteomes_tax_id_file_path = pd.read_csv(input_tsv_file_path, sep='\t')
+        # Check that corresponding files exist.
+        existing_files = [os.path.exists(consensus_sequence_folder, tax_id_name+'.faa') and os.path.exists(annotation_reference_folder, tax_id_name+'.tsv')
+            for tax_id_name in df_proteomes_tax_id_file_path['tax_id_name']]
+        df_proteomes_tax_id_file_path = df_proteomes_tax_id_file_path[existing_files]
+        df_proteomes_tax_id_file_path.to_csv(tsv_file_concat_path, sep='\t', index=False)
     else:
         df_proteomes_tax_id_file_path = pd.read_csv(input_tsv_file_path, sep='\t')
+        # Check that corresponding files exist.
+        existing_files = [os.path.exists(consensus_sequence_folder, tax_id_name, tax_id_name+'.faa') and os.path.exists(annotation_reference_folder, tax_id_name, tax_id_name+'.tsv')
+            for tax_id_name in df_proteomes_tax_id_file_path['tax_id_name']]
+        df_proteomes_tax_id_file_path = df_proteomes_tax_id_file_path[existing_files]
         df_tsv_file_concat = pd.read_csv(tsv_file_concat_path, sep='\t')
         df_concat = pd.concat([df_proteomes_tax_id_file_path, df_tsv_file_concat])
         df_concat.to_csv(tsv_file_concat_path, sep='\t', index=False)
@@ -164,10 +175,15 @@ def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmec
     if not os.path.exists(output_database_folder):
         os.mkdir(output_database_folder)
 
+    consensus_sequence_folder = os.path.join(esmecata_clustering_folder, 'reference_proteins_consensus_fasta')
+    computed_threshold_folder = os.path.join(esmecata_clustering_folder, 'computed_threshold')
+
+    annotation_reference_folder = os.path.join(esmecata_annotation_folder, 'annotation_reference')
+
     # Create/merge proteome_tax_id file for each taxon level.
     proteomes_tax_id_file_path = os.path.join(esmecata_clustering_folder, 'proteome_tax_id.tsv')
     proteomes_tax_id_file_database_path = os.path.join(output_database_folder, 'proteome_tax_id.tsv')
-    concat_tsv_file(proteomes_tax_id_file_path, proteomes_tax_id_file_database_path)
+    concat_tsv_file(proteomes_tax_id_file_path, proteomes_tax_id_file_database_path, consensus_sequence_folder, annotation_reference_folder)
 
     # Create/merge stat_proteome file for each taxon level.
     stat_number_proteome_file_path = os.path.join(esmecata_proteomes_folder, 'stat_number_proteome.tsv')
@@ -185,12 +201,6 @@ def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmec
     concat_tsv_file(stat_number_annotation_file_path, stat_number_annotation_database_path)
 
     proteomes_taxa_names = get_proteomes_tax_id_name(proteomes_tax_id_file_path)
-
-    consensus_sequence_folder = os.path.join(esmecata_clustering_folder, 'reference_proteins_consensus_fasta')
-    computed_threshold_folder = os.path.join(esmecata_clustering_folder, 'computed_threshold')
-    reference_proteins_folder = os.path.join(esmecata_clustering_folder, 'reference_proteins')
-
-    annotation_reference_folder = os.path.join(esmecata_annotation_folder, 'annotation_reference')
 
     # Use multiprocessing to copy fasta and annotation files.
     database_copy_pool = Pool(nb_core)
@@ -273,7 +283,8 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
     for annotation_file in os.listdir(annotation_reference_folder):
         observation_name = os.path.splitext(annotation_file)[0]
         taxon_id_name = proteomes_taxa_names[observation_name]
-        if taxon_id_name not in already_processed_tax_id:
+        reference_proteins_consensus_fasta_file = os.path.join(consensus_sequence_folder, taxon_id_name+'.faa')
+        if taxon_id_name not in already_processed_tax_id and os.path.exists(reference_proteins_consensus_fasta_file):
             proteome_tax_id_data.append([taxon_id_name, *df_proteomes_tax_id.loc[observation_name].to_list()])
             stat_number_proteome_data.append([taxon_id_name, *df_stat_number_proteome.loc[observation_name].to_list()])
             stat_number_clustering_data.append([taxon_id_name, *df_stat_number_clustering.loc[observation_name].to_list()])

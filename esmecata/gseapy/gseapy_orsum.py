@@ -16,13 +16,13 @@ import csv
 import os
 import sys
 import pandas as pd
+import numpy as np
 import datetime
 import time
 import json
 import pronto
 import logging
 import subprocess
-import matplotlib.pyplot as plt
 import urllib.request
 import gseapy
 
@@ -102,16 +102,21 @@ def get_annot_name(enzyme_datfile, gobasic_file):
     return enzyme_names, go_names
 
 
-def run_orsum(annotation_file_gmt_file, enrichr_module_phylum_output, orsum_output_folder):
+def run_orsum(annotation_file_gmt_file, enrichr_module_phylum_output, orsum_output_folder, orsum_minterm_size=None):
     """ Run orsum to reduce list of enriched annotations from gseapy.
 
     Args:
         annotation_file_gmt_file (str): GMT file containing annotations and their labels
         enrichr_module_phylum_output (str): path to output of gseapy containing enriched annotations for each taxon
         orsum_output_folder (str): path to output folder for orsum
+        orsum_minterm_size (int): option minTermSize of orsum
     """
     input_files = [os.path.join(enrichr_module_phylum_output, file) for file in os.listdir(enrichr_module_phylum_output)]
-    subprocess.call(['orsum.py', '--gmt', annotation_file_gmt_file, '--files', *input_files, '--outputFolder', orsum_output_folder])
+    orsum_cmd = ['orsum.py', '--gmt', annotation_file_gmt_file, '--files', *input_files, '--outputFolder', orsum_output_folder]
+    if orsum_minterm_size is not None:
+        orsum_cmd.append('--minTermSize')
+        orsum_cmd.append(str(orsum_minterm_size))
+    subprocess.call(orsum_cmd)
 
 
 def get_orsum_version():
@@ -127,8 +132,8 @@ def get_orsum_version():
         orsum_version = orsum_line_decoded.strip('\n')
 
     if orsum_version is None:
-        logger.critical('|EsMeCaTa|gseapy_taxon| esmecata could not find the version of orsum.')
-        logger.critical('|EsMeCaTa|gseapy_taxon| It is possibly an issue with the installation of orsum (maybe it is not in the PATH). Or it can be due to a change in the output of orsum.py -v command.')
+        logger.critical('|EsMeCaTa|gseapy_enrichr| esmecata could not find the version of orsum.')
+        logger.critical('|EsMeCaTa|gseapy_enrichr| It is possibly an issue with the installation of orsum (maybe it is not in the PATH). Or it can be due to a change in the output of orsum.py -v command.')
         sys.exit()
 
     return orsum_version
@@ -145,14 +150,15 @@ def extract_organisms_selected(taxa_lists_file):
     """
     taxa_lists = {}
     df = pd.read_csv(taxa_lists_file, sep='\t')
+    df = df.replace(np.nan, '')
     for col in df.columns:
-        taxa_lists[col] = df[col].tolist()
+        taxa_lists[col] = [observation_name for observation_name in df[col].tolist() if observation_name != '']
     return taxa_lists
 
 
 def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping="tax_rank",
                                      taxon_rank='phylum', taxa_lists_file=None,
-                                     enzyme_data_file=None, go_basic_obo_file=None):
+                                     enzyme_data_file=None, go_basic_obo_file=None, orsum_minterm_size=None):
     """ Run an enrichment analysis on taxon from annotation results of esmecata using gseapy.
     Then filter this list with orsum.
 
@@ -164,30 +170,32 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         taxa_lists_file (str): path to manually created groups of observation names when selecting grouping "selected"
         enzyme_data_file (str): path to expasy enzyme.dat file, if not given, download it
         go_basic_obo_file (str): path to Gene Ontology go-basic.obo file, if not given, download it
+        orsum_minterm_size (int): option minTermSize of orsum
     """
     starttime = time.time()
-    logger.info('|EsMeCaTa|gseapy_taxon| Begin enrichment analysis.')
+    logger.info('|EsMeCaTa|gseapy_enrichr| Begin enrichment analysis.')
 
     if grouping == "tax_rank":
         if taxon_rank is None:
-            logger.critical('|EsMeCaTa|gseapy_taxon| You have to specify a taxon rank for this analysis with --taxon-rank')
+            logger.critical('|EsMeCaTa|gseapy_enrichr| You have to specify a taxon rank for this analysis with --taxon-rank')
             sys.exit()
         taxon_ranks = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']
         if taxon_rank != 'phylum':
             if taxon_rank not in taxon_ranks:
-                logger.critical('|EsMeCaTa|gseapy_taxon| Incorrect taxon given {0}, possible ranks are: {1}'.format(taxon_rank, ','.join(taxon_ranks)))
+                logger.critical('|EsMeCaTa|gseapy_enrichr| Incorrect taxon given {0}, possible ranks are: {1}'.format(taxon_rank, ','.join(taxon_ranks)))
                 sys.exit()
     elif grouping == "selected":
         if taxa_lists_file is None:
-            logger.critical('|EsMeCaTa|gseapy_taxon| You have to specify a taxa lists file for this analysis with --taxa-list')
+            logger.critical('|EsMeCaTa|gseapy_enrichr| You have to specify a taxa lists file for this analysis with --taxa-list')
             sys.exit()
     elif grouping is None:
-        logger.critical('|EsMeCaTa|gseapy_taxon| You have to choose a grouping factor either "tax_rank" or "selected".')
+        logger.critical('|EsMeCaTa|gseapy_enrichr| You have to choose a grouping factor either "tax_rank" or "selected".')
         sys.exit()
 
     # Get metadata associated with run.
-    options = {'annotation_folder': annotation_folder, 'output_folder': output_folder, 'enzyme_data_file': enzyme_data_file,
-                'go_basic_obo_file': go_basic_obo_file, 'taxon_rank': taxon_rank}
+    options = {'annotation_folder': annotation_folder, 'output_folder': output_folder, 'grouping': grouping,
+               'taxon_rank': taxon_rank, 'taxa_lists_file': taxa_lists_file,
+               'enzyme_data_file': enzyme_data_file, 'go_basic_obo_file': go_basic_obo_file, 'orsum_minterm_size': orsum_minterm_size}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
@@ -241,33 +249,31 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
 
     output_dir = os.path.join(output_folder, 'enrichr_module')
     orsum_input_folder = os.path.join(output_folder, 'orsum_input_folder')
+
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     if not os.path.exists(orsum_input_folder):
         os.mkdir(orsum_input_folder)
+
+    enriched_elements = {}
     for tax_name in taxa_name:
         organisms = taxa_name[tax_name]
         # Try to run gseapy enrichr, if no enriched results, continue.
         try:
             gseapy.enrichr(gene_list=organisms, gene_sets=annotation_sets, background=None,
                         outdir=os.path.join(output_dir, tax_name))
-        except:
+        except ValueError as error:
+            logger.info('|EsMeCaTa|gseapy_enrichr| No enrichred functions with p-value cutoff < 0.05 for {0}.'.format(tax_name))
             continue
         if os.path.exists(os.path.join(output_dir, tax_name, 'gs_ind_0.human.enrichr.reports.pdf')):
             # If enriched results, extract the ones with an adjusted p-value inferior to 0.05 to output folder.
             df = pd.read_csv(os.path.join(output_dir, tax_name, 'gs_ind_0.human.enrichr.reports.txt'), sep='\t')
             df = df[df['Adjusted P-value'] < 0.05]
+            enriched_elements[tax_name] = df.set_index('Term')['Adjusted P-value'].to_dict()
+
             df.sort_values('Adjusted P-value', inplace=True)
             df = df['Term']
             df.to_csv(os.path.join(orsum_input_folder, tax_name), sep='\t', index=False)
-
-    enriched_elements = {}
-    for result_file in os.listdir(orsum_input_folder):
-        if result_file.endswith('.txt'):
-            df = pd.read_csv(os.path.join(orsum_input_folder, result_file), sep='\t')
-            df.set_index('Term', inplace=True)
-            base_name = os.path.splitext(os.path.basename(result_file))[0]
-            enriched_elements[base_name] = df[df['Adjusted P-value'] < 0.05]['Odds Ratio'].to_dict()
 
     all_elments = set([element for org in enriched_elements for element in enriched_elements[org]])
 
@@ -279,24 +285,22 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
             csvwriter.writerow([org, *[enriched_elements[org][element] if element in enriched_elements[org] else 'NA' for element in all_elments]])
     result_df = pd.read_csv(enrich_matrix_file, sep='\t')
     result_df.set_index('Organism', inplace=True)
-    fig, axes = plt.subplots(figsize=(70,25))
-    plt.rc('font', size=4)
 
     # Run orsum to filter list of enriched annotations.
     orsum_output_folder = os.path.join(output_folder, 'orsum_output_folder')
-    run_orsum(annotation_file_gmt_file, orsum_input_folder, orsum_output_folder)
+    run_orsum(annotation_file_gmt_file, orsum_input_folder, orsum_output_folder, orsum_minterm_size)
 
     endtime = time.time()
     duration = endtime - starttime
-    logger.info('|EsMeCaTa|gseapy_taxon| Enrichment analysis took {0}.'.format(duration))
+    logger.info('|EsMeCaTa|gseapy_enrichr| Enrichment analysis took {0}.'.format(duration))
 
-    esmecata_metadata['esmecata_gseapy_taxon_duration'] = duration
-    gseapy_taxon_metadata_file = os.path.join(output_folder, 'esmecata_metadata_gseapy_taxon.json')
-    if os.path.exists(gseapy_taxon_metadata_file):
-        metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_gseapy_taxon' in metadata_file]
-        gseapy_taxon_metadata_file = os.path.join(output_folder, 'esmecata_metadata_gseapy_taxon_{0}.json'.format(len(metadata_files)))
-        with open(gseapy_taxon_metadata_file, 'w') as ouput_file:
+    esmecata_metadata['esmecata_gseapy_enrichr_duration'] = duration
+    gseapy_enrichr_metadata_file = os.path.join(output_folder, 'esmecata_metadata_gseapy_enrichr.json')
+    if os.path.exists(gseapy_enrichr_metadata_file):
+        metadata_files = [metadata_file for metadata_file in os.listdir(output_folder) if 'esmecata_metadata_gseapy_enrichr' in metadata_file]
+        gseapy_enrichr_metadata_file = os.path.join(output_folder, 'esmecata_metadata_gseapy_enrichr{0}.json'.format(len(metadata_files)))
+        with open(gseapy_enrichr_metadata_file, 'w') as ouput_file:
             json.dump(esmecata_metadata, ouput_file, indent=4)
     else:
-        with open(gseapy_taxon_metadata_file, 'w') as ouput_file:
+        with open(gseapy_enrichr_metadata_file, 'w') as ouput_file:
             json.dump(esmecata_metadata, ouput_file, indent=4)
