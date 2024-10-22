@@ -113,9 +113,12 @@ def run_orsum(annotation_file_gmt_file, enrichr_module_phylum_output, orsum_outp
     """
     input_files = [os.path.join(enrichr_module_phylum_output, file) for file in os.listdir(enrichr_module_phylum_output)]
     orsum_cmd = ['orsum.py', '--gmt', annotation_file_gmt_file, '--files', *input_files, '--outputFolder', orsum_output_folder]
+
     if orsum_minterm_size is not None:
         orsum_cmd.append('--minTermSize')
         orsum_cmd.append(str(orsum_minterm_size))
+
+    logger.info('|EsMeCaTa|gseapy_enrichr| orsum command: {0}'.format(' '.join(orsum_cmd)))
     subprocess.call(orsum_cmd)
 
 
@@ -273,7 +276,7 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
 
             df.sort_values('Adjusted P-value', inplace=True)
             df = df['Term']
-            df.to_csv(os.path.join(orsum_input_folder, tax_name), sep='\t', index=False)
+            df.to_csv(os.path.join(orsum_input_folder, tax_name), sep='\t', index=False, header=False)
 
     all_elments = set([element for org in enriched_elements for element in enriched_elements[org]])
 
@@ -283,10 +286,9 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         csvwriter.writerow(['Organism', *all_elments])
         for org in enriched_elements:
             csvwriter.writerow([org, *[enriched_elements[org][element] if element in enriched_elements[org] else 'NA' for element in all_elments]])
-    result_df = pd.read_csv(enrich_matrix_file, sep='\t')
-    result_df.set_index('Organism', inplace=True)
 
     # Run orsum to filter list of enriched annotations.
+    logger.info('|EsMeCaTa|gseapy_enrichr| Launch orsum visualisation.')
     orsum_output_folder = os.path.join(output_folder, 'orsum_output_folder')
     run_orsum(annotation_file_gmt_file, orsum_input_folder, orsum_output_folder, orsum_minterm_size)
 
