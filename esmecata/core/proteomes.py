@@ -1444,9 +1444,16 @@ def download_proteome_file(proteome, output_proteome_file, empty_proteomes, opti
     else:
         if option_bioservices is None:
             http_str = 'https://rest.uniprot.org/uniprotkb/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
-            proteome_response = session.get(http_str)
-            with open(output_proteome_file, 'wb') as f:
-                f.write(proteome_response.content)
+            try:
+                proteome_response = session.get(http_str)
+                with open(output_proteome_file, 'wb') as f:
+                    f.write(proteome_response.content)
+            except requests.exceptions.ChunkedEncodingError as error:
+                logger.critical('|EsMeCaTa|proteomes| Error with proteome file %s, will be considered as empty.', proteome)
+                logger.critical(error)
+                with open(output_proteome_file, 'wb') as f:
+                    f.write(b'')
+
         else:
             import bioservices
             uniprot_bioservices = bioservices.UniProt()
@@ -1460,9 +1467,15 @@ def download_proteome_file(proteome, output_proteome_file, empty_proteomes, opti
             logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be empty, it seems that there is an issue with this proteome on UniProt. Try Uniparc.', proteome)
             if option_bioservices is None:
                 http_str = 'https://rest.uniprot.org/uniparc/stream?query=proteome:{0}&format=fasta&compressed=true'.format(proteome)
-                proteome_response = session.get(http_str)
-                with open(output_proteome_file, 'wb') as f:
-                    f.write(proteome_response.content)
+                try:
+                    proteome_response = session.get(http_str)
+                    with open(output_proteome_file, 'wb') as f:
+                        f.write(proteome_response.content)
+                except requests.exceptions.ChunkedEncodingError as error:
+                    logger.critical('|EsMeCaTa|proteomes| Error with proteome file %s, will be considered as empty.', proteome)
+                    logger.critical(error)
+                    with open(output_proteome_file, 'wb') as f:
+                        f.write(b'')
             else:
                 import bioservices
                 uniprot_bioservices = bioservices.UniProt()
@@ -1475,6 +1488,7 @@ def download_proteome_file(proteome, output_proteome_file, empty_proteomes, opti
                 empty_proteomes.append(proteome)
             else:
                 logger.info('|EsMeCaTa|proteomes| Proteome file %s has been downloaded with proteins from Uniparc.', proteome)
+
 
 def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
