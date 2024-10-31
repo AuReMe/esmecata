@@ -1,5 +1,15 @@
 # Changelog
 
+# EsMeCaTa v0.5.3 (2024-10-31)
+
+## Fix
+
+* Handle an issue with requests.exceptions.ChunkedEncodingError.
+
+## Modify
+
+* Remove unused header in output file of gseapy.
+
 # EsMeCaTa v0.5.2 (2024-10-21)
 
 ## Add
