@@ -137,7 +137,7 @@ def test_update_taxonomy_bacillus_offline():
     outdated_taxonomic_affiliation = 'Firmicutes;Bacilli;Bacillales;Bacilliaceae;Bacillus'
     new_taxonomic_affiliation = update_taxonomy('test', outdated_taxonomic_affiliation)
 
-    expected_taconomic_affiliation = 'root;cellular organisms;Bacteria;Terrabacteria group;Bacillota;Bacilli;Bacillales;Bacillaceae;Bacillus'
+    expected_taconomic_affiliation = 'root;cellular organisms;Bacteria;Bacillati;Bacillota;Bacilli;Bacillales;Bacillaceae;Bacillus'
 
     assert new_taxonomic_affiliation == expected_taconomic_affiliation
 

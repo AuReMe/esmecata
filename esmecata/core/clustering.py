@@ -17,11 +17,7 @@ import csv
 import gzip
 import json
 import logging
-import matplotlib.pyplot as plt
-import numpy as np
 import os
-import pandas as pd
-import seaborn as sns
 import shutil
 import subprocess
 import sys
@@ -253,7 +249,11 @@ def compute_proteome_representativeness_ratio(protein_clusters, observation_name
                 compressed_filebasename = os.path.basename(fasta_file)
                 fasta_filebasename = os.path.splitext(compressed_filebasename)[0]
                 filebasename = os.path.splitext(fasta_filebasename)[0]
-                organism_prots[record.id.split('|')[1]] = filebasename
+                if '|' in record.id:
+                    prot_id = record.id.split('|')[1]
+                else:
+                    prot_id = record.id
+                organism_prots[prot_id] = filebasename
 
     number_proteomes = len(observation_name_proteomes)
 
@@ -447,7 +447,8 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
         logger.info('|EsMeCaTa|clustering| %d protein clusters kept for %s (%d on %d).', len(protein_cluster_to_keeps), proteomes_tax_name, index+1, nb_taxa_names)
 
         # Create BioPython records with the representative proteins kept.
-        new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
+        new_records = [record for record in SeqIO.parse(mmseqs_tmp_representative_fasta, 'fasta')
+                                        if ('|' in record.id and record.id.split('|')[1] in protein_cluster_to_keeps) or (record.id in protein_cluster_to_keeps)]
 
         # Do not create fasta file when 0 sequences were kept.
         if len(new_records) > 0:
@@ -459,7 +460,8 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
         del new_records
 
         # Create BioPython records with the consensus proteins kept.
-        consensus_new_records = [record for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta') if record.id.split('|')[1] in protein_cluster_to_keeps]
+        consensus_new_records = [record for record in SeqIO.parse(mmseqs_consensus_fasta, 'fasta')
+                                        if ('|' in record.id and record.id.split('|')[1] in protein_cluster_to_keeps) or (record.id in protein_cluster_to_keeps)]
 
         # Do not create fasta file when 0 sequences were kept.
         if len(consensus_new_records) > 0:

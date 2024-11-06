@@ -1,5 +1,12 @@
 # Changelog
 
+# EsMeCaTa v0.5.4 (2024-11-06)
+
+## Fix
+
+* Issue with proteomes from UniParc during clustering (incorrect plit on '|').
+* Issue in test with updated taxonomic group.
+
 # EsMeCaTa v0.5.3 (2024-10-31)
 
 ## Fix
