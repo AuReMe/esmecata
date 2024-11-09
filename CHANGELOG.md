@@ -4,6 +4,7 @@
 
 ## Add
 
+* Create database from different output folders of esmecata (`from_runs`).
 * Check the good format of the gzip file.
 
 ## Fix

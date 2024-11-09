@@ -55,6 +55,30 @@ def main():
         help='EsMeCaTa output folder.',
         metavar='INPUT_FOLDER')
 
+    parent_parser_iproteomes = argparse.ArgumentParser(add_help=False)
+    parent_parser_iproteomes.add_argument(
+        '-iproteomes',
+        dest='input_proteomes',
+        required=True,
+        help='EsMeCaTa proteomes output folder.',
+        metavar='INPUT_FOLDER')
+
+    parent_parser_iclustering = argparse.ArgumentParser(add_help=False)
+    parent_parser_iclustering.add_argument(
+        '-iclustering',
+        dest='input_clustering',
+        required=True,
+        help='EsMeCaTa clustering output folder.',
+        metavar='INPUT_FOLDER')
+
+    parent_parser_iannotation = argparse.ArgumentParser(add_help=False)
+    parent_parser_iannotation.add_argument(
+        '-iannotation',
+        dest='input_annotation',
+        required=True,
+        help='EsMeCaTa annotation output folder.',
+        metavar='INPUT_FOLDER')
+
     parent_parser_i_zip = argparse.ArgumentParser(add_help=False)
     parent_parser_i_zip.add_argument(
         '-i',
@@ -105,6 +129,15 @@ def main():
             ],
         allow_abbrev=False)
 
+    from_esmecata_runs = subparsers.add_parser(
+        'from_runs',
+        help='Create database from esmecata proteomes, clustering and annotation output folders.',
+        parents=[
+            parent_parser_iproteomes, parent_parser_iclustering, parent_parser_iannotation, parent_parser_o,
+            parent_parser_database_version, parent_parser_c
+            ],
+        allow_abbrev=False)
+
     merge_db = subparsers.add_parser(
         'merge_db',
         help='Merge multiple zip files corresponding to EsMeCaTa databases.',
@@ -146,7 +179,10 @@ def main():
         if ' ' in args.input:
             list_db_files = args.input.split(' ')
         merge_db_files(list_db_files, args.output)
-
+    elif args.cmd == 'from_runs':
+        create_database_from_esmecata_run(args.input_proteomes, args.input_clustering, args.parent_parser_iannotation,
+                                          args.output, args.database_version, args.core)
+  
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')
 
