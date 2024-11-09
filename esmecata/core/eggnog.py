@@ -209,7 +209,10 @@ def write_pathologic(base_filename, annotated_proteins, pathologic_output_file, 
         element_file.write(';; ' + base_filename + '\n')
         element_file.write(';;;;;;;;;;;;;;;;;;;;;;;;;\n')
         for protein_annots in annotated_proteins:
-            protein = protein_annots[0].split('|')[1]
+            if '|' in protein_annots[0]:
+                protein = protein_annots[0].split('|')[1]
+            else:
+                protein = protein_annots[0]
 
             protein_annot = protein_annots[1]
             element_file.write('ID\t' + protein + '\n')
@@ -246,7 +249,10 @@ def write_annotation_reference(protein_annotations, reference_proteins, annotati
         csvwriter = csv.writer(output_tsv, delimiter='\t')
         csvwriter.writerow(['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction'])
         for protein_annot_tuples in protein_annotations:
-            protein = protein_annot_tuples[0].split('|')[1]
+            if '|' in protein_annot_tuples[0]:
+                protein = protein_annot_tuples[0].split('|')[1]
+            else:
+                protein = protein_annot_tuples[0]
             protein_annot = protein_annot_tuples[1]
             gene_name = protein_annot['Preferred_name']
             cluster_members = ','.join(reference_proteins[protein])

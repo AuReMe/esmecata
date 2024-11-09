@@ -1549,6 +1549,19 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
             if os.path.getsize(proteome_file_path) == 0:
                 logger.info('|EsMeCaTa|proteomes| Proteome file %s is still completly empty (0 octet), remove it to avoid issue with mmseqs2.', proteome)
                 os.remove(proteome_file_path)
+        # Try to open it to check the format.
+        chunksize = 1000000
+        with gzip.open(proteome_file_path, 'rb') as f:
+            try:
+                while f.read(chunksize) != b'':
+                    pass
+            except gzip.BadGzipFile:
+                logger.info('|EsMeCaTa|proteomes| Bad format for proteome file %s, try to redownload it.', proteome)
+                download_proteome_file(proteome, proteome_file_path, empty_proteomes, option_bioservices, session, uniprot_sparql_endpoint)
+            except EOFError:
+                logger.info('|EsMeCaTa|proteomes| Bad format for proteome file %s, try to redownload it.', proteome)
+                download_proteome_file(proteome, proteome_file_path, empty_proteomes, option_bioservices, session, uniprot_sparql_endpoint)
+
 
 
     # Download Uniprot metadata and create a json file containing them.

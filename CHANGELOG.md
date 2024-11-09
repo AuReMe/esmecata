@@ -1,5 +1,15 @@
 # Changelog
 
+# EsMeCaTa v0.5.4 (2024-11-09)
+
+## Add
+
+* Check the good format of the gzip file.
+
+## Fix
+
+* Issue with protein IDs from UniParc during annotation (incorrect split on '|').
+
 # EsMeCaTa v0.5.4 (2024-11-06)
 
 ## Fix
