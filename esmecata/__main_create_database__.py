@@ -180,7 +180,7 @@ def main():
             list_db_files = args.input.split(' ')
         merge_db_files(list_db_files, args.output)
     elif args.cmd == 'from_runs':
-        create_database_from_esmecata_run(args.input_proteomes, args.input_clustering, args.parent_parser_iannotation,
+        create_database_from_esmecata_run(args.input_proteomes, args.input_clustering, args.input_annotation,
                                           args.output, args.database_version, args.core)
   
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
