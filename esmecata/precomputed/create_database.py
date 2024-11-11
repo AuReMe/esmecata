@@ -17,12 +17,15 @@ import shutil
 import pandas as pd
 import json
 import csv
+import logging
 import zipfile
 
 from esmecata.core.eggnog import get_proteomes_tax_id_name
 
 from multiprocessing import Pool
 from collections import Counter
+
+logger = logging.getLogger(__name__)
 
 
 def get_proteomes_tax_id_name(proteomes_tax_id_file_path):
@@ -135,96 +138,6 @@ def copy_file(annotation_file, proteomes_taxa_names, computed_threshold_folder, 
         shutil.copyfile(consensus_sequence_file_path, taxon_consensus_sequence_file_path)
 
 
-def concat_tsv_file(input_tsv_file_path, tsv_file_concat_path, consensus_sequence_folder, annotation_reference_folder):
-    """ Concat tsv file for database by checking that fasta and tsv files exist.
-
-    Args:
-        input_tsv_file_path (str): path to input tsv file.
-        tsv_file_concat_path (str): path to tsv file containing concatenation.
-        consensus_sequence_folder (str): path to consensus folder.
-        annotation_reference_folder (str): path to annotation reference folder.
-    """
-    if not os.path.exists(tsv_file_concat_path):
-        df_proteomes_tax_id_file_path = pd.read_csv(input_tsv_file_path, sep='\t')
-        # Check that corresponding files exist.
-        existing_files = [os.path.exists(consensus_sequence_folder, tax_id_name+'.faa') and os.path.exists(annotation_reference_folder, tax_id_name+'.tsv')
-            for tax_id_name in df_proteomes_tax_id_file_path['tax_id_name']]
-        df_proteomes_tax_id_file_path = df_proteomes_tax_id_file_path[existing_files]
-        df_proteomes_tax_id_file_path.to_csv(tsv_file_concat_path, sep='\t', index=False)
-    else:
-        df_proteomes_tax_id_file_path = pd.read_csv(input_tsv_file_path, sep='\t')
-        # Check that corresponding files exist.
-        existing_files = [os.path.exists(consensus_sequence_folder, tax_id_name, tax_id_name+'.faa') and os.path.exists(annotation_reference_folder, tax_id_name, tax_id_name+'.tsv')
-            for tax_id_name in df_proteomes_tax_id_file_path['tax_id_name']]
-        df_proteomes_tax_id_file_path = df_proteomes_tax_id_file_path[existing_files]
-        df_tsv_file_concat = pd.read_csv(tsv_file_concat_path, sep='\t')
-        df_concat = pd.concat([df_proteomes_tax_id_file_path, df_tsv_file_concat])
-        df_concat.to_csv(tsv_file_concat_path, sep='\t', index=False)
-
-
-def create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, nb_core=1):
-    """ Create esmecata database from a run of esmecata.
-
-    Args:
-        esmecata_proteomes_folder (str): path to esmecata proteomes folder.
-        esmecata_clustering_folder (str): path to esmecata clustering folder.
-        esmecata_annotation_folder (str): path to esmecata anntoation folder.
-        output_database_folder (str): path to output folder containing zip database of esmecata.
-        nb_core (int): number of core to use when creating database.
-    """
-    if not os.path.exists(output_database_folder):
-        os.mkdir(output_database_folder)
-
-    consensus_sequence_folder = os.path.join(esmecata_clustering_folder, 'reference_proteins_consensus_fasta')
-    computed_threshold_folder = os.path.join(esmecata_clustering_folder, 'computed_threshold')
-
-    annotation_reference_folder = os.path.join(esmecata_annotation_folder, 'annotation_reference')
-
-    # Create/merge proteome_tax_id file for each taxon level.
-    proteomes_tax_id_file_path = os.path.join(esmecata_clustering_folder, 'proteome_tax_id.tsv')
-    proteomes_tax_id_file_database_path = os.path.join(output_database_folder, 'proteome_tax_id.tsv')
-    concat_tsv_file(proteomes_tax_id_file_path, proteomes_tax_id_file_database_path, consensus_sequence_folder, annotation_reference_folder)
-
-    # Create/merge stat_proteome file for each taxon level.
-    stat_number_proteome_file_path = os.path.join(esmecata_proteomes_folder, 'stat_number_proteome.tsv')
-    stat_number_proteome_database_path = os.path.join(output_database_folder, 'stat_number_proteome.tsv')
-    concat_tsv_file(stat_number_proteome_file_path, stat_number_proteome_database_path)
-
-    # Create/merge stat_number_clustering file for each taxon level.
-    stat_number_clustering_file_path = os.path.join(esmecata_clustering_folder, 'stat_number_clustering.tsv')
-    stat_number_clustering_database_path = os.path.join(output_database_folder, 'stat_number_clustering.tsv')
-    concat_tsv_file(stat_number_clustering_file_path, stat_number_clustering_database_path)
-
-    # Create/merge stat_proteome file for each taxon level.
-    stat_number_annotation_file_path = os.path.join(esmecata_annotation_folder, 'stat_number_annotation.tsv')
-    stat_number_annotation_database_path = os.path.join(output_database_folder, 'stat_number_annotation.tsv')
-    concat_tsv_file(stat_number_annotation_file_path, stat_number_annotation_database_path)
-
-    proteomes_taxa_names = get_proteomes_tax_id_name(proteomes_tax_id_file_path)
-
-    # Use multiprocessing to copy fasta and annotation files.
-    database_copy_pool = Pool(nb_core)
-
-    similar_tax_id_names = []
-    for observation_name in proteomes_taxa_names:
-        similar_tax_id_names.append(proteomes_taxa_names[observation_name])
-    similar_tax_id_names = Counter(similar_tax_id_names)
-
-    multiprocessing_data = []
-    for annotation_file in os.listdir(annotation_reference_folder):
-        observation_name = os.path.splitext(annotation_file)[0]
-        taxon_id_name = proteomes_taxa_names[observation_name]
-        # If more than 1 observation name associated with a similar tax_id_name, do not use multiprocessing as it leads error.
-        if similar_tax_id_names[taxon_id_name] > 1:
-            copy_file(annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder)
-        else:
-            multiprocessing_data.append([annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder])
-    database_copy_pool.starmap(copy_file, multiprocessing_data)
-
-    database_copy_pool.close()
-    database_copy_pool.join()
-
-
 def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, nb_core=1):
     """ Create esmecata database from a run of esmecata.
 
@@ -257,6 +170,10 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
     stat_number_annotation_file_path = os.path.join(esmecata_annotation_folder, 'stat_number_annotation.tsv')
     df_stat_number_annotation = pd.read_csv(stat_number_annotation_file_path, sep='\t')
     df_stat_number_annotation.set_index('observation_name', inplace=True)
+    # Remove predicitons with 0 EC and GO terms from the database.
+    empty_prediction_df = df_stat_number_annotation[df_stat_number_annotation['Number_ecs']==0]
+    empty_prediction_df = empty_prediction_df[empty_prediction_df['Number_go_terms']==0]
+    empty_predictions = empty_prediction_df.index.tolist()
 
     proteomes_taxa_names = get_proteomes_tax_id_name(proteomes_tax_id_file_path)
 
@@ -282,20 +199,24 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
     multiprocessing_data = []
     for annotation_file in os.listdir(annotation_reference_folder):
         observation_name = os.path.splitext(annotation_file)[0]
-        taxon_id_name = proteomes_taxa_names[observation_name]
-        reference_proteins_consensus_fasta_file = os.path.join(consensus_sequence_folder, taxon_id_name+'.faa')
-        if taxon_id_name not in already_processed_tax_id and os.path.exists(reference_proteins_consensus_fasta_file):
-            proteome_tax_id_data.append([taxon_id_name, *df_proteomes_tax_id.loc[observation_name].to_list()])
-            stat_number_proteome_data.append([taxon_id_name, *df_stat_number_proteome.loc[observation_name].to_list()])
-            stat_number_clustering_data.append([taxon_id_name, *df_stat_number_clustering.loc[observation_name].to_list()])
-            stat_number_annotation_data.append([taxon_id_name, *df_stat_number_annotation.loc[observation_name].to_list()])
-
-            already_processed_tax_id.append(taxon_id_name)
-        # If more than 1 observation name associated with a similar tax_id_name, do not use multiprocessing as it leads error.
-        if similar_tax_id_names[taxon_id_name] > 1:
-            copy_file(annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder)
+        if observation_name in empty_predictions:
+            logger.info(f'|EsMeCaTa|create_db| {observation_name} will not be added to database as it contains 0 ECs and 0 GO Terms.')
         else:
-            multiprocessing_data.append([annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder])
+            taxon_id_name = proteomes_taxa_names[observation_name]
+            reference_proteins_consensus_fasta_file = os.path.join(consensus_sequence_folder, taxon_id_name+'.faa')
+            if taxon_id_name not in already_processed_tax_id and os.path.exists(reference_proteins_consensus_fasta_file):
+                proteome_tax_id_data.append([taxon_id_name, *df_proteomes_tax_id.loc[observation_name].to_list()])
+                stat_number_proteome_data.append([taxon_id_name, *df_stat_number_proteome.loc[observation_name].to_list()])
+                stat_number_clustering_data.append([taxon_id_name, *df_stat_number_clustering.loc[observation_name].to_list()])
+                stat_number_annotation_data.append([taxon_id_name, *df_stat_number_annotation.loc[observation_name].to_list()])
+
+                already_processed_tax_id.append(taxon_id_name)
+            # If more than 1 observation name associated with a similar tax_id_name, do not use multiprocessing as it leads error.
+            if similar_tax_id_names[taxon_id_name] > 1:
+                copy_file(annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder)
+            else:
+                multiprocessing_data.append([annotation_file, proteomes_taxa_names, computed_threshold_folder, annotation_reference_folder, consensus_sequence_folder, output_database_folder])
+
     database_copy_pool.starmap(copy_file, multiprocessing_data)
 
     database_copy_pool.close()
@@ -357,38 +278,13 @@ def create_database_from_esmecata_workflow_run(esmecata_workflow_folder, output_
     create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder, database_version, nb_core)
 
 
-def create_database_from_multiple_esmecata_runs(esmecata_proteomes_folders, esmecata_clustering_folders, esmecata_annotation_folders, output_folder, database_version, cpu_number=1):
-    """ Extract data from esmecata runs and create an esmecata database from these.
+def merge_db_files(list_db_files, output_folder):
+    """ From a list of zip files of precomputed database of esmecata, merged them in one database.
 
     Args:
-        esmecata_proteomes_folders (list): list of path to esmecata proteomes folder.
-        esmecata_clustering_folders (list): list of path to esmecata clustering folder.
-        esmecata_annotation_folders (list): list of path to esmecata anntoation folder.
+        list_db_files (list): list of path to precomputed zip file of esmecata.
         output_folder (str): path to output folder containing zip database of esmecata.
-        nb_core (int): number of core to use when creating database.
     """
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
-
-    output_database_folder = os.path.join(output_folder, 'database_folder')
-    if not os.path.exists(output_database_folder):
-        os.mkdir(output_database_folder)
-
-    for index, esmecata_proteomes_folder in enumerate(esmecata_proteomes_folders):
-        taxon_level = os.path.basename(esmecata_proteomes_folder).split('_')[0]
-        esmecata_clustering_folder = esmecata_clustering_folders[index]
-        esmecata_annotation_folder = esmecata_annotation_folders[index]
-        create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, database_version, taxon_level)
-        create_database(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, cpu_number)
-
-    compress_database_file = os.path.join(output_folder, 'esmecata_database')
-    if not os.path.exists(compress_database_file):
-        os.mkdir(compress_database_file)
-    shutil.make_archive(compress_database_file, 'zip', output_database_folder)
-    shutil.rmtree(output_database_folder)
-
-
-def merge_db_files(list_db_files, output_folder):
     stat_number_proteome_df = pd.DataFrame(columns=['observation_name', 'Number_proteomes', 'Input_taxon_Name', 'Taxon_rank', 'EsMeCaTa_used_taxon', 'EsMeCaTa_used_rank', 'only_reference_proteome_used'])
     stat_number_clustering_df = pd.DataFrame(columns=['observation_name', 'Number_protein_clusters_panproteome', 'Number_protein_clusters_kept', 'Number_protein_clusters_coreproteome'])
     stat_number_annotation_df = pd.DataFrame(columns=['observation_name', 'Number_go_terms', 'Number_ecs'])
