@@ -17,6 +17,7 @@ import csv
 import datetime
 import json
 import logging
+import io
 import os
 import pandas as pd
 import shutil
@@ -280,10 +281,10 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     # For each line of the input files that has a match in the database, recreate an imitation of esmecata output folder.
     for tax_id in tax_id_obs_names:
-        taxi_id_name = proteomes_tax_id_names[tax_id]
+        tax_id_name = proteomes_tax_id_names[tax_id]
 
         # Read annotation file
-        annotation_file = os.path.join(taxi_id_name, taxi_id_name+'.tsv')
+        annotation_file = os.path.join(tax_id_name, tax_id_name+'.tsv')
         with archive.open(annotation_file) as zf:
             df_annotation = pd.read_csv(zf, sep='\t')
 
@@ -291,7 +292,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         df_annotation = df_annotation[df_annotation['cluster_ratio'] >= clust_threshold]
 
         # Create a computed threhsold file.
-        output_computed_threshold_file = os.path.join(computed_threshold_folder, taxi_id_name+'.tsv')
+        output_computed_threshold_file = os.path.join(computed_threshold_folder, tax_id_name+'.tsv')
         df_annotation[['representative_protein', 'cluster_ratio', 'proteomes']].to_csv(output_computed_threshold_file, sep='\t', index=None)
 
         kept_protein_ids = set(df_annotation['representative_protein'].tolist())
@@ -301,11 +302,10 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             df_annotation.to_csv(output_path_annotation_file, sep='\t', index=None)
 
         # Create a consensus proteoems file.
-        clustering_consensus_file = os.path.join(taxi_id_name, taxi_id_name+'.faa')
-        output_path_consensus_file = os.path.join(reference_proteins_consensus_fasta_folder, taxi_id_name+'.faa')
+        clustering_consensus_file = os.path.join(tax_id_name, tax_id_name+'.faa')
+        output_path_consensus_file = os.path.join(reference_proteins_consensus_fasta_folder, tax_id_name+'.faa')
         if not os.path.exists(output_path_consensus_file):
             records = []
-            import io
             with archive.open(clustering_consensus_file) as zf:
                 open_zf_text  = io.TextIOWrapper(zf)
                 for record in SeqIO.parse(open_zf_text, 'fasta'):
@@ -315,7 +315,12 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
                         protein_id = record.id
                     if protein_id in kept_protein_ids:
                         records.append(record)
-            SeqIO.write(records, output_path_consensus_file, 'fasta')
+
+            if len(records) > 0:
+                logger.critical('|EsMeCaTa|precomputed| {0} protein clusters kept for taxon {0} using threshold {1}.'.format(len(records), clust_threshold, tax_id_name))
+                SeqIO.write(records, output_path_consensus_file, 'fasta')
+            else:
+                logger.critical('|EsMeCaTa|precomputed| 0 protein clusters kept for taxon {0} using threshold {1}, it will not have predictions.'.format(tax_id_name, clust_threshold))
 
     archive.close()
 
@@ -340,12 +345,15 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
                 if protein_cluster_threshold >= 0:
                     cluster_0.append(line[0])
 
-        tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = [cluster_0, selected_threshold_cluster, cluster_0_95]
+        if len(selected_threshold_cluster) > 0:
+            tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = [cluster_0, selected_threshold_cluster, cluster_0_95]
     proteomes_taxa_id_names = get_proteomes_tax_id_name(clustering_proteome_tax_id_file)
+
     clustering_numbers = {}
     for observation_name in proteomes_taxa_id_names:
         tax_name = proteomes_taxa_id_names[observation_name]
-        clustering_numbers[observation_name] = tax_name_clustering_numbers[tax_name]
+        if tax_name in tax_name_clustering_numbers:
+            clustering_numbers[observation_name] = tax_name_clustering_numbers[tax_name]
 
     clustering_stat_file = os.path.join(clustering_output_folder, 'stat_number_clustering.tsv')
     with open(clustering_stat_file, 'w') as stat_file_open:
