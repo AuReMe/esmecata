@@ -140,16 +140,17 @@ def copy_file(annotation_file, proteomes_taxa_names, computed_threshold_folder, 
         shutil.copyfile(consensus_sequence_file_path, taxon_consensus_sequence_file_path)
 
 
-def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, nb_core=1):
+def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder, nb_core=1):
     """ Create esmecata database from a run of esmecata.
 
     Args:
         esmecata_proteomes_folder (str): path to esmecata proteomes folder.
         esmecata_clustering_folder (str): path to esmecata clustering folder.
         esmecata_annotation_folder (str): path to esmecata anntoation folder.
-        output_database_folder (str): path to output folder containing zip database of esmecata.
+        output_folder (str): path to output folder.
         nb_core (int): number of core to use when creating database.
     """
+    output_database_folder = os.path.join(output_folder, 'database_folder')
     if not os.path.exists(output_database_folder):
         os.mkdir(output_database_folder)
 
@@ -225,7 +226,7 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
                         tax_id_issues[children_tax_id] = (children_protein_nb, parent_tax_id, parent_protein_nb)
 
     predictions_with_issues = []
-    issues_tax_id_folder = os.path.join(output_database_folder, 'issues_tax_id')
+    issues_tax_id_folder = os.path.join(output_folder, 'issues_tax_id')
     if not os.path.exists(issues_tax_id_folder):
         os.mkdir(issues_tax_id_folder)
     for tax_id in tax_id_issues:
@@ -312,7 +313,7 @@ def create_database_from_esmecata_run(esmecata_proteomes_folder, esmecata_cluste
         os.mkdir(output_database_folder)
 
     create_json(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, database_version)
-    create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_database_folder, nb_core)
+    create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_folder, esmecata_annotation_folder, output_folder, nb_core)
 
     compress_database_file = os.path.join(output_folder, 'esmecata_database')
     if not os.path.exists(compress_database_file):
