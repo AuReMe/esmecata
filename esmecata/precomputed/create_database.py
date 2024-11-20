@@ -25,6 +25,8 @@ from esmecata.core.eggnog import get_proteomes_tax_id_name
 from multiprocessing import Pool
 from collections import Counter
 
+from ete3 import NCBITaxa
+
 logger = logging.getLogger(__name__)
 
 
@@ -155,6 +157,17 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
     proteomes_tax_id_file_path = os.path.join(esmecata_clustering_folder, 'proteome_tax_id.tsv')
     df_proteomes_tax_id = pd.read_csv(proteomes_tax_id_file_path, sep='\t')
     df_proteomes_tax_id.set_index('observation_name', inplace=True)
+    obs_name_proteomes = df_proteomes_tax_id['proteome'].to_dict()
+
+    # Get dict mapping tax IDs and observation names.
+    obs_name_tax_ids = df_proteomes_tax_id['tax_id'].to_dict()
+    tax_id_obs_names = {}
+    for observation_name in obs_name_tax_ids:
+        tax_id = obs_name_tax_ids[observation_name]
+        if tax_id not in tax_id_obs_names:
+            tax_id_obs_names[tax_id] = [observation_name]
+        else:
+            tax_id_obs_names[tax_id].append(observation_name)
 
     # Create/merge stat_proteome file for each taxon level.
     stat_number_proteome_file_path = os.path.join(esmecata_proteomes_folder, 'stat_number_proteome.tsv')
@@ -166,14 +179,14 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
     df_stat_number_clustering = pd.read_csv(stat_number_clustering_file_path, sep='\t')
     df_stat_number_clustering.set_index('observation_name', inplace=True)
 
+    df_stat_join = df_proteomes_tax_id.join(df_stat_number_clustering)
+    df_stat_join.set_index('tax_id', inplace=True)
+    tax_id_protein_clusters = df_stat_join['Number_protein_clusters_kept'].to_dict()
+
     # Create/merge stat_proteome file for each taxon level.
     stat_number_annotation_file_path = os.path.join(esmecata_annotation_folder, 'stat_number_annotation.tsv')
     df_stat_number_annotation = pd.read_csv(stat_number_annotation_file_path, sep='\t')
     df_stat_number_annotation.set_index('observation_name', inplace=True)
-    # Remove predicitons with 0 EC and GO terms from the database.
-    empty_prediction_df = df_stat_number_annotation[df_stat_number_annotation['Number_ecs']==0]
-    empty_prediction_df = empty_prediction_df[empty_prediction_df['Number_go_terms']==0]
-    empty_predictions = empty_prediction_df.index.tolist()
 
     proteomes_taxa_names = get_proteomes_tax_id_name(proteomes_tax_id_file_path)
 
@@ -182,6 +195,49 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
     reference_proteins_folder = os.path.join(esmecata_clustering_folder, 'reference_proteins')
 
     annotation_reference_folder = os.path.join(esmecata_annotation_folder, 'annotation_reference')
+
+    ncbi = NCBITaxa()
+    database_tree = ncbi.get_topology([org_tax_id for org_tax_id in df_proteomes_tax_id['tax_id']])
+    tax_id_issues = {}
+    # Parse all descendant of root to search for children tax id with lower protein than parents.
+    # To identify taxon with potential errors.
+    for descendant in database_tree.iter_descendants():
+        descendant_childrens = descendant.children
+        parent_tax_id = int(descendant.name)
+        if parent_tax_id in tax_id_protein_clusters:
+            parent_protein_nb = tax_id_protein_clusters[parent_tax_id]
+        else:
+            parent_protein_nb = None
+        if descendant_childrens != []:
+            for children in descendant.children:
+                children_tax_id = int(children.name)
+                if children_tax_id in tax_id_protein_clusters:
+                    children_protein_nb = tax_id_protein_clusters[children_tax_id]
+                else:
+                    children_protein_nb = None
+                if children_protein_nb is not None and parent_protein_nb is not None:
+                    # Compute percent of proteins in children compare to parent
+                    percent_protein_nb = (children_protein_nb / parent_protein_nb) * 100
+                    # If children has less than 20% of proteins compared to the parent, add them to the issues.
+                    if percent_protein_nb < 20:
+                        tax_id_issues[children_tax_id] = (children_protein_nb, parent_tax_id, parent_protein_nb)
+
+    predictions_with_issues = []
+    issues_tax_id_folder = os.path.join(output_database_folder, 'issues_tax_id')
+    if not os.path.exists(issues_tax_id_folder):
+        os.mkdir(issues_tax_id_folder)
+    for tax_id in tax_id_issues:
+        children_protein_nb = tax_id_issues[tax_id][0]
+        parent_tax_id = tax_id_issues[tax_id][1]
+        parent_protein_nb = tax_id_issues[tax_id][2]
+        for observation_name in tax_id_obs_names[tax_id]:
+            observation_name_issue_folder = os.path.join(issues_tax_id_folder, observation_name)
+            if not os.path.exists(observation_name_issue_folder):
+                os.mkdir(observation_name_issue_folder)
+            for proteome in obs_name_proteomes[observation_name].split(','):
+                shutil.copyfile(os.path.join(consensus_sequence_folder, proteome+'.faa.gz'), os.path.join(observation_name_issue_folder, proteome+'.faa.gz'))
+            logger.info(f'|EsMeCaTa|create_db| {observation_name} with less than 20% of protein clusters ({children_protein_nb}) compared to parent ({parent_tax_id}) protein clusters ({parent_protein_nb}).')
+            predictions_with_issues.append(observation_name)
 
     # Use multiprocessing to copy fasta and annotation files.
     database_copy_pool = Pool(nb_core)
@@ -199,7 +255,7 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
     multiprocessing_data = []
     for annotation_file in os.listdir(annotation_reference_folder):
         observation_name = os.path.splitext(annotation_file)[0]
-        if observation_name in empty_predictions:
+        if observation_name in predictions_with_issues:
             logger.info(f'|EsMeCaTa|create_db| {observation_name} will not be added to database as it contains 0 ECs and 0 GO Terms.')
         else:
             taxon_id_name = proteomes_taxa_names[observation_name]

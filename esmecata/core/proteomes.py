@@ -1451,8 +1451,9 @@ def download_proteome_file(proteome, output_proteome_file, empty_proteomes, opti
             except requests.exceptions.ChunkedEncodingError as error:
                 logger.critical('|EsMeCaTa|proteomes| Error with proteome file %s, will be considered as empty.', proteome)
                 logger.critical(error)
-                with open(output_proteome_file, 'wb') as f:
-                    f.write(b'')
+                with gzip.open(output_proteome_file, 'wb') as output_file:
+                    output_file.write(b'')
+
 
         else:
             import bioservices
@@ -1462,7 +1463,7 @@ def download_proteome_file(proteome, output_proteome_file, empty_proteomes, opti
             with open(output_proteome_file, 'wb') as f:
                 f.write(data_fasta)
         # Check if downloaded file is empty, if yes, try with UniParc.
-        if os.path.getsize(output_proteome_file) <= 20:
+        if os.path.getsize(output_proteome_file) <= 200:
             time.sleep(1)
             logger.info('|EsMeCaTa|proteomes| Proteome file %s seems to be empty, it seems that there is an issue with this proteome on UniProt. Try Uniparc.', proteome)
             if option_bioservices is None:
@@ -1474,8 +1475,9 @@ def download_proteome_file(proteome, output_proteome_file, empty_proteomes, opti
                 except requests.exceptions.ChunkedEncodingError as error:
                     logger.critical('|EsMeCaTa|proteomes| Error with proteome file %s, will be considered as empty.', proteome)
                     logger.critical(error)
-                    with open(output_proteome_file, 'wb') as f:
-                        f.write(b'')
+                    with gzip.open(output_proteome_file, 'wb') as output_file:
+                        output_file.write(b'')
+
             else:
                 import bioservices
                 uniprot_bioservices = bioservices.UniProt()
@@ -1483,7 +1485,7 @@ def download_proteome_file(proteome, output_proteome_file, empty_proteomes, opti
                                                         frmt='fasta', compress=True, progress=False)
                 with open(output_proteome_file, 'wb') as f:
                     f.write(data_fasta)
-            if os.path.getsize(output_proteome_file) <= 20:
+            if os.path.getsize(output_proteome_file) <= 200:
                 logger.info('|EsMeCaTa|proteomes| Proteome file %s is still empty even after using UniParc.', proteome)
                 empty_proteomes.append(proteome)
             else:
