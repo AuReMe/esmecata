@@ -235,7 +235,7 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
             if not os.path.exists(observation_name_issue_folder):
                 os.mkdir(observation_name_issue_folder)
             for proteome in obs_name_proteomes[observation_name].split(','):
-                shutil.copyfile(os.path.join(consensus_sequence_folder, proteome+'.faa.gz'), os.path.join(observation_name_issue_folder, proteome+'.faa.gz'))
+                shutil.copyfile(os.path.join(consensus_sequence_folder, proteome+'.faa'), os.path.join(observation_name_issue_folder, proteome+'.faa'))
             logger.info(f'|EsMeCaTa|create_db| {observation_name} with less than 20% of protein clusters ({children_protein_nb}) compared to parent ({parent_tax_id}) protein clusters ({parent_protein_nb}).')
             predictions_with_issues.append(observation_name)
 
