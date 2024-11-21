@@ -190,7 +190,7 @@ For each observation name in the input file, it will returned the associated ann
 It will also output the protein sequences for each taxa associated with the observation name.
 
 ```
-usage: esmecata precomputed [-h] -i INPUT_FILE -d INPUT_FILE -o OUPUT_DIR [-r RANK_LIMIT] [--update-affiliations]
+usage: esmecata precomputed [-h] -i INPUT_FILE -d INPUT_FILE -o OUPUT_DIR [-r RANK_LIMIT] [--update-affiliations] [-t THRESHOLD_CLUSTERING]
 
 options:
   -h, --help            show this help message and exit
@@ -205,6 +205,8 @@ options:
                         information (and a list of rank names).
   --update-affiliations
                         If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+  -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
+                        Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly. Default is 0.5.
 ```
 
 Two options can be used to limit the rank used when searching for proteomes and to update the taxonomic affiliations from the input file.
