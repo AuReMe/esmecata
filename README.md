@@ -85,7 +85,7 @@ EsMeCaTa is available on [PyPI](https://pypi.org/project/esmecata/) and can be i
 
 It can also be installed using esmecata github directory:
 
-```git clone https://github.com/ArnaudBelcour/esmecata.git```
+```git clone https://github.com/AuReMe/esmecata.git```
 
 ```cd esmecata```
 
