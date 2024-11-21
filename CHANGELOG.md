@@ -1,15 +1,21 @@
 # Changelog
 
-# EsMeCaTa v0.5.4 (2024-11-09)
+# EsMeCaTa v0.5.5 (2024-11-21)
 
 ## Add
 
 * Create database from different output folders of esmecata (`from_runs`).
+* Add option threshold to precomputed.
+* A check after database creation to detect taxon with few predicted proteins compared to higher affiliated taxon. 
 * Check the good format of the gzip file.
 
 ## Fix
 
 * Issue with protein IDs from UniParc during annotation (incorrect split on '|').
+
+## Modify
+
+* Add adatabase version in log.
 
 # EsMeCaTa v0.5.4 (2024-11-06)
 
