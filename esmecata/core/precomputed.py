@@ -187,6 +187,9 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         if json_key.endswith('_clustering'):
             clustering_data_json = json_data[json_key]
 
+    precomputed_db_version = json_data['database_version']
+    logger.critical('|EsMeCaTa|precomputed| EsMeCaTa is using precomputed database version {0}.'.format(precomputed_db_version))
+
     # Check compatibility between user threshold and database threshold.
     database_clustering_threhsold = clustering_data_json['tool_options']['clust_threshold']
     if clust_threshold < database_clustering_threhsold:
@@ -200,6 +203,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     esmecata_metadata['precomputed_database']['swissprot_release_date'] = proteomes_data_json['swissprot_release_date']
     esmecata_metadata['precomputed_database']['trembl_release_number'] = proteomes_data_json['trembl_release_number']
     esmecata_metadata['precomputed_database']['trembl_release_date'] = proteomes_data_json['trembl_release_date']
+    esmecata_metadata['precomputed_database']['esmecata_precomputed_db_version'] = precomputed_db_version
 
     ncbi = NCBITaxa()
 
