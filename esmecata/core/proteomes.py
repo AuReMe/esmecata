@@ -1260,7 +1260,7 @@ def get_taxon_obs_name(proteome_tax_id_file, selected_taxon_rank='family'):
 
             found_taxon_id = None
             if tax_rank == selected_taxon_rank:
-                found_taxon_id = tax_id
+                found_taxon_id = int(tax_id)
             else:
                 tax_id_lineages = ncbi.get_lineage(tax_id)
                 for tax_id in tax_id_lineages:
