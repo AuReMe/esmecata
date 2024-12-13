@@ -1022,6 +1022,11 @@ Or by using one input file with:
 
 `esmecata_gseapy gseapy_enrichr -f esmecata_annotation_output_folder -o output_folder --grouping selected --taxa-list manually_selected_groups.tsv`
 
+Additional arguments can be given to use gseapy or orsum options such as:
+
+- `--gseapyCutOff` to set adjusted p-value cut-off for gseapy enrichr term (by default it is 0.05).
+- `--orsumMinTermSize` to set the MinTermSize of orsum (the minimum size of the terms to be processed.).
+
 ## EsMeCaTa create_db
 
 Create precomputed database from esmecata output folders or merge already present precomputed databases.

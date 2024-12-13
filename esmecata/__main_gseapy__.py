@@ -119,6 +119,16 @@ def main():
         metavar='INT',
         default=None)
 
+    parent_parser_gseapyCutOff = argparse.ArgumentParser(add_help=False)
+    parent_parser_gseapyCutOff.add_argument(
+        '--gseapyCutOff',
+        dest='gseapyCutOff',
+        required=False,
+        type=float,
+        help='Adjust-Pval cutoff for gseapy enrichr, default: 0.05 (--cut-off argument of gseapy).',
+        metavar='FLOAT',
+        default=0.05)
+
     # subparsers
     subparsers = parser.add_subparsers(
         title='subcommands',
@@ -130,7 +140,7 @@ def main():
         help='Extract enriched functions from groups (either chosen from tax_rank or manually selected) using gseapy enrichr and orsum.',
         parents=[
             parent_parser_f, parent_parser_o, parent_parser_grouping, parent_parser_t, parent_parser_taxa_list,
-            parent_parser_e, parent_parser_g, parent_parser_orsumMinTermSize
+            parent_parser_e, parent_parser_g, parent_parser_orsumMinTermSize, parent_parser_gseapyCutOff
             ],
         allow_abbrev=False)
 
@@ -158,7 +168,8 @@ def main():
 
     if args.cmd == 'gseapy_enrichr':
         taxon_rank_annotation_enrichment(args.input_folder, args.output, args.grouping, taxon_rank=args.taxon_rank, taxa_lists_file=args.taxa_list,
-                                         enzyme_data_file=args.enzyme_file, go_basic_obo_file=args.go_file, orsum_minterm_size=args.orsumMinTermSize)
+                                         enzyme_data_file=args.enzyme_file, go_basic_obo_file=args.go_file, orsum_minterm_size=args.orsumMinTermSize,
+                                         selected_adjust_pvalue_cutoff=args.gseapyCutOff)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

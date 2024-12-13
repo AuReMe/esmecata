@@ -161,7 +161,8 @@ def extract_organisms_selected(taxa_lists_file):
 
 def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping="tax_rank",
                                      taxon_rank='phylum', taxa_lists_file=None,
-                                     enzyme_data_file=None, go_basic_obo_file=None, orsum_minterm_size=None):
+                                     enzyme_data_file=None, go_basic_obo_file=None, orsum_minterm_size=None,
+                                     selected_adjust_pvalue_cutoff=0.05):
     """ Run an enrichment analysis on taxon from annotation results of esmecata using gseapy.
     Then filter this list with orsum.
 
@@ -174,6 +175,7 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         enzyme_data_file (str): path to expasy enzyme.dat file, if not given, download it
         go_basic_obo_file (str): path to Gene Ontology go-basic.obo file, if not given, download it
         orsum_minterm_size (int): option minTermSize of orsum
+        selected_adjust_pvalue_cutoff (float): adjust-Pval cutoff for gseapy enrichr, default: 0.05
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|gseapy_enrichr| Begin enrichment analysis.')
@@ -264,14 +266,14 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         # Try to run gseapy enrichr, if no enriched results, continue.
         try:
             gseapy.enrichr(gene_list=organisms, gene_sets=annotation_sets, background=None,
-                        outdir=os.path.join(output_dir, tax_name))
+                        outdir=os.path.join(output_dir, tax_name), cutoff=selected_adjust_pvalue_cutoff)
         except ValueError as error:
-            logger.info('|EsMeCaTa|gseapy_enrichr| No enrichred functions with p-value cutoff < 0.05 for {0}.'.format(tax_name))
+            logger.info('|EsMeCaTa|gseapy_enrichr| No enrichred functions with p-value cutoff < {0} for {1}.'.format(selected_adjust_pvalue_cutoff, tax_name))
             continue
         if os.path.exists(os.path.join(output_dir, tax_name, 'gs_ind_0.human.enrichr.reports.pdf')):
-            # If enriched results, extract the ones with an adjusted p-value inferior to 0.05 to output folder.
+            # If enriched results, extract the ones with an adjusted p-value inferior to selected_adjust_pvalue_cutoff to output folder.
             df = pd.read_csv(os.path.join(output_dir, tax_name, 'gs_ind_0.human.enrichr.reports.txt'), sep='\t')
-            df = df[df['Adjusted P-value'] < 0.05]
+            df = df[df['Adjusted P-value'] < selected_adjust_pvalue_cutoff]
             enriched_elements[tax_name] = df.set_index('Term')['Adjusted P-value'].to_dict()
 
             df.sort_values('Adjusted P-value', inplace=True)
@@ -286,6 +288,12 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         csvwriter.writerow(['Organism', *all_elments])
         for org in enriched_elements:
             csvwriter.writerow([org, *[enriched_elements[org][element] if element in enriched_elements[org] else 'NA' for element in all_elments]])
+
+    # Check that there are files in orsum folder.
+    orsum_input_folder_files = os.listdir(orsum_input_folder)
+    if len(orsum_input_folder_files) == 0:
+        logger.critical('|EsMeCaTa|gseapy_enrichr| No enriched files from gseapy enrichr as input for orsum. It seems that there are no enrichd terms found.')
+        sys.exit(1)
 
     # Run orsum to filter list of enriched annotations.
     logger.info('|EsMeCaTa|gseapy_enrichr| Launch orsum visualisation.')
