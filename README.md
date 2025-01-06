@@ -996,7 +996,7 @@ subcommands:
 Requires: gseapy and orsum
 ```
 
-`gseapy_enrichr` has currently two ways of use:
+There are currently two ways to use `gseapy_enrichr`:
 
 - by grouping observation names according to their taxonomic ranks (by default `phylum`) with the parameter `--grouping tax_rank`.
 - by grouping observation names into groups defined by the user with a tsv file with the parameter `--grouping selected`. The input file is given by  the suer with the parameter `--taxa-list` and should look like this:

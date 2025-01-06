@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023-2024 Pauline Hamon-Giraud and Victor Mataigne - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2023-2024 Pauline Hamon-Giraud and Alice Mataigne - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # Arnaud Belcour - Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,8 +38,7 @@ from esmecata.report.esmecata_compression import RANK2COL, RANK_SORTED
 # import scipy.stats as st
 
 
-__author__ = "Pauline Hamon-Giraud, Victor Mataigne"
-__email__ = "victor.mataigne@irisa.fr"
+__author__ = "Pauline Hamon-Giraud, Alice Mataigne"
 
 # warnings.filterwarnings('ignore')
 
