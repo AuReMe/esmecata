@@ -1,10 +1,11 @@
 # Changelog
 
-# EsMeCaTa v0.5.5 (2024-11-21)
+# EsMeCaTa v0.6.0 (2025-01-06)
 
 ## Add
 
 * Create database from different output folders of esmecata (`from_runs`).
+* Full release of `esmecata precomputed` associated with the first version of [esmecata precomputed database](https://doi.org/10.5281/zenodo.13354073).
 * Add option threshold to precomputed.
 * A check after database creation to detect taxon with few predicted proteins compared to higher affiliated taxon. 
 * Check the good format of the gzip file.
@@ -15,7 +16,7 @@
 
 ## Modify
 
-* Add adatabase version in log.
+* Add database version in log.
 
 # EsMeCaTa v0.5.4 (2024-11-06)
 
