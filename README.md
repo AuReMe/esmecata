@@ -181,8 +181,8 @@ Steps proteomes and annotation by UniProt requires an internet connection (for R
 
 ### Use the precomputed database
 
-**WARNING**: Database is in development, it is not available yet.
-But there are several precomputed databases associated with the article datasets available in the Zenodo archive of EsMeCaTa.
+The precomputed database of EsMeCaTa is available at this [Zenodo repository](https://doi.org/10.5281/zenodo.13354073). Warning, this precomputed database size is 4 Gb.
+Several precomputed databases (of smaller size) associated with the article datasets are available in the Zenodo archive of EsMeCaTa's article.
 
 Using the precomputed database, esmecata searches for input taxon inside the precomputed database to make prediction.
 It requires an input file containing the taxonomic affiliations and a precomputed esmecata database.
