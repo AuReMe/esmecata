@@ -233,7 +233,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         for observation_name in association_taxon_database:
             tax_id = association_taxon_database[observation_name][1]
             if tax_id != 'not_found':
-                tax_name = association_taxon_database[observation_name][1]
+                tax_name = association_taxon_database[observation_name][0]
                 tax_id_name = proteomes_tax_id_names[tax_id]
                 tax_rank = taxon_data[tax_id][2]
                 proteome = taxon_data[tax_id][3]
