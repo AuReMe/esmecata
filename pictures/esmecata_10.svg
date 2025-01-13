@@ -27,9 +27,9 @@
      inkscape:pagecheckerboard="true"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.41659698"
-     inkscape:cx="2085.9489"
-     inkscape:cy="1957.5274"
+     inkscape:zoom="0.20829849"
+     inkscape:cx="2726.8561"
+     inkscape:cy="2157.9609"
      inkscape:window-width="2490"
      inkscape:window-height="1376"
      inkscape:window-x="70"
@@ -4911,7 +4911,13 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     style="display:inline"><text
+     style="display:inline"><rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#838281;stroke-width:1;stroke-opacity:0.888889"
+       id="rect2"
+       width="925"
+       height="850"
+       x="0"
+       y="0" /><text
        xml:space="preserve"
        style="font-size:14.1111px;line-height:1.25;font-family:Sans;-inkscape-font-specification:'Sans, Normal';font-variant-ligatures:none;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        x="21.877537"
