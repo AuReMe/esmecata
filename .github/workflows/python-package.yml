@@ -58,7 +58,7 @@ jobs:
         pytest test_proteomes.py
         pytest test_clustering.py
         pytest test_annotation.py
-        pytest test_workflow.py
+        pytest test_workflow_uniprot.py
         pytest test_precomputed.py
         pytest test_eggnog.py
         pytest test_report.py
