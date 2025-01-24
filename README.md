@@ -754,7 +754,7 @@ output_folder
 │       └── Cluster_1.pf
 │   └── ...
 │   └── taxon_id.tsv
-├── dataset_annotation_observation_name.tsv
+├── function_table.tsv
 ├── esmecata_annotation.log
 ├── esmecata_metadata_annotation.json
 ├── stat_number_annotation.tsv
@@ -768,7 +768,7 @@ The `merge_fasta` folder contains merged protein sequences of the clustering ste
 
 The `pathologic` folder contains one sub-folder for each `observation_name` in which there is one PathoLogic file. There is also a `taxon_id.tsv` file which corresponds to a modified version of `proteome_tax_id.tsv` with only the `observation_name` and the `taxon_id`. This folder can be used as input to [mpwt](https://github.com/AuReMe/mpwt) to reconstruct draft metabolic networks using Pathway Tools PathoLogic.
 
-The file `dataset_annotation_observation_name.tsv` contains the EC numbers and GO Terms present in each observation name.
+The file `function_table.tsv` contains the EC numbers and GO Terms present in each observation name.
 
 The file `esmecata_annotation.log` contains the log associated with the command.
 
@@ -797,7 +797,7 @@ output_folder
 ├── uniref_annotation (if --uniref option)
 │   └── Cluster_1.tsv
 │   └── ...
-├── dataset_annotation_observation_name.tsv
+├── function_table.tsv
 ├── esmecata_annotation.log
 ├── esmecata_metadata_annotation.json
 ├── stat_number_annotation.tsv
@@ -879,7 +879,7 @@ output_folder
   │       └── Cluster_1.pf
   │   └── ...
   │   └── taxon_id.tsv
-  ├── dataset_annotation_observation_name.tsv
+  ├── function_table.tsv
   ├── esmecata_annotation.log
   ├── esmecata_metadata_annotation.json
   ├── stat_number_annotation.tsv
@@ -930,7 +930,7 @@ output_folder
   │       └── Cluster_1.pf
   │   └── ...
   │   └── taxon_id.tsv
-  ├── dataset_annotation_observation_name.tsv
+  ├── function_table.tsv
   ├── esmecata_metadata_annotation.json
   ├── stat_number_annotation.tsv
 ├── esmecata_precomputed.log

@@ -321,7 +321,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
                         records.append(record)
 
             if len(records) > 0:
-                logger.critical('|EsMeCaTa|precomputed| {0} protein clusters kept for taxon {0} using threshold {1}.'.format(len(records), clust_threshold, tax_id_name))
+                logger.critical('|EsMeCaTa|precomputed| {0} protein clusters kept for taxon {1} using threshold {2}.'.format(len(records), tax_id_name, clust_threshold))
                 SeqIO.write(records, output_path_consensus_file, 'fasta')
             else:
                 logger.critical('|EsMeCaTa|precomputed| 0 protein clusters kept for taxon {0} using threshold {1}, it will not have predictions.'.format(tax_id_name, clust_threshold))
