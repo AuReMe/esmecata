@@ -139,7 +139,7 @@ def main():
         '--update-affiliations',
         dest='update_affiliations',
         help='''If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. \
-            This option tries to udpate the taxonomic affiliations using the lowest taxon name.''',
+            This option tries to update the taxonomic affiliations using the lowest taxon name.''',
         required=False,
         action='store_true',
         default=None)

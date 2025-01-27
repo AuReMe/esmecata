@@ -2,7 +2,7 @@
 
 # EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic affiliations
 
-EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affiliation (for example with 16S rRNA sequencing or using a specific taxon name) by using the UniProt Proteomes database. This can be used to (1) estimate protein sequences and functions for an organism with no sequenced genomes, (2) explore the protein diveristy of a taxon.
+EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affiliation (for example with 16S rRNA sequencing or using a specific taxon name) by using the UniProt Proteomes database. This can be used to (1) estimate protein sequences and functions for an organism with no sequenced genomes, (2) explore the protein diversity of a taxon.
 
 ![](pictures/esmecata_10.svg)
 
@@ -144,13 +144,13 @@ It is possible to use EsMeCaTa with a taxonomic affiliation containing only one 
 | Cluster_1        | Sphaerochaeta       |
 | Cluster_2        | Yersinia            |
 
-But this can cause issue. For example, "Cluster_2" is associated with Yersinia but two genus are associated with this name (one mantid (taxId: 444888) and one bacteria (taxId: 629)). EsMeCaTa will not able to differentiate them. But if you give more informations by adding more taxons (for example: 'Bacteria;Gammaproteobacteria;Yersinia'), EsMeCaTa will compare all the taxons of the taxonomic affiliation (here: 2 (Bacteria) and 1236 (Gammaproteobacteria)) to the lineage associated with the two taxIDs (for bacteria Yersinia: [1, 131567, 2, 1224, 1236, 91347, 1903411, 629] and for the mantid one: [1, 131567, 2759, 33154, 33208, 6072, 33213, 33317, 1206794, 88770, 6656, 197563, 197562, 6960, 50557, 85512, 7496, 33340, 33341, 6970, 7504, 7505, 267071, 444888]). In this example, there is 2 matches for the bacterial one (2 and 1236) and 0 for the mantid one. So EsMeCaTa will select the taxId associated with the bacteria (629).
+But this can cause issue. For example, "Cluster_2" is associated with Yersinia but two genus are associated with this name (one mantid (taxId: 444888) and one bacteria (taxId: 629)). EsMeCaTa will not able to differentiate them. But if you give more informations by adding more taxa (for example: 'Bacteria;Gammaproteobacteria;Yersinia'), EsMeCaTa will compare all the taxa of the taxonomic affiliation (here: 2 (Bacteria) and 1236 (Gammaproteobacteria)) to the lineage associated with the two taxIDs (for bacteria Yersinia: [1, 131567, 2, 1224, 1236, 91347, 1903411, 629] and for the mantid one: [1, 131567, 2759, 33154, 33208, 6072, 33213, 33317, 1206794, 88770, 6656, 197563, 197562, 6960, 50557, 85512, 7496, 33340, 33341, 6970, 7504, 7505, 267071, 444888]). In this example, there is 2 matches for the bacterial one (2 and 1236) and 0 for the mantid one. So EsMeCaTa will select the taxId associated with the bacteria (629).
 
 A [jupyter notebook](https://github.com/AuReMe/esmecata/blob/master/tutorials/esmecata_method.ipynb) explains how EsMeCata works.
 
 ## EsMeCaTa commands
 
-Several command line are created after the isntallation:
+Several command line are created after the installation:
 
 - `esmecata`: the main command to perform esmecata workflow from input file or with a precomputed database.
 - `esmecata_report`: another command to create HTML report showing different statistics on the predictions.
@@ -226,7 +226,7 @@ esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database.zi
 
 ### Classical run of EsMeCaTa
 
-Otherwise, it is possible to run the whole workflow of EsMeCaTa but it will take times as it will search and download proteomes from UniProt, clsuter protein sequences with mmseqs2 and then annotate them with eggnog-mapper.
+Otherwise, it is possible to run the whole workflow of EsMeCaTa but it will take times as it will search and download proteomes from UniProt, cluster protein sequences with mmseqs2 and then annotate them with eggnog-mapper.
 
 These different steps are presented in the following section.
 
@@ -277,18 +277,18 @@ options:
 
 For each taxon in each taxonomic affiliations EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated with these taxon ID in the Uniprot Proteomes database.
 
-If there is more than 100 proteomes, esmecata will apply a specific method:
+If there is more than 100 proteomes, esmecata applies a subsampling procedure:
 
 * (1) use the taxon ID associated with each proteomes to create a taxonomic tree with ete3.
 
-* (2) from the root of the tree (the input taxon), esmecata will find the direct deescendant (sub-taxons).
+* (2) from the root of the tree (the input taxon), esmecata will find the direct descendants (sub-taxa).
 
 * (3) then esmecata will compute the number of proteomes associated with each sub-taxon.
 
 * (4) the corresponding proportions will be used to select randomly a number of proteomes corresponding to the proportion.
 
 For example: for the taxon Clostridiales, 645 proteomes are found. Using the organism taxon ID associated with the 645 proteomes we found that there is 17 direct sub-taxons. Then for each sub-taxon we compute the percentage of proportion of proteomes given by the sub-taxon to the taxon Clostridiales.
-There is 198 proteomes associated with the sub-taxon Clostridiaceae, the percentage will be computed as follow: 198 / 645 = 30% (if a percentage is superior to 1 it will be round down and if the percentage is lower than 1 it will be round up to keep all the low proportion sub-taxons). We will use this 30% to select randomly 30 proteomes amongst the 198 proteomes of Clostridiaceae. This is done for all the other sub-taxons, so we get a number of proteomes around 100 (here it will be 102). Due to the different rounds (up or down) the total number of proteomes will not be equal to exactly 100 but it will be around it. The number of proteomes leading to this behavior is set to 99 by default but the user can modify it with the `-l/--limit-proteomes` option.
+There is 198 proteomes associated with the sub-taxon Clostridiaceae, the percentage will be computed as follow: 198 / 645 = 30% (if a percentage is superior to 1 it will be round down and if the percentage is lower than 1 it will be round up to keep all the low proportion sub-taxa). We will use this 30% to select randomly 30 proteomes amongst the 198 proteomes of Clostridiaceae. This is done for all the other sub-taxa, so we get a number of proteomes around 100 (here it will be 102). Due to the different rounds (up or down) the total number of proteomes will not be equal to exactly 100 but it will be around it. The number of proteomes leading to this behaviour is set to 99 by default but the user can modify it with the `-l/--limit-proteomes` option.
 
 `esmecata check` options:
 
@@ -298,7 +298,7 @@ It is possible to avoid using REST queries for esmecata and instead use SPARQL q
 
 * `-b/--busco`: filter proteomes using BUSCO score (default is 0.8)
 
-It is possible to filter proteomes according to to their BUSCO score (from Uniprot documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By default esmecata uses a BUSCO score of 0.80, it will only download proteomes with a BUSCO score of at least 80%.
+It is possible to filter proteomes according to to their BUSCO score (from UniProt documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By default esmecata uses a BUSCO score of 0.80, it will only download proteomes with a BUSCO score of at least 80%.
 
 * `--ignore-taxadb-update`: ignore need to udpate ete3 taxaDB
 
@@ -306,7 +306,7 @@ If you have an old version of the ete3 NCBI taxonomy database, you can use this 
 
 * `--all-proteomes`: download all proteomes (reference and non-reference)
 
-By default, esmecata will try to downlaod the reference proteomes associated with a taxon. But if you want to download all the proteomes associated with a taxon (either if they are non reference proteome) you can use this option. Without this option non-reference proteoems can also be used if no reference proteomes are found.
+By default, esmecata will try to download the reference proteomes associated with a taxon. But if you want to download all the proteomes associated with a taxon (either if they are non reference proteome) you can use this option. Without this option non-reference proteomes can also be used if no reference proteomes are found.
 
 * `-l/--limit-proteomes`: choose the number of proteomes that will lead to the used of the selection of a subset of proteomes
 
@@ -316,7 +316,7 @@ To avoid working on too many proteomes, esmecata works on subset of proteomes wh
 
 To avoid working on too little proteomes, it is possible to give an int to this option.
 With this int, esmecata will select only taxon associated to at least this number of proteomes.
-For example if you use `--minimal-nb-proteomes 10`, and the lowest taxon in the taxonomic affiliation is associated with 3 proteomes, it will be ignored and a taxon with a higer taxonomic rank will be used.
+For example if you use `--minimal-nb-proteomes 10`, and the lowest taxon in the taxonomic affiliation is associated with 3 proteomes, it will be ignored and a taxon with a higher taxonomic rank will be used.
 
 * `-r/--rank-limit`: This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept.
 
@@ -516,7 +516,7 @@ options:
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
-For each of the protein clusters kept after the clustering, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in Uniprot.
+For each of the protein clusters kept after the clustering, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in UniProt.
 By default, esmecata will look at the annotations of each proteins from a cluster and keeps only annotation occurring in all the protein of a cluster (threshold 1 of option -p).
 It is like selecting the intersection of the annotation of the cluster. This can be changed with the option `-p` and giving a float between 0 and 1.
 
@@ -548,10 +548,10 @@ With this option, esmecata will extract the [expression information](https://www
 
 * `--annotation-files`: use UniProt txt files instead of queyring Uniprot servers.
 
-As the `annotation step` needs a high numbers of queries to UniProt servers when working with hundreds or thousands of taxonomic affliations, it can failed due to issues with the query.
+As the `annotation step` needs a high numbers of queries to UniProt servers when working with hundreds or thousands of taxonomic affiliations, it can failed due to issues with the query.
 A workaround (for example on a cluster), is to use the UniProt flat files containing the protein annotations.
 Warning, the TrEMBL file takes a lot of space (around 150G compressed for the version 2022_05 andd 700G uncompressed).
-One of the downside of this option is that it needs lof of memory to handle indexing the TrEMBL file (around 32G using Biopython indexing) and it takes several hours to parse it.
+One of the downside of this option is that it needs a lot of memory to handle indexing the TrEMBL file (around 32G using Biopython indexing) and it takes several hours to parse it.
 But for dataset with thousands of taxonomic affiliations, this can be compensated by the fact that queyring the indexed files is more stable than querying a server.
 For this option, you should give the path to the two annotation files (both the Swiss-Prot and the TrEMBL files) separated by `,`such as: `--annotation-files /db/uniprot/UniProt_2022_05/flat/uniprot_sprot.dat,/db/uniprot/UniProt_2022_05/flat/uniprot_trembl.dat`.
 The names of the files must contained: `uniprot_sprot` and `uniprot_trembl` to be able to differentiate them.
@@ -644,7 +644,7 @@ options:
   --annotation-files ANNOTATION_FILES
                         Use UniProt annotation files (uniprot_trembl.txt and uniprot_sprot.txt) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to update the taxonomic affiliations using the lowest taxon name.
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
@@ -719,9 +719,9 @@ output_folder
 ├── taxonomy_diff.tsv
 ````
 
-The `cluster_founds` contains one tsv file per taxon name used by EsMeCaTa. So multiple `observation_name` can be represented by a similar taxon name to avoid redundancy and limit the disk space used. These files contain the clustered proteins The first column contains the representative proteins of a cluster and the following columns correspond to the other proteins of the same cluster. The first protein occurs two time: one as the representative member o.f the cluster and a second time as a member of the cluster.
+The `cluster_founds` contains one tsv file per taxon name used by EsMeCaTa. So multiple `observation_name` can be represented by a similar taxon name to avoid redundancy and limit the disk space used. These files contain the clustered proteins The first column contains the representative proteins of a cluster and the following columns correspond to the other proteins of the same cluster. The first protein occurs two time: one as the representative member of the cluster and a second time as a member of the cluster.
 
-The `computed_threshold` folder contains the ratio of proteomes represented in a cluster compared to the total number of proteomes associated with a taxon. If the ratio is equal to 1, it means that all the proteomes are represented by a protein in the cluster, 0.5 means that half of the proteoems are represented in the cluster. This score is used when giving the `-t` argument.
+The `computed_threshold` folder contains the ratio of proteomes represented in a cluster compared to the total number of proteomes associated with a taxon. If the ratio is equal to 1, it means that all the proteomes are represented by a protein in the cluster, 0.5 means that half of the proteomes are represented in the cluster. This score is used when giving the `-t` argument.
 
 The `mmseqs_tmp` folder contains the intermediary files of mmseqs2 for each taxon name. To save disk space, it is recommended to delete it with the option `--remove-tmp`.
 
@@ -810,7 +810,7 @@ output_folder
 ├── stat_number_annotation.tsv
 ````
 
-The `annotation` folder contains a tabulated file for each taxon name (that can be associated with multiple `observation_name`). It contains the annotation retrieved with Uniprot (protein_name, review, GO Terms, EC numbers, Interpros, Rhea IDs and gene name) associated with all the proteins in a proteome or associated with an `observation_name`.
+The `annotation` folder contains a tabulated file for each taxon name (that can be associated with multiple `observation_name`). It contains the annotation retrieved with UniProt (protein_name, review, GO Terms, EC numbers, InterPros, Rhea IDs and gene name) associated with all the proteins in a proteome or associated with an `observation_name`.
 
 The `annotation_reference` contains annotation only for the representative proteins, but the annotation of the other proteins of the same cluster can be propagated to the reference protein if the `-p` was used.
 
@@ -820,7 +820,7 @@ The `pathologic` contains one sub-folder for each `observation_name` in which th
 
 The file `esmecata_annotation.log` contains the log associated with the command.
 
-The `esmecata_metadata_annotation.json` serves the same purpose as the one used in `esmecata proteomes` to retrieve metadata about Uniprot release at the time of the query. It also gets the metadata associated with the command used with esmecata and the dependencies.
+The `esmecata_metadata_annotation.json` serves the same purpose as the one used in `esmecata proteomes` to retrieve metadata about UniProt release at the time of the query. It also gets the metadata associated with the command used with esmecata and the dependencies.
 
 The `uniref_annotation` contains the annotation from the representative protein of the UniRef cluster associated with the proteins of a taxon (if the `--uniref` option was used).
 
@@ -899,7 +899,7 @@ The files in the folders `0_proteomes`, `1_clustering` and `2_annotation` are th
 
 The file `esmecata_workflow.log` contains the log associated with the command.
 
-The `esmecata_metadata_workflow.json` retrieves metadata about Uniprot release at the time of the query, the command used and its duration.
+The `esmecata_metadata_workflow.json` retrieves metadata about UniProt release at the time of the query, the command used and its duration.
 
 `stat_number_workflow.tsv` is a tabulated file containing the number of proteomes, shared proteins, GO Terms and EC numbers found for each observation name.
 
@@ -907,7 +907,7 @@ The `esmecata_metadata_workflow.json` retrieves metadata about Uniprot release a
 
 ### EsMeCaTa precomputed
 
-The output of `esmecata precomputed` is similar to the output of `esmecata workflow` but with fewer results as the database does not ocntain all the files created by esmecata:
+The output of `esmecata precomputed` is similar to the output of `esmecata workflow` but with fewer results as the database does not contain all the files created by esmecata:
 
 ````
 output_folder
@@ -1079,4 +1079,3 @@ Arnaud Belcour, Pauline Hamon-Giraud, Alice Mataigne, Baptiste Ruiz, Yann Le Cun
 ## License
 
 This software is licensed under the GNU GPL-3.0-or-later, see the [LICENSE](https://github.com/AuReMe/esmecata/blob/main/LICENSE) file for details.
-
