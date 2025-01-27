@@ -37,6 +37,8 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
   - [EsMeCaTa report](#esmecata-report)
   - [EsMeCaTa gseapy](#esmecata-gseapy)
   - [EsMeCaTa create\_db](#esmecata-create_db)
+  - [Troubleshooting](#troubleshooting)
+    - [Issue with incompatible versions of ete3 and UniProt NCBI Taxonomy databases](#issue-with-incompatible-versions-of-ete3-and-uniprot-ncbi-taxonomy-databases)
   - [Citation](#citation)
   - [License](#license)
 
@@ -1069,6 +1071,16 @@ The precomputed database (in zip format) will be in the `output_folder` and name
 To merge several precomputed databases, you can use the following command:
 
 `esmecata_create_db from_workflow -i esmecata_database_1.zip,esmecata_database_2.zip,esmecata_database_3.zip -o output_folder`
+
+## Troubleshooting
+
+### Issue with incompatible versions of ete3 and UniProt NCBI Taxonomy databases
+
+A common issue encountered when using EsMeCaTa is that the NCBI Taxonomy database present in the ete3 package (and used to parse the input taxonomic affiliations) is different from the ones used by UniProt. This can lead to several issues at different levels of EsMeCaTa. A possible solution is to update the NCBI Taxonomy database of ete3 with the following command:
+
+```
+python3 -c "from ete3 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database()"
+```
 
 ## Citation
 

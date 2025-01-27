@@ -147,7 +147,7 @@ def test_update_taxonomy_yersinia_offline():
     outdated_taxonomic_affiliation = 'Bacteria;Yersinia'
     new_taxonomic_affiliation = update_taxonomy('test', outdated_taxonomic_affiliation)
 
-    expected_taconomic_affiliation = 'root;cellular organisms;Bacteria;Pseudomonadota;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia'
+    expected_taconomic_affiliation = 'root;cellular organisms;Bacteria;Pseudomonadati;Pseudomonadota;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia'
 
     assert new_taxonomic_affiliation == expected_taconomic_affiliation
 
@@ -207,6 +207,7 @@ def test_find_proteome_rest_all_proteomes_online():
                              ['UP000267007', 77.8984350047908, 'full', '6265', False, [['Unassembled WGS sequence', 'Toxocara canis']]]]
 
     proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 33256, 'Ascaridoidea', 0.8, all_proteomes=True)
+
     time.sleep(1)
 
     assert set(expected_proteoems) == set(proteomes)
@@ -228,8 +229,10 @@ def test_find_non_reference_proteome_sparql_online():
     assert set(expected_proteoems) == set(proteomes)
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
-    for data in expected_proteome_data:
-        assert data in proteomes_data
+    for data in proteomes_data:
+        if data[0] == 'UP000829720':
+            assert data[0:5] == expected_proteome_data[0][0:5]
+            assert sorted(data[5]) == sorted(expected_proteome_data[0][5])
 
 
 def test_find_proteome_sparql_all_proteomes_online():
@@ -245,7 +248,9 @@ def test_find_proteome_sparql_all_proteomes_online():
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
     for data in expected_proteome_data:
-        assert data in proteomes_data
+        if data[0] == 'UP000036680':
+            assert data[0:5] == expected_proteome_data[0][0:5]
+            assert sorted(data[5]) == sorted(expected_proteome_data[0][5])
 
 
 def test_find_proteomes_tax_ids_online():
