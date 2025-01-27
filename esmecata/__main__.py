@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2024 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2021-2025 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -139,7 +139,7 @@ def main():
         '--update-affiliations',
         dest='update_affiliations',
         help='''If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. \
-            This option tries to udpate the taxonomic affiliations using the lowest taxon name.''',
+            This option tries to update the taxonomic affiliations using the lowest taxon name.''',
         required=False,
         action='store_true',
         default=None)
@@ -386,7 +386,8 @@ def main():
         help='Use precomputed database to create estimated data for the run.',
         parents=[
             parent_parser_i_taxon, parent_parser_d, parent_parser_o,
-            parent_parser_rank_limit, parent_parser_update_affiliation
+            parent_parser_rank_limit, parent_parser_update_affiliation,
+            parent_parser_thr
             ],
         allow_abbrev=False)
 
@@ -460,7 +461,8 @@ def main():
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
                                 args.option_bioservices, args.eggnog_tmp_dir, args.no_dbmem)
     elif args.cmd == 'precomputed':
-        precomputed_parse_affiliation(args.input, args.database, args.output, args.rank_limit, args.update_affiliations)
+        precomputed_parse_affiliation(args.input, args.database, args.output, args.rank_limit, args.update_affiliations,
+                                      args.threshold_clustering)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

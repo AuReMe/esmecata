@@ -1,15 +1,30 @@
 # Changelog
 
-# EsMeCaTa v0.5.4 (2024-11-09)
+# EsMeCaTa v0.6.0 (2025-01-27)
 
 ## Add
 
-* Create database from different output folders of esmecata (`from_runs`).
+* New command `esmecata_create_db` to create database from different output folders of esmecata (`from_runs`).
+* Full release of `esmecata precomputed` associated with the first version of [esmecata precomputed database](https://doi.org/10.5281/zenodo.13354073).
+* Option threshold (`-t`) to precomputed.
+* Add `--gseapyCutOff` option to `gseapy_enrichr`.
+* A check after database creation to detect taxon with few predicted proteins compared to higher affiliated taxon. 
 * Check the good format of the gzip file.
+* Header `KEGG_reaction` in annotation_reference from `annotation_uniprot` to avoid issues with `esmecata_create_db`.
 
 ## Fix
 
 * Issue with protein IDs from UniParc during annotation (incorrect split on '|').
+* Fix issue in `get_taxon_obs_name` function.
+* Issues in test.
+
+## Modify
+
+* Add database version in log.
+* Rename `test_workflow.py` into `test_workflow_uniprot.py`, to better reflect what is done.
+* Update workflow figure.
+* Update readme.
+* Update article_data folder and the associated readme.
 
 # EsMeCaTa v0.5.4 (2024-11-06)
 

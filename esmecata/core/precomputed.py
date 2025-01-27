@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2024-2025 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@ import csv
 import datetime
 import json
 import logging
+import io
 import os
 import pandas as pd
 import shutil
@@ -28,6 +29,8 @@ from io import TextIOWrapper
 
 from ete3 import __version__ as ete3_version
 from ete3 import NCBITaxa
+from Bio import SeqIO
+from Bio import __version__ as biopython_version
 
 from esmecata.utils import is_valid_dir
 from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file
@@ -97,7 +100,8 @@ def find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, 
     return association_taxon_database, observation_name_not_founds
 
 
-def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_folder, rank_limit=None, update_affiliations=None):
+def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_folder, rank_limit=None, update_affiliations=None,
+                                  clust_threshold=0.5):
     """From a tsv file with taxonomic affiliations find the associated proteomes and download them.
 
     Args:
@@ -105,6 +109,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         output_folder (str): pathname to the output folder.
         rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks).
         update_affiliations (str): option to update taxonomic affiliations.
+        clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster (must be equal or superior to the one use in the creation of the precomputed db).
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|precomputed| Reading input file.')
@@ -134,7 +139,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     # Metadata of the script.
     options = {'input_file': input_file, 'output_folder': output_folder, 'database_taxon_file_path': database_taxon_file_path,
-               'rank_limit': rank_limit, 'update_affiliations': update_affiliations}
+               'rank_limit': rank_limit, 'update_affiliations': update_affiliations, 'clust_threshold': clust_threshold}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
@@ -142,6 +147,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
     options['tool_dependencies']['python_package']['ete3'] = ete3_version
     options['tool_dependencies']['python_package']['pandas'] = pd.__version__
+    options['tool_dependencies']['python_package']['biopython'] = biopython_version
 
     esmecata_metadata = {}
     date = datetime.datetime.now().strftime('%d-%B-%Y %H:%M:%S')
@@ -178,6 +184,18 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     for json_key in json_data:
         if json_key.endswith('_proteomes'):
             proteomes_data_json = json_data[json_key]
+        if json_key.endswith('_clustering'):
+            clustering_data_json = json_data[json_key]
+
+    precomputed_db_version = json_data['database_version']
+    logger.critical('|EsMeCaTa|precomputed| EsMeCaTa is using precomputed database version {0}.'.format(precomputed_db_version))
+
+    # Check compatibility between user threshold and database threshold.
+    database_clustering_threhsold = clustering_data_json['tool_options']['clust_threshold']
+    if clust_threshold < database_clustering_threhsold:
+        logger.critical('|EsMeCaTa|precomputed| Selected threshold (-t) too low ({0}) compared to database threhsold ({1}), select one superior or equal to the one of the database.'.format(clust_threshold, database_clustering_threhsold))
+        sys.exit(1)
+
     esmecata_metadata['precomputed_database']['esmecata_query_system'] = proteomes_data_json['esmecata_query_system']
     esmecata_metadata['precomputed_database']['uniprot_release'] = proteomes_data_json['uniprot_release']
     esmecata_metadata['precomputed_database']['access_time'] = proteomes_data_json['access_time']
@@ -185,6 +203,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     esmecata_metadata['precomputed_database']['swissprot_release_date'] = proteomes_data_json['swissprot_release_date']
     esmecata_metadata['precomputed_database']['trembl_release_number'] = proteomes_data_json['trembl_release_number']
     esmecata_metadata['precomputed_database']['trembl_release_date'] = proteomes_data_json['trembl_release_date']
+    esmecata_metadata['precomputed_database']['esmecata_precomputed_db_version'] = precomputed_db_version
 
     ncbi = NCBITaxa()
 
@@ -214,7 +233,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         for observation_name in association_taxon_database:
             tax_id = association_taxon_database[observation_name][1]
             if tax_id != 'not_found':
-                tax_name = association_taxon_database[observation_name][1]
+                tax_name = association_taxon_database[observation_name][0]
                 tax_id_name = proteomes_tax_id_names[tax_id]
                 tax_rank = taxon_data[tax_id][2]
                 proteome = taxon_data[tax_id][3]
@@ -266,28 +285,48 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     # For each line of the input files that has a match in the database, recreate an imitation of esmecata output folder.
     for tax_id in tax_id_obs_names:
-        taxi_id_name = proteomes_tax_id_names[tax_id]
-
-        # Create a consensus proteoems file.
-        clustering_consensus_file = os.path.join(taxi_id_name, taxi_id_name+'.faa')
-        output_path_consensus_file = os.path.join(reference_proteins_consensus_fasta_folder, taxi_id_name+'.faa')
-        if not os.path.exists(output_path_consensus_file):
-            with archive.open(clustering_consensus_file) as zf, open(output_path_consensus_file, 'wb') as f:
-                shutil.copyfileobj(zf, f)
+        tax_id_name = proteomes_tax_id_names[tax_id]
 
         # Read annotation file
-        annotation_file = os.path.join(taxi_id_name, taxi_id_name+'.tsv')
+        annotation_file = os.path.join(tax_id_name, tax_id_name+'.tsv')
         with archive.open(annotation_file) as zf:
             df_annotation = pd.read_csv(zf, sep='\t')
 
+        # Filter according to selected clust_threshold.
+        df_annotation = df_annotation[df_annotation['cluster_ratio'] >= clust_threshold]
+
         # Create a computed threhsold file.
-        output_computed_threshold_file = os.path.join(computed_threshold_folder, taxi_id_name+'.tsv')
+        output_computed_threshold_file = os.path.join(computed_threshold_folder, tax_id_name+'.tsv')
         df_annotation[['representative_protein', 'cluster_ratio', 'proteomes']].to_csv(output_computed_threshold_file, sep='\t', index=None)
 
+        kept_protein_ids = set(df_annotation['representative_protein'].tolist())
         for observation_name in tax_id_obs_names[tax_id]:
             # Create an annotaiton_reference file for the observation name.
             output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
-            df_annotation.to_csv(output_path_annotation_file, sep='\t', index=None)
+            selected_df_annotation = df_annotation[['representative_protein', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']]
+            selected_df_annotation.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
+            selected_df_annotation.to_csv(output_path_annotation_file, sep='\t', index=None)
+
+        # Create a consensus proteoems file.
+        clustering_consensus_file = os.path.join(tax_id_name, tax_id_name+'.faa')
+        output_path_consensus_file = os.path.join(reference_proteins_consensus_fasta_folder, tax_id_name+'.faa')
+        if not os.path.exists(output_path_consensus_file):
+            records = []
+            with archive.open(clustering_consensus_file) as zf:
+                open_zf_text  = io.TextIOWrapper(zf)
+                for record in SeqIO.parse(open_zf_text, 'fasta'):
+                    if '|' in record.id:
+                        protein_id = record.id.split('|')[1]
+                    else:
+                        protein_id = record.id
+                    if protein_id in kept_protein_ids:
+                        records.append(record)
+
+            if len(records) > 0:
+                logger.critical('|EsMeCaTa|precomputed| {0} protein clusters kept for taxon {1} using threshold {2}.'.format(len(records), tax_id_name, clust_threshold))
+                SeqIO.write(records, output_path_consensus_file, 'fasta')
+            else:
+                logger.critical('|EsMeCaTa|precomputed| 0 protein clusters kept for taxon {0} using threshold {1}, it will not have predictions.'.format(tax_id_name, clust_threshold))
 
     archive.close()
 
@@ -301,23 +340,26 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             csvreader = csv.reader(open_clustering_file_path, delimiter='\t')
             next(csvreader)
             cluster_0 = []
-            cluster_0_5 = []
+            selected_threshold_cluster = []
             cluster_0_95 = []
             for line in csvreader:
                 protein_cluster_threshold = float(line[1])
                 if protein_cluster_threshold >= 0.95:
                     cluster_0_95.append(line[0])
-                if protein_cluster_threshold >= 0.5:
-                    cluster_0_5.append(line[0])
+                if protein_cluster_threshold >= clust_threshold:
+                    selected_threshold_cluster.append(line[0])
                 if protein_cluster_threshold >= 0:
                     cluster_0.append(line[0])
 
-        tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = [cluster_0, cluster_0_5, cluster_0_95]
+        if len(selected_threshold_cluster) > 0:
+            tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = [cluster_0, selected_threshold_cluster, cluster_0_95]
     proteomes_taxa_id_names = get_proteomes_tax_id_name(clustering_proteome_tax_id_file)
+
     clustering_numbers = {}
     for observation_name in proteomes_taxa_id_names:
         tax_name = proteomes_taxa_id_names[observation_name]
-        clustering_numbers[observation_name] = tax_name_clustering_numbers[tax_name]
+        if tax_name in tax_name_clustering_numbers:
+            clustering_numbers[observation_name] = tax_name_clustering_numbers[tax_name]
 
     clustering_stat_file = os.path.join(clustering_output_folder, 'stat_number_clustering.tsv')
     with open(clustering_stat_file, 'w') as stat_file_open:
@@ -325,9 +367,9 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         csvwriter.writerow(['observation_name', 'Number_protein_clusters_panproteome', 'Number_protein_clusters_kept', 'Number_protein_clusters_coreproteome'])
         for observation_name in clustering_numbers:
             cluster_0 = len(clustering_numbers[observation_name][0])
-            cluster_0_5 = len(clustering_numbers[observation_name][1])
+            selected_threshold_cluster = len(clustering_numbers[observation_name][1])
             cluster_0_95 = len(clustering_numbers[observation_name][2])
-            csvwriter.writerow([observation_name, cluster_0, cluster_0_5, cluster_0_95])
+            csvwriter.writerow([observation_name, cluster_0, selected_threshold_cluster, cluster_0_95])
 
     annotation_stat_file = os.path.join(annotation_output_folder, 'stat_number_annotation.tsv')
     compute_stat_annotation(annotation_reference_output_folder, annotation_stat_file)

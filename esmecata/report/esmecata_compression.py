@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024  Alice Mataigne and Pauline Hamon-Giraud - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2023-2025  Alice Mataigne and Pauline Hamon-Giraud - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # Arnaud Belcour - Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2024 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2021-2025 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1029,22 +1029,23 @@ def write_annotation_reference(protein_annotations, reference_proteins, annotati
     with open(annotation_reference_file, 'w') as output_tsv:
         csvwriter = csv.writer(output_tsv, delimiter='\t')
         if expression_output_dict:
-            csvwriter.writerow(['protein_cluster', 'cluster_members', 'protein_name', 'gene_name', 'GO', 'EC', 'Induction', 'Tissue_Specificity', 'Disruption_Phenotype'])
+            csvwriter.writerow(['protein_cluster', 'cluster_members', 'protein_name', 'gene_name', 'GO', 'EC', 'KEGG_reaction' 'Induction', 'Tissue_Specificity', 'Disruption_Phenotype'])
         else:
-            csvwriter.writerow(['protein_cluster', 'cluster_members', 'protein_name', 'gene_name', 'GO', 'EC'])
+            csvwriter.writerow(['protein_cluster', 'cluster_members', 'protein_name', 'gene_name', 'GO', 'EC', 'KEGG_reaction'])
         for protein in protein_annotations:
             protein_name = protein_annotations[protein][0]
             gene_name = protein_annotations[protein][3]
             cluster_members = ','.join(reference_proteins[protein])
             gos = ','.join(sorted(list(protein_annotations[protein][1])))
             ecs = ','.join(sorted(list(protein_annotations[protein][2])))
+            kegg_reaction = ''
             if expression_output_dict:
                 induction = expression_output_dict[protein][0]
                 tissue_specificity = expression_output_dict[protein][1]
                 disruption = expression_output_dict[protein][2]
-                csvwriter.writerow([protein, cluster_members, protein_name, gene_name, gos, ecs, induction, tissue_specificity, disruption])
+                csvwriter.writerow([protein, cluster_members, protein_name, gene_name, gos, ecs, kegg_reaction, induction, tissue_specificity, disruption])
             else:
-                csvwriter.writerow([protein, cluster_members, protein_name, gene_name, gos, ecs])
+                csvwriter.writerow([protein, cluster_members, protein_name, gene_name, gos, ecs, kegg_reaction])
 
 
 def create_pathologic(base_filename, annotated_protein_to_keeps, reference_proteins, pathologic_output_file):

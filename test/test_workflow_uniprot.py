@@ -8,7 +8,7 @@ from esmecata.core.precomputed import precomputed_parse_affiliation
 from esmecata.report.workflow_create_report import run_create_workflow_report
 
 RESULTS = {
-    'Cluster_1': {'proteomes': 2, 'protein_clusters': 603, 'GOs': 856, 'ECs': 313}
+    'Cluster_1': {'proteomes': 2, 'protein_clusters': 603, 'GOs': 902, 'ECs': 313}
 }
 
 def test_workflow_online():
