@@ -37,6 +37,7 @@ EsMeCaTa is a method to estimate metabolic capabilities from a taxonomic affilia
   - [EsMeCaTa report](#esmecata-report)
   - [EsMeCaTa gseapy](#esmecata-gseapy)
   - [EsMeCaTa create\_db](#esmecata-create_db)
+  - [Citation](#citation)
   - [License](#license)
 
 ## Requirements
@@ -72,6 +73,12 @@ To query the precomputed database, it is only required to install EsMeCaTa with 
 ```pip install esmecata ```
 
 All the required dependencies for the estimation from the precomputed database are performed with python packages.
+
+The second requirement is esmecata precomputed database (file size: 4G) available at the following [Zenodo archive](https://zenodo.org/records/13354073).
+As this file is quite big and if you want just to test esmecata precomputed, you can try:
+
+- the precomputed database (`buchnera_database.zip`) present in the [test folder](https://github.com/AuReMe/esmecata/tree/main/test). You can use it on the `buchnera_workflow.tsv` input file present in the same test folder.
+- one of the precomputed database associated with the article and present in this other [Zenodo archive](https://zenodo.org/records/14502342). The associated input files are in this [folder](https://github.com/AuReMe/esmecata/tree/main/article_data).
 
 ### Core pipeline installation
 
@@ -116,7 +123,7 @@ All dependencies can be installed with following command:
 
 ## Input
 
-EsMeCaTa takes as input a tabulated or an excel file with two columns one with the ID corresponding to the taxonomic affiliation (for example the OTU ID from 16S rRNA sequencing) and a second column with the taxonomic classification separated by ';'. In the following documentation, the first column (named `observation_name`) will be used to identify the label associated with each taxonomic affiliation. An example is located in the test folder ([Example.tsv](https://github.com/ArnaudBelcour/esmecata/blob/master/test/Example.tsv)).
+EsMeCaTa takes as input a tabulated or an excel file with two columns one with the ID corresponding to the taxonomic affiliation (for example the OTU ID from 16S rRNA sequencing) and a second column with the taxonomic classification separated by ';'. In the following documentation, the first column (named `observation_name`) will be used to identify the label associated with each taxonomic affiliation. Several examples are available ([buchnera_workflow.tsv](https://github.com/AuReMe/esmecata/blob/main/test/buchnera_workflow.tsv), [toy_example.tsv](https://github.com/AuReMe/esmecata/blob/main/article_data/toy_example/toy_example.tsv), [methanogenic_reactor.tsv](https://github.com/AuReMe/esmecata/blob/main/article_data/methanogenic_reactor/methanogenic_reactor.tsv) or [honeybee_esmecata_metdata.tsv](https://github.com/AuReMe/esmecata/blob/main/article_data/mgnify_validation/honeybee_esmecata_metdata.tsv)).
 
 For example:
 
@@ -182,7 +189,7 @@ Steps proteomes and annotation by UniProt requires an internet connection (for R
 ### Use the precomputed database
 
 The precomputed database of EsMeCaTa is available at this [Zenodo repository](https://doi.org/10.5281/zenodo.13354073). Warning, this precomputed database size is 4 Gb.
-Several precomputed databases (of smaller size) associated with the article datasets are available in the Zenodo archive of EsMeCaTa's article.
+Several precomputed databases (of smaller size) associated with the article datasets are available in the [Zenodo archive of EsMeCaTa's article](https://zenodo.org/records/14502342). And there is also a little precomputed dbatase available for test purpose (on one organism `buchnera_database.zip`) in the test folder ([test folder](https://github.com/AuReMe/esmecata/tree/main/test)).
 
 Using the precomputed database, esmecata searches for input taxon inside the precomputed database to make prediction.
 It requires an input file containing the taxonomic affiliations and a precomputed esmecata database.
@@ -1062,6 +1069,12 @@ The precomputed database (in zip format) will be in the `output_folder` and name
 To merge several precomputed databases, you can use the following command:
 
 `esmecata_create_db from_workflow -i esmecata_database_1.zip,esmecata_database_2.zip,esmecata_database_3.zip -o output_folder`
+
+## Citation
+
+If you have used esmecata, please cite its preprint:
+
+Arnaud Belcour, Pauline Hamon-Giraud, Alice Mataigne, Baptiste Ruiz, Yann Le Cunff, Jeanne Got, Lorraine Awhangbo, Mégane Lebreton, Clémence Frioux, Simon Dittami, Patrick Dabert, Anne Siegel, Samuel Blanquart. Estimating consensus proteomes and metabolic functions from taxonomic affiliations. bioRxiv 2022.03.16.484574; doi: https://doi.org/10.1101/2022.03.16.484574
 
 ## License
 
