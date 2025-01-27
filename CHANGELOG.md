@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.6.0 (2025-01-24)
+# EsMeCaTa v0.6.0 (2025-01-27)
 
 ## Add
 
@@ -23,6 +23,8 @@
 * Add database version in log.
 * Rename `test_workflow.py` into `test_workflow_uniprot.py`, to better reflect what is done.
 * Update workflow figure.
+* Update readme.
+* Update article_data folder and the associated readme.
 
 # EsMeCaTa v0.5.4 (2024-11-06)
 
