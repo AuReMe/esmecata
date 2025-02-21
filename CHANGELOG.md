@@ -92,7 +92,7 @@ If you have been importing the package in Python, you will need to modify your i
 
 ## Add
 
-* New command `esmecata_report` to create a report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv` reports from EsMeCaTa (work of @Mataivic and @PaulineGHG). This command has several subcommands:
+* New command `esmecata_report` to create a report from the output folder of EsMeCaTa. Scripts of `esmecata_report` allow to create `html`, `pdf` and `tsv` reports from EsMeCaTa (work of @alimatai and @PaulineGHG). This command has several subcommands:
     * (1) `create_report` to create a report from the output folder of the `esmecata workflow` subcommand (only way to have the complete HTML report).
     * (2) `create_report_proteomes` to create report files from output of `esmecata proteomes` subcommand.
     * (3) `create_report_clustering` to create report files from output of `esmecata clustering` subcommand.
