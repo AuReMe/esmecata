@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.6.1 (2025-02-21)
+
+## Fix
+
+* Issue with tax synonyms on the same tax rank when filtering rank in `proteomes`.
+
 # EsMeCaTa v0.6.0 (2025-01-27)
 
 ## Add
