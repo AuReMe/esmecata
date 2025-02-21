@@ -380,7 +380,6 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
                     tax_keep.append(False)
             else:
                 tax_keep.append(False)
-
         # If the rank limit is in the tax_ranks, keep all the rank below this rank and this rank.
         if rank_limit in tax_ranks:
             tax_rank_max_index = tax_rank_position[rank_limit]
@@ -394,10 +393,12 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
         tax_ids_wo_not_found = [tax_id for tax_id in tax_ids if tax_id != 'not_found']
         tax_id_to_deletes = set(tax_ids_wo_not_found) - set(keep_tax_ids)
 
-        # Delete the remvoed rank and all its superior.
+        # Delete the removed rank and all its superior.
         for tax_id in tax_id_to_deletes:
-            tax_name = tax_names[tax_id]
-            del output_json_taxonomic_affiliations[observation_name][tax_name]
+            # Iterate through tax_name to find tax_name with tax_id, because their can be synonym.
+            for tax_name in json_taxonomic_affiliations[observation_name]:
+                if tax_id in json_taxonomic_affiliations[observation_name][tax_name]:
+                    del output_json_taxonomic_affiliations[observation_name][tax_name]
 
     return output_json_taxonomic_affiliations
 
