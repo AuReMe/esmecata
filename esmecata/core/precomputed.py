@@ -54,13 +54,13 @@ def get_taxon_database(archive):
         proteomes_tax_id_names (dict): dict of observation name as key and tax_id_name as value
         taxon_proteomes (dict): dict of observation name as key and tax_id, tax_name, tax_rank and associated proteomes as value
     """
-    database_taxon_ids = []
+    database_taxon_ids = {}
     proteomes_tax_id_names = {}
     taxon_data = {}
     with archive.open('proteome_tax_id.tsv', 'r') as open_database_taxon_file_path:
         csvreader = csv.DictReader(TextIOWrapper(open_database_taxon_file_path), delimiter='\t')
         for line in csvreader:
-            database_taxon_ids.append(line['name'])
+            database_taxon_ids[line['tax_id']] = line['name']
             proteomes_tax_id_names[line['tax_id']] = line['tax_id_name']
             taxon_data[line['tax_id']] = [line['tax_id'], line['name'], line['tax_rank'], line['proteome']]
 
@@ -72,7 +72,7 @@ def find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, 
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping between taxon name and taxon ID (with remove rank specified)
-        database_taxon_ids (list): list of taxon IDs contained in the database
+        database_taxon_ids (dict): list of taxon IDs contained in the database
 
     Returns:
         association_taxon_database (dict): observation name (key) associated with tax_name and tax_id
@@ -86,9 +86,15 @@ def find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, 
             tax_id = str(json_taxonomic_affiliations[observation_name][tax_name][0])
 
             # If tax_id has already been found use the corresponding proteomes without new requests.
-            if tax_name in database_taxon_ids:
+            if tax_id in database_taxon_ids:
+                if tax_name != database_taxon_ids[tax_id]:
+                    logger.info('|EsMeCaTa|precomputed| "%s" has a matching taxon ID in the database (taxon ID: %s), but taxon names of input file and the one from database do not match. Taxon name from database will be used: "%s" instead of "%s".', observation_name, tax_id, database_taxon_ids[tax_id], tax_name)
+                    tax_name = database_taxon_ids[tax_id]
+
+                else:
+                    logger.info('|EsMeCaTa|precomputed| "%s" has a matching taxon ID in the database (taxon ID: %s), it will be associated with the taxon "%s".', observation_name, tax_id, tax_name)
+
                 association_taxon_database[observation_name] = (tax_name,  tax_id)
-                logger.info('|EsMeCaTa|precomputed| "%s" present in database, %s will be associated with the taxon "%s".', tax_name, observation_name, tax_name)
                 break
 
     observation_name_not_founds = []
