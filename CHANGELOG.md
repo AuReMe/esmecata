@@ -1,10 +1,14 @@
 # Changelog
 
-# EsMeCaTa v0.6.1 (2025-02-21)
+# EsMeCaTa v0.6.1 (2025-02-25)
 
 ## Fix
 
 * Issue with tax synonyms on the same tax rank when filtering rank in `proteomes`.
+
+## Modify
+
+* Use taxon ID to search for taxon presence in precomputed database.
 
 # EsMeCaTa v0.6.0 (2025-01-27)
 
