@@ -17,7 +17,7 @@
 
 import os
 import json
-import datapane as dp
+import arakawa as ar
 
 from plotly.io import write_json
 
@@ -196,157 +196,158 @@ def create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig
         panel.save(output_file, resources=INLINE)
 
 
-def create_datapane_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
+def create_arakawa_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
                         fig7, fig7b, fig8, fig8b, fig9, fig10, fig10a, fig11,
                         fig12, fig12_details, metadata, output_file):
     print("Formatting summary dataframes")
     if not DATA["DISCARDED"].empty:    
-        df_discarded_panel_content = dp.DataTable(DATA["DISCARDED"],label="Data")
+        df_discarded_panel_content = ar.DataTable(DATA["DISCARDED"],label="Data")
     else:
-        df_discarded_panel_content = dp.HTML("<p>None of input the taxonomic observations were discarded</p>")
+        df_discarded_panel_content = ar.HTML("<p>None of input the taxonomic observations were discarded</p>")
 
-    report = dp.Blocks(
+    report = ar.Blocks(
 
         # Page 1 : EsMeCaTa's inputs and outputs taxonomic ranks
-        dp.Page(
+        ar.Page(
             title="Inputs and outputs ranks comparison",
             blocks=[
-                dp.HTML("<h2>Reduction of taxonomic diversity between EsMeCaTa's inputs and outputs</h2>"),
-                dp.HTML("<p>The sunburst below displays the taxonomic diversity of inputs, i.e. all the taxonomic affiliations listed in the tsv input file. White cells indicates inputs whose ranks were not retained by EsMeCaTa, which went up to the superior taxonomic rank to find proteomes.</p>"),           
-                dp.Plot(fig9), #.update_traces(marker=dict(pattern=dict(shape=tmp_data['Shape'])))),
-                dp.HTML("<h2>\"Compression\" of taxonomic diversity between inputs and outputs</h2>"),
-                dp.HTML("<p>The sankey diagram below also displays the initial taxonomic diversity of taxonomic affiliations given to EsMeCaTa as inputs. The first column details the content of the input file : one block is equivalent to one taxonomic affiliation, and the block height indicates the number of times this affiliation appears in the input file. The second column details which of these taxonomic affiliations were merged together (i.e. 'compressed') because their taxonomyies were identical in the input file. Finally, The first column displays the ranks EsMeCaTa attributed to each of them : at this step, some taxonomic affiliations can be merged because EsMeCaTa went up the taxonomic ranks to find proteomes.</p>"),
-                dp.Plot(fig10, label='Taxonomic compression')
+                ar.HTML("<h2>Reduction of taxonomic diversity between EsMeCaTa's inputs and outputs</h2>"),
+                ar.HTML("<p>The sunburst below displays the taxonomic diversity of inputs, i.e. all the taxonomic affiliations listed in the tsv input file. White cells indicates inputs whose ranks were not retained by EsMeCaTa, which went up to the superior taxonomic rank to find proteomes.</p>"),           
+                ar.Plot(fig9), #.update_traces(marker=dict(pattern=dict(shape=tmp_data['Shape'])))),
+                ar.HTML("<h2>\"Compression\" of taxonomic diversity between inputs and outputs</h2>"),
+                ar.HTML("<p>The sankey diagram below also displays the initial taxonomic diversity of taxonomic affiliations given to EsMeCaTa as inputs. The first column details the content of the input file : one block is equivalent to one taxonomic affiliation, and the block height indicates the number of times this affiliation appears in the input file. The second column details which of these taxonomic affiliations were merged together (i.e. 'compressed') because their taxonomyies were identical in the input file. Finally, The first column displays the ranks EsMeCaTa attributed to each of them : at this step, some taxonomic affiliations can be merged because EsMeCaTa went up the taxonomic ranks to find proteomes.</p>"),
+                ar.Plot(fig10, label='Taxonomic compression')
             ],
         ),
 
         # Step 1 (Page 2) : EsMeCaTa proteomes
-        dp.Page(
+        ar.Page(
             title="Proteomes summary",
             blocks=[
-                dp.Group(
-                    dp.HTML("<p>When proteomes of the lowest taxonomic rank of an input taxa are not found, EsMeCaTa goes up in the taxonomic levels to found suited proteomes. In complement to the figures in the first panel, the heatmap below details the difference between the lowest taxonomic rank of all input taxonomic observations (y-axis) and the lowest rank atributed by EsMeCaTa (x-axis).</p>"),
-                    dp.HTML("<p>The barplot belows details how many proteomes were assigned to inputs taxonomic affiliations (grouped and colored by phylum). The number of proteomes found can vary from only a few to dozens or hundreds, depending on the data available on UniProt for each taxonomic group.</p>"),
-                    dp.Plot(fig4.update_layout(modebar=CONFIG), label='Input and output ranks difference'),
-                    dp.Plot(fig1.update_layout(modebar=CONFIG), label='Distribution of the number of proteomes found'),
-                    dp.HTML("<h2>Distribution of proteomes according to taxonomic ranks</h2>"),
-                    dp.Plot(fig10a.update_layout(modebar=CONFIG), label='Distribution of proteomes according to taxonomic ranks'),
+                ar.Group(
+                    ar.HTML("<p>When proteomes of the lowest taxonomic rank of an input taxa are not found, EsMeCaTa goes up in the taxonomic levels to found suited proteomes. In complement to the figures in the first panel, the heatmap below details the difference between the lowest taxonomic rank of all input taxonomic observations (y-axis) and the lowest rank atributed by EsMeCaTa (x-axis).</p>"),
+                    ar.HTML("<p>The barplot belows details how many proteomes were assigned to inputs taxonomic affiliations (grouped and colored by phylum). The number of proteomes found can vary from only a few to dozens or hundreds, depending on the data available on UniProt for each taxonomic group.</p>"),
+                    ar.Plot(fig4.update_layout(modebar=CONFIG), label='Input and output ranks difference'),
+                    ar.Plot(fig1.update_layout(modebar=CONFIG), label='Distribution of the number of proteomes found'),
+                    ar.HTML("<h2>Distribution of proteomes according to taxonomic ranks</h2>"),
+                    ar.Plot(fig10a.update_layout(modebar=CONFIG), label='Distribution of proteomes according to taxonomic ranks'),
                     columns=2,
                 )
             ],
         ),
 
         # Step 2 (Page 3): EsMeCaTa clustering
-        dp.Page(
+        ar.Page(
             title="Clustering summary",
             blocks=[
-                dp.HTML("<p>In the clustering step, for the set of proteomes associated to each input taxa, EsMeCaTa searches for clusters of similar proteic sequences among these proteomes. This step is supervised by a threshold between 0 and 1, 1 meaning that a cluster contains sequences from each proteomes, 0.5 meaning that a cluster contains sequences from at least a half of the proteomes (etc). This threshold can then be an approximation of the pan-proteome (0) and the core-proteome (1). Clusters below the threshold are discarded. The figure below displays how many clusters were retained at each threshold value. The vertical red line displays the threshold set dor this run of EsMeCata.</p>"),
-                dp.Plot(fig12.update_layout(modebar=CONFIG), label='proteomes representativeness'),
-                dp.Plot(fig12_details.update_layout(modebar=CONFIG), label="proteomes representativeness details")
+                ar.HTML("<p>In the clustering step, for the set of proteomes associated to each input taxa, EsMeCaTa searches for clusters of similar proteic sequences among these proteomes. This step is supervised by a threshold between 0 and 1, 1 meaning that a cluster contains sequences from each proteomes, 0.5 meaning that a cluster contains sequences from at least a half of the proteomes (etc). This threshold can then be an approximation of the pan-proteome (0) and the core-proteome (1). Clusters below the threshold are discarded. The figure below displays how many clusters were retained at each threshold value. The vertical red line displays the threshold set dor this run of EsMeCata.</p>"),
+                ar.Plot(fig12.update_layout(modebar=CONFIG), label='proteomes representativeness'),
+                ar.Plot(fig12_details.update_layout(modebar=CONFIG), label="proteomes representativeness details")
             ]
         ),
 
         # Step 3 (Page 4): EsMeCaTa annotation
-        dp.Page(
+        ar.Page(
             title="Annotation summary", 
             blocks=[
 
                 # EC numbers figures
-                dp.HTML("<h2>EC numbers frequencies among taxa</h2>"),
-                dp.HTML("<p>Numbers and figures below detail how EC numbers vary among taxa, i.e. if an EC number is found in many taxa (a generic EC number) or only in very few taxa (a specific EC number).</p>"),
+                ar.HTML("<h2>EC numbers frequencies among taxa</h2>"),
+                ar.HTML("<p>Numbers and figures below detail how EC numbers vary among taxa, i.e. if an EC number is found in many taxa (a generic EC number) or only in very few taxa (a specific EC number).</p>"),
                 
-                dp.Group(
-                    dp.BigNumber(heading="EC found in more than 90% of taxa", value=DATA2["n_9_an"]),
-                    dp.BigNumber(heading="EC found in less than 10% of taxa", value=DATA2["n_1_an"]),
-                    dp.BigNumber(heading="EC found between 10% and 90% of taxa", value=DATA2["n91_an"]),
+                ar.Group(
+                    ar.BigNumber(heading="EC found in more than 90% of taxa", value=DATA2["n_9_an"]),
+                    ar.BigNumber(heading="EC found in less than 10% of taxa", value=DATA2["n_1_an"]),
+                    ar.BigNumber(heading="EC found between 10% and 90% of taxa", value=DATA2["n91_an"]),
                     columns=3,
                 ),
-                dp.Group(
-                    dp.Plot(fig5.update_layout(modebar=CONFIG), label='EC numbers frequencies in observations'),
-                    dp.Plot(fig7.update_layout(modebar=CONFIG), label='EC numbers frequencies in observations (barplot version)'),
+                ar.Group(
+                    ar.Plot(fig5.update_layout(modebar=CONFIG), label='EC numbers frequencies in observations'),
+                    ar.Plot(fig7.update_layout(modebar=CONFIG), label='EC numbers frequencies in observations (barplot version)'),
                     columns=2,
                 ),
 
-                dp.HTML("<h2>Taxa content in EC numbers</h2>"),
-                dp.HTML("<p>Numbers and figures below detail which taxa are annotated with most of the EC numbers of the whole dataset or only a few EC numbers. For instance, taxa with many EC numbers could have bigger genomes or be generalist species.</p>"),
+                ar.HTML("<h2>Taxa content in EC numbers</h2>"),
+                ar.HTML("<p>Numbers and figures below detail which taxa are annotated with most of the EC numbers of the whole dataset or only a few EC numbers. For instance, taxa with many EC numbers could have bigger genomes or be generalist species.</p>"),
                 
-                dp.Group(
-                    dp.BigNumber(heading="Taxa with more than 90% of all the dataset's EC numbers", value=DATA2["n_9_ob"]),
-                    dp.BigNumber(heading="Taxa with less than 10% of all the dataset's EC numbers", value=DATA2["n_1_ob"]),
-                    dp.BigNumber(heading="Taxa with between 10% and 90% of all the dataset's EC numbers", value=DATA2["n91_ob"]),
+                ar.Group(
+                    ar.BigNumber(heading="Taxa with more than 90% of all the dataset's EC numbers", value=DATA2["n_9_ob"]),
+                    ar.BigNumber(heading="Taxa with less than 10% of all the dataset's EC numbers", value=DATA2["n_1_ob"]),
+                    ar.BigNumber(heading="Taxa with between 10% and 90% of all the dataset's EC numbers", value=DATA2["n91_ob"]),
                     columns=3,
                 ),
-                dp.Group(
-                    dp.Plot(fig6.update_layout(modebar=CONFIG), label="Taxa content in EC numbers"),
-                    dp.Plot(fig8.update_layout(modebar=CONFIG), label="Taxa content in EC numbers (barplot version)"),
+                ar.Group(
+                    ar.Plot(fig6.update_layout(modebar=CONFIG), label="Taxa content in EC numbers"),
+                    ar.Plot(fig8.update_layout(modebar=CONFIG), label="Taxa content in EC numbers (barplot version)"),
                     columns=2,
                 ),
 
-                dp.HTML("<h2>EC numbers classes, counts and proportions</h2>"),
-                dp.Plot(fig11.update_layout(modebar=CONFIG), label="EC numbers classes, counts and proportions"),
+                ar.HTML("<h2>EC numbers classes, counts and proportions</h2>"),
+                ar.Plot(fig11.update_layout(modebar=CONFIG), label="EC numbers classes, counts and proportions"),
 
                 # GO terms figures
-                dp.HTML("<h2>GO terms frequencies among taxa</h2>"),
-                dp.HTML("<p>Numbers and figures below detail how GO terms vary among taxa, i.e. if a GO term is found in many taxa (a generic GO term) or only in very few taxa (a specific GO term).</p>"),
+                ar.HTML("<h2>GO terms frequencies among taxa</h2>"),
+                ar.HTML("<p>Numbers and figures below detail how GO terms vary among taxa, i.e. if a GO term is found in many taxa (a generic GO term) or only in very few taxa (a specific GO term).</p>"),
                 
-                dp.Group(
-                    dp.BigNumber(heading="GO terms found in more than 90% of taxa", value=DATA3["n_9_an"]),
-                    dp.BigNumber(heading="GO terms found in less than 10% of taxa", value=DATA3["n_1_an"]),
-                    dp.BigNumber(heading="GO terms found between 10% and 90% of taxa", value=DATA3["n91_an"]),
+                ar.Group(
+                    ar.BigNumber(heading="GO terms found in more than 90% of taxa", value=DATA3["n_9_an"]),
+                    ar.BigNumber(heading="GO terms found in less than 10% of taxa", value=DATA3["n_1_an"]),
+                    ar.BigNumber(heading="GO terms found between 10% and 90% of taxa", value=DATA3["n91_an"]),
                     columns=3,
                 ),
-                dp.Group(
-                    dp.Plot(fig5b.update_layout(modebar=CONFIG), label='Go terms frequencies in taxa'),
-                    dp.Plot(fig7b.update_layout(modebar=CONFIG), label='Go terms frequencies in taxa (barplot version)'),
+                ar.Group(
+                    ar.Plot(fig5b.update_layout(modebar=CONFIG), label='Go terms frequencies in taxa'),
+                    ar.Plot(fig7b.update_layout(modebar=CONFIG), label='Go terms frequencies in taxa (barplot version)'),
                     columns=2,
                 ),
 
-                dp.HTML("<h2>Taxa content in GO terms</h2>"),
-                dp.HTML("<p>Numbers and figures below detail which taxa are annotated with most of the GO terms of the whole dataset or only a few Go terms. For instance, taxa with many Go terms could have bigger genomes or be generalist species.</p>"),
+                ar.HTML("<h2>Taxa content in GO terms</h2>"),
+                ar.HTML("<p>Numbers and figures below detail which taxa are annotated with most of the GO terms of the whole dataset or only a few Go terms. For instance, taxa with many Go terms could have bigger genomes or be generalist species.</p>"),
                 
-                dp.Group(
-                    dp.BigNumber(heading="Taxa with more than 90% of all the dataset's GO terms", value=DATA3["n_9_ob"]),
-                    dp.BigNumber(heading="Taxa with less than 10% of all the dataset's GO terms", value=DATA3["n_1_ob"]),
-                    dp.BigNumber(heading="Taxa with between 10% and 90% of all the dataset's GO terms", value=DATA3["n91_ob"]),
+                ar.Group(
+                    ar.BigNumber(heading="Taxa with more than 90% of all the dataset's GO terms", value=DATA3["n_9_ob"]),
+                    ar.BigNumber(heading="Taxa with less than 10% of all the dataset's GO terms", value=DATA3["n_1_ob"]),
+                    ar.BigNumber(heading="Taxa with between 10% and 90% of all the dataset's GO terms", value=DATA3["n91_ob"]),
                     columns=3,
                 ),
-                dp.Group(
-                    dp.Plot(fig6b.update_layout(modebar=CONFIG), label="Observations' content in GO terms"),
-                    dp.Plot(fig8b.update_layout(modebar=CONFIG), label="Observations' content in GO terms (barplot version)"),
+                ar.Group(
+                    ar.Plot(fig6b.update_layout(modebar=CONFIG), label="Observations' content in GO terms"),
+                    ar.Plot(fig8b.update_layout(modebar=CONFIG), label="Observations' content in GO terms (barplot version)"),
                     columns=2,
                 ),
             ]
         ),
 
         # Page 4 : dataframes of default summary statistics
-        dp.Page(
+        ar.Page(
             title="Data summary", 
             blocks=[
-                dp.Group(
-                    dp.BigNumber(heading="Number of inputs", value=DATA["N_IN"]),
-                    dp.BigNumber(heading="Kept by EsMeCaTa", value=DATA["N_OUT"]),
-                    dp.BigNumber(heading="Discarded", value=DATA["N_DISCARDED"]),
+                ar.Group(
+                    ar.BigNumber(heading="Number of inputs", value=DATA["N_IN"]),
+                    ar.BigNumber(heading="Kept by EsMeCaTa", value=DATA["N_OUT"]),
+                    ar.BigNumber(heading="Discarded", value=DATA["N_DISCARDED"]),
                     columns=3,
                 ),
 
-                dp.HTML("<h2>Output stats</h2><p>Taxonomic ranks are NCBI ranks returned by ete3</p>"),
-                dp.DataTable(DATA["DF_STATS"], label="Data"),
-                dp.HTML("<h2>Discarded</h2><p>Taxonomic ranks were not inferred; only names are displayed</p>"),
+                ar.HTML("<h2>Output stats</h2><p>Taxonomic ranks are NCBI ranks returned by ete3</p>"),
+                ar.DataTable(DATA["DF_STATS"], label="Data"),
+                ar.HTML("<h2>Discarded</h2><p>Taxonomic ranks were not inferred; only names are displayed</p>"),
                 df_discarded_panel_content
             ]
         ),
 
         # Page 5 : metadata with tools versions, files paths (...) for reproducibility
-        dp.Page(title="Metadata", blocks=[dp.Code(code=metadata, language="json", label="Metadata")]),
+        ar.Page(title="Metadata", blocks=[ar.Code(code=metadata, language="json", label="Metadata")]),
     )
 
-    dp.save_report(report, 
+    ar.save_report(report, 
         path=output_file,
-        formatting=dp.Formatting(
+        formatting=ar.Formatting(
             accent_color="rgb(204, 255, 204)",
-            font=dp.FontChoice.MONOSPACE,
-            width=dp.Width.FULL
-        )
+            font=ar.FontChoice.MONOSPACE,
+            width=ar.Width.FULL
+        ),
+        standalone=True
     )
 
 def create_esmecata_report(esmecata_input_file, esmecata_core_output_folder, output_folder, create_svg=False):
@@ -496,6 +497,6 @@ def create_esmecata_report(esmecata_input_file, esmecata_core_output_folder, out
                             fig12, fig12_details, metadata, esmecata_summary_panel, True)
     """
     esmecata_summary = os.path.join(output_folder, 'esmecata_summary.html')
-    create_datapane_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
+    create_arakawa_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig6, fig6b,
                             fig7, fig7b, fig8, fig8b, fig9, fig10, fig10a, fig11,
                             fig12, fig12_details, metadata, esmecata_summary)
