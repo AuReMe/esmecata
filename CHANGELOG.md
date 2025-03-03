@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.6.1 (2025-02-25)
+# EsMeCaTa v0.6.1 (2025-03-03)
 
 ## Fix
 
@@ -9,6 +9,7 @@
 ## Modify
 
 * Use taxon ID to search for taxon presence in precomputed database.
+* Use Trusted publisher to publish on PyPI.
 
 # EsMeCaTa v0.6.0 (2025-01-27)
 
