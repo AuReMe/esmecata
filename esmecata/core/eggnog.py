@@ -32,6 +32,9 @@ from esmecata.core.annotation import extract_protein_cluster, create_dataset_ann
 from esmecata.core.clustering import get_proteomes_tax_id_name
 
 from ete3 import NCBITaxa
+from ete3 import __version__ as ete3_version
+
+from Bio import __version__ as biopython_version
 from Bio import SeqIO
 
 logger = logging.getLogger(__name__)
@@ -438,6 +441,8 @@ def annotate_with_eggnog(input_folder, output_folder, eggnog_database_path, nb_c
     options['tool_dependencies']['python_package']['Python_version'] = sys.version
     options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
     options['tool_dependencies']['python_package']['pandas'] = pd.__version__
+    options['tool_dependencies']['python_package']['ete3'] = ete3_version
+    options['tool_dependencies']['python_package']['biopython'] = biopython_version
     options['tool_dependencies']['eggnog_mapper'] = get_eggnog_version()
 
     esmecata_metadata = {}

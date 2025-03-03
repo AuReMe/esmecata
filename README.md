@@ -44,6 +44,8 @@ EsMeCaTa is a method to estimate consensus proteomes and metabolic capabilities 
 
 ## Requirements
 
+Requirements for EsMeCaTa vary depending on the command used.
+
 EsMeCaTa is developed in Python, it is tested with Python 3.11. It needs the following python packages:
  
 - [biopython](https://pypi.org/project/biopython/): To create fasta files and used by the option `--annotation-files` to index UniProt flat files.
@@ -110,6 +112,7 @@ To use eggNOG-mapper, you have to setup it and install [its database](https://gi
 - [plotly](https://github.com/plotly/plotly.py).
 - [kaleido](https://github.com/plotly/Kaleido)
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
+- [bokeh](https://github.com/bokeh/bokeh)
 
 **Warning**: due to the fact that datapane is no longer maintained, it requires a version of pandas lower than `2.0.0`. `esmecata_report` has been used with pandas `1.5.3`.
 The replacement of datapane by [panel](https://github.com/holoviz/panel) is under development to solve this issue.
