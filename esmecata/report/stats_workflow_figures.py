@@ -371,7 +371,7 @@ def taxo_ranks_contribution(proteome_tax_id, results_path, n_bins=10, savefig=Tr
 
 def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, output_folder, savefig=True):
     '''
-    Plots a heatmap displaying how many input taxonomic ranks were assigned to the same rank by esmecata and how many were assigned to higher tanks.
+    Plots a heatmap displaying how many input taxonomic ranks were assigned to the same rank by esmecata and how many were assigned to higher ranks.
 
         Parameters:
             proteome_tax_id (pandas): a pandas df loaded with esmecata 'proteome_tax_id.tsv' file, output of post_analysis_config()
@@ -1115,7 +1115,7 @@ def reproducibility_tokens(outdir):
             outdir (str) : path to the results of an EsMeCaTa workflow
 
         Returns:
-            metadata (str) : all metadata of the workflow
+            metadata (dict) : all metadata of the workflow
     '''
     reprometa_proteomes = json.load(open(os.path.join(outdir, '0_proteomes', 'esmecata_metadata_proteomes.json'), 'r'))
     reprometa_clustering = json.load(open(os.path.join(outdir, '1_clustering', 'esmecata_metadata_clustering.json'), 'r'))
@@ -1125,6 +1125,4 @@ def reproducibility_tokens(outdir):
          "clustering": reprometa_clustering,
          "annotation": reprometa_annotation}
     
-    # metadata = json.dumps(metadata, indent=4)
-
     return metadata

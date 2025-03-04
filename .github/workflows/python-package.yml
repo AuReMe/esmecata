@@ -49,8 +49,8 @@ jobs:
         brew update
         brew install mmseqs2
         mmseqs -h
-        pip install -e . --config-settings editable_mode=compat
-        pip install datapane plotly ontosunburst kaleido numpy==1.26.4
+        pip install -e .
+        pip install arakawa plotly ontosunburst kaleido numpy
     - name: Test with pytest
       run: |
         pip install pytest pytest-mock

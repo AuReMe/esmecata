@@ -112,11 +112,10 @@ To use eggNOG-mapper, you have to setup it and install [its database](https://gi
 - [plotly](https://github.com/plotly/plotly.py): to create most of the figures.
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst): to create sunburst figures of Enzyme Commission numbers.
 - [kaleido](https://github.com/plotly/Kaleido): required to create the figure.
-- [bokeh](https://github.com/bokeh/bokeh): required to create the figure.
 
 This can be installed with pip:
 
-```pip install arakawa bokeh plotly kaleido ontosunburst```
+```pip install arakawa plotly kaleido ontosunburst```
 
 `esmecata_gseapy` requires:
 - [pronto](https://github.com/althonos/pronto): to get Gene Ontology names.
@@ -976,7 +975,7 @@ subcommands:
     create_report_annotation
                         Create report from esmecata output folder of annotation subcommand.
 
-Requires: arakawa, bokeh, plotly, kaleido, ontosunburst.
+Requires: arakawa, plotly, kaleido, ontosunburst.
 ```
 
 It can be used with this command:
