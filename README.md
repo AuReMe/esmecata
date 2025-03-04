@@ -108,23 +108,24 @@ To use eggNOG-mapper, you have to setup it and install [its database](https://gi
 
 `esmecata_report` requires:
 
-- [datapane](https://github.com/datapane/datapane).
-- [plotly](https://github.com/plotly/plotly.py).
-- [kaleido](https://github.com/plotly/Kaleido)
-- [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
-- [bokeh](https://github.com/bokeh/bokeh)
+- [arakawa](https://github.com/ninoseki/arakawa): fork of [datapane](https://github.com/datapane/datapane) to create the HTML report.
+- [plotly](https://github.com/plotly/plotly.py): to create most of the figures.
+- [ontosunburst](https://github.com/AuReMe/Ontology_sunburst): to create sunburst figures of Enzyme Commission numbers.
+- [kaleido](https://github.com/plotly/Kaleido): required to create the figure.
+- [bokeh](https://github.com/bokeh/bokeh): required to create the figure.
 
-**Warning**: due to the fact that datapane is no longer maintained, it requires a version of pandas lower than `2.0.0`. `esmecata_report` has been used with pandas `1.5.3`.
-The replacement of datapane by [panel](https://github.com/holoviz/panel) is under development to solve this issue.
+This can be installed with pip:
+
+```pip install arakawa bokeh plotly kaleido ontosunburst```
 
 `esmecata_gseapy` requires:
 - [pronto](https://github.com/althonos/pronto): to get Gene Ontology names.
 - [gseapy](https://github.com/zqfang/GSEApy): to perform enrichment analysis.
 - [orsum](https://github.com/ozanozisik/orsum): to visualize the results of enrichment analysis.
 
-All dependencies can be installed with following command:
+These dependencies can be installed with conda:
 
-```conda install mmseqs2 pandas=1.5.3 sparqlwrapper requests biopython ete3 eggnog-mapper orsum gseapy plotly datapane python-kaleido -c conda-forge -c bioconda```
+```conda install pronto orsum gseapy plotly -c conda-forge -c bioconda```
 
 ## Input
 
@@ -975,7 +976,7 @@ subcommands:
     create_report_annotation
                         Create report from esmecata output folder of annotation subcommand.
 
-Requires: datapane, plotly, kaleido, ontosunburst.
+Requires: arakawa, bokeh, plotly, kaleido, ontosunburst.
 ```
 
 It can be used with this command:
