@@ -25,7 +25,7 @@ from esmecata.core.eggnog import get_proteomes_tax_id_name
 from multiprocessing import Pool
 from collections import Counter
 
-from ete3 import NCBITaxa
+from ete4 import NCBITaxa
 
 logger = logging.getLogger(__name__)
 

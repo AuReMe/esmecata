@@ -16,7 +16,7 @@ dependencies = [
   'matplotlib',
   'pandas',
   'requests',
-  'ete3',
+  'ete4',
   'seaborn',
   'SPARQLWrapper'
 ]

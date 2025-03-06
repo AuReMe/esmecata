@@ -17,7 +17,7 @@ import csv
 import os.path
 
 import plotly.graph_objects as go
-from ete3 import NCBITaxa
+from ete4 import NCBITaxa
 from typing import Dict, List, Set, Tuple
 
 from esmecata.report.esmecata_compression import RANK2COL

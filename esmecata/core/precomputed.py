@@ -27,8 +27,8 @@ import zipfile
 
 from io import TextIOWrapper
 
-from ete3 import __version__ as ete3_version
-from ete3 import NCBITaxa
+from ete4 import __version__ as ete3_version
+from ete4 import NCBITaxa
 from Bio import SeqIO
 from Bio import __version__ as biopython_version
 
