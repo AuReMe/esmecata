@@ -73,7 +73,7 @@ If you use the option `--bioservices`, EsMeCaTa will also require this package:
 **Warning**: due to change in sqlite, ete3 is no more working. To continue working, EsMeCaTa now uses ete4.
 But ete4 is not yet available on pip or conda, so you have to install it from its github repository with the command:
 
-```pip install git+https://github.com/etetoolkit/ete.git```
+```pip install git+https://github.com/etetoolkit/ete.git@a96d66643b7dd53c1d60968b610c5cd6c9497a9c```
 
 Once ete4 has been released, I will update the requirements.
 
