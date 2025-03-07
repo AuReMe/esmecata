@@ -70,8 +70,7 @@ If you use the option `--bioservices`, EsMeCaTa will also require this package:
 
 ## Installation
 
-**Warning**: due to change in sqlite, there is issue when using ete3 from PyPI. To continue working, EsMeCaTa now relies on ete4.
-For all use of EsMeCaTa, you have to install ete4.
+**Warning**: due to change in sqlite, there is an issue when using ete3 from PyPI. To avoid this, EsMeCaTa relies on ete4, which becomes a requirement for EsMeCaTa.
 But ete4 is not yet available on PyPI or conda, so you have to install it from its github repository with the command:
 
 ```pip install git+https://github.com/etetoolkit/ete.git@a96d66643b7dd53c1d60968b610c5cd6c9497a9c```
@@ -84,7 +83,7 @@ To query the precomputed database, it is only required to install EsMeCaTa with 
 
 ```pip install esmecata ```
 
-All the required dependencies for the estimation from the precomputed database are performed with python packages.
+Except from ete4, all the required dependencies for the estimation from the precomputed database are performed with python packages.
 
 The second requirement is EsMeCaTa precomputed database (file size: 4G) available at the following [Zenodo archive](https://zenodo.org/records/13354073).
 As this file is quite big and if you want just to test `esmecata precomputed`, you can try:
