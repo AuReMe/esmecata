@@ -179,7 +179,7 @@ def create_panel_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, fig
                     pn.indicators.Number(name="Discarded", value=DATA["N_DISCARDED"], format='{value}'),
                 ),
                 pn.FlexBox(
-                    pn.pane.HTML("<h2>Output stats</h2><p>Taxonomic ranks are NCBI ranks returned by ete3</p>", styles=styles),
+                    pn.pane.HTML("<h2>Output stats</h2><p>Taxonomic ranks are NCBI ranks returned by ete4</p>", styles=styles),
                     pn.pane.DataFrame(DATA["DF_STATS"]),
                 ),
                 pn.FlexBox(
