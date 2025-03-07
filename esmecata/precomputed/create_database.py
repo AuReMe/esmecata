@@ -204,7 +204,7 @@ def create_database_from_run(esmecata_proteomes_folder, esmecata_clustering_fold
     tax_id_issues = {}
     # Parse all descendant of root to search for children tax id with lower protein than parents.
     # To identify taxon with potential errors.
-    for descendant in database_tree.iter_descendants():
+    for descendant in database_tree.descendants():
         descendant_childrens = descendant.children
         parent_tax_id = int(descendant.name)
         if parent_tax_id in tax_id_protein_clusters:
