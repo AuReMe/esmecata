@@ -91,8 +91,8 @@ def test_filter_rank_limit_offline():
     for taxon in json_taxonomic_affiliations['id_1']:
         assert expected_json_taxonomic_affiliations['id_1'][taxon] == json_taxonomic_affiliations['id_1'][taxon]
 
-    # Keep superkingdom and inferior (here Bacteria).
-    json_taxonomic_affiliations = filter_rank_limit(input_json_taxonomic_affiliations, ncbi, 'superkingdom')
+    # Keep domain and inferior (here Bacteria).
+    json_taxonomic_affiliations = filter_rank_limit(input_json_taxonomic_affiliations, ncbi, 'domain')
     expected_json_taxonomic_affiliations = {'id_1': OrderedDict([('Bacteria', [2]), ('Proteobacteria', [1224]),
                                         ('Gammaproteobacteria', [1236]), ('Enterobacterales', [91347]), ('Yersiniaceae', [1903411]),
                                         ('Yersinia', [629]), ('species not found', ['not_found'])])}

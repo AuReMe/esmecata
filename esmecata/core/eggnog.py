@@ -26,7 +26,7 @@ import shutil
 import subprocess
 import sys
 
-from esmecata.utils import is_valid_dir
+from esmecata.utils import is_valid_dir, get_domain_or_superkingdom_from_ncbi_tax_database
 from esmecata import __version__ as esmecata_version
 from esmecata.core.annotation import extract_protein_cluster, create_dataset_annotation_file
 from esmecata.core.clustering import get_proteomes_tax_id_name
@@ -299,12 +299,14 @@ def merge_fasta_taxa(reference_protein_fasta_path, proteome_tax_id_file, merge_f
     obs_name_tax_ids = get_proteomes_tax_id_name(proteome_tax_id_file, 'tax_id')
     proteomes_tax_id_names = get_proteomes_tax_id_name(proteome_tax_id_file)
 
+    domain_superkingdom_tax_rank_name = get_domain_or_superkingdom_from_ncbi_tax_database()
+
     obs_name_superkingdom = {}
     for obs_name in obs_name_tax_ids:
         tax_id = obs_name_tax_ids[obs_name]
         tax_id_lineages = ncbi.get_lineage(tax_id)
         rank_tax_id_lineages = ncbi.get_rank(tax_id_lineages)
-        superkingdom = str([tax_id for tax_id in rank_tax_id_lineages if rank_tax_id_lineages[tax_id] == 'superkingdom'][0])
+        superkingdom = str([tax_id for tax_id in rank_tax_id_lineages if rank_tax_id_lineages[tax_id] == domain_superkingdom_tax_rank_name][0])
         proteomes_tax_id_name = proteomes_tax_id_names[obs_name]
         proteomes_tax_id_name_fasta = os.path.join(reference_protein_fasta_path, proteomes_tax_id_name + '.faa')
         # Check if proteomes_tax_id_name_fasta exists, because if it contains 0 proteins, there will not be a fasta file associated.

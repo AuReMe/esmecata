@@ -29,6 +29,7 @@ import gseapy
 from Bio.ExPASy import Enzyme
 from matplotlib import __version__ as matplotlib_version
 from esmecata.core.proteomes import get_taxon_obs_name
+from esmecata.utils import get_domain_or_superkingdom_from_ncbi_tax_database
 from esmecata import __version__ as esmecata_version
 from Bio import __version__ as biopython_version
 
@@ -181,14 +182,24 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
     logger.info('|EsMeCaTa|gseapy_enrichr| Begin enrichment analysis.')
 
     if grouping == "tax_rank":
+        domain_superkingdom_tax_rank_name = get_domain_or_superkingdom_from_ncbi_tax_database()
         if taxon_rank is None:
             logger.critical('|EsMeCaTa|gseapy_enrichr| You have to specify a taxon rank for this analysis with --taxon-rank')
             sys.exit()
-        taxon_ranks = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']
+        taxon_ranks = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'kingdom', 'domain', 'superkingdom']
         if taxon_rank != 'phylum':
             if taxon_rank not in taxon_ranks:
                 logger.critical('|EsMeCaTa|gseapy_enrichr| Incorrect taxon given {0}, possible ranks are: {1}'.format(taxon_rank, ','.join(taxon_ranks)))
                 sys.exit()
+        if taxon_rank == 'superkingdom':
+            if taxon_rank != domain_superkingdom_tax_rank_name and domain_superkingdom_tax_rank_name == 'domain':
+                logger.critical('|EsMeCaTa|gseapy_enrichr| superkingdom has been renamed domain in new version of NCBI Taxonomy database, EsMeCaTa will use domain.')
+                taxon_rank = domain_superkingdom_tax_rank_name
+        if taxon_rank == 'domain':
+            if taxon_rank != domain_superkingdom_tax_rank_name and domain_superkingdom_tax_rank_name == 'superkingdom':
+                logger.critical('|EsMeCaTa|gseapy_enrichr| domain was named superkingdom in old version of NCBI Taxonomy database (which is the case of your version), EsMeCaTa will use superkingdom.')
+                taxon_rank = domain_superkingdom_tax_rank_name
+
     elif grouping == "selected":
         if taxa_lists_file is None:
             logger.critical('|EsMeCaTa|gseapy_enrichr| You have to specify a taxa lists file for this analysis with --taxa-list')

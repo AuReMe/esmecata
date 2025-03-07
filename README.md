@@ -339,7 +339,7 @@ The following ranks can be given to this option (from Supplementary Table S3 of 
 
 |Level           |Rank            |
 |----------------|----------------|
-|1               |superkingdom    |
+|1               |superkingdom (renamed into `domain` in recent version of NCBI Taxonomy database)   |
 |2               |kingdom         |
 |3               |subkingdom      |
 |4               |superphylum     |

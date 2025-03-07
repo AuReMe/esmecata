@@ -1,5 +1,16 @@
 # Changelog
 
+# EsMeCaTa v0.6.4 (2025-03-07)
+
+## Add
+
+* Function `get_domain_or_superkingdom_from_ncbi_tax_database` in esmecata.utils to check if domain is called domain or superkingdom in NCBI Taxonomy database.
+
+## Fix
+
+* Taxonomic rank `superkingdom` has been renamed `domain` in recent versionf the NCBI Taxonomy database. Fix several issues associated with that in different parts of EsMeCaTa.
+* `esmecata_gseapy` that was not working with results from `esmecata precomputed` due to missing `proteome_tax_id.tsv` in `2_annotation` folder.
+
 # EsMeCaTa v0.6.3 (2025-03-07)
 
 ## Fix

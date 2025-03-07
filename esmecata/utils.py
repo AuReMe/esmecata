@@ -27,6 +27,7 @@ from SPARQLWrapper import SPARQLWrapper, TSV
 from socket import timeout
 
 from esmecata import __version__ as esmecata_version
+from ete4 import NCBITaxa
 
 MIN_VAL = 0
 MAX_VAL = 1
@@ -244,3 +245,21 @@ def send_uniprot_sparql_query(sparql_query, uniprot_sparql_endpoint):
         csvreader = []
 
     return csvreader
+
+
+def get_domain_or_superkingdom_from_ncbi_tax_database():
+    """ Due to change in the NCBI Taxonomy database superkingdom has been changed to domain.
+    To get the correct one, I search for Bacteria taxonomic ID (2) and comapre the taxonomic rank name to domain or superkingdom.
+
+    Returns:
+        domain_superkingdom_tax_rank_name (str): either domain or superkingdom according to NCBI database version
+    """
+    ncbi = NCBITaxa()
+
+    bacteria_tax_rank = ncbi.get_rank([2])[2]
+    if bacteria_tax_rank == 'domain':
+        domain_superkingdom_tax_rank_name = 'domain'
+    elif bacteria_tax_rank == 'superkingdom':
+        domain_superkingdom_tax_rank_name = 'superkingdom'
+
+    return domain_superkingdom_tax_rank_name

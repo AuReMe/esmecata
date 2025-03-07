@@ -43,7 +43,7 @@ from ete4 import NCBITaxa, is_taxadb_up_to_date
 
 from SPARQLWrapper import __version__ as sparqlwrapper_version
 
-from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir, send_uniprot_sparql_query
+from esmecata.utils import get_rest_uniprot_release, get_sparql_uniprot_release, is_valid_file, is_valid_dir, send_uniprot_sparql_query, get_domain_or_superkingdom_from_ncbi_tax_database
 from esmecata import __version__ as esmecata_version
 
 from urllib.parse import unquote
@@ -52,8 +52,12 @@ REQUESTS_HEADERS = {'User-Agent': 'EsMeCaTa proteomes v' + esmecata_version + ',
 
 logger = logging.getLogger(__name__)
 
+# Due to change in the NCBI Taxonomy database superkingdom has been changed to domain.
+# To get the correct one, I search for Bacteria taxonomic ID (2) and comapre the taxonomic rank name to domain or superkingdom.
+domain_superkingdom_tax_rank_name = get_domain_or_superkingdom_from_ncbi_tax_database()
+
 # Rank level from Supplementary Table S3 of https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7408187/
-RANK_LEVEL = OrderedDict({'superkingdom': 1, 'kingdom': 2, 'subkingdom': 3, 'superphylum': 4,
+RANK_LEVEL = OrderedDict({domain_superkingdom_tax_rank_name: 1, 'kingdom': 2, 'subkingdom': 3, 'superphylum': 4,
                 'phylum': 5, 'subphylum': 6, 'infraphylum': 7, 'superclass': 8,
                 'class': 9, 'subclass': 10, 'infraclass': 11, 'cohort': 12, 'subcohort': 13,
                 'superorder': 14, 'order': 15, 'suborder': 16, 'infraorder': 17, 'parvorder': 18,
@@ -1513,6 +1517,15 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         option_bioservices (bool): use bioservices instead of manual queries.
     """
     starttime = time.time()
+
+    # Check how domain/superkingdom are called in NCBI Taxonomy database.
+    if rank_limit is not None:
+        if rank_limit == 'superkingdom' and rank_limit != domain_superkingdom_tax_rank_name and domain_superkingdom_tax_rank_name == 'domain':
+            logger.info('|EsMeCaTa|proteomes| Rank limit sets as superkingdom but it is called domain inside NCBI Taxonomy database, use domain instead.')
+            rank_limit = 'domain'
+        elif rank_limit == 'domain' and rank_limit != domain_superkingdom_tax_rank_name and domain_superkingdom_tax_rank_name == 'superkingdom':
+            logger.info('|EsMeCaTa|proteomes| Rank limit sets as domain but it is called superkingdom inside NCBI Taxonomy database, use superkingdom instead.')
+            rank_limit = 'superkingdom'
 
     proteome_to_download, session = check_proteomes(input_file, output_folder, busco_percentage_keep,
                             ignore_taxadb_update, all_proteomes, uniprot_sparql_endpoint,

@@ -21,14 +21,21 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 
+from esmecata.utils import get_domain_or_superkingdom_from_ncbi_tax_database
+
 # CONSTANTS
 # ======================================================================================================================
 
 # TAXONOMIC RANK RELATED CONSTANTS
 # --------------------------------
 
-RANK2COL = {  # KINGDOM (RED)
-    'superkingdom': '#6f1a12', 'domain': '#6f1a12', 'kingdom': '#872015', 'subkingdom': '#a2261a',
+
+# Due to change in the NCBI Taxonomy database superkingdom has been changed to domain.
+# To get the correct one, I search for Bacteria taxonomic ID (2) and comapre the taxonomic rank name to domain or superkingdom.
+domain_superkingdom_tax_rank_name = get_domain_or_superkingdom_from_ncbi_tax_database()
+
+RANK2COL = {# KINGDOM (RED)
+    domain_superkingdom_tax_rank_name: '#6f1a12', 'kingdom': '#872015', 'subkingdom': '#a2261a',
     # PHYLUM (ORANGE)
     'superphylum': '#b26f15', 'phylum': '#c87c14', 'subphylum': '#de8710', 'infraphylum': '#fa960e',
     # CLASS (YELLOW)
@@ -68,7 +75,7 @@ RANK_SORTED = ['isolate', 'strain', 'serotype', 'serogroup', 'forma', 'subvariet
                'subcohort', 'cohort',
                'infraclass', 'subclass', 'class', 'superclass',
                'infraphylum', 'subphylum', 'phylum', 'superphylum',
-               'subkingdom', 'kingdom', 'superkingdom', 'domain',
+               'subkingdom', 'kingdom', domain_superkingdom_tax_rank_name,
                'clade', 'environmental samples', 'incertae sedis', 'unclassified', 'no rank']
 
 # FIGURE COMPOSITION CONSTANTS

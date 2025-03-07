@@ -32,7 +32,7 @@ from ete4 import NCBITaxa
 from Bio import SeqIO
 from Bio import __version__ as biopython_version
 
-from esmecata.utils import is_valid_dir
+from esmecata.utils import is_valid_dir, get_domain_or_superkingdom_from_ncbi_tax_database
 from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file
 from esmecata.core.eggnog import compute_stat_annotation
 from esmecata.core.clustering import get_proteomes_tax_id_name
@@ -119,6 +119,16 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|precomputed| Reading input file.')
+
+    # Check how domain/superkingdom are called in NCBI Taxonomy database.
+    domain_superkingdom_tax_rank_name = get_domain_or_superkingdom_from_ncbi_tax_database()
+    if rank_limit is not None:
+        if rank_limit == 'superkingdom' and rank_limit != domain_superkingdom_tax_rank_name and domain_superkingdom_tax_rank_name == 'domain':
+            logger.info('|EsMeCaTa|proteomes| Rank limit sets as superkingdom but it is called domain inside NCBI Taxonomy database, use domain instead.')
+            rank_limit = 'domain'
+        elif rank_limit == 'domain' and rank_limit != domain_superkingdom_tax_rank_name and domain_superkingdom_tax_rank_name == 'superkingdom':
+            logger.info('|EsMeCaTa|proteomes| Rank limit sets as domain but it is called superkingdom inside NCBI Taxonomy database, use superkingdom instead.')
+            rank_limit = 'superkingdom'
 
     is_valid_dir(output_folder)
 
@@ -282,6 +292,8 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     clustering_proteome_tax_id_file = os.path.join(clustering_output_folder, 'proteome_tax_id.tsv')
     shutil.copyfile(proteome_tax_id_file, clustering_proteome_tax_id_file)
+    annotation_proteome_tax_id_file = os.path.join(annotation_output_folder, 'proteome_tax_id.tsv')
+    shutil.copyfile(proteome_tax_id_file, annotation_proteome_tax_id_file)
 
     # If some organisms have no match in their taxonomic affiliations with esmecata precomputed database, create an input file for esmecata containing them.
     if len(observation_name_not_founds) > 0:
