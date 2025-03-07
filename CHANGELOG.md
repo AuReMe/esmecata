@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.6.3 (2025-03-07)
+
+## Fix
+
+* KeyError when using precomputed database from EsMeCaTa article (as there is no `KEGG_reaction` in these databases).
+
 # EsMeCaTa v0.6.2 (2025-03-07)
 
 ## Modify

@@ -309,8 +309,12 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         for observation_name in tax_id_obs_names[tax_id]:
             # Create an annotaiton_reference file for the observation name.
             output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
-            selected_df_annotation = df_annotation[['representative_protein', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']]
-            selected_df_annotation.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
+            if 'KEGG_reaction' in df_annotation.columns:
+                selected_df_annotation = df_annotation[['representative_protein', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']]
+                selected_df_annotation.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
+            else:
+                selected_df_annotation = df_annotation[['representative_protein', 'cluster_members', 'gene_name', 'GO', 'EC']]
+                selected_df_annotation.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC']
             selected_df_annotation.to_csv(output_path_annotation_file, sep='\t', index=None)
 
         # Create a consensus proteoems file.
