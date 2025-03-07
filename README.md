@@ -51,7 +51,7 @@ EsMeCaTa is developed in Python, it is tested with Python 3.11. It needs the fol
 - [biopython](https://pypi.org/project/biopython/): To create fasta files and used by the option `--annotation-files` to index UniProt flat files.
 - [pandas](https://pypi.org/project/pandas/): To read the input files.
 - [requests](https://pypi.org/project/requests/): For the REST queries on Uniprot.
-- [ete4](https://pypi.org/project/ete4/): To analyse the taxonomic affiliation and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.
+- [ete4](https://github.com/etetoolkit/ete): To analyse the taxonomic affiliation and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.
 - [SPARQLwrapper](https://pypi.org/project/SPARQLWrapper/): Optionally, you can use SPARQL queries instead of REST queries. This can be done either with the [Uniprot SPARQL Endpoint](https://sparql.uniprot.org/) (with the option `--sparql uniprot`) or with a Uniprot SPARQL Endpoint that you created locally (it is supposed to work but not tested, only SPARQL queries on the Uniprot SPARQL endpoint have been tested). **Warning**: using SPARQL queries will lead to minor differences in functional annotations and metabolic reactions due to how the results are retrieved with REST query or SPARQL query.
 
 Also esmecata requires MMseqs2 for protein clustering with `esmecata workflow` or `esmecata clustering`:
