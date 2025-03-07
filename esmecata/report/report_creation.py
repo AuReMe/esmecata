@@ -186,7 +186,7 @@ def create_arakawa_report(CONFIG, DATA, DATA2, DATA3, fig1, fig4, fig5, fig5b, f
                     columns=3,
                 ),
 
-                ar.HTML("<h2>Output stats</h2><p>Taxonomic ranks are NCBI ranks returned by ete3</p>"),
+                ar.HTML("<h2>Output stats</h2><p>Taxonomic ranks are NCBI ranks returned by ete4</p>"),
                 ar.DataTable(DATA["DF_STATS"], label="Data"),
                 ar.HTML("<h2>Discarded</h2><p>Taxonomic ranks were not inferred; only names are displayed</p>"),
                 df_discarded_panel_content

@@ -8,7 +8,6 @@ dependencies:
   - sparqlwrapper
   - requests
   - biopython
-  - ete3
   - eggnog-mapper
   - orsum
   - gseapy

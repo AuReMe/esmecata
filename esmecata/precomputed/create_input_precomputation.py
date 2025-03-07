@@ -15,7 +15,9 @@
 import csv
 from esmecata.utils import send_uniprot_sparql_query
 
-from ete3 import NCBITaxa
+from ete4 import NCBITaxa
+
+
 def get_taxon_proteomes(output_file, taxon_rank='Genus'):
     uniprot_sparql_endpoint='https://sparql.uniprot.org/sparql'
 

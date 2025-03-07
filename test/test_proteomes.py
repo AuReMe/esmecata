@@ -5,7 +5,7 @@ import subprocess
 import time
 
 from collections import OrderedDict, Counter
-from ete3 import NCBITaxa
+from ete4 import NCBITaxa
 
 from esmecata.core.proteomes import taxonomic_affiliation_to_taxon_id, associate_taxon_to_taxon_id, \
                                 disambiguate_taxon, find_proteomes_tax_ids, filter_rank_limit, \
