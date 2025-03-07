@@ -1,10 +1,11 @@
 # Changelog
 
-# EsMeCaTa v0.6.2 (2025-03-06)
+# EsMeCaTa v0.6.2 (2025-03-07)
 
 ## Modify
 
 * Replace `datapane` by `arakawa` for HTML report creation in `esmecata_report`. Make HTMLs standalone (they are a lot bigger but bo not require internet to display).
+* Replace `ete3` by `ete4` as ete3 is no longer maintained.
 
 # EsMeCaTa v0.6.1 (2025-03-03)
 
