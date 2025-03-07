@@ -28,7 +28,7 @@ import pandas as pd
 # --------------------------------
 
 RANK2COL = {  # KINGDOM (RED)
-    'superkingdom': '#6f1a12', 'kingdom': '#872015', 'subkingdom': '#a2261a',
+    'superkingdom': '#6f1a12', 'domain': '#6f1a12', 'kingdom': '#872015', 'subkingdom': '#a2261a',
     # PHYLUM (ORANGE)
     'superphylum': '#b26f15', 'phylum': '#c87c14', 'subphylum': '#de8710', 'infraphylum': '#fa960e',
     # CLASS (YELLOW)
@@ -68,7 +68,7 @@ RANK_SORTED = ['isolate', 'strain', 'serotype', 'serogroup', 'forma', 'subvariet
                'subcohort', 'cohort',
                'infraclass', 'subclass', 'class', 'superclass',
                'infraphylum', 'subphylum', 'phylum', 'superphylum',
-               'subkingdom', 'kingdom', 'superkingdom',
+               'subkingdom', 'kingdom', 'superkingdom', 'domain',
                'clade', 'environmental samples', 'incertae sedis', 'unclassified', 'no rank']
 
 # FIGURE COMPOSITION CONSTANTS

@@ -68,10 +68,10 @@ For a better change to reproduce the results, it is recommended to use the NCBI 
 | Pig Gut                   | 2023_05 | 12-2023       |
 | Methanogenic reactor      | 2024_01 | 01-2024       |
 
-You can update the NCBI Taxonomy database used by ete3 with the following command (here we use as example `taxdmp_2024-01.tar.gz` associated with the methanogenic reactor):
+You can update the NCBI Taxonomy database used by ete4 with the following command (here we use as example `taxdmp_2024-01.tar.gz` associated with the methanogenic reactor):
 
 ```
-python3 -c "from ete3 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database('taxdmp_2024-01.tar.gz')"
+python3 -c "from ete4 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database('taxdmp_2024-01.tar.gz')"
 ```
 
 This will create output folder containing the predictions for the associated organisms of the community.

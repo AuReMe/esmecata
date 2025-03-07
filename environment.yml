@@ -4,16 +4,14 @@ channels:
   - conda-forge
 dependencies:
   - mmseqs2
-  - pandas=1.5.3
+  - pandas
   - sparqlwrapper
   - requests
   - biopython
-  - ete3
   - eggnog-mapper
   - orsum
   - gseapy
   - plotly
-  - datapane
   - python-kaleido
   - pytest
   - pytest-mock

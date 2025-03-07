@@ -27,8 +27,8 @@ import zipfile
 
 from io import TextIOWrapper
 
-from ete3 import __version__ as ete3_version
-from ete3 import NCBITaxa
+from ete4 import __version__ as ete_version
+from ete4 import NCBITaxa
 from Bio import SeqIO
 from Bio import __version__ as biopython_version
 
@@ -151,7 +151,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     options['tool_dependencies']['python_package'] = {}
     options['tool_dependencies']['python_package']['Python_version'] = sys.version
     options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
-    options['tool_dependencies']['python_package']['ete3'] = ete3_version
+    options['tool_dependencies']['python_package']['ete4'] = ete_version
     options['tool_dependencies']['python_package']['pandas'] = pd.__version__
     options['tool_dependencies']['python_package']['biopython'] = biopython_version
 
@@ -213,7 +213,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     ncbi = NCBITaxa()
 
-    # Parse taxonomic affiliations with ete3 to find matching taxon name.
+    # Parse taxonomic affiliations with ete4 to find matching taxon name.
     tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi, output_folder)
 
     # Disambiguate taxon name using other taxon from the taxonomic affiliations.

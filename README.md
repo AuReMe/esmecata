@@ -38,7 +38,7 @@ EsMeCaTa is a method to estimate consensus proteomes and metabolic capabilities 
   - [EsMeCaTa gseapy](#esmecata-gseapy)
   - [EsMeCaTa create\_db](#esmecata-create_db)
   - [Troubleshooting](#troubleshooting)
-    - [Issue with incompatible versions of ete3 and UniProt NCBI Taxonomy databases](#issue-with-incompatible-versions-of-ete3-and-uniprot-ncbi-taxonomy-databases)
+    - [Issue with incompatible versions of ete4 and UniProt NCBI Taxonomy databases](#issue-with-incompatible-versions-of-ete4-and-uniprot-ncbi-taxonomy-databases)
   - [Citation](#citation)
   - [License](#license)
 
@@ -51,7 +51,7 @@ EsMeCaTa is developed in Python, it is tested with Python 3.11. It needs the fol
 - [biopython](https://pypi.org/project/biopython/): To create fasta files and used by the option `--annotation-files` to index UniProt flat files.
 - [pandas](https://pypi.org/project/pandas/): To read the input files.
 - [requests](https://pypi.org/project/requests/): For the REST queries on Uniprot.
-- [ete3](https://pypi.org/project/ete3/): To analyse the taxonomic affiliation and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.
+- [ete4](https://pypi.org/project/ete4/): To analyse the taxonomic affiliation and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.
 - [SPARQLwrapper](https://pypi.org/project/SPARQLWrapper/): Optionally, you can use SPARQL queries instead of REST queries. This can be done either with the [Uniprot SPARQL Endpoint](https://sparql.uniprot.org/) (with the option `--sparql uniprot`) or with a Uniprot SPARQL Endpoint that you created locally (it is supposed to work but not tested, only SPARQL queries on the Uniprot SPARQL endpoint have been tested). **Warning**: using SPARQL queries will lead to minor differences in functional annotations and metabolic reactions due to how the results are retrieved with REST query or SPARQL query.
 
 Also esmecata requires MMseqs2 for protein clustering with `esmecata workflow` or `esmecata clustering`:
@@ -69,6 +69,14 @@ If you use the option `--bioservices`, EsMeCaTa will also require this package:
 - [bioservices](https://github.com/cokelaer/bioservices): To query Uniprot instead of using the query functions of EsMeCaTa (potentially more robust overtime).
 
 ## Installation
+
+**Warning**: due to change in sqlite, there is issue when using ete3 from PyPI. To continue working, EsMeCaTa now relies on ete4.
+For all use of EsMeCaTa, you have to install ete4.
+But ete4 is not yet available on PyPI or conda, so you have to install it from its github repository with the command:
+
+```pip install git+https://github.com/etetoolkit/ete.git@a96d66643b7dd53c1d60968b610c5cd6c9497a9c```
+
+Once ete4 has been released, I will update the requirements.
 
 ### With the precomputed database
 
@@ -88,7 +96,7 @@ As this file is quite big and if you want just to test `esmecata precomputed`, y
 
 For the whole workflow, the easiest way to install the dependencies of EsMeCaTa is by using conda (or mamba):
 
-```conda install mmseqs2 pandas sparqlwrapper requests biopython ete3 eggnog-mapper -c conda-forge -c bioconda```
+```conda install mmseqs2 pandas sparqlwrapper requests biopython eggnog-mapper -c conda-forge -c bioconda```
 
 EsMeCaTa is available on [PyPI](https://pypi.org/project/esmecata/) and can be installed with pip:
 
@@ -108,23 +116,23 @@ To use eggNOG-mapper, you have to setup it and install [its database](https://gi
 
 `esmecata_report` requires:
 
-- [datapane](https://github.com/datapane/datapane).
-- [plotly](https://github.com/plotly/plotly.py).
-- [kaleido](https://github.com/plotly/Kaleido)
-- [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).
-- [bokeh](https://github.com/bokeh/bokeh)
+- [arakawa](https://github.com/ninoseki/arakawa): fork of [datapane](https://github.com/datapane/datapane) to create the HTML report.
+- [plotly](https://github.com/plotly/plotly.py): to create most of the figures.
+- [ontosunburst](https://github.com/AuReMe/Ontology_sunburst): to create sunburst figures of Enzyme Commission numbers.
+- [kaleido](https://github.com/plotly/Kaleido): required to create the figure.
 
-**Warning**: due to the fact that datapane is no longer maintained, it requires a version of pandas lower than `2.0.0`. `esmecata_report` has been used with pandas `1.5.3`.
-The replacement of datapane by [panel](https://github.com/holoviz/panel) is under development to solve this issue.
+This can be installed with pip:
+
+```pip install arakawa==0.0.15 plotly kaleido ontosunburst```
 
 `esmecata_gseapy` requires:
 - [pronto](https://github.com/althonos/pronto): to get Gene Ontology names.
 - [gseapy](https://github.com/zqfang/GSEApy): to perform enrichment analysis.
 - [orsum](https://github.com/ozanozisik/orsum): to visualize the results of enrichment analysis.
 
-All dependencies can be installed with following command:
+These dependencies can be installed with conda:
 
-```conda install mmseqs2 pandas=1.5.3 sparqlwrapper requests biopython ete3 eggnog-mapper orsum gseapy plotly datapane python-kaleido -c conda-forge -c bioconda```
+```conda install pronto orsum gseapy plotly -c conda-forge -c bioconda```
 
 ## Input
 
@@ -216,7 +224,7 @@ options:
                         This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more
                         information (and a list of rank names).
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
   -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
                         Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly. Default is 0.5.
 ```
@@ -264,7 +272,7 @@ options:
   -b BUSCO, --busco BUSCO
                         BUSCO percentage between 0 and 1. This will remove all the proteomes without BUSCO score and the score before the selected ratio of completion.
   --ignore-taxadb-update
-                        If you have a not up-to-date version of the NCBI taxonomy database with ete3, use this option to bypass the warning message and use the old version.
+                        If you have a not up-to-date version of the NCBI taxonomy database with ete4, use this option to bypass the warning message and use the old version.
   --all-proteomes       Download all proteomes associated with a taxon even if they are no reference proteomes.
   -s SPARQL, --sparql SPARQL
                         Use sparql endpoint instead of REST queries on Uniprot.
@@ -276,15 +284,15 @@ options:
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 5.
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ```
 
-For each taxon in each taxonomic affiliations EsMeCaTa will use ete3 to find the corresponding taxon ID. Then it will search for proteomes associated with these taxon ID in the Uniprot Proteomes database.
+For each taxon in each taxonomic affiliations EsMeCaTa will use ete4 to find the corresponding taxon ID. Then it will search for proteomes associated with these taxon ID in the Uniprot Proteomes database.
 
 If there is more than 100 proteomes, esmecata applies a subsampling procedure:
 
-* (1) use the taxon ID associated with each proteomes to create a taxonomic tree with ete3.
+* (1) use the taxon ID associated with each proteomes to create a taxonomic tree with ete4.
 
 * (2) from the root of the tree (the input taxon), esmecata will find the direct descendants (sub-taxa).
 
@@ -305,9 +313,9 @@ It is possible to avoid using REST queries for esmecata and instead use SPARQL q
 
 It is possible to filter proteomes according to to their BUSCO score (from UniProt documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By default esmecata uses a BUSCO score of 0.80, it will only download proteomes with a BUSCO score of at least 80%.
 
-* `--ignore-taxadb-update`: ignore need to udpate ete3 taxaDB
+* `--ignore-taxadb-update`: ignore need to udpate ete4 taxaDB
 
-If you have an old version of the ete3 NCBI taxonomy database, you can use this option to use esmecata with it.
+If you have an old version of the ete4 NCBI taxonomy database, you can use this option to use esmecata with it.
 
 * `--all-proteomes`: download all proteomes (reference and non-reference)
 
@@ -401,7 +409,7 @@ optional arguments:
   -b BUSCO, --busco BUSCO
                         BUSCO percentage between 0 and 1. This will remove all the proteomes without BUSCO score and the score before the selected ratio of completion.
   --ignore-taxadb-update
-                        If you have a not up-to-date version of the NCBI taxonomy database with ete3, use this option to bypass the warning message and use the old version.
+                        If you have a not up-to-date version of the NCBI taxonomy database with ete4, use this option to bypass the warning message and use the old version.
   --all-proteomes       Download all proteomes associated with a taxon even if they are no reference proteomes.
   -s SPARQL, --sparql SPARQL
                         Use sparql endpoint instead of REST queries on Uniprot.
@@ -413,7 +421,7 @@ optional arguments:
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to udpate the taxonomic affiliations using the lowest taxon
                         name.
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
@@ -582,7 +590,7 @@ options:
                         BUSCO percentage between 0 and 1. This will remove all the proteomes without BUSCO score and the score before the selected ratio of completion.
   -c CPU, --cpu CPU     CPU number for multiprocessing.
   --ignore-taxadb-update
-                        If you have a not up-to-date version of the NCBI taxonomy database with ete3, use this option to bypass the warning message and use the old version.
+                        If you have a not up-to-date version of the NCBI taxonomy database with ete4, use this option to bypass the warning message and use the old version.
   --all-proteomes       Download all proteomes associated with a taxon even if they are no reference proteomes.
   -s SPARQL, --sparql SPARQL
                         Use sparql endpoint instead of REST queries on Uniprot.
@@ -600,7 +608,7 @@ options:
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 5.
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
   --eggnog-tmp EGGNOG_TMP_DIR
                         Path to eggnog tmp dir.
@@ -624,7 +632,7 @@ options:
                         BUSCO percentage between 0 and 1. This will remove all the proteomes without BUSCO score and the score before the selected ratio of completion.
   -c CPU, --cpu CPU     CPU number for multiprocessing.
   --ignore-taxadb-update
-                        If you have a not up-to-date version of the NCBI taxonomy database with ete3, use this option to bypass the warning message and use the old version.
+                        If you have a not up-to-date version of the NCBI taxonomy database with ete4, use this option to bypass the warning message and use the old version.
   --all-proteomes       Download all proteomes associated with a taxon even if they are no reference proteomes.
   -s SPARQL, --sparql SPARQL
                         Use sparql endpoint instead of REST queries on Uniprot.
@@ -649,7 +657,7 @@ options:
   --annotation-files ANNOTATION_FILES
                         Use UniProt annotation files (uniprot_trembl.txt and uniprot_sprot.txt) to avoid querying UniProt REST API. Need both paths to these files separated by a ",".
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. This option tries to update the taxonomic affiliations using the lowest taxon name.
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to update the taxonomic affiliations using the lowest taxon name.
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
@@ -681,7 +689,7 @@ The `proteomes_description` contains list of proteomes find by esmecata on Unipr
 
 The `proteomes` contains all the proteomes that have been found to be associated with one taxon. It will be used for the clustering step.
 
-`association_taxon_taxID.json` contains for each `observation_name` the name of the taxon and the corresponding taxon_id found with `ete3`.
+`association_taxon_taxID.json` contains for each `observation_name` the name of the taxon and the corresponding taxon_id found with `ete4`.
 
 `empty_proteome.tsv` contains UniProt proteome ID that have been downloaded but are empty.
 
@@ -975,7 +983,7 @@ subcommands:
     create_report_annotation
                         Create report from esmecata output folder of annotation subcommand.
 
-Requires: datapane, plotly, kaleido, ontosunburst.
+Requires: arakawa, plotly, kaleido, ontosunburst.
 ```
 
 It can be used with this command:
@@ -1077,12 +1085,12 @@ To merge several precomputed databases, you can use the following command:
 
 ## Troubleshooting
 
-### Issue with incompatible versions of ete3 and UniProt NCBI Taxonomy databases
+### Issue with incompatible versions of ete4 and UniProt NCBI Taxonomy databases
 
-A common issue encountered when using EsMeCaTa is that the NCBI Taxonomy database present in the ete3 package (and used to parse the input taxonomic affiliations) is different from the ones used by UniProt. This can lead to several issues at different levels of EsMeCaTa. A possible solution is to update the NCBI Taxonomy database of ete3 with the following command:
+A common issue encountered when using EsMeCaTa is that the NCBI Taxonomy database present in the ete4 package (and used to parse the input taxonomic affiliations) is different from the ones used by UniProt. This can lead to several issues at different levels of EsMeCaTa. A possible solution is to update the NCBI Taxonomy database of ete4 with the following command:
 
 ```
-python3 -c "from ete3 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database()"
+python3 -c "from ete4 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database()"
 ```
 
 ## Citation

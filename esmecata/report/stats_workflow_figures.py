@@ -21,7 +21,7 @@ import os
 import json
 import numpy as np
 import pandas as pd
-from ete3 import NCBITaxa
+from ete4 import NCBITaxa
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.io import write_json
@@ -109,7 +109,7 @@ def _format_axes(fig):
 
 def _format_taxo(proteome_tax_id):
     '''
-    Recovers the full taxonomic lineage of all OTUs/ASVs analyzed by esMeCaTa by parsing proteome_tax_id.tsv with ete3
+    Recovers the full taxonomic lineage of all OTUs/ASVs analyzed by esMeCaTa by parsing proteome_tax_id.tsv with ete4
 
         Parameters:
             proteome_tax_id (pandas): a DataFrame loaded with the output file proteome_tax_id.tsv of EsMeCaTa proteomes
@@ -133,7 +133,7 @@ def _format_taxo(proteome_tax_id):
     names = {}
     data = {}
 
-    # ete3 to get lineages
+    # ete4 to get lineages
     for index, row in proteome_tax_id.iterrows():
         tmp = ncbi.get_lineage(row['tax_id'])
         ranks[index] = ncbi.get_rank(tmp)
@@ -211,7 +211,7 @@ def post_analysis_config(input_table, results_path):
     proteome_tax_id = proteome_tax_id[proteome_tax_id.index.isin(df_stats.index)]
     proteome_tax_id['n_proteomes'] = proteome_tax_id['proteome'].str.split(pat=',').str.len()
 
-    # Input taxonomy must be formatted ; ete3 is used to find the lineage
+    # Input taxonomy must be formatted ; ete4 is used to find the lineage
     output_taxo = _format_taxo(proteome_tax_id)
     df_stats = df_stats.join(output_taxo)
 
@@ -371,7 +371,7 @@ def taxo_ranks_contribution(proteome_tax_id, results_path, n_bins=10, savefig=Tr
 
 def compare_ranks_in_out(proteome_tax_id, association_taxon_tax_id, output_folder, savefig=True):
     '''
-    Plots a heatmap displaying how many input taxonomic ranks were assigned to the same rank by esmecata and how many were assigned to higher tanks.
+    Plots a heatmap displaying how many input taxonomic ranks were assigned to the same rank by esmecata and how many were assigned to higher ranks.
 
         Parameters:
             proteome_tax_id (pandas): a pandas df loaded with esmecata 'proteome_tax_id.tsv' file, output of post_analysis_config()
@@ -822,7 +822,7 @@ def ec_sunburst_per_model(ec_classes, output_folder, taxgroup, savefig=True):
     Parameters
         ec_classes (list) : a list of EC numbers
         output_folder (str): path to the output folder
-        taxgroup (int) : an ete3 taxonomic group id
+        taxgroup (int) : an ete4 taxonomic group id
         savefig (bool): if the figure should be saved (in svg format). True by default
 
     Returns:
@@ -1115,7 +1115,7 @@ def reproducibility_tokens(outdir):
             outdir (str) : path to the results of an EsMeCaTa workflow
 
         Returns:
-            metadata (str) : all metadata of the workflow
+            metadata (dict) : all metadata of the workflow
     '''
     reprometa_proteomes = json.load(open(os.path.join(outdir, '0_proteomes', 'esmecata_metadata_proteomes.json'), 'r'))
     reprometa_clustering = json.load(open(os.path.join(outdir, '1_clustering', 'esmecata_metadata_clustering.json'), 'r'))
@@ -1125,6 +1125,4 @@ def reproducibility_tokens(outdir):
          "clustering": reprometa_clustering,
          "annotation": reprometa_annotation}
     
-    # metadata = json.dumps(metadata, indent=4)
-
     return metadata

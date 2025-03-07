@@ -113,7 +113,7 @@ def main():
     parent_parser_taxadb.add_argument(
         '--ignore-taxadb-update',
         dest='ignore_taxadb_update',
-        help='If you have a not up-to-date version of the NCBI taxonomy database with ete3, use this option to bypass the warning message and use the old version.',
+        help='If you have a not up-to-date version of the NCBI taxonomy database with ete4, use this option to bypass the warning message and use the old version.',
         required=False,
         action='store_true',
         default=None)
@@ -138,7 +138,7 @@ def main():
     parent_parser_update_affiliation.add_argument(
         '--update-affiliations',
         dest='update_affiliations',
-        help='''If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete3 database. \
+        help='''If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. \
             This option tries to update the taxonomic affiliations using the lowest taxon name.''',
         required=False,
         action='store_true',

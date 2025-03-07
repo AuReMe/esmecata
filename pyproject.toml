@@ -16,7 +16,6 @@ dependencies = [
   'matplotlib',
   'pandas',
   'requests',
-  'ete3',
   'seaborn',
   'SPARQLWrapper'
 ]
@@ -32,7 +31,7 @@ Homepage = "https://github.com/AuReMe/esmecata"
 Changelog = "https://github.com/AuReMe/esmecata/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-ANALYSIS = ['datapane',
+ANALYSIS = ['arakawa',
   'plotly',
   'kaleido',
   'ontosunburst'

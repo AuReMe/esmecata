@@ -16,7 +16,7 @@ Furthermore, it requires `esmecata` and its following dependencies:
 - [ete3](https://pypi.org/project/ete3/).
 - [SPARQLwrapper](https://pypi.org/project/SPARQLWrapper/).
 - [mmseqs2](https://github.com/soedinglab/MMseqs2).
-- [datapane](https://github.com/datapane/datapane).
+- [arakawa](https://github.com/ninoseki/arakawa).
 - [plotly](https://github.com/plotly/plotly.py).
 - [kaleido](https://github.com/plotly/Kaleido)
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst).

@@ -38,8 +38,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from ete3 import __version__ as ete3_version
-from ete3 import NCBITaxa, is_taxadb_up_to_date
+from ete4 import __version__ as ete4_version
+from ete4 import NCBITaxa, is_taxadb_up_to_date
 
 from SPARQLWrapper import __version__ as sparqlwrapper_version
 
@@ -99,8 +99,8 @@ def get_batch(session, batch_url):
         batch_url = get_next_link(response.headers)
 
 
-def ete3_database_update(ignore_taxadb_update):
-    """ Check if ete3 taxa database is up to date, if not update it.
+def ete_database_update(ignore_taxadb_update):
+    """ Check if ete4 taxa database is up to date, if not update it.
 
     Args:
         ignore_taxadb_update (bool): if True, ignore the need to update database.
@@ -116,7 +116,7 @@ def ete3_database_update(ignore_taxadb_update):
     if ete_taxadb_up_to_date is False:
         logger.warning('|EsMeCaTa|proteomes| WARNING: ncbi taxonomy database is not up to date with the last NCBI Taxonomy. It will be updated')
         if ignore_taxadb_update is None:
-            logger.info('|EsMeCaTa|proteomes| Ete3 taxa database will be updated.')
+            logger.info('|EsMeCaTa|proteomes| Ete4 taxa database will be updated.')
             ncbi = NCBITaxa()
             ncbi.update_taxonomy_database()
         else:
@@ -124,12 +124,12 @@ def ete3_database_update(ignore_taxadb_update):
 
 
 def update_taxonomy(observation_name, taxonomic_affiliation, ncbi=None):
-    """ Update the taxonomic affiliation using ete3 and the lowest available taxonomic name.
+    """ Update the taxonomic affiliation using ete4 and the lowest available taxonomic name.
 
     Args:
         observation_name (str): observation name associated with taxonomic affiliation
         taxonomic_affiliation (str): str with taxon from highest taxon (such as kingdom) to lowest (such as species)
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database
 
     Returns:
         new_taxonomic_affiliations (str): str with taxon from highest taxon (such as kingdom) to lowest (such as species)
@@ -137,7 +137,7 @@ def update_taxonomy(observation_name, taxonomic_affiliation, ncbi=None):
     if ncbi is None:
         ncbi = NCBITaxa()
 
-    # For each taxon in the affiliation, search for the lineage associated in ete3.
+    # For each taxon in the affiliation, search for the lineage associated in ete4.
     lineage_all_taxa = []
     taxons = [taxon for taxon in taxonomic_affiliation.split(';')]
     for taxon in reversed(taxons):
@@ -212,7 +212,7 @@ def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, n
     Args:
         observation_name (str): observation name associated with taxonomic affiliation
         taxonomic_affiliation (str): str with taxon from highest taxon (such as kingdom) to lowest (such as species)
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database
     Returns:
         tax_ids_to_names (dict): mapping between taxon ID and taxon name
         taxon_ids (dict): mapping between taxon name and taxon ID
@@ -226,7 +226,7 @@ def taxonomic_affiliation_to_taxon_id(observation_name, taxonomic_affiliation, n
     for taxon in taxons:
         taxon_translations = ncbi.get_name_translator([taxon])
         if taxon_translations == {}:
-            logger.critical('|EsMeCaTa|proteomes| For %s, no taxon ID has been found associated with the taxon "%s" in the NCBI taxonomy of ete3.', observation_name, taxon)
+            logger.critical('|EsMeCaTa|proteomes| For %s, no taxon ID has been found associated with the taxon "%s" in the NCBI taxonomy of ete4.', observation_name, taxon)
             taxon_translations = {taxon: ['not_found']}
         taxon_ids.update(taxon_translations)
     tax_ids_to_names = {v: k for k, vs in tax_names_to_ids.items() for v in vs }
@@ -240,7 +240,7 @@ def associate_taxon_to_taxon_id(taxonomic_affiliations, update_affiliations=None
     Args:
         taxonomic_affiliations (dict): dictionary with observation name as key and taxonomic affiliation as value
         update_affiliations (str): option to update taxonomic affiliations.
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database.
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database.
         output_folder (str): pathname to output folder.
 
     Returns:
@@ -284,7 +284,7 @@ def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database
     Returns:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (disambiguated)
     """
@@ -337,7 +337,7 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database
         rank_limit (str): rank limit to filter the affiliations (keep this rank and all inferior ranks)
     Returns:
         output_json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID (with remove rank specified)
@@ -720,13 +720,13 @@ def sparql_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_
 
 
 def compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids, ncbi):
-    """Search the taxonomic affiliations found by ete3 to find the lowest tax rank associated with each observation_name.
+    """Search the taxonomic affiliations found by ete4 to find the lowest tax rank associated with each observation_name.
     Then look at esmecata to find the taxon rank used to find proteome.
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping between taxon name and taxon ID (with remove rank specified)
         proteomes_ids (dict):  observation name (key) associated with proteome IDs
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database
 
     Returns:
         taxon_rank_comparison (dict): lowest taxon name in input affiliation (key) associated with dict containing associated taxon ranks found by esmecata and the corresponding occurrence
@@ -751,7 +751,7 @@ def compare_input_taxon_with_esmecata(json_taxonomic_affiliations, proteomes_ids
                         lowest_tax_rank = higher_tax_rank
                     break
 
-        # If no taxon identified by ete3 is found, classified it as not_found.
+        # If no taxon identified by ete4 is found, classified it as not_found.
         if lowest_tax_rank is None:
             lowest_tax_rank = 'not_found'
 
@@ -856,7 +856,7 @@ def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
     Args:
         organism_ids (dict): organism ID as key and the proteome IDs associated with it as value
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database
 
     Returns:
         selected_proteomes (list): subsample proteomes selected by the methods
@@ -864,15 +864,15 @@ def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
     try:
         tree = ncbi.get_topology([org_tax_id for org_tax_id in organism_ids])
     except KeyError:
-        logger.critical('|EsMeCaTa|proteomes| UniProt tax ID not in ete3 NCBI Taxonomy database. Try to update it with the following command: python3 -c "from ete3 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database()".')
+        logger.critical('|EsMeCaTa|proteomes| UniProt tax ID not in ete4 NCBI Taxonomy database. Try to update it with the following command: python3 -c "from ete4 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database()".')
         raise KeyError()
 
     # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
     childs = {}
     for parent_node in tree.get_children():
         parent_tax_id = str(parent_node.taxid)
-        if parent_node.get_descendants() != []:
-            for child_node in parent_node.get_descendants():
+        if parent_node.descendants() != []:
+            for child_node in parent_node.descendants():
                 child_tax_id = str(child_node.taxid)
                 if parent_tax_id not in childs:
                     if child_tax_id in organism_ids:
@@ -918,7 +918,7 @@ def find_proteomes_tax_ids(json_taxonomic_affiliations, ncbi, proteomes_descript
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping between taxon name and taxon ID (with remove rank specified)
-        ncbi (ete3.NCBITaxa()): ete3 NCBI database
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database
         proteomes_description_folder (str): pathname to the proteomes_description_folder
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
@@ -1299,7 +1299,7 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
         input_file (str): pathname to the tsv input file containing taxonomic affiliations.
         output_folder (str): pathname to the output folder.
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold).
-        ignore_taxadb_update (bool): option to ignore ete3 taxa database update.
+        ignore_taxadb_update (bool): option to ignore ete4 taxa database update.
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes).
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint).
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data.
@@ -1320,7 +1320,7 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
         logger.critical('|EsMeCaTa|proteomes| The input %s is not a valid file pathname.', input_file)
         sys.exit()
 
-    ete3_database_update(ignore_taxadb_update)
+    ete_database_update(ignore_taxadb_update)
 
     if minimal_number_proteomes >= limit_maximal_number_proteomes:
         logger.critical('|EsMeCaTa|proteomes| Error minimal_number_proteomes (%d) can not be superior or equal to limit_maximal_number_proteomes (%d).', minimal_number_proteomes, limit_maximal_number_proteomes)
@@ -1503,7 +1503,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
         input_file (str): pathname to the tsv input file containing taxonomic affiliations.
         output_folder (str): pathname to the output folder.
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold).
-        ignore_taxadb_update (bool): option to ignore ete3 taxa database update.
+        ignore_taxadb_update (bool): option to ignore ete4 taxa database update.
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes).
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint).
         limit_maximal_number_proteomes (int): int threshold after which a subsampling will be performed on the data.
@@ -1587,7 +1587,7 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
     options['tool_dependencies']['python_package']['Python_version'] = sys.version
     options['tool_dependencies']['python_package']['biopython'] = biopython_version
     options['tool_dependencies']['python_package']['esmecata'] = esmecata_version
-    options['tool_dependencies']['python_package']['ete3'] = ete3_version
+    options['tool_dependencies']['python_package']['ete4'] = ete4_version
     options['tool_dependencies']['python_package']['pandas'] = pd.__version__
     options['tool_dependencies']['python_package']['requests'] = requests.__version__
     options['tool_dependencies']['python_package']['SPARQLWrapper'] = sparqlwrapper_version

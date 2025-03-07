@@ -93,7 +93,7 @@ def perform_workflow(input_file, output_folder, busco_percentage_keep=80, ignore
         input_file (str): pathname to the tsv input file containing taxonomic affiliations
         output_folder (str): pathname to the output folder
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
-        ignore_taxadb_update (bool): option to ignore ete3 taxa database update
+        ignore_taxadb_update (bool): option to ignore ete4 taxa database update
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         remove_tmp (bool): remove the tmp files
@@ -178,7 +178,7 @@ def perform_workflow_eggnog(input_file, output_folder, eggnog_database_path, bus
         output_folder (str): pathname to the output folder
         eggnog_database_path (str): pathname to eggnog database folder
         busco_percentage_keep (float): BUSCO score to filter proteomes (proteomes selected will have a higher BUSCO score than this threshold)
-        ignore_taxadb_update (bool): option to ignore ete3 taxa database update
+        ignore_taxadb_update (bool): option to ignore ete4 taxa database update
         all_proteomes (bool): Option to select all the proteomes (and not only preferentially reference proteomes)
         uniprot_sparql_endpoint (str): uniprot SPARQL endpoint to query (by default query Uniprot SPARQL endpoint)
         remove_tmp (bool): remove the tmp files
