@@ -123,7 +123,7 @@ To use eggNOG-mapper, you have to setup it and install [its database](https://gi
 
 This can be installed with pip:
 
-```pip install arakawa plotly kaleido ontosunburst```
+```pip install arakawa==0.0.15 plotly kaleido ontosunburst```
 
 `esmecata_gseapy` requires:
 - [pronto](https://github.com/althonos/pronto): to get Gene Ontology names.
