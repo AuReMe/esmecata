@@ -2,6 +2,10 @@
 
 # EsMeCaTa v0.6.5 (2025-03-31)
 
+## Fix
+
+* Issue with `cellular root` in `esmecata_compression.py`.
+
 ## Modify
 
 * Complete the move to ete4.
