@@ -13,6 +13,7 @@ license = {text = "GPL-3.0-or-later"}
 dependencies = [
   'biopython',
   'bioservices',
+  'ete4',
   'matplotlib',
   'pandas',
   'requests',

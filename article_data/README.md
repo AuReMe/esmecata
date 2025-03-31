@@ -20,7 +20,7 @@
 
 #### Manually selected taxa
 
-A folder containing an input file for esmecata containing 13 manually selected taxonomic affiliations from Gammaproteobacteria and Alveolata.
+A folder containing an input file for EsMeCaTa with 13 manually selected taxonomic affiliations from Gammaproteobacteria and Alveolata.
 
 #### MGnify validation
 
@@ -39,14 +39,12 @@ An OTU table from a methanogenic reactor experiment containing the taxonomic ass
 
 #### Algae symbionts
 
-Microbiotes from Metagenomes experiment ([Burgunter et al. 2020](https://doi.org/10.3389/fmars.2020.00085) and [KleinJan et al. 2023](https://doi.org/10.1111/mec.16766)). 35 MAGs were selected from KleinJan et al. 2023 with more than 90% completion.
+Microbiotes from Metagenomes experiment ([Burgunter et al. 2020](https://doi.org/10.3389/fmars.2020.00085) and [KleinJan et al. 2023](https://doi.org/10.1111/mec.16766)). 35 MAGs were selected from KleinJan et al. (2023) with more than 90% completion.
 
 ### Reproduce experiments
 
-The experimetns made in the article of EsMeCaTa (a preprint is available at [biorXiv](https://doi.org/10.1101/2022.03.16.484574
-)) are available in this [Zenodo archive](https://zenodo.org/records/14502342).
-
-Furthermore, in this archive, there are several precomptued database present (to try) to reproduce these experiments.
+The experiments made in the article of EsMeCaTa (a preprint is available at [biorXiv](https://doi.org/10.1101/2022.03.16.484574)) are available in this [Zenodo archive](https://zenodo.org/records/14502342).
+Furthermore, in the Zenodo archive, there are several precomputed database present (to try) to reproduce these experiments.
 
 To run these experiments, you will have to install esmecata with: `pip install esmecata`
 
@@ -56,7 +54,7 @@ To do so, download one of the precomputed database associated with the dataset y
 esmecata precomputed -i honeybee_esmecata_metdata.tsv -d precomputed_db_honeybee.zip -o output_folder_honeybee
 ```
 
-For a better change to reproduce the results, it is recommended to use the NCBI Taxonomy database associacted with the dataset. The NCBI Taxonomy database can be dwonload from the Zenodo archive (file `ncbi_taxonomy_database.zip`). To know which version use, refer to the following table:
+To reproduce the results, it is recommended to use the NCBI Taxonomy database associacted with the dataset. The NCBI Taxonomy database can be downloaded from the Zenodo archive (file `ncbi_taxonomy_database.zip`). To find the appropriate version, please refer to the following table:
 
 | dataset                   | UniProt | NCBI Taxonomy |
 |---------------------------|---------|---------------|

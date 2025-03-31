@@ -50,16 +50,19 @@ def compare_annotation_dict(expected_dict, result_dict, propagate_test=None):
 
 
 def test_extract_protein_cluster_offline():
-    reference_proteins, set_proteins = extract_protein_cluster(os.path.join('annotation_input', 'reference_proteins', 'Buchnera_c32_aphidicola__taxid__9.tsv'))
+    cluster_protein_file = os.path.join('test_data', 'annotation_input', 'reference_proteins', 'Buchnera_c32_aphidicola__taxid__9.tsv')
+    reference_proteins, set_proteins = extract_protein_cluster(cluster_protein_file)
     assert len(reference_proteins) == 573
     assert len(set_proteins) == 9854
 
 
 def test_search_already_annotated_protein_offline():
+    cluster_protein_file = os.path.join('test_data', 'annotation_input', 'reference_proteins', 'Buchnera_c32_aphidicola__taxid__9.tsv')
+
     output_dict = {}
     already_annotated_proteins = {'P59488': ['Shikimate kinase', True, ['GO:0000287', 'GO:0004765', 'GO:0005524', 'GO:0005737', 'GO:0008652', 'GO:0009073', 'GO:0009423'], ['2.7.1.71'],
                                     ['IPR000623', 'IPR023000', 'IPR027417', 'IPR031322'], ['RHEA:13121'], ['aroK']]}
-    reference_proteins, set_proteins = extract_protein_cluster(os.path.join('annotation_input', 'reference_proteins', 'Buchnera_c32_aphidicola__taxid__9.tsv')) 
+    reference_proteins, set_proteins = extract_protein_cluster(cluster_protein_file) 
     protein_to_search_on_uniprots, output_dict = search_already_annotated_protein(set_proteins, already_annotated_proteins, output_dict)
 
     assert len(set_proteins)-1 == len(protein_to_search_on_uniprots)
@@ -149,9 +152,11 @@ def test_propagate_annotation_in_cluster_offline():
 
 
 def test_annotation_from_files_offline():
-    uniprot_trembl_index = SeqIO.index('uniprot_trembl.txt', 'swiss')
+    uniprot_trembl_file = os.path.join('test_data', 'uniprot_trembl.txt')
+    uniprot_trembl_index = SeqIO.index(uniprot_trembl_file, 'swiss')
 
-    uniprot_sprot_index = SeqIO.index('uniprot_sprot.txt', 'swiss')
+    uniprot_sprot_file = os.path.join('test_data', 'uniprot_sprot.txt')
+    uniprot_sprot_index = SeqIO.index(uniprot_sprot_file, 'swiss')
 
     protein_to_search_on_uniprots = ['A0A5A7R956', 'A0A0M4HE72', 'A0A1B2H8S9', 'P57406', 'P57634', 'P57136']
     output_dict = {}

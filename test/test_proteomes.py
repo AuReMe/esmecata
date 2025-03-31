@@ -296,7 +296,8 @@ def test_sparql_find_proteomes_tax_ids_online():
 
 def test_check_cli_online():
     output_folder = 'proteomes_output'
-    subprocess.call(['esmecata', 'check', '-i', 'buchnera_workflow.tsv', '-o', output_folder])
+    buchnera_workflow_file = os.path.join('test_data', 'buchnera_workflow.tsv')
+    subprocess.call(['esmecata', 'check', '-i', buchnera_workflow_file, '-o', output_folder])
     expected_results = []
     output_stat_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
     with open(output_stat_file, 'r') as stat_file_read:

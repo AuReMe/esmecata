@@ -1,5 +1,12 @@
 # Changelog
 
+# EsMeCaTa v0.6.5 (2025-03-31)
+
+## Modify
+
+* Complete the move to ete4.
+* Move test data files.
+
 # EsMeCaTa v0.6.4 (2025-03-07)
 
 ## Add

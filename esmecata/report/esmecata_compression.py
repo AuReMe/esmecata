@@ -62,6 +62,7 @@ RANK2COL = {# KINGDOM (RED)
     'strain': '#d57392', 'isolate': '#e085a2',
     # NO RANK (GREY)
     'clade': '#585858', 'environmental samples': '#686868', 'incertae sedis': '#828181', 'unclassified': '#939393',
+    'cellular root': '#585858',
     'no rank': '#acacac'}
 
 RANK_SORTED = ['isolate', 'strain', 'serotype', 'serogroup', 'forma', 'subvariety', 'varietas',

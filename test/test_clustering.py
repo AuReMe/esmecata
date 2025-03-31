@@ -11,6 +11,8 @@ RESULTS = {
 
 def test_filter_protein_cluster_offline():
     output_folder = 'output'
+    clustering_input = os.path.join('test_data', 'clustering_input')
+
     remove_output_folder = False
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
@@ -22,8 +24,8 @@ def test_filter_protein_cluster_offline():
     observation_name = 'Cluster_1'
     protein_clusters = {'Q89AE4': ['Q89AE4', 'P57473'],
                         'Q89AY7': ['Q89AY7']}
-    observation_name_proteomes = [os.path.join('clustering_input', 'proteomes', 'UP000000601.faa.gz'),
-                                os.path.join('clustering_input', 'proteomes', 'UP000001806.faa.gz')]
+    observation_name_proteomes = [os.path.join(clustering_input, 'proteomes', 'UP000000601.faa.gz'),
+                                os.path.join(clustering_input, 'proteomes', 'UP000001806.faa.gz')]
     clust_threshold = 0.95
 
     expected_protein = {'Q89AE4'}
@@ -47,7 +49,8 @@ def test_filter_protein_cluster_offline():
 
 def test_make_clustering_offline():
     output_folder = 'clustering_output'
-    make_clustering('clustering_input', output_folder, nb_core=1, clust_threshold=0.5, mmseqs_options=None, linclust=None, remove_tmp=None)
+    clustering_input = os.path.join('test_data', 'clustering_input')
+    make_clustering(clustering_input, output_folder, nb_core=1, clust_threshold=0.5, mmseqs_options=None, linclust=None, remove_tmp=None)
 
     expected_results = {}
     output_stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
@@ -66,7 +69,8 @@ def test_make_clustering_offline():
 
 def test_clustering_cli_offline():
     output_folder = 'clustering_output'
-    subprocess.call(['esmecata', 'clustering', '-i', 'clustering_input', '-o', output_folder, '-c', '1', '-t', '0.5'])
+    clustering_input = os.path.join('test_data', 'clustering_input')
+    subprocess.call(['esmecata', 'clustering', '-i', clustering_input, '-o', output_folder, '-c', '1', '-t', '0.5'])
     expected_results = {}
     output_stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
     with open(output_stat_file, 'r') as stat_file_read:

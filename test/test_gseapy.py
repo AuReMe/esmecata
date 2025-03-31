@@ -7,10 +7,10 @@ from esmecata.gseapy.gseapy_orsum import taxon_rank_annotation_enrichment
 
 
 def test_taxon_rank_annotation_enrichment_selected():
-    input_folder = 'annotation_output'
+    input_folder = os.path.join('test_data', 'annotation_output')
     output_folder = 'output_folder'
     grouping = 'selected'
-    taxa_list_file = 'taxa_list.tsv'
+    taxa_list_file = os.path.join('test_data', 'taxa_list.tsv')
     expected_terms = ['1.1.1.86', '2.8.4.1']
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
@@ -25,10 +25,10 @@ def test_taxon_rank_annotation_enrichment_selected():
 
 
 def test_taxon_rank_annotation_enrichment_selected_cli():
-    input_folder = 'annotation_output'
+    input_folder = os.path.join('test_data', 'annotation_output')
     output_folder = 'output_folder'
     grouping = 'selected'
-    taxa_list_file = 'taxa_list.tsv'
+    taxa_list_file = os.path.join('test_data', 'taxa_list.tsv')
     expected_terms = ['1.1.1.86', '2.8.4.1']
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
@@ -43,10 +43,10 @@ def test_taxon_rank_annotation_enrichment_selected_cli():
 
 
 def test_taxon_rank_annotation_enrichment_selected_cutoff():
-    input_folder = 'annotation_output'
+    input_folder = os.path.join('test_data', 'annotation_output')
     output_folder = 'output_folder'
     grouping = 'selected'
-    taxa_list_file = 'taxa_list.tsv'
+    taxa_list_file = os.path.join('test_data', 'taxa_list.tsv')
     expected_terms = ['1.1.1.86', '2.8.4.1']
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
@@ -61,10 +61,10 @@ def test_taxon_rank_annotation_enrichment_selected_cutoff():
 
 
 def test_taxon_rank_annotation_enrichment_selected_cutoff_cli():
-    input_folder = 'annotation_output'
+    input_folder = os.path.join('test_data', 'annotation_output')
     output_folder = 'output_folder'
     grouping = 'selected'
-    taxa_list_file = 'taxa_list.tsv'
+    taxa_list_file = os.path.join('test_data', 'taxa_list.tsv')
     expected_terms = ['1.1.1.86', '2.8.4.1']
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
@@ -79,7 +79,7 @@ def test_taxon_rank_annotation_enrichment_selected_cutoff_cli():
 
 
 def test_taxon_rank_annotation_enrichment_tax_rank():
-    input_folder = 'annotation_output'
+    input_folder = os.path.join('test_data', 'annotation_output')
     output_folder = 'output_folder'
     grouping = 'tax_rank'
     expected_terms = ['1.1.1.86', '2.8.4.1']
@@ -96,7 +96,7 @@ def test_taxon_rank_annotation_enrichment_tax_rank():
 
 
 def test_taxon_rank_annotation_enrichment_tax_rank_cli():
-    input_folder = 'annotation_output'
+    input_folder = os.path.join('test_data', 'annotation_output')
     output_folder = 'output_folder'
     grouping = 'tax_rank'
     expected_terms = ['1.1.1.86', '2.8.4.1']

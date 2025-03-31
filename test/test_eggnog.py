@@ -11,12 +11,13 @@ EXPECTED_RESULTS = {
 
 def fake_creation_eggnog(input_path, taxon_name, output_dir, temporary_dir, eggnog_database_path, nb_core, no_dbmem=False, taxon_id_scope=None):
     output_folder = 'output_folder'
+    annotation_expected = os.path.join('test_data', 'annotation_expected')
 
-    eggnog_folder_expected = os.path.join('annotation_expected', 'eggnog_output')
+    eggnog_folder_expected = os.path.join(annotation_expected, 'eggnog_output')
     for expected_file in os.listdir(eggnog_folder_expected):
         shutil.copyfile(os.path.join(eggnog_folder_expected, expected_file), os.path.join(output_folder, 'eggnog_output', expected_file))
  
-    eggnog_fasta_expected = os.path.join('annotation_expected', 'merge_fasta', '2.faa')
+    eggnog_fasta_expected = os.path.join(annotation_expected, 'merge_fasta', '2.faa')
     ouput_fasta_expected = os.path.join(output_folder, 'merge_fasta', '2.faa')
     shutil.copyfile(eggnog_fasta_expected, ouput_fasta_expected)
 
@@ -26,7 +27,8 @@ def test_annotate_with_eggnog_mocked(mocker):
     # Mock call to eggnog-mapper by creating expected files.
     mocker.patch("esmecata.core.eggnog.get_eggnog_version", return_value=eggnog_version)
     mocker.patch("esmecata.core.eggnog.call_to_emapper", wraps=fake_creation_eggnog)
-    annotate_with_eggnog('annotation_input', 'output_folder', 'eggnog_database', 1)
+    annotation_input = os.path.join('test_data', 'annotation_input')
+    annotate_with_eggnog(annotation_input, 'output_folder', 'eggnog_database', 1)
 
     results = {}
     annotation_stat_file = os.path.join('output_folder', 'stat_number_annotation.tsv')

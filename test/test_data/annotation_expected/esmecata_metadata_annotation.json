@@ -1,0 +1,20 @@
+{
+    "access_time": "21-August-2024 15:59:32",
+    "tool_options": {
+        "input_folder": "output_buchnera_6/1_clustering",
+        "output_folder": "output_buchnera_6/2_annotation",
+        "nb_core": "10",
+        "eggnog_database_path": "/db/eggnog/5.0.2",
+        "eggnog_tmp_dir": null,
+        "no_dbmem": false,
+        "tool_dependencies": {
+            "python_package": {
+                "Python_version": "3.9.7 | packaged by conda-forge | (default, Sep  2 2021, 17:58:34) \n[GCC 9.4.0]",
+                "esmecata": "0.5.0"
+            },
+            "eggnog_mapper": "2.1.9"
+        }
+    },
+    "esmecata_annotation_method": "eggnog-mapper",
+    "esmecata_annotation_duration": 1581.6479573249817
+}

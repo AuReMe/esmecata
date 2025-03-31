@@ -70,25 +70,18 @@ If you use the option `--bioservices`, EsMeCaTa will also require this package:
 
 ## Installation
 
-**Warning**: due to change in sqlite, there is an issue when using ete3 from PyPI. To avoid this, EsMeCaTa relies on ete4, which becomes a requirement for EsMeCaTa.
-But ete4 is not yet available on PyPI or conda, so you have to install it from its github repository with the command:
-
-```pip install git+https://github.com/etetoolkit/ete.git@a96d66643b7dd53c1d60968b610c5cd6c9497a9c```
-
-Once ete4 has been released, I will update the requirements.
-
 ### With the precomputed database
 
 To query the precomputed database, it is only required to install EsMeCaTa with pip:
 
 ```pip install esmecata ```
 
-Except from ete4, all the required dependencies for the estimation from the precomputed database are performed with python packages.
+All the required dependencies for the estimation from the precomputed database are performed with python packages.
 
 The second requirement is EsMeCaTa precomputed database (file size: 4G) available at the following [Zenodo archive](https://zenodo.org/records/13354073).
 As this file is quite big and if you want just to test `esmecata precomputed`, you can try:
 
-- the precomputed database (`buchnera_database.zip`) present in the [test folder](https://github.com/AuReMe/esmecata/tree/main/test). You can use it on the `buchnera_workflow.tsv` input file present in the same test folder.
+- the precomputed database (`buchnera_database.zip`) present in the [test_data folder](https://github.com/AuReMe/esmecata/tree/main/test/test_data). You can use it on the `buchnera_workflow.tsv` input file present in the same test folder.
 - one of the precomputed database associated with the article and present in this other [Zenodo archive](https://zenodo.org/records/14502342). The associated input files are in this [folder](https://github.com/AuReMe/esmecata/tree/main/article_data).
 
 ### Core pipeline installation
@@ -135,7 +128,7 @@ These dependencies can be installed with conda:
 
 ## Input
 
-EsMeCaTa takes as input a tabulated or an excel file with two columns one with the ID corresponding to the taxonomic affiliation (for example the OTU ID from 16S rRNA sequencing) and a second column with the taxonomic classification separated by ';'. In the following documentation, the first column (named `observation_name`) will be used to identify the label associated with each taxonomic affiliation. Several examples are available ([buchnera_workflow.tsv](https://github.com/AuReMe/esmecata/blob/main/test/buchnera_workflow.tsv), [toy_example.tsv](https://github.com/AuReMe/esmecata/blob/main/article_data/toy_example/toy_example.tsv), [methanogenic_reactor.tsv](https://github.com/AuReMe/esmecata/blob/main/article_data/methanogenic_reactor/methanogenic_reactor.tsv) or [honeybee_esmecata_metdata.tsv](https://github.com/AuReMe/esmecata/blob/main/article_data/mgnify_validation/honeybee_esmecata_metdata.tsv)).
+EsMeCaTa takes as input a tabulated or an excel file with two columns one with the ID corresponding to the taxonomic affiliation (for example the OTU ID from 16S rRNA sequencing) and a second column with the taxonomic classification separated by ';'. In the following documentation, the first column (named `observation_name`) will be used to identify the label associated with each taxonomic affiliation. Several examples are available ([buchnera_workflow.tsv](https://github.com/AuReMe/esmecata/blob/main/test/test_data/buchnera_workflow.tsv), [toy_example.tsv](https://github.com/AuReMe/esmecata/blob/main/article_data/toy_example/toy_example.tsv), [methanogenic_reactor.tsv](https://github.com/AuReMe/esmecata/blob/main/article_data/methanogenic_reactor/methanogenic_reactor.tsv) or [honeybee_esmecata_metdata.tsv](https://github.com/AuReMe/esmecata/blob/main/article_data/mgnify_validation/honeybee_esmecata_metdata.tsv)).
 
 For example:
 
@@ -201,7 +194,7 @@ Steps proteomes and annotation by UniProt requires an internet connection (for R
 ### Use the precomputed database
 
 The precomputed database of EsMeCaTa is available at this [Zenodo repository](https://doi.org/10.5281/zenodo.13354073). Warning, this precomputed database size is 4 Gb.
-Several precomputed databases (of smaller size) associated with the article datasets are available in the [Zenodo archive of EsMeCaTa's article](https://zenodo.org/records/14502342). And there is also a little precomputed dbatase available for test purpose (on one organism `buchnera_database.zip`) in the test folder ([test folder](https://github.com/AuReMe/esmecata/tree/main/test)).
+Several precomputed databases (of smaller size) associated with the article datasets are available in the [Zenodo archive of EsMeCaTa's article](https://zenodo.org/records/14502342). And there is also a little precomputed dbatase available for test purpose (on one organism `buchnera_database.zip`) in the test folder ([test_data folder](https://github.com/AuReMe/esmecata/tree/main/test/test_data)).
 
 Using the precomputed database, esmecata searches for input taxon inside the precomputed database to make prediction.
 It requires an input file containing the taxonomic affiliations and a precomputed esmecata database.

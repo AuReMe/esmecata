@@ -13,7 +13,7 @@ Furthermore, it requires `esmecata` and its following dependencies:
 - [biopython](https://pypi.org/project/biopython/).
 - [pandas](https://pypi.org/project/pandas/).
 - [requests](https://pypi.org/project/requests/).
-- [ete3](https://pypi.org/project/ete3/).
+- [ete4](https://pypi.org/project/ete4/).
 - [SPARQLwrapper](https://pypi.org/project/SPARQLWrapper/).
 - [mmseqs2](https://github.com/soedinglab/MMseqs2).
 - [arakawa](https://github.com/ninoseki/arakawa).
@@ -25,15 +25,18 @@ Furthermore, it requires `esmecata` and its following dependencies:
 
 This folder contains several files:
 
-- `buchnera_workflow.tsv`: the test data file (that can be given as input to esmecata) used in most tests. It contains a taxonomic affiliation associated with the species `Buchnera aphidicola` (a symbiont of the pea aphid with a reduced genome, very useful to limit the time taken by the tests).
-- `Example.tsv`: another example of input file for esmecata.
 - `test_*.py`: scripts testing esmecata code.
-- `annotation_input`: input folder for test on esmecata annotation part.
-- `clustering_input`: input folder for test on esmecata clustering part.
-- `annotation_expected`: eggnog-mapper predictions on test data for mocking the call to eggnog-mapper.
-- `buchnera_database.zip`: precomputed database of esmecata for `Buchnera aphidicola` (used in `esmecata precomputed`).
-- `uniprot_sprot.txt`: Swissprot annotation file for proteins of `Buchnera aphidicola` (used in `annotation_uniprot` with parameter `-annotation-files`).
-- `uniprot_trembl.txt`: TrEMBL annotation file for proteins of `Buchnera aphidicola` (used in `annotation_uniprot` with parameter `-annotation-files`).
+- `test_data` subfolder containing:
+  - `buchnera_workflow.tsv`: the test data file (that can be given as input to esmecata) used in most tests. It contains a taxonomic affiliation associated with the species `Buchnera aphidicola` (a symbiont of the pea aphid with a reduced genome, very useful to limit the time taken by the tests).
+  - `Example.tsv`: another example of input file for esmecata.
+  - `annotation_input`: input folder for test on esmecata annotation part.
+  - `clustering_input`: input folder for test on esmecata clustering part.
+  - `annotation_expected`: eggnog-mapper predictions on test data for mocking the call to eggnog-mapper.
+  - `annotation_output`: simulated output of `esmecata annotation` for `esmecata_gseapy`.
+  - `buchnera_database.zip`: precomputed database of esmecata for `Buchnera aphidicola` (used in `esmecata precomputed`).
+  - `uniprot_sprot.txt`: Swissprot annotation file for proteins of `Buchnera aphidicola` (used in `annotation_uniprot` with parameter `-annotation-files`).
+  - `uniprot_trembl.txt`: TrEMBL annotation file for proteins of `Buchnera aphidicola` (used in `annotation_uniprot` with parameter `-annotation-files`).
+  - `taxa_list.tsv`: a tabulated file containing modules with several taxa for `esmecata_gseapy`.
 
 
 ## Usage
