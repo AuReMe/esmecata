@@ -734,7 +734,7 @@ The `reference_proteins` contains one tsv file per taxon name and these files co
 
 The `reference_proteins_consensus_fasta` contains the consensus proteins associated with a taxon name for the cluster kept after clustering process.
 
-The `reference_proteins_representative_fasta` contains the consensus proteins associated with a taxon name for the cluster kept after clustering process.
+The `reference_proteins_representative_fasta` contains the representative proteins associated with a taxon name for the cluster kept after clustering process.
 
 The `proteome_tax_id.tsv` file is the same than the one created in `esmecata proteomes`.
 
