@@ -34,8 +34,10 @@ EsMeCaTa is a method to estimate consensus proteomes and metabolic capabilities 
     - [EsMeCaTa annotation\_uniprot](#esmecata-annotation_uniprot)
     - [EsMeCaTa workflow](#esmecata-workflow)
     - [EsMeCaTa precomputed](#esmecata-precomputed)
-  - [EsMeCaTa report](#esmecata-report)
-  - [EsMeCaTa gseapy](#esmecata-gseapy)
+  - [Post-processing analysis](#post-processing-analysis)
+    - [EsMeCaTa report](#esmecata-report)
+    - [EsMeCaTa gseapy](#esmecata-gseapy)
+    - [SPARTA](#sparta)
   - [EsMeCaTa create\_db](#esmecata-create_db)
   - [Troubleshooting](#troubleshooting)
     - [Issue with incompatible versions of ete4 and UniProt NCBI Taxonomy databases](#issue-with-incompatible-versions-of-ete4-and-uniprot-ncbi-taxonomy-databases)
@@ -950,7 +952,10 @@ output_folder
 ├── stat_number_precomputed.tsv
 ````
 
-## EsMeCaTa report
+
+## Post-processing analysis
+
+### EsMeCaTa report
 
 Using the command `esmecata_report`, it is possible to create an html report summarising the results from an esmecata run (either from `workflow` or `precomputed`).
 
@@ -988,7 +993,7 @@ For example:
 
 ![](pictures/esmecata_report.png)
 
-## EsMeCaTa gseapy
+### EsMeCaTa gseapy
 
 An enrichment analysis can be performed to identify functions specific to a phylum compared to the whole community of the input files by using gseapy and orsum.
 
@@ -1038,6 +1043,10 @@ Additional arguments can be given to use gseapy or orsum options such as:
 
 - `--gseapyCutOff` to set adjusted p-value cut-off for gseapy enrichr term (by default it is 0.05).
 - `--orsumMinTermSize` to set the MinTermSize of orsum (the minimum size of the terms to be processed.).
+
+### SPARTA
+
+A computational pipeline has been developed to ease the interpretation of EsMeCaTa predictions when comparing samples or groups. This method relies on Random Forests classifiers to discern groups and outputs variables of importance (either taxa and EsMeCaTa predicted functions). The method has been published in [PLOS Computational Biology](https://doi.org/10.1371/journal.pcbi.1012577) and is available on [GitHub](https://github.com/baptisteruiz/SPARTA).
 
 ## EsMeCaTa create_db
 
