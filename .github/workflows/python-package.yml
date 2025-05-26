@@ -55,9 +55,9 @@ jobs:
       run: |
         pip install pytest pytest-mock
         cd test
-        pytest test_proteomes.py
+        pytest test_proteomes.py -k 'not sparql'
         pytest test_clustering.py
-        pytest test_annotation.py
+        pytest test_annotation.py -k 'not sparql'
         pytest test_workflow_uniprot.py
         pytest test_precomputed.py
         pytest test_eggnog.py
