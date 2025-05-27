@@ -1,5 +1,13 @@
 # Changelog
 
+# EsMeCaTa v0.6.6 (2025-05-26)
+
+## Add
+
+* The possibility to give multiple precomputed databases to `esmecata precomputed`.
+* `create_input_precomputation_rest.py` script to get input from EsMeCaTa using REST queries.
+* Link to SPARTA pipeline in readme.
+
 # EsMeCaTa v0.6.5 (2025-03-31)
 
 ## Fix
