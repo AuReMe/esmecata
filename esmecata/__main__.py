@@ -258,14 +258,6 @@ def main():
         dest='eggnog_database',
         help='Path to eggnog database.',
         required=True)
-    parent_parser_nb_digit = argparse.ArgumentParser(add_help=False)
-    parent_parser_nb_digit.add_argument(
-        '--nb-digit',
-        dest='nb_digit',
-        required=False,
-        type=limited_integer_type,
-        help='Number of the digit to keep on the clustermap (1, 2, 3 or 4). Defualt 3.',
-        default=3)
     parent_parser_taxon_rank = argparse.ArgumentParser(add_help=False)
     parent_parser_taxon_rank.add_argument(
         '--taxon-rank',
@@ -287,7 +279,7 @@ def main():
         '--database',
         dest='database',
         required=True,
-        help='EsMeCaTa precomputed database file path.',
+        help='EsMeCaTa precomputed database file path. Multiple precomputed databases can be given, separated by a ",".',
         metavar='INPUT_FILE')
 
     parent_parser_no_dbmem = argparse.ArgumentParser(add_help=False)

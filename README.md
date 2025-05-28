@@ -211,14 +211,14 @@ options:
   -i INPUT_FILE, --input INPUT_FILE
                         Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic affiliation (separated by ;).
   -d INPUT_FILE, --database INPUT_FILE
-                        EsMeCaTa precomputed database file path.
+                        EsMeCaTa precomputed database file path. Multiple precomputed databases can be given, separated by a ",".
   -o OUPUT_DIR, --output OUPUT_DIR
                         Output directory path.
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
                         This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more
                         information (and a list of rank names).
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to update the taxonomic affiliations using the lowest taxon name.
   -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
                         Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly. Default is 0.5.
 ```
@@ -230,6 +230,15 @@ Example of use:
 ```
 esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database.zip -o output_folder
 ```
+
+It is also possible to give multiple precomputed databases, by separating them with a ",":
+
+```
+esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database_1.zip,esmecata_database_2.zip -o output_folder
+```
+
+The order is important, because esmecata will use the first database and then the following one. Especially, it will not use the next database to search for taxa found in the previous ones.
+For example, esmecata begins its search in `esmecata_database_1.zip` and find taxon `Escherichia`, all organisms associated with this taxon will not be searched again when using `esmecata_database_2.zip`.
 
 ### Classical run of EsMeCaTa
 
