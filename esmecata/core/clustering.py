@@ -310,6 +310,83 @@ def filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims
     return protein_cluster_to_keeps
 
 
+def compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_openess_file, clustering_threhsold=0.5,iteration_nb=100):
+    """ Compute openess of proteomes using Heap's Law.
+
+    Args:
+        esmecata_computed_threshold_folder (str): path to esmecata computed threshold folder
+        output_openess_file (str): path to output file containing alpha and other data
+        clustering_threhsold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
+        iteration_nb (int): number of times permutations will be made on the proteomes list to get different order list of proteomes
+    """
+    # Define Heap's Law: nb_gene_families = k * nb_proteomes^-alpha
+    # Reference used: https://doi.org/10.1016/j.mib.2008.09.006
+    # If alpha is superior to 1, pangenome is closed: adding more genomes do not increase number of gene families.
+    # If alpha is inferior to 1, pangenome is open: adding more genomes increase the number of gene families.
+    heaps_law = lambda nb_proteomes, k, alpha: k*nb_proteomes**(-alpha)
+
+    import pandas as pd
+    import numpy as np
+    import random
+
+    from scipy.optimize import curve_fit
+    from tqdm import tqdm
+
+    proteome_statistics = []
+    for computed_threshold_file in tqdm(os.listdir(esmecata_computed_threshold_folder)):
+        organism_name = os.path.splitext(computed_threshold_file)[0]
+        computed_threshold_filepath = os.path.join(esmecata_computed_threshold_folder, computed_threshold_file)
+        df_computed_threshold = pd.read_csv(computed_threshold_filepath, sep='\t', index_col = 0)
+        #df_computed_threshold = df_computed_threshold[df_computed_threshold['cluster_ratio']>=clustering_threhsold]
+        proteomes_lists = df_computed_threshold['proteomes'].str.split(',')
+        # Extract proteomes associated with the organism (and remove the redundancy).
+        unique_proteome = list(set([proteome for proteomes in proteomes_lists for proteome in proteomes]))
+        # Create several lists of proteome (to avoid computing alpha with only one distribution of proteomes).
+        list_proteome_to_iter = [random.sample(unique_proteome, k=len(unique_proteome)) for nb_iter in range(iteration_nb)]
+        # Extract proteome and their presence in protein clusters.
+        dataset_protein_dict = {proteome: set(df_computed_threshold[df_computed_threshold['proteomes'].str.contains(proteome)].index) for proteome in unique_proteome}
+
+        # Compute mean, median, variance
+        proteomes_nb_cluster = [len(dataset_protein_dict[proteome]) for proteome in dataset_protein_dict]
+        proteomes_nb_cluster_mean = np.mean(proteomes_nb_cluster)
+        proteomes_nb_cluster_median = np.median(proteomes_nb_cluster)
+        proteomes_nb_cluster_variance = np.var(proteomes_nb_cluster)
+        proteomes_nb_cluster_min = min(proteomes_nb_cluster)
+        proteomes_nb_cluster_max = max(proteomes_nb_cluster)
+        organism_nb_proteomes = len(unique_proteome)
+        nb_protein_clusters_kept = len(df_computed_threshold[df_computed_threshold['cluster_ratio']>=clustering_threhsold].index)
+
+        # Compute number of newly found protein clusters when adding proteomes.
+        nb_proteomes = []
+        nb_new_protein_discovered = []
+        for proteome_list in list_proteome_to_iter:
+            protein_discovered = set()
+            nb_proteome = 0
+            for proteome in proteome_list:
+                # Get the protein cluters of the new proteome.
+                protein_clusters_associated = dataset_protein_dict[proteome]
+                nb_proteome += 1
+                if protein_discovered == set():
+                    # If it is the first proteome, all its protein clusters correspond to newly found protein clusters.
+                    protein_discovered = protein_discovered.union(protein_clusters_associated)
+                    new_protein_discovered = protein_discovered
+                else:
+                    # Take previously found protein clusters from the other proteomes and extract how many new protein clusters are added by the new proteome.
+                    new_protein_discovered = protein_clusters_associated - protein_discovered
+                    protein_discovered = protein_discovered.union(protein_clusters_associated)
+                nb_proteomes.append(nb_proteome)
+                nb_new_protein_discovered.append(len(new_protein_discovered))
+        # Fit Heap's Law with the association between shared protein clusters and proteomes.
+        parameter_optimal_values, pcov = curve_fit(f=heaps_law, xdata=nb_proteomes, ydata=nb_new_protein_discovered, p0=[0, 0], bounds=(-np.inf, np.inf))
+        k, alpha = parameter_optimal_values
+        proteome_statistics.append([organism_name, organism_nb_proteomes, alpha, proteomes_nb_cluster_min, proteomes_nb_cluster_mean, proteomes_nb_cluster_median, proteomes_nb_cluster_max, proteomes_nb_cluster_variance, nb_protein_clusters_kept])
+
+        # Create output dataframe.
+        df = pd.DataFrame(proteome_statistics)
+        df.columns = ['organism', 'organism_nb_proteomes', 'constant_alpha', 'min', 'mean', 'median', 'max', 'variance', 'Number of protein clusters kept']
+        df.to_csv(output_openess_file, index=False, sep='\t')
+
+
 def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mmseqs_options, linclust, remove_tmp):
     """From the proteomes found by esmecata proteomes, create protein cluster for each taxonomic affiliations.
 
