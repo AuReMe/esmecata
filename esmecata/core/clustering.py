@@ -22,7 +22,12 @@ import shutil
 import subprocess
 import sys
 import time
+import pandas as pd
+import numpy as np
+import random
 
+from scipy.optimize import curve_fit
+from scipy import __version__ as scipy_version
 from Bio import SeqIO
 from Bio import __version__ as biopython_version
 from shutil import which
@@ -310,7 +315,7 @@ def filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims
     return protein_cluster_to_keeps
 
 
-def compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_openess_file, clustering_threhsold=0.5,iteration_nb=100):
+def compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_openess_file, clustering_threhsold=0.5, iteration_nb=100):
     """ Compute openess of proteomes using Heap's Law.
 
     Args:
@@ -325,15 +330,8 @@ def compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_ope
     # If alpha is inferior to 1, pangenome is open: adding more genomes increase the number of gene families.
     heaps_law = lambda nb_proteomes, k, alpha: k*nb_proteomes**(-alpha)
 
-    import pandas as pd
-    import numpy as np
-    import random
-
-    from scipy.optimize import curve_fit
-    from tqdm import tqdm
-
     proteome_statistics = []
-    for computed_threshold_file in tqdm(os.listdir(esmecata_computed_threshold_folder)):
+    for computed_threshold_file in os.listdir(esmecata_computed_threshold_folder):
         organism_name = os.path.splitext(computed_threshold_file)[0]
         computed_threshold_filepath = os.path.join(esmecata_computed_threshold_folder, computed_threshold_file)
         df_computed_threshold = pd.read_csv(computed_threshold_filepath, sep='\t', index_col = 0)
@@ -459,6 +457,9 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
     clustering_metadata['tool_dependencies']['python_package'] = {}
     clustering_metadata['tool_dependencies']['python_package']['Python_version'] = sys.version
     clustering_metadata['tool_dependencies']['python_package']['biopython'] = biopython_version
+    clustering_metadata['tool_dependencies']['python_package']['scipy'] = scipy_version
+    clustering_metadata['tool_dependencies']['python_package']['pandas'] = pd.__version__
+    clustering_metadata['tool_dependencies']['python_package']['numpy'] = np.__version__
     clustering_metadata['tool_dependencies']['python_package']['esmecata'] = esmecata_version
 
     # Create tmp folder for mmseqs analysis.
@@ -555,6 +556,9 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
     # Compute number of protein clusters kept.
     stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
     compute_stat_clustering(output_folder, stat_file)
+    # Comptue openess of proteomes.
+    proteome_openess_file = os.path.join(output_folder, 'stat_openess_proteomes.tsv')
+    compute_openess_pan_proteomes(computed_threshold_path, proteome_openess_file, clustering_threhsold=0.5, iteration_nb=100)
 
     endtime = time.time()
     duration = endtime - starttime

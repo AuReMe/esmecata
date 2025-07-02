@@ -2,10 +2,13 @@
 
 # EsMeCaTa v0.6.6 (2025-07-01)
 
+New requirements `scipy` and `numpy` for proteome openess computation.
+
 ## Add
 
 * The possibility to give multiple precomputed databases to `esmecata precomputed`.
 * `create_input_precomputation_rest.py` script to get input from EsMeCaTa using REST queries.
+* Computation of proteomes openess with Heap's law. This required `scipy` package.
 * More statistics on sequence-function associations after annotation step.
 * Link to SPARTA pipeline in readme.
 
