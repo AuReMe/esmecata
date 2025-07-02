@@ -1,11 +1,12 @@
 # Changelog
 
-# EsMeCaTa v0.6.6 (2025-05-26)
+# EsMeCaTa v0.6.6 (2025-07-01)
 
 ## Add
 
 * The possibility to give multiple precomputed databases to `esmecata precomputed`.
 * `create_input_precomputation_rest.py` script to get input from EsMeCaTa using REST queries.
+* More statistics on sequence-function associations after annotation step.
 * Link to SPARTA pipeline in readme.
 
 # EsMeCaTa v0.6.5 (2025-03-31)
