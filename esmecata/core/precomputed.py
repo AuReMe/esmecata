@@ -35,7 +35,7 @@ from Bio import __version__ as biopython_version
 from esmecata.utils import is_valid_dir, get_domain_or_superkingdom_from_ncbi_tax_database
 from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file
 from esmecata.core.eggnog import compute_stat_annotation
-from esmecata.core.clustering import get_proteomes_tax_id_name
+from esmecata.core.clustering import get_proteomes_tax_id_name, compute_openess_pan_proteomes
 from esmecata.core.annotation import create_dataset_annotation_file
 
 from esmecata import __version__ as esmecata_version
@@ -178,12 +178,12 @@ def search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path,
         with archive.open(annotation_file) as zf:
             df_annotation = pd.read_csv(zf, sep='\t')
 
-        # Filter according to selected clust_threshold.
-        df_annotation = df_annotation[df_annotation['cluster_ratio'] >= clust_threshold]
-
         # Create a computed threhsold file.
         output_computed_threshold_file = os.path.join(computed_threshold_folder, tax_id_name+'.tsv')
         df_annotation[['representative_protein', 'cluster_ratio', 'proteomes']].to_csv(output_computed_threshold_file, sep='\t', index=None)
+
+        # Filter according to selected clust_threshold.
+        df_annotation = df_annotation[df_annotation['cluster_ratio'] >= clust_threshold]
 
         kept_protein_ids = set(df_annotation['representative_protein'].tolist())
         for observation_name in tax_id_obs_names[tax_id]:
@@ -526,6 +526,10 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             selected_threshold_cluster = len(clustering_numbers[observation_name][1])
             cluster_0_95 = len(clustering_numbers[observation_name][2])
             csvwriter.writerow([observation_name, cluster_0, selected_threshold_cluster, cluster_0_95])
+
+    # Compute openess of proteomes.
+    proteome_openess_file = os.path.join(clustering_output_folder, 'stat_openess_proteomes.tsv')
+    compute_openess_pan_proteomes(computed_threshold_folder, proteome_openess_file, clustering_threhsold=0.5, iteration_nb=100)
 
     annotation_stat_file = os.path.join(annotation_output_folder, 'stat_number_annotation.tsv')
     compute_stat_annotation(annotation_reference_output_folder, annotation_stat_file)

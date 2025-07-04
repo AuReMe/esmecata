@@ -315,7 +315,30 @@ def filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims
     return protein_cluster_to_keeps
 
 
-def compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_openess_file, clustering_threhsold=0.5, iteration_nb=100):
+def heap_law_curve_fitting(nb_proteomes, nb_new_protein_discovered):
+    """ Curve fitting accordng to Heap's Law.
+
+    Args:
+        nb_proteomes (list): List of number of genomes
+        nb_new_protein_discovered (list): List associated with nb_proteomes list and showing the associated number of newly found genes for the corresponding number of genomes
+
+    Returns:
+        k (float): intercept
+        alpha (float): constant alpha resulting from the fitting
+    """
+    # Define Heap's Law: nb_gene_families = k * nb_proteomes^-alpha
+    heaps_law = lambda nb_proteomes, k, alpha: k*nb_proteomes**(-alpha)
+    heaps_law_func = lambda nb_proteomes, k, alpha: [k*float(nb_proteome)**(-alpha) for nb_proteome in nb_proteomes]
+    # Fit Heap's Law with the association between shared protein clusters and proteomes.
+    parameter_optimal_values, pcov = curve_fit(f=heaps_law, xdata=nb_proteomes, ydata=nb_new_protein_discovered, p0=[0, 0], bounds=(-np.inf, np.inf),
+                                               method='lm')
+
+    k, alpha = parameter_optimal_values
+
+    return k, alpha
+
+
+def compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_openess_file, clustering_threhsold=0.5, iteration_nb=1000):
     """ Compute openess of proteomes using Heap's Law.
 
     Args:
@@ -328,7 +351,6 @@ def compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_ope
     # Reference used: https://doi.org/10.1016/j.mib.2008.09.006
     # If alpha is superior to 1, pangenome is closed: adding more genomes do not increase number of gene families.
     # If alpha is inferior to 1, pangenome is open: adding more genomes increase the number of gene families.
-    heaps_law = lambda nb_proteomes, k, alpha: k*nb_proteomes**(-alpha)
 
     proteome_statistics = []
     for computed_threshold_file in os.listdir(esmecata_computed_threshold_folder):
@@ -374,14 +396,16 @@ def compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_ope
                     protein_discovered = protein_discovered.union(protein_clusters_associated)
                 nb_proteomes.append(nb_proteome)
                 nb_new_protein_discovered.append(len(new_protein_discovered))
-        # Fit Heap's Law with the association between shared protein clusters and proteomes.
-        parameter_optimal_values, pcov = curve_fit(f=heaps_law, xdata=nb_proteomes, ydata=nb_new_protein_discovered, p0=[0, 0], bounds=(-np.inf, np.inf))
-        k, alpha = parameter_optimal_values
+
+        k, alpha = heap_law_curve_fitting(nb_proteomes, nb_new_protein_discovered)
         proteome_statistics.append([organism_name, organism_nb_proteomes, alpha, proteomes_nb_cluster_min, proteomes_nb_cluster_mean, proteomes_nb_cluster_median, proteomes_nb_cluster_max, proteomes_nb_cluster_variance, nb_protein_clusters_kept])
 
         # Create output dataframe.
         df = pd.DataFrame(proteome_statistics)
-        df.columns = ['organism', 'organism_nb_proteomes', 'constant_alpha', 'min', 'mean', 'median', 'max', 'variance', 'Number of protein clusters kept']
+        df.columns = ['organism', 'organism_nb_proteomes', 'constant_alpha', 'Minimal number of protein clusters associated with a proteome',
+                      'Mean number of protein clusters associated with a proteome', 'Median number of protein clusters associated with a proteome',
+                      'Maximal number of protein clusters associated with a proteome', 'Variance of protein clusters associated with a proteome',
+                      'Number of protein clusters kept']
         df.to_csv(output_openess_file, index=False, sep='\t')
 
 
@@ -556,7 +580,7 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
     # Compute number of protein clusters kept.
     stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
     compute_stat_clustering(output_folder, stat_file)
-    # Comptue openess of proteomes.
+    # Compute openess of proteomes.
     proteome_openess_file = os.path.join(output_folder, 'stat_openess_proteomes.tsv')
     compute_openess_pan_proteomes(computed_threshold_path, proteome_openess_file, clustering_threhsold=0.5, iteration_nb=100)
 
