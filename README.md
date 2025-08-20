@@ -1,4 +1,4 @@
-[![PyPI version](https://img.shields.io/pypi/v/esmecata.svg)](https://pypi.org/project/esmecata/) [![GitHub license](https://raw.githubusercontent.com/AuReMe/esmecata/master/pictures/license_esmecata.svg)](https://github.com/AuReMe/esmecata/blob/master/LICENSE) [![Actions Status](https://github.com/AuReMe/esmecata/workflows/Python%20package/badge.svg)](https://github.com/AuReMe/esmecata/actions) [![](https://raw.githubusercontent.com/AuReMe/esmecata/master/pictures/doi_esmecata.svg)](https://doi.org/10.1101/2022.03.16.484574)
+[![PyPI version](https://img.shields.io/pypi/v/esmecata.svg)](https://pypi.org/project/esmecata/) [![GitHub license](pictures/license_esmecata.svg)](https://github.com/AuReMe/esmecata/blob/master/LICENSE) [![Actions Status](https://github.com/AuReMe/esmecata/workflows/Python%20package/badge.svg)](https://github.com/AuReMe/esmecata/actions) [![](pictures/doi_esmecata.svg)](https://doi.org/10.1101/2022.03.16.484574) [![](pictures/doi_tabigecy.svg)](https://doi.org/10.1093/bioinformatics/btaf230)
 
 # EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic affiliations
 
