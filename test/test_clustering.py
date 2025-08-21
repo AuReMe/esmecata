@@ -119,7 +119,7 @@ def test_heap_law_curve_fitting():
 
     # Fit curve.
     k, alpha = heap_law_curve_fitting(nb_proteomes, nb_new_protein_discovered)
-    # Results should be inferior to 0.9 and clsoe to 0.8 (0.8 found in https://doi.org/10.1016/j.mib.2008.09.006)
+    # Results should be inferior to 0.9 and close to 0.8 (0.8 found in https://doi.org/10.1016/j.mib.2008.09.006)
     assert alpha < 0.9
     assert alpha > 0.79
 

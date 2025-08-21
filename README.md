@@ -231,10 +231,10 @@ Example of use:
 esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database.zip -o output_folder
 ```
 
-It is also possible to give multiple precomputed databases, by separating them with a ",":
+It is also possible to give multiple precomputed databases, by separating them with a space:
 
 ```
-esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database_1.zip,esmecata_database_2.zip -o output_folder
+esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database_1.zip esmecata_database_2.zip -o output_folder
 ```
 
 The order is important, because esmecata will use the first database and then the following one. Especially, it will not use the next database to search for taxa found in the previous ones.
