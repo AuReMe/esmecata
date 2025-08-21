@@ -334,7 +334,6 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         json_taxonomic_affiliations_to_research = json_taxonomic_affiliations.copy()
         for single_database_taxon_file_path in database_taxon_file_path.split(' '):
             tmp_database_name = os.path.splitext(os.path.basename(single_database_taxon_file_path))[0]
-            logger.info(tmp_database_name)
             tmp_association_taxon_database, tmp_proteomes_tax_id_names, tmp_taxon_data, \
                 tmp_observation_name_not_founds, tmp_only_reference_proteome_used, tmp_proteomes_data_json, tmp_json_data, \
                 tmp_precomputed_db_version = search_taxon_database(json_taxonomic_affiliations_to_research, single_database_taxon_file_path, clust_threshold,
