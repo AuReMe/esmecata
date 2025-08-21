@@ -94,7 +94,7 @@ def test_precomputed_parse_affiliation_cli_offline():
 def test_precomputed_parse_affiliation_offline_two_databases():
     output_folder = 'output_folder'
     input_file = os.path.join('test_data', 'two_db_precomputed.tsv')
-    esmecata_precomputed_db = os.path.join('test_data', 'buchnera_database.zip') + ',' + os.path.join('test_data', 'second_database.zip')
+    esmecata_precomputed_db = os.path.join('test_data', 'buchnera_database.zip') + ' ' + os.path.join('test_data', 'second_database.zip')
     precomputed_parse_affiliation(input_file, esmecata_precomputed_db, output_folder)
 
     proteome_tax_id_file = os.path.join(output_folder, '1_clustering', 'proteome_tax_id.tsv')
@@ -132,7 +132,7 @@ def test_precomputed_parse_affiliation_offline_two_databases():
 def test_precomputed_parse_affiliation_two_databases_cli_offline():
     output_folder = 'output_folder'
     input_file = os.path.join('test_data', 'two_db_precomputed.tsv')
-    esmecata_precomputed_db = os.path.join('test_data', 'buchnera_database.zip') + ',' + os.path.join('test_data', 'second_database.zip')
+    esmecata_precomputed_db = os.path.join('test_data', 'buchnera_database.zip') + ' ' + os.path.join('test_data', 'second_database.zip')
     subprocess.call(['esmecata', 'precomputed', '-i', input_file, '-d', esmecata_precomputed_db, '-o', output_folder])
 
     proteome_tax_id_file = os.path.join(output_folder, '1_clustering', 'proteome_tax_id.tsv')

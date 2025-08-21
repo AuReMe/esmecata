@@ -279,6 +279,7 @@ def main():
         '--database',
         dest='database',
         required=True,
+        nargs="+",
         help='EsMeCaTa precomputed database file path. Multiple precomputed databases can be given, separated by a ",".',
         metavar='INPUT_FILE')
 
@@ -453,7 +454,8 @@ def main():
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
                                 args.option_bioservices, args.eggnog_tmp_dir, args.no_dbmem)
     elif args.cmd == 'precomputed':
-        precomputed_parse_affiliation(args.input, args.database, args.output, args.rank_limit, args.update_affiliations,
+        precomputed_db = ' '.join(args.database)
+        precomputed_parse_affiliation(args.input, precomputed_db, args.output, args.rank_limit, args.update_affiliations,
                                       args.threshold_clustering)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))

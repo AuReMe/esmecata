@@ -106,14 +106,13 @@ def find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, 
     return association_taxon_database, observation_name_not_founds
 
 
-def search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path, esmecata_metadata, clust_threshold,
+def search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path, clust_threshold,
                           computed_threshold_folder, annotation_reference_output_folder, reference_proteins_consensus_fasta_folder):
     """ Search in esmecata precomputed database from taxa.
 
     Args:
         json_taxonomic_affiliations (dict): observation name and dictionary with mapping between taxon name and taxon ID (with remove rank specified).
         database_taxon_file_path (str): path to esmecata precomputed database.
-        esmecata_metadata (dict): esmecata metadata dictionary.
         clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster (must be equal or superior to the one use in the creation of the precomputed db).
         computed_threshold_folder (str): path to output computed threshold folder.
         annotation_reference_output_folder (str): path to output annotation reference folder.
@@ -131,8 +130,6 @@ def search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path,
     """
     archive = zipfile.ZipFile(database_taxon_file_path, 'r')
     database_taxon_ids, proteomes_tax_id_names, taxon_data = get_taxon_database(archive)
-
-    esmecata_metadata['precomputed_database'] = {}
 
     with archive.open('esmecata_database_metadata.json', 'r') as open_metadata_json:
         json_data = json.load(open_metadata_json)
@@ -287,6 +284,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     date = datetime.datetime.now().strftime('%d-%B-%Y %H:%M:%S')
     esmecata_metadata['access_time'] = date
     esmecata_metadata['tool_options'] = options
+    esmecata_metadata['precomputed_database'] = {}
 
     known_extensions = ['.xlsx', '.tsv', '.csv']
     file_name, file_extension = os.path.splitext(input_file)
@@ -326,7 +324,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     predictions_from_which_database = {}
     # If multiple database files are given, iter on each of them to associate taxa with observation name. 
-    if ',' in database_taxon_file_path:
+    if ' ' in database_taxon_file_path:
         association_taxon_database = {}
         proteomes_tax_id_names = {}
         taxon_data = {}
@@ -334,11 +332,12 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         only_reference_proteome_used = {}
 
         json_taxonomic_affiliations_to_research = json_taxonomic_affiliations.copy()
-        for single_database_taxon_file_path in database_taxon_file_path.split(','):
+        for single_database_taxon_file_path in database_taxon_file_path.split(' '):
             tmp_database_name = os.path.splitext(os.path.basename(single_database_taxon_file_path))[0]
+            logger.info(tmp_database_name)
             tmp_association_taxon_database, tmp_proteomes_tax_id_names, tmp_taxon_data, \
                 tmp_observation_name_not_founds, tmp_only_reference_proteome_used, tmp_proteomes_data_json, tmp_json_data, \
-                tmp_precomputed_db_version = search_taxon_database(json_taxonomic_affiliations_to_research, single_database_taxon_file_path, esmecata_metadata, clust_threshold,
+                tmp_precomputed_db_version = search_taxon_database(json_taxonomic_affiliations_to_research, single_database_taxon_file_path, clust_threshold,
                                                             computed_threshold_folder, annotation_reference_output_folder, reference_proteins_consensus_fasta_folder)
 
             # Extract metadata.
@@ -398,7 +397,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         # Run esmecata precomputed on one database.
         association_taxon_database, proteomes_tax_id_names, taxon_data, \
             observation_name_not_founds, only_reference_proteome_used, proteomes_data_json, json_data, \
-            precomputed_db_version = search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path, esmecata_metadata, clust_threshold,
+            precomputed_db_version = search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path, clust_threshold,
                                                         computed_threshold_folder, annotation_reference_output_folder, reference_proteins_consensus_fasta_folder)
 
         database_name = os.path.splitext(os.path.basename(database_taxon_file_path))[0]
