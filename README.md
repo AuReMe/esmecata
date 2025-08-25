@@ -732,6 +732,7 @@ output_folder
 ├── esmecata_clustering.log
 ├── esmecata_metadata_clustering.json
 ├── stat_number_clustering.tsv
+├── stat_openess_proteomes.tsv
 ├── taxonomy_diff.tsv
 ````
 
@@ -754,6 +755,17 @@ The file `esmecata_clustering.log` contains the log associated with the command.
 `esmecata_metadata_clustering.json` is a log about the the metadata associated with the command used with esmecata and the dependencies.
 
 `stat_number_clustering.tsv` is a tabulated file containing the number of shared proteins found for each observation name.
+
+`stat_openess_proteomes.tsv` is a tabulated file containing the openess of panproteomes for each observation name. The openess is shown with the alpha values from [Tettelin et al. (2008)](https://doi.org/10.1016/j.mib.2008.09.006). It is computed with:
+
+```math
+nb gene families = k * nb proteomes^{-alpha}
+```
+
+Where `nb gene families` is the number of newly discovered protein clusters when adding proteomes and `nb proteomes` is the number of proteomes.
+
+If alpha is superior to 1, pangenome is closed: adding more proteomes do not increase number of newly discovered gene families (here protein clusters).
+If alpha is inferior to 1, pangenome is open: adding more proteomes increase the number of newly discovered gene families.
 
 `taxonomy_diff.tsv` is a tabulated file indicating the taxon selected by EsMeCaTa compared to the lowest taxon in the taxonomic affiliations.
 

@@ -10,7 +10,12 @@ New requirements `scipy` and `numpy` for proteome openess computation.
 * `create_input_precomputation_rest.py` script to get input from EsMeCaTa using REST queries.
 * Computation of proteomes openess with Heap's law. This required `scipy` package.
 * More statistics on sequence-function associations after annotation step.
+* Creation of pathologic files when using `esmecata preocmputed`.
 * Link to SPARTA pipeline in readme.
+
+## Modify
+
+* Update readme and changelog.
 
 # EsMeCaTa v0.6.5 (2025-03-31)
 
