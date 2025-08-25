@@ -34,7 +34,7 @@ from Bio import __version__ as biopython_version
 
 from esmecata.utils import is_valid_dir, get_domain_or_superkingdom_from_ncbi_tax_database
 from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file
-from esmecata.core.eggnog import compute_stat_annotation
+from esmecata.core.eggnog import compute_stat_annotation, write_pathologic
 from esmecata.core.clustering import get_proteomes_tax_id_name, compute_openess_pan_proteomes
 from esmecata.core.annotation import create_dataset_annotation_file
 
@@ -107,7 +107,8 @@ def find_proteomes_tax_ids_in_precomputed_database(json_taxonomic_affiliations, 
 
 
 def search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path, clust_threshold,
-                          computed_threshold_folder, annotation_reference_output_folder, reference_proteins_consensus_fasta_folder):
+                          computed_threshold_folder, annotation_reference_output_folder, reference_proteins_consensus_fasta_folder,
+                          pathologic_folder):
     """ Search in esmecata precomputed database from taxa.
 
     Args:
@@ -117,6 +118,7 @@ def search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path,
         computed_threshold_folder (str): path to output computed threshold folder.
         annotation_reference_output_folder (str): path to output annotation reference folder.
         reference_proteins_consensus_fasta_folder (str): path to output reference proteins consensus folder.
+        pathologic_folder (str): path to output pathologic folder.
 
     Returns:
         association_taxon_database (dict): observation name (key) associated with tax_name and tax_id.
@@ -194,6 +196,26 @@ def search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path,
                 selected_df_annotation.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC']
             if not os.path.exists(output_path_annotation_file):
                 selected_df_annotation.to_csv(output_path_annotation_file, sep='\t', index=None)
+
+            # Create pathologic files.
+            pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
+            # Add _1 to pathologic file as genetic element cannot have the same name as the organism.
+            pathologic_file = os.path.join(pathologic_organism_folder, observation_name+'_1.pf')
+
+            if not os.path.exists(pathologic_file):
+                # Replace NA by empty string.
+                selected_df_annotation = selected_df_annotation.fillna('')
+                reference_proteins_string = selected_df_annotation.set_index('protein_cluster')['cluster_members'].to_dict()
+                reference_proteins = {protein: reference_proteins_string[protein].split(',') for protein in reference_proteins_string}
+                sub_annotated_proteins = selected_df_annotation.set_index('protein_cluster').to_dict('index')
+                # Rename dictionary keys according to the ones expected in write_pathologic.
+                sub_annotated_proteins = [(protein, {'Preferred_name': sub_annotated_proteins[protein]['gene_name'],
+                                                    'GOs': sub_annotated_proteins[protein]['GO'],
+                                                    'EC': sub_annotated_proteins[protein]['EC']})
+                                                    for protein in sub_annotated_proteins]
+                if len(sub_annotated_proteins) > 0:
+                    is_valid_dir(pathologic_organism_folder)
+                    write_pathologic(observation_name, sub_annotated_proteins, pathologic_file, reference_proteins)
 
         # Create a consensus proteomes file.
         clustering_consensus_file = os.path.join(tax_id_name, tax_id_name+'.faa')
@@ -337,7 +359,8 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             tmp_association_taxon_database, tmp_proteomes_tax_id_names, tmp_taxon_data, \
                 tmp_observation_name_not_founds, tmp_only_reference_proteome_used, tmp_proteomes_data_json, tmp_json_data, \
                 tmp_precomputed_db_version = search_taxon_database(json_taxonomic_affiliations_to_research, single_database_taxon_file_path, clust_threshold,
-                                                            computed_threshold_folder, annotation_reference_output_folder, reference_proteins_consensus_fasta_folder)
+                                                            computed_threshold_folder, annotation_reference_output_folder, reference_proteins_consensus_fasta_folder,
+                                                            pathologic_folder)
 
             # Extract metadata.
             esmecata_metadata['precomputed_database'][tmp_database_name] = {}
@@ -397,7 +420,8 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         association_taxon_database, proteomes_tax_id_names, taxon_data, \
             observation_name_not_founds, only_reference_proteome_used, proteomes_data_json, json_data, \
             precomputed_db_version = search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path, clust_threshold,
-                                                        computed_threshold_folder, annotation_reference_output_folder, reference_proteins_consensus_fasta_folder)
+                                                        computed_threshold_folder, annotation_reference_output_folder, reference_proteins_consensus_fasta_folder,
+                                                        pathologic_folder)
 
         database_name = os.path.splitext(os.path.basename(database_taxon_file_path))[0]
         for observation_name in observation_name_not_founds:
@@ -474,6 +498,20 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     shutil.copyfile(proteome_tax_id_file, clustering_proteome_tax_id_file)
     annotation_proteome_tax_id_file = os.path.join(annotation_output_folder, 'proteome_tax_id.tsv')
     shutil.copyfile(proteome_tax_id_file, annotation_proteome_tax_id_file)
+
+    # Create mpwt taxon ID file.
+    clustering_taxon_id = {}
+    with open(proteome_tax_id_file, 'r') as input_taxon_id_file:
+        taxon_id_csvreader = csv.DictReader(input_taxon_id_file, delimiter='\t')
+        for line in taxon_id_csvreader:
+            clustering_taxon_id[line['observation_name']] = line['tax_id']
+
+    pathologic_taxon_id_file = os.path.join(pathologic_folder, 'taxon_id.tsv')
+    with open(pathologic_taxon_id_file, 'w') as taxon_id_file:
+        taxon_id_csvwriter = csv.writer(taxon_id_file, delimiter='\t')
+        taxon_id_csvwriter.writerow(['species', 'taxon_id'])
+        for species in clustering_taxon_id:
+            taxon_id_csvwriter.writerow([species, clustering_taxon_id[species]])
 
     # If some organisms have no match in their taxonomic affiliations with esmecata precomputed database, create an input file for esmecata containing them.
     organism_not_found_in_database_file_path = os.path.join(output_folder, 'organism_not_found_in_database.tsv')

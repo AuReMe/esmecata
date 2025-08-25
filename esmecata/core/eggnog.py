@@ -238,7 +238,7 @@ def write_pathologic(base_filename, annotated_proteins, pathologic_output_file, 
 
     Args:
         base_filename (str): observation name
-        annotated_proteins (dict): dict of protein and their annotations as {protein:{EC:'..,..', GOs:'..,..,'}}
+        annotated_proteins (list): list of protein and their annotations as [(protein, {EC:'..,..', GOs:'..,..,'}), (...)]
         reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
         pathologic_output_file (str): pathname to output pathologic file
     """
