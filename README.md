@@ -113,11 +113,11 @@ To use eggNOG-mapper, you have to setup it and install [its database](https://gi
 - [arakawa](https://github.com/ninoseki/arakawa): fork of [datapane](https://github.com/datapane/datapane) to create the HTML report.
 - [plotly](https://github.com/plotly/plotly.py): to create most of the figures.
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst): to create sunburst figures of Enzyme Commission numbers.
-- [kaleido](https://github.com/plotly/Kaleido): required to create the figure.
+- [kaleido](https://github.com/plotly/Kaleido): required to render the figure with plotly. Kaleido requires to install a compatible Chrome version with: `kaleido_get_chrome`
 
 This can be installed with pip:
 
-```pip install arakawa==0.0.15 plotly kaleido ontosunburst```
+```pip install arakawa plotly kaleido ontosunburst```
 
 `esmecata_gseapy` requires:
 - [pronto](https://github.com/althonos/pronto): to get Gene Ontology names.
