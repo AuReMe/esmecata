@@ -38,6 +38,7 @@ EsMeCaTa is a method to estimate consensus proteomes and metabolic capabilities 
     - [EsMeCaTa report](#esmecata-report)
     - [EsMeCaTa gseapy](#esmecata-gseapy)
     - [SPARTA](#sparta)
+  - [Tabigecy and bigecyhmm](#tabigecy-and-bigecyhmm)
   - [EsMeCaTa create\_db](#esmecata-create_db)
   - [Troubleshooting](#troubleshooting)
     - [Issue with incompatible versions of ete4 and UniProt NCBI Taxonomy databases](#issue-with-incompatible-versions-of-ete4-and-uniprot-ncbi-taxonomy-databases)
@@ -54,6 +55,7 @@ EsMeCaTa is developed in Python, it is tested with Python 3.11. It needs the fol
 - [pandas](https://pypi.org/project/pandas/): To read the input files.
 - [requests](https://pypi.org/project/requests/): For the REST queries on Uniprot.
 - [ete4](https://github.com/etetoolkit/ete): To analyse the taxonomic affiliation and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.
+- [scipy](https://github.com/scipy/scipy): to compute openess with a Heap's Law.
 - [SPARQLwrapper](https://pypi.org/project/SPARQLWrapper/): Optionally, you can use SPARQL queries instead of REST queries. This can be done either with the [Uniprot SPARQL Endpoint](https://sparql.uniprot.org/) (with the option `--sparql uniprot`) or with a Uniprot SPARQL Endpoint that you created locally (it is supposed to work but not tested, only SPARQL queries on the Uniprot SPARQL endpoint have been tested). **Warning**: using SPARQL queries will lead to minor differences in functional annotations and metabolic reactions due to how the results are retrieved with REST query or SPARQL query.
 
 Also esmecata requires MMseqs2 for protein clustering with `esmecata workflow` or `esmecata clustering`:
@@ -764,8 +766,8 @@ nb gene families = k * nb proteomes^{-alpha}
 
 Where `nb gene families` is the number of newly discovered protein clusters when adding proteomes and `nb proteomes` is the number of proteomes.
 
-If alpha is superior to 1, pangenome is closed: adding more proteomes do not increase number of newly discovered gene families (here protein clusters).
-If alpha is inferior to 1, pangenome is open: adding more proteomes increase the number of newly discovered gene families.
+If alpha is superior to 1, pangenome is closed: adding more proteomes do not increase number of newly discovered gene families (here protein clusters). The consensus proteome should be a good estimator of the protein contents for the taxon.
+If alpha is inferior to 1, pangenome is open: adding more proteomes increase the number of newly discovered gene families. It is possible that genes specific to the taxon are missed and then the estimation is more uncertain.
 
 `taxonomy_diff.tsv` is a tabulated file indicating the taxon selected by EsMeCaTa compared to the lowest taxon in the taxonomic affiliations.
 
@@ -1068,6 +1070,10 @@ Additional arguments can be given to use gseapy or orsum options such as:
 ### SPARTA
 
 A computational pipeline has been developed to ease the interpretation of EsMeCaTa predictions when comparing samples or groups. This method relies on Random Forests classifiers to discern groups and outputs variables of importance (either taxa and EsMeCaTa predicted functions). The method has been published in [PLOS Computational Biology](https://doi.org/10.1371/journal.pcbi.1012577) and is available on [GitHub](https://github.com/baptisteruiz/SPARTA).
+
+## Tabigecy and bigecyhmm
+
+EsMeCaTa's consensus proteomes can be used as input to [bigecyhmm](https://github.com/ArnaudBelcour/bigecyhmm) to predict impact of microbial communities on coarse-grained representation of biogeochemical cycles using Hidden-Markov Models. Then with `bigecyhmm_visualisation`, it is possible to add abundance file to weight funcitons with organisms abundances.
 
 ## EsMeCaTa create_db
 

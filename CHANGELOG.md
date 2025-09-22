@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.6.6 (2025-07-01)
+# EsMeCaTa v0.6.6 (2025-09-22)
 
 New requirements `scipy` and `numpy` for proteome openess computation.
 
