@@ -376,28 +376,33 @@ def compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_ope
         organism_nb_proteomes = len(unique_proteome)
         nb_protein_clusters_kept = len(df_computed_threshold[df_computed_threshold['cluster_ratio']>=clustering_threhsold].index)
 
-        # Compute number of newly found protein clusters when adding proteomes.
-        nb_proteomes = []
-        nb_new_protein_discovered = []
-        for proteome_list in list_proteome_to_iter:
-            protein_discovered = set()
-            nb_proteome = 0
-            for proteome in proteome_list:
-                # Get the protein cluters of the new proteome.
-                protein_clusters_associated = dataset_protein_dict[proteome]
-                nb_proteome += 1
-                if protein_discovered == set():
-                    # If it is the first proteome, all its protein clusters correspond to newly found protein clusters.
-                    protein_discovered = protein_discovered.union(protein_clusters_associated)
-                    new_protein_discovered = protein_discovered
-                else:
-                    # Take previously found protein clusters from the other proteomes and extract how many new protein clusters are added by the new proteome.
-                    new_protein_discovered = protein_clusters_associated - protein_discovered
-                    protein_discovered = protein_discovered.union(protein_clusters_associated)
-                nb_proteomes.append(nb_proteome)
-                nb_new_protein_discovered.append(len(new_protein_discovered))
+        if organism_nb_proteomes > 1:
+            # Compute number of newly found protein clusters when adding proteomes.
+            nb_proteomes = []
+            nb_new_protein_discovered = []
+            for proteome_list in list_proteome_to_iter:
+                protein_discovered = set()
+                nb_proteome = 0
+                for proteome in proteome_list:
+                    # Get the protein cluters of the new proteome.
+                    protein_clusters_associated = dataset_protein_dict[proteome]
+                    nb_proteome += 1
+                    if protein_discovered == set():
+                        # If it is the first proteome, all its protein clusters correspond to newly found protein clusters.
+                        protein_discovered = protein_discovered.union(protein_clusters_associated)
+                        new_protein_discovered = protein_discovered
+                    else:
+                        # Take previously found protein clusters from the other proteomes and extract how many new protein clusters are added by the new proteome.
+                        new_protein_discovered = protein_clusters_associated - protein_discovered
+                        protein_discovered = protein_discovered.union(protein_clusters_associated)
+                    nb_proteomes.append(nb_proteome)
+                    nb_new_protein_discovered.append(len(new_protein_discovered))
 
-        k, alpha = heap_law_curve_fitting(nb_proteomes, nb_new_protein_discovered)
+            k, alpha = heap_law_curve_fitting(nb_proteomes, nb_new_protein_discovered)
+        else:
+            logger.info('|EsMeCaTa|clustering| Only 1 proteome for {0}, openess not computed for this taxon.'.format(organism_name))
+            alpha = 'not computed'
+
         proteome_statistics.append([organism_name, organism_nb_proteomes, alpha, proteomes_nb_cluster_min, proteomes_nb_cluster_mean, proteomes_nb_cluster_median, proteomes_nb_cluster_max, proteomes_nb_cluster_variance, nb_protein_clusters_kept])
 
         # Create output dataframe.
