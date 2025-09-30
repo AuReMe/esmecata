@@ -1,4 +1,4 @@
-[![PyPI version](https://img.shields.io/pypi/v/esmecata.svg)](https://pypi.org/project/esmecata/) [![GitHub license](https://raw.githubusercontent.com/AuReMe/esmecata/master/pictures/license_esmecata.svg)](https://github.com/AuReMe/esmecata/blob/master/LICENSE) [![Actions Status](https://github.com/AuReMe/esmecata/workflows/Python%20package/badge.svg)](https://github.com/AuReMe/esmecata/actions) [![](https://raw.githubusercontent.com/AuReMe/esmecata/master/pictures/doi_esmecata.svg)](https://doi.org/10.1101/2022.03.16.484574)
+[![PyPI version](https://img.shields.io/pypi/v/esmecata.svg)](https://pypi.org/project/esmecata/) [![GitHub license](pictures/license_esmecata.svg)](https://github.com/AuReMe/esmecata/blob/master/LICENSE) [![Actions Status](https://github.com/AuReMe/esmecata/workflows/Python%20package/badge.svg)](https://github.com/AuReMe/esmecata/actions) [![](pictures/doi_esmecata.svg)](https://doi.org/10.1101/2022.03.16.484574) [![](pictures/doi_tabigecy.svg)](https://doi.org/10.1093/bioinformatics/btaf230)
 
 # EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic affiliations
 
@@ -38,6 +38,7 @@ EsMeCaTa is a method to estimate consensus proteomes and metabolic capabilities 
     - [EsMeCaTa report](#esmecata-report)
     - [EsMeCaTa gseapy](#esmecata-gseapy)
     - [SPARTA](#sparta)
+  - [Tabigecy and bigecyhmm](#tabigecy-and-bigecyhmm)
   - [EsMeCaTa create\_db](#esmecata-create_db)
   - [Troubleshooting](#troubleshooting)
     - [Issue with incompatible versions of ete4 and UniProt NCBI Taxonomy databases](#issue-with-incompatible-versions-of-ete4-and-uniprot-ncbi-taxonomy-databases)
@@ -54,6 +55,7 @@ EsMeCaTa is developed in Python, it is tested with Python 3.11. It needs the fol
 - [pandas](https://pypi.org/project/pandas/): To read the input files.
 - [requests](https://pypi.org/project/requests/): For the REST queries on Uniprot.
 - [ete4](https://github.com/etetoolkit/ete): To analyse the taxonomic affiliation and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.
+- [scipy](https://github.com/scipy/scipy): to compute openess with a Heap's Law.
 - [SPARQLwrapper](https://pypi.org/project/SPARQLWrapper/): Optionally, you can use SPARQL queries instead of REST queries. This can be done either with the [Uniprot SPARQL Endpoint](https://sparql.uniprot.org/) (with the option `--sparql uniprot`) or with a Uniprot SPARQL Endpoint that you created locally (it is supposed to work but not tested, only SPARQL queries on the Uniprot SPARQL endpoint have been tested). **Warning**: using SPARQL queries will lead to minor differences in functional annotations and metabolic reactions due to how the results are retrieved with REST query or SPARQL query.
 
 Also esmecata requires MMseqs2 for protein clustering with `esmecata workflow` or `esmecata clustering`:
@@ -113,11 +115,11 @@ To use eggNOG-mapper, you have to setup it and install [its database](https://gi
 - [arakawa](https://github.com/ninoseki/arakawa): fork of [datapane](https://github.com/datapane/datapane) to create the HTML report.
 - [plotly](https://github.com/plotly/plotly.py): to create most of the figures.
 - [ontosunburst](https://github.com/AuReMe/Ontology_sunburst): to create sunburst figures of Enzyme Commission numbers.
-- [kaleido](https://github.com/plotly/Kaleido): required to create the figure.
+- [kaleido](https://github.com/plotly/Kaleido): required to render the figure with plotly. Kaleido requires to install a compatible Chrome version with: `kaleido_get_chrome`
 
 This can be installed with pip:
 
-```pip install arakawa==0.0.15 plotly kaleido ontosunburst```
+```pip install arakawa plotly kaleido ontosunburst```
 
 `esmecata_gseapy` requires:
 - [pronto](https://github.com/althonos/pronto): to get Gene Ontology names.
@@ -204,21 +206,21 @@ For each observation name in the input file, it will returned the associated ann
 It will also output the protein sequences for each taxa associated with the observation name.
 
 ```
-usage: esmecata precomputed [-h] -i INPUT_FILE -d INPUT_FILE -o OUPUT_DIR [-r RANK_LIMIT] [--update-affiliations] [-t THRESHOLD_CLUSTERING]
+usage: esmecata precomputed [-h] -i INPUT_FILE -d INPUT_FILE [INPUT_FILE ...] -o OUPUT_DIR [-r RANK_LIMIT] [--update-affiliations] [-t THRESHOLD_CLUSTERING]
 
 options:
   -h, --help            show this help message and exit
   -i INPUT_FILE, --input INPUT_FILE
                         Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic affiliation (separated by ;).
-  -d INPUT_FILE, --database INPUT_FILE
-                        EsMeCaTa precomputed database file path.
+  -d INPUT_FILE [INPUT_FILE ...], --database INPUT_FILE [INPUT_FILE ...]
+                        EsMeCaTa precomputed database file path. Multiple precomputed databases can be given, separated by a " ", for example -d "esmecata_db1.zip esmecata_db2.zip".
   -o OUPUT_DIR, --output OUPUT_DIR
                         Output directory path.
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
                         This option limits the rank used when searching for proteomes. All the ranks superior to the given rank will be ignored. For example, if 'family' is given, only taxon ranks inferior or equal to family will be kept. Look at the readme for more
                         information (and a list of rank names).
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to update the taxonomic affiliations using the lowest taxon name.
   -t THRESHOLD_CLUSTERING, --threshold THRESHOLD_CLUSTERING
                         Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly. Default is 0.5.
 ```
@@ -230,6 +232,15 @@ Example of use:
 ```
 esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database.zip -o output_folder
 ```
+
+It is also possible to give multiple precomputed databases, by separating them with a space:
+
+```
+esmecata precomputed -i input_taxonomic_affiliations.tsv -d "esmecata_database_1.zip esmecata_database_2.zip" -o output_folder
+```
+
+The order is important, because esmecata will use the first database and then the following one. Especially, it will not use the next database to search for taxa found in the previous ones.
+For example, esmecata begins its search in `esmecata_database_1.zip` and find taxon `Escherichia`, all organisms associated with this taxon will not be searched again when using `esmecata_database_2.zip`.
 
 ### Classical run of EsMeCaTa
 
@@ -723,6 +734,7 @@ output_folder
 ├── esmecata_clustering.log
 ├── esmecata_metadata_clustering.json
 ├── stat_number_clustering.tsv
+├── stat_openess_proteomes.tsv
 ├── taxonomy_diff.tsv
 ````
 
@@ -745,6 +757,17 @@ The file `esmecata_clustering.log` contains the log associated with the command.
 `esmecata_metadata_clustering.json` is a log about the the metadata associated with the command used with esmecata and the dependencies.
 
 `stat_number_clustering.tsv` is a tabulated file containing the number of shared proteins found for each observation name.
+
+`stat_openess_proteomes.tsv` is a tabulated file containing the openess of panproteomes for each observation name. The openess is shown with the alpha values from [Tettelin et al. (2008)](https://doi.org/10.1016/j.mib.2008.09.006). It is computed with:
+
+```math
+nb gene families = k * nb proteomes^{-alpha}
+```
+
+Where `nb gene families` is the number of newly discovered protein clusters when adding proteomes and `nb proteomes` is the number of proteomes.
+
+If alpha is superior to 1, pangenome is closed: adding more proteomes do not increase number of newly discovered gene families (here protein clusters). The consensus proteome should be a good estimator of the protein contents for the taxon.
+If alpha is inferior to 1, pangenome is open: adding more proteomes increase the number of newly discovered gene families. It is possible that genes specific to the taxon are missed and then the estimation is more uncertain.
 
 `taxonomy_diff.tsv` is a tabulated file indicating the taxon selected by EsMeCaTa compared to the lowest taxon in the taxonomic affiliations.
 
@@ -1048,6 +1071,10 @@ Additional arguments can be given to use gseapy or orsum options such as:
 
 A computational pipeline has been developed to ease the interpretation of EsMeCaTa predictions when comparing samples or groups. This method relies on Random Forests classifiers to discern groups and outputs variables of importance (either taxa and EsMeCaTa predicted functions). The method has been published in [PLOS Computational Biology](https://doi.org/10.1371/journal.pcbi.1012577) and is available on [GitHub](https://github.com/baptisteruiz/SPARTA).
 
+## Tabigecy and bigecyhmm
+
+EsMeCaTa's consensus proteomes can be used as input to [bigecyhmm](https://github.com/ArnaudBelcour/bigecyhmm) to predict impact of microbial communities on coarse-grained representation of biogeochemical cycles using Hidden-Markov Models. Then with `bigecyhmm_visualisation`, it is possible to add abundance file to weight funcitons with organisms abundances.
+
 ## EsMeCaTa create_db
 
 Create precomputed database from esmecata output folders or merge already present precomputed databases.
@@ -1102,7 +1129,7 @@ Arnaud Belcour, Pauline Hamon-Giraud, Alice Mataigne, Baptiste Ruiz, Yann Le Cun
 
 If you have used EsMeCaTa precomputed database, please cite:
 
-Arnaud Belcour, Loris Megy, Sylvain Stephant, Caroline Michel, Sétareh Rad, Petra Bombach, Nicole Dopffel, Hidde de Jong and Delphine Ropers. Predicting coarse-grained representations of biogeochemical cycles from metabarcoding data bioRxiv 2025.01.30.635649; doi: https://doi.org/10.1101/2025.01.30.635649
+Arnaud Belcour, Loris Megy, Sylvain Stephant, Caroline Michel, Sétareh Rad, Petra Bombach, Nicole Dopffel, Hidde de Jong and Delphine Ropers. Predicting coarse-grained representations of biogeochemical cycles from metabarcoding data *Bioinformatics*, Volume 41, Issue Supplement_1, July 2025, Pages i49–i57, https://doi.org/10.1093/bioinformatics/btaf230
 
 ## License
 

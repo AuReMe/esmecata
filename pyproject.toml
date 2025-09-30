@@ -18,7 +18,9 @@ dependencies = [
   'pandas',
   'requests',
   'seaborn',
-  'SPARQLWrapper'
+  'SPARQLWrapper',
+  'numpy',
+  'scipy'
 ]
 
 [project.scripts]

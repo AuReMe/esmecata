@@ -258,14 +258,6 @@ def main():
         dest='eggnog_database',
         help='Path to eggnog database.',
         required=True)
-    parent_parser_nb_digit = argparse.ArgumentParser(add_help=False)
-    parent_parser_nb_digit.add_argument(
-        '--nb-digit',
-        dest='nb_digit',
-        required=False,
-        type=limited_integer_type,
-        help='Number of the digit to keep on the clustermap (1, 2, 3 or 4). Defualt 3.',
-        default=3)
     parent_parser_taxon_rank = argparse.ArgumentParser(add_help=False)
     parent_parser_taxon_rank.add_argument(
         '--taxon-rank',
@@ -287,7 +279,8 @@ def main():
         '--database',
         dest='database',
         required=True,
-        help='EsMeCaTa precomputed database file path.',
+        nargs="+",
+        help='EsMeCaTa precomputed database file path. Multiple precomputed databases can be given, separated by a " ", for example -d "esmecata_db1.zip esmecata_db2.zip".',
         metavar='INPUT_FILE')
 
     parent_parser_no_dbmem = argparse.ArgumentParser(add_help=False)
@@ -461,7 +454,8 @@ def main():
                                 args.linclust, args.minimal_number_proteomes, args.update_affiliations,
                                 args.option_bioservices, args.eggnog_tmp_dir, args.no_dbmem)
     elif args.cmd == 'precomputed':
-        precomputed_parse_affiliation(args.input, args.database, args.output, args.rank_limit, args.update_affiliations,
+        precomputed_db = ' '.join(args.database)
+        precomputed_parse_affiliation(args.input, precomputed_db, args.output, args.rank_limit, args.update_affiliations,
                                       args.threshold_clustering)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))

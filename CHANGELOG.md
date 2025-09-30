@@ -1,5 +1,24 @@
 # Changelog
 
+# EsMeCaTa v0.6.6 (2025-09-30)
+
+New requirements `scipy` and `numpy` for proteome openess computation.
+SPARQL requests are broken, need to figure out the reason.
+
+## Add
+
+* The possibility to give multiple precomputed databases to `esmecata precomputed`.
+* `create_input_precomputation_rest.py` script to get input from EsMeCaTa using REST queries.
+* Computation of proteomes openess with Heap's law. This required `scipy` package.
+* More statistics on sequence-function associations after annotation step.
+* Creation of pathologic files when using `esmecata precomputed`.
+* Link to SPARTA pipeline in readme.
+
+## Modify
+
+* Update readme and changelog.
+* Remove test on SPARQL queries as they failed constantly.
+
 # EsMeCaTa v0.6.5 (2025-03-31)
 
 ## Fix

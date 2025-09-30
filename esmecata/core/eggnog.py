@@ -25,6 +25,7 @@ import time
 import shutil
 import subprocess
 import sys
+import statistics
 
 from esmecata.utils import is_valid_dir, get_domain_or_superkingdom_from_ncbi_tax_database
 from esmecata import __version__ as esmecata_version
@@ -105,28 +106,62 @@ def compute_stat_annotation(annotation_reference_folder, stat_file=None):
         annotation_numbers (dict): dict containing observation names (as key) associated with GO Terms and EC (as value)
     """
     annotation_numbers = {}
+    annotated_sequenced_numbers = {}
+    not_annotated_sequenced_numbers = {}
+    taxon_nb_annotation_per_sequences = {}
+    sequence_function_associations = {}
+    sequence_go_associations = {}
+    sequence_ec_associations = {}
     for infile in os.listdir(annotation_reference_folder):
         if '.tsv' in infile:
+            observation_name = infile.replace('.tsv','')
             annotation_input_file_path = os.path.join(annotation_reference_folder, infile)
             infile_gos = []
             infile_ecs = []
+            annotated_sequences = []
+            not_annotated_sequences = []
+            nb_annotation_per_sequences = []
+            nb_gos_per_sequence = []
+            nb_ecs_per_sequence = []
+            sequence_function_association = 0
             with open(annotation_input_file_path, 'r') as open_annotation_input_file_path:
                 csvreader = csv.DictReader(open_annotation_input_file_path, delimiter='\t')
                 for line in csvreader:
-                    gos = line['GO'].split(',')
-                    ecs = line['EC'].split(',')
+                    protein_cluster = line['protein_cluster']
+                    gos = [go for go in line['GO'].split(',') if go != '']
+                    ecs = [ec for ec in line['EC'].split(',') if ec != '']
                     infile_gos.extend(gos)
                     infile_ecs.extend(ecs)
-            infile_gos = set([go for go in infile_gos if go != ''])
-            infile_ecs = set([ec for ec in infile_ecs if ec != ''])
-            annotation_numbers[infile.replace('.tsv','')] = (len(infile_gos), len(infile_ecs))
+                    if len(gos) == 0 and len(ecs) == 0:
+                        not_annotated_sequences.append(protein_cluster)
+                    else:
+                        annotated_sequences.append(protein_cluster)
+                    nb_annotation_per_sequence = len(gos+ecs)
+                    nb_annotation_per_sequences.append(nb_annotation_per_sequence)
+                    nb_gos_per_sequence.append(len(gos))
+                    nb_ecs_per_sequence.append(len(ecs))
+                    sequence_function_association += len(gos+ecs)
+            infile_gos = set([go for go in infile_gos])
+            infile_ecs = set([ec for ec in infile_ecs])
+            annotation_numbers[observation_name] = (len(infile_gos), len(infile_ecs))
+            annotated_sequenced_numbers[observation_name] = len(annotated_sequences)
+            not_annotated_sequenced_numbers[observation_name] = len(not_annotated_sequences)
+            taxon_nb_annotation_per_sequences[observation_name] = statistics.fmean(nb_annotation_per_sequences)
+            sequence_function_associations[observation_name] = sequence_function_association
+            sequence_go_associations[observation_name] = statistics.fmean(nb_gos_per_sequence)
+            sequence_ec_associations[observation_name] = statistics.fmean(nb_ecs_per_sequence)
 
     if stat_file:
         with open(stat_file, 'w') as stat_file_open:
             csvwriter = csv.writer(stat_file_open, delimiter='\t')
-            csvwriter.writerow(['observation_name', 'Number_go_terms', 'Number_ecs'])
+            csvwriter.writerow(['observation_name', 'Number_go_terms', 'Number_ecs', 'Number_sequence_function_association',
+                                'Number_annotated_sequences', 'Number_not_annotated_sequences', 'Mean_annotations_per_sequence',
+                                'Mean_GOs_per_sequence', 'Mean_ECs_per_sequence'])
             for observation_name in annotation_numbers:
-                csvwriter.writerow([observation_name, annotation_numbers[observation_name][0], annotation_numbers[observation_name][1]])
+                csvwriter.writerow([observation_name, annotation_numbers[observation_name][0], annotation_numbers[observation_name][1],
+                                    sequence_function_associations[observation_name], annotated_sequenced_numbers[observation_name],
+                                    not_annotated_sequenced_numbers[observation_name], taxon_nb_annotation_per_sequences[observation_name],
+                                    sequence_go_associations[observation_name], sequence_ec_associations[observation_name]])
 
     return annotation_numbers
 
@@ -203,7 +238,7 @@ def write_pathologic(base_filename, annotated_proteins, pathologic_output_file, 
 
     Args:
         base_filename (str): observation name
-        annotated_proteins (dict): dict of protein and their annotations as {protein:{EC:'..,..', GOs:'..,..,'}}
+        annotated_proteins (list): list of protein and their annotations as [(protein, {EC:'..,..', GOs:'..,..,'}), (...)]
         reference_proteins (dict): dict containing representative protein IDs (as key) associated with proteins of the cluster
         pathologic_output_file (str): pathname to output pathologic file
     """
