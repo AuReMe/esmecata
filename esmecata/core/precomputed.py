@@ -424,8 +424,10 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
                                                         pathologic_folder)
 
         database_name = os.path.splitext(os.path.basename(database_taxon_file_path))[0]
-        for observation_name in observation_name_not_founds:
-            predictions_from_which_database[observation_name] = database_name
+        for observation_name in association_taxon_database:
+            tax_id = association_taxon_database[observation_name][1]
+            if tax_id != 'not_found':
+                predictions_from_which_database[observation_name] = database_name
 
         esmecata_metadata['precomputed_database']['esmecata_query_system'] = proteomes_data_json['esmecata_query_system']
         esmecata_metadata['precomputed_database']['uniprot_release'] = proteomes_data_json['uniprot_release']
