@@ -35,33 +35,37 @@ def test_workflow_online():
 
 
 def test_create_database_from_workflow_online():
+    buchnera_workflow_file = os.path.join('test_data', 'buchnera_workflow.tsv')
     esmecata_result_folder = 'test_output'
     esmecata_database_output_folder = 'output_database'
-    buchnera_workflow_file = os.path.join('test_data', 'buchnera_workflow.tsv')
+    output_folder = 'output_folder'
+    report_output_folder = 'output_report_folder'
 
     create_database_from_esmecata_workflow_run(esmecata_result_folder, esmecata_database_output_folder, '0.1.0')
 
     esmecata_database = os.path.join(esmecata_database_output_folder, 'esmecata_database.zip')
-    output_folder = 'output_folder'
     precomputed_parse_affiliation(buchnera_workflow_file, esmecata_database, output_folder)
 
-    report_output_folder = 'output_report_folder'
     run_create_workflow_report(buchnera_workflow_file, output_folder, report_output_folder)
 
     html_report_file = os.path.join(report_output_folder, 'esmecata_summary.html')
     # Check creation of HTML report file.
     assert os.path.exists(html_report_file)
 
+    shutil.rmtree(output_folder)
+    shutil.rmtree(report_output_folder)
+    shutil.rmtree(esmecata_database_output_folder)
+
 
 def test_create_database_from_workflow_cli_online():
+    buchnera_workflow_file = os.path.join('test_data', 'buchnera_workflow.tsv')
     esmecata_result_folder = 'test_output'
     esmecata_database_output_folder = 'output_database'
-    buchnera_workflow_file = os.path.join('test_data', 'buchnera_workflow.tsv')
+    output_folder = 'output_folder'
 
     subprocess.call(['esmecata_create_db', 'from_workflow', '-i', esmecata_result_folder, '-o', esmecata_database_output_folder, '--db-version', '0.1.0'])
 
     esmecata_database = os.path.join(esmecata_database_output_folder, 'esmecata_database.zip')
-    output_folder = 'output_folder'
     precomputed_parse_affiliation(buchnera_workflow_file, esmecata_database, output_folder)
 
     report_output_folder = 'output_report_folder'
@@ -71,7 +75,10 @@ def test_create_database_from_workflow_cli_online():
     # Check creation of HTML report file.
     assert os.path.exists(html_report_file)
 
-    shutil.rmtree('test_output')
+    shutil.rmtree(output_folder)
+    shutil.rmtree(report_output_folder)
+    shutil.rmtree(esmecata_database_output_folder)
+    shutil.rmtree(esmecata_result_folder)
 
 
 if __name__ == "__main__":
