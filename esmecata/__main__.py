@@ -280,7 +280,7 @@ def main():
         dest='database',
         required=True,
         nargs="+",
-        help='EsMeCaTa precomputed database file path. Multiple precomputed databases can be given, separated by a ",".',
+        help='EsMeCaTa precomputed database file path. Multiple precomputed databases can be given, separated by a " ", for example -d "esmecata_db1.zip esmecata_db2.zip".',
         metavar='INPUT_FILE')
 
     parent_parser_no_dbmem = argparse.ArgumentParser(add_help=False)

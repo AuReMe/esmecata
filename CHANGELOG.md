@@ -3,6 +3,7 @@
 # EsMeCaTa v0.6.6 (2025-09-30)
 
 New requirements `scipy` and `numpy` for proteome openess computation.
+SPARQL requests are broken, need to figure out the reason.
 
 ## Add
 
@@ -16,6 +17,7 @@ New requirements `scipy` and `numpy` for proteome openess computation.
 ## Modify
 
 * Update readme and changelog.
+* Remove test on SPARQL queries as they failed constantly.
 
 # EsMeCaTa v0.6.5 (2025-03-31)
 

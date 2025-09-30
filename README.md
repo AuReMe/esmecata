@@ -206,14 +206,14 @@ For each observation name in the input file, it will returned the associated ann
 It will also output the protein sequences for each taxa associated with the observation name.
 
 ```
-usage: esmecata precomputed [-h] -i INPUT_FILE -d INPUT_FILE -o OUPUT_DIR [-r RANK_LIMIT] [--update-affiliations] [-t THRESHOLD_CLUSTERING]
+usage: esmecata precomputed [-h] -i INPUT_FILE -d INPUT_FILE [INPUT_FILE ...] -o OUPUT_DIR [-r RANK_LIMIT] [--update-affiliations] [-t THRESHOLD_CLUSTERING]
 
 options:
   -h, --help            show this help message and exit
   -i INPUT_FILE, --input INPUT_FILE
                         Input taxon file (excel, tsv or csv) containing a column associating ID to a taxonomic affiliation (separated by ;).
-  -d INPUT_FILE, --database INPUT_FILE
-                        EsMeCaTa precomputed database file path. Multiple precomputed databases can be given, separated by a ",".
+  -d INPUT_FILE [INPUT_FILE ...], --database INPUT_FILE [INPUT_FILE ...]
+                        EsMeCaTa precomputed database file path. Multiple precomputed databases can be given, separated by a " ", for example -d "esmecata_db1.zip esmecata_db2.zip".
   -o OUPUT_DIR, --output OUPUT_DIR
                         Output directory path.
   -r RANK_LIMIT, --rank-limit RANK_LIMIT
@@ -236,7 +236,7 @@ esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database.zi
 It is also possible to give multiple precomputed databases, by separating them with a space:
 
 ```
-esmecata precomputed -i input_taxonomic_affiliations.tsv -d esmecata_database_1.zip esmecata_database_2.zip -o output_folder
+esmecata precomputed -i input_taxonomic_affiliations.tsv -d "esmecata_database_1.zip esmecata_database_2.zip" -o output_folder
 ```
 
 The order is important, because esmecata will use the first database and then the following one. Especially, it will not use the next database to search for taxa found in the previous ones.
