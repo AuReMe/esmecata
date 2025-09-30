@@ -2,6 +2,7 @@ import csv
 import os
 import shutil
 import subprocess
+import hashlib
 
 from esmecata.core.precomputed import precomputed_parse_affiliation
 
@@ -15,10 +16,17 @@ EXPECTED_RESULTS_TWO_DB = {
     'Cluster_2': {'proteomes': 5, 'protein_clusters': 708, 'GOs': 1439, 'ECs': 296}
 }
 
+EXPECTED_MD5_BUCHNERA = "501f1308d5954f796155004b1e6bfd44"
+EXPECTED_MD5_SECOND = "0a6331f5ea548b1ba6853cfb4c760602"
+
 def test_precomputed_parse_affiliation_offline():
     output_folder = 'output_folder'
     input_file = os.path.join('test_data', 'buchnera_workflow.tsv')
     esmecata_precomputed_db = os.path.join('test_data', 'buchnera_database.zip')
+    # Check md5 database.
+    md5_database = hashlib.md5(open(esmecata_precomputed_db,'rb').read()).hexdigest()
+    assert md5_database == EXPECTED_MD5_BUCHNERA
+
     precomputed_parse_affiliation(input_file, esmecata_precomputed_db, output_folder)
 
     proteome_tax_id_file = os.path.join(output_folder, '1_clustering', 'proteome_tax_id.tsv')
@@ -57,6 +65,10 @@ def test_precomputed_parse_affiliation_cli_offline():
     output_folder = 'output_folder'
     input_file = os.path.join('test_data', 'buchnera_workflow.tsv')
     esmecata_precomputed_db = os.path.join('test_data', 'buchnera_database.zip')
+    # Check md5 database.
+    md5_database = hashlib.md5(open(esmecata_precomputed_db,'rb').read()).hexdigest()
+    assert md5_database == EXPECTED_MD5_BUCHNERA
+
     subprocess.call(['esmecata', 'precomputed', '-i', input_file, '-d', esmecata_precomputed_db, '-o', output_folder])
 
     proteome_tax_id_file = os.path.join(output_folder, '1_clustering', 'proteome_tax_id.tsv')
@@ -94,7 +106,15 @@ def test_precomputed_parse_affiliation_cli_offline():
 def test_precomputed_parse_affiliation_offline_two_databases():
     output_folder = 'output_folder'
     input_file = os.path.join('test_data', 'two_db_precomputed.tsv')
-    esmecata_precomputed_db = os.path.join('test_data', 'buchnera_database.zip') + ' ' + os.path.join('test_data', 'second_database.zip')
+    esmecata_path_buchnera_database = os.path.join('test_data', 'buchnera_database.zip')
+    esmecata_path_second_database = os.path.join('test_data', 'second_database.zip')
+    esmecata_precomputed_db = esmecata_path_buchnera_database + ' ' + esmecata_path_second_database
+    # Check md5 database.
+    md5_database = hashlib.md5(open(esmecata_path_buchnera_database,'rb').read()).hexdigest()
+    assert md5_database == EXPECTED_MD5_BUCHNERA
+    md5_database = hashlib.md5(open(esmecata_path_second_database,'rb').read()).hexdigest()
+    assert md5_database == EXPECTED_MD5_SECOND
+
     precomputed_parse_affiliation(input_file, esmecata_precomputed_db, output_folder)
 
     proteome_tax_id_file = os.path.join(output_folder, '1_clustering', 'proteome_tax_id.tsv')
@@ -132,7 +152,15 @@ def test_precomputed_parse_affiliation_offline_two_databases():
 def test_precomputed_parse_affiliation_two_databases_cli_offline():
     output_folder = 'output_folder'
     input_file = os.path.join('test_data', 'two_db_precomputed.tsv')
-    esmecata_precomputed_db = os.path.join('test_data', 'buchnera_database.zip') + ' ' + os.path.join('test_data', 'second_database.zip')
+    esmecata_path_buchnera_database = os.path.join('test_data', 'buchnera_database.zip')
+    esmecata_path_second_database = os.path.join('test_data', 'second_database.zip')
+    esmecata_precomputed_db = esmecata_path_buchnera_database + ' ' + esmecata_path_second_database
+    # Check md5 database.
+    md5_database = hashlib.md5(open(esmecata_path_buchnera_database,'rb').read()).hexdigest()
+    assert md5_database == EXPECTED_MD5_BUCHNERA
+    md5_database = hashlib.md5(open(esmecata_path_second_database,'rb').read()).hexdigest()
+    assert md5_database == EXPECTED_MD5_SECOND
+
     subprocess.call(['esmecata', 'precomputed', '-i', input_file, '-d', esmecata_precomputed_db, '-o', output_folder])
 
     proteome_tax_id_file = os.path.join(output_folder, '1_clustering', 'proteome_tax_id.tsv')
