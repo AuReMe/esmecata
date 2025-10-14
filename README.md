@@ -2,7 +2,7 @@
 
 # EsMeCaTa: *Es*timating *Me*tabolic *Ca*pabilties from *Ta*xonomic affiliations
 
-EsMeCaTa is a method to estimate consensus proteomes and metabolic capabilities from taxonomic affiliations (for example with 16S rRNA sequencing or using a specific taxon name) by using UniProt Proteomes database, NCBI Taxonomy database, MMseqs2 and eggNOG-mapper. This can be used to (1) estimate protein sequences and functions for an organism with no sequenced genomes, (2) explore the protein diversity of a taxon and (3) identify metabolic functions in the taxa. It is also used to search for key enzymes of biogeochemical cycles, for more information look at [tabigecy GitHub page](https://github.com/ArnaudBelcour/tabigecy).
+EsMeCaTa is a method to estimate consensus proteomes and metabolic capabilities from taxonomic affiliations (for example with 16S rRNA sequencing or using a specific taxon name) by using UniProt Proteomes database, NCBI Taxonomy database, MMseqs2 and eggNOG-mapper. This can be used to (1) estimate protein sequences and functions for an organism with no sequenced genomes, (2) explore the protein diversity of a taxon and (3) identify metabolic functions in the taxa. It is also used to search for key enzymes of biogeochemical cycles, for more information look at [Tabigecy GitHub page](https://github.com/ArnaudBelcour/tabigecy).
 
 ![](pictures/esmecata_10.svg)
 
@@ -53,10 +53,10 @@ EsMeCaTa is developed in Python, it is tested with Python 3.11. It needs the fol
  
 - [biopython](https://pypi.org/project/biopython/): To create fasta files and used by the option `--annotation-files` to index UniProt flat files.
 - [pandas](https://pypi.org/project/pandas/): To read the input files.
-- [requests](https://pypi.org/project/requests/): For the REST queries on Uniprot.
+- [requests](https://pypi.org/project/requests/): For the REST queries on UniProt.
 - [ete4](https://github.com/etetoolkit/ete): To analyse the taxonomic affiliation and extract taxon_id, also used to deal with taxon associated with more than 100 proteomes.
-- [scipy](https://github.com/scipy/scipy): to compute openess with a Heap's Law.
-- [SPARQLwrapper](https://pypi.org/project/SPARQLWrapper/): Optionally, you can use SPARQL queries instead of REST queries. This can be done either with the [Uniprot SPARQL Endpoint](https://sparql.uniprot.org/) (with the option `--sparql uniprot`) or with a Uniprot SPARQL Endpoint that you created locally (it is supposed to work but not tested, only SPARQL queries on the Uniprot SPARQL endpoint have been tested). **Warning**: using SPARQL queries will lead to minor differences in functional annotations and metabolic reactions due to how the results are retrieved with REST query or SPARQL query.
+- [scipy](https://github.com/scipy/scipy): to compute openness with a Heap's Law.
+- [SPARQLwrapper](https://pypi.org/project/SPARQLWrapper/): Optionally, you can use SPARQL queries instead of REST queries. This can be done either with the [UniProt SPARQL Endpoint](https://sparql.uniprot.org/) (with the option `--sparql uniprot`) or with a UniProt SPARQL Endpoint that you created locally (it is supposed to work but not tested, only SPARQL queries on the UniProt SPARQL endpoint have been tested). **Warning**: using SPARQL queries will lead to minor differences in functional annotations and metabolic reactions due to how the results are retrieved with REST query or SPARQL query.
 
 Also esmecata requires MMseqs2 for protein clustering with `esmecata workflow` or `esmecata clustering`:
 
@@ -70,7 +70,7 @@ So it is recommended to use it in a cluster.
 
 If you use the option `--bioservices`, EsMeCaTa will also require this package:
 
-- [bioservices](https://github.com/cokelaer/bioservices): To query Uniprot instead of using the query functions of EsMeCaTa (potentially more robust overtime).
+- [bioservices](https://github.com/cokelaer/bioservices): To query UniProt instead of using the query functions of EsMeCaTa (potentially more robust overtime).
 
 ## Installation
 
@@ -198,7 +198,7 @@ Steps proteomes and annotation by UniProt requires an internet connection (for R
 ### Use the precomputed database
 
 The precomputed database of EsMeCaTa is available at this [Zenodo repository](https://doi.org/10.5281/zenodo.13354073). Warning, this precomputed database size is 4 Gb.
-Several precomputed databases (of smaller size) associated with the article datasets are available in the [Zenodo archive of EsMeCaTa's article](https://zenodo.org/records/14502342). And there is also a little precomputed dbatase available for test purpose (on one organism `buchnera_database.zip`) in the test folder ([test_data folder](https://github.com/AuReMe/esmecata/tree/main/test/test_data)).
+Several precomputed databases (of smaller size) associated with the article datasets are available in the [Zenodo archive of EsMeCaTa's article](https://zenodo.org/records/14502342). And there is also a little precomputed dabatase available for test purpose (on one organism `buchnera_database.zip`) in the test folder ([test_data folder](https://github.com/AuReMe/esmecata/tree/main/test/test_data)).
 
 Using the precomputed database, esmecata searches for input taxon inside the precomputed database to make prediction.
 It requires an input file containing the taxonomic affiliations and a precomputed esmecata database.
@@ -289,7 +289,7 @@ options:
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 5.
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to udpate the taxonomic affiliations using the lowest taxon name.
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to update the taxonomic affiliations using the lowest taxon name.
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ```
 
@@ -312,13 +312,13 @@ There is 198 proteomes associated with the sub-taxon Clostridiaceae, the percent
 
 * `-s/--sparql`: use SPARQL instead of REST requests
 
-It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a sparql endpoint containing UniProt. If you want to use the [SPARQL endpoint of UniProt](https://sparql.uniprot.org/sparql), you can use the argument: `-s uniprot`.
+It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a SPARQL endpoint containing UniProt. If you want to use the [SPARQL endpoint of UniProt](https://sparql.uniprot.org/sparql), you can use the argument: `-s uniprot`.
 
 * `-b/--busco`: filter proteomes using BUSCO score (default is 0.8)
 
 It is possible to filter proteomes according to to their BUSCO score (from UniProt documentation: `The Benchmarking Universal Single-Copy Ortholog (BUSCO) assessment tool is used, for eukaryotic and bacterial proteomes, to provide quantitative measures of UniProt proteome data completeness in terms of expected gene content.`). It is a percentage between 0 and 1 showing the quality of the proteomes that esmecata will download. By default esmecata uses a BUSCO score of 0.80, it will only download proteomes with a BUSCO score of at least 80%.
 
-* `--ignore-taxadb-update`: ignore need to udpate ete4 taxaDB
+* `--ignore-taxadb-update`: ignore need to update ete4 taxaDB
 
 If you have an old version of the ete4 NCBI taxonomy database, you can use this option to use esmecata with it.
 
@@ -426,8 +426,7 @@ optional arguments:
   --minimal-nb-proteomes MINIMAL_NUMBER_PROTEOMES
                         Choose the minimal number of proteomes to be selected by EsMeCaTa. If a taxon has less proteomes, it will be ignored and a higher taxonomic rank will be used. Default is 1.
   --update-affiliations
-                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to udpate the taxonomic affiliations using the lowest taxon
-                        name.
+                        If the taxonomic affiliations were assigned from an outdated taxonomic database, this can lead to taxon not be found in ete4 database. This option tries to update the taxonomic affiliations using the lowest taxon name.
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
@@ -449,7 +448,7 @@ optional arguments:
                         Proportion [0 to 1] of proteomes required to occur in a proteins cluster for that cluster to be kept in core proteome assembly.
   -m MMSEQS_OPTIONS, --mmseqs MMSEQS_OPTIONS
                         String containing mmseqs options for cluster command (except --threads which is already set by --cpu command and -v). If nothing is given, esmecata will used the option "--min-seq-id 0.3 -c 0.8"
-  --linclust            Use mmseqs linclust (clustering in lienar time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.
+  --linclust            Use mmseqs linclust (clustering in linear time) to cluster proteins sequences. It is faster than mmseqs cluster (default behaviour) but less sensitive.
   --remove-tmp          Delete tmp files to limit the disk space used: files created by mmseqs (in mmseqs_tmp).
 ````
 
@@ -534,8 +533,8 @@ options:
   --bioservices         Use bioservices instead of esmecata functions for protein annotation.
 ````
 
-For each of the protein clusters kept after the clustering, esmecata will look for the annotation (GO terms, EC number, function, gene name, Interpro) in UniProt.
-By default, esmecata will look at the annotations of each proteins from a cluster and keeps only annotation occurring in all the protein of a cluster (threshold 1 of option -p).
+For each of the protein clusters kept after the clustering, esmecata will look for the annotation (GO terms, EC number, function, gene name, InterPro) in UniProt.
+By default, EsMeCaTa will look at the annotations of each proteins from a cluster and keeps only annotation occurring in all the protein of a cluster (threshold 1 of option -p).
 It is like selecting the intersection of the annotation of the cluster. This can be changed with the option `-p` and giving a float between 0 and 1.
 
 Then esmecata will create a tabulated file for each row of the input file and also a folder containing PathoLogic file that can be used as input for Pathway Tools.
@@ -544,7 +543,7 @@ Then esmecata will create a tabulated file for each row of the input file and al
 
 * `-s/--sparql`: use SPARQL instead of REST requests
 
-It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a sparql endpoint containing UniProt. If you want to use the [SPARQL endpoint](https://sparql.uniprot.org/sparql), you can just use: `-s uniprot`.
+It is possible to avoid using REST queries for esmecata and instead use SPARQL queries. This option need a link to a SPARQL endpoint containing UniProt. If you want to use the [SPARQL endpoint](https://sparql.uniprot.org/sparql), you can just use: `-s uniprot`.
 
 * `-p/--propagate`: propagation of annotation
 
@@ -734,7 +733,7 @@ output_folder
 ├── esmecata_clustering.log
 ├── esmecata_metadata_clustering.json
 ├── stat_number_clustering.tsv
-├── stat_openess_proteomes.tsv
+├── stat_openness_proteomes.tsv
 ├── taxonomy_diff.tsv
 ````
 
@@ -758,7 +757,7 @@ The file `esmecata_clustering.log` contains the log associated with the command.
 
 `stat_number_clustering.tsv` is a tabulated file containing the number of shared proteins found for each observation name.
 
-`stat_openess_proteomes.tsv` is a tabulated file containing the openess of panproteomes for each observation name. The openess is shown with the alpha values from [Tettelin et al. (2008)](https://doi.org/10.1016/j.mib.2008.09.006). It is computed with:
+`stat_openness_proteomes.tsv` is a tabulated file containing the openness of panproteomes for each observation name. The openness is shown with the alpha values from [Tettelin et al. (2008)](https://doi.org/10.1016/j.mib.2008.09.006). It is computed with:
 
 ```math
 nb gene families = k * nb proteomes^{-alpha}
@@ -809,7 +808,7 @@ The file `function_table.tsv` contains the EC numbers and GO Terms present in ea
 
 The file `esmecata_annotation.log` contains the log associated with the command.
 
-The `esmecata_metadata_annotation.json` serves the same purpose as the one used in `esmecata proteomes` to retrieve metadata about Uniprot release at the time of the query. It also gets the metadata associated with the command used with esmecata and the dependencies.
+The `esmecata_metadata_annotation.json` serves the same purpose as the one used in `esmecata proteomes` to retrieve metadata about UniProt release at the time of the query. It also gets the metadata associated with the command used with esmecata and the dependencies.
 
 `stat_number_annotation.tsv` is a tabulated file containing the number of GO Terms and EC numbers found for each observation name.
 
@@ -1080,7 +1079,7 @@ EsMeCaTa's consensus proteomes can be used as input to [bigecyhmm](https://githu
 Create precomputed database from esmecata output folders or merge already present precomputed databases.
 This command is mainly for the developers of esmecata to automatise the creation of the precomputed database.
 But if you want to create a precomputed database of your esmecata run for reproducibility it is also possible.
-For exmaple, it was used to create the precomputed databases for the dataset of the article of EsMeCaTa.
+For example, it was used to create the precomputed databases for the dataset of the article of EsMeCaTa.
 
 ```
 usage: esmecata_create_db [-h] [--version] {from_workflow,merge_db} ...

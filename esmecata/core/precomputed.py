@@ -35,7 +35,7 @@ from Bio import __version__ as biopython_version
 from esmecata.utils import is_valid_dir, get_domain_or_superkingdom_from_ncbi_tax_database
 from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file
 from esmecata.core.eggnog import compute_stat_annotation, write_pathologic
-from esmecata.core.clustering import get_proteomes_tax_id_name, compute_openess_pan_proteomes
+from esmecata.core.clustering import get_proteomes_tax_id_name, compute_openness_pan_proteomes
 from esmecata.core.annotation import create_dataset_annotation_file
 
 from esmecata import __version__ as esmecata_version
@@ -565,9 +565,9 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             cluster_0_95 = len(clustering_numbers[observation_name][2])
             csvwriter.writerow([observation_name, cluster_0, selected_threshold_cluster, cluster_0_95])
 
-    # Compute openess of proteomes.
-    proteome_openess_file = os.path.join(clustering_output_folder, 'stat_openess_proteomes.tsv')
-    compute_openess_pan_proteomes(computed_threshold_folder, proteome_openess_file, clustering_threhsold=0.5, iteration_nb=100)
+    # Compute openness of proteomes.
+    proteome_openness_file = os.path.join(clustering_output_folder, 'stat_openness_proteomes.tsv')
+    compute_openness_pan_proteomes(computed_threshold_folder, proteome_openness_file, clustering_threhsold=0.5, iteration_nb=100)
 
     annotation_stat_file = os.path.join(annotation_output_folder, 'stat_number_annotation.tsv')
     compute_stat_annotation(annotation_reference_output_folder, annotation_stat_file)

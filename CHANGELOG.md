@@ -1,5 +1,15 @@
 # Changelog
 
+# EsMeCaTa v0.6.7 (2025-10-14)
+
+## Add
+
+* Assert in test for `test_compute_openness_pan_proteomes`.
+
+## Fix
+
+* Fix typos in readme, script and test.
+
 # EsMeCaTa v0.6.6 (2025-09-30)
 
 New requirements `scipy` and `numpy` for proteome openess computation.

@@ -2,8 +2,10 @@ import csv
 import os
 import shutil
 import subprocess
+import pandas as pd
+import random
 
-from esmecata.core.clustering import make_clustering, filter_protein_cluster, compute_proteome_representativeness_ratio, heap_law_curve_fitting, compute_openess_pan_proteomes
+from esmecata.core.clustering import make_clustering, filter_protein_cluster, compute_proteome_representativeness_ratio, heap_law_curve_fitting, compute_openness_pan_proteomes
 
 RESULTS = {
     'Cluster_1': {'Number_protein_clusters_kept': 603}
@@ -88,8 +90,6 @@ def test_clustering_cli_offline():
 
 def test_heap_law_curve_fitting():
     # Test on pangenome from https://doi.org/10.1371/journal.pgen.0030231 by using Table S1
-    import pandas as pd
-    import random
     iteration_nb = 10000
     input_file = os.path.join('test_data', 'pangenome', 'Prochlorococcus_pangenome.tsv')
 
@@ -123,10 +123,13 @@ def test_heap_law_curve_fitting():
     assert alpha < 0.9
     assert alpha > 0.79
 
-def test_compute_openess_pan_proteomes():
+def test_compute_openness_pan_proteomes():
     esmecata_computed_threshold_folder = os.path.join('test_data', 'computed_threshold')
-    output_openess_file = 'output_openess.tsv'
-    compute_openess_pan_proteomes(esmecata_computed_threshold_folder, output_openess_file)
+    output_openess_file = 'output_openness.tsv'
+    compute_openness_pan_proteomes(esmecata_computed_threshold_folder, output_openess_file)
+    df = pd.read_csv(output_openess_file, sep='\t')
+    predicted_alpha = df['constant_alpha'][0]
+    assert 4.1 < predicted_alpha  < 4.6
     os.remove(output_openess_file)
 
 if __name__ == "__main__":
@@ -134,3 +137,4 @@ if __name__ == "__main__":
     test_filter_protein_cluster_offline()
     test_make_clustering_offline()
     test_clustering_cli_offline()
+    test_compute_openness_pan_proteomes()
