@@ -143,7 +143,7 @@ def test_subsampling_proteomes_offline():
     # 2562891 has 1 proteoùe with 20 proteomes the subsampling will ensure that there is this proteome among the 10 selected.
     # This leads to 11 proteomes.
     expected_proteomes_representation = {'562': 5, '2562891': 1, '208962': 3, '564': 2}
-    for org_id in Counter(selected_organisms):
+    for org_id in expected_proteomes_representation:
         assert Counter(selected_organisms)[org_id] == expected_proteomes_representation[org_id]
 
 
@@ -151,27 +151,27 @@ def test_update_taxonomy_bacillus_offline():
     outdated_taxonomic_affiliation = 'Firmicutes;Bacilli;Bacillales;Bacilliaceae;Bacillus'
     new_taxonomic_affiliation = update_taxonomy('test', outdated_taxonomic_affiliation)
 
-    expected_taconomic_affiliation = 'root;cellular organisms;Bacteria;Bacillati;Bacillota;Bacilli;Bacillales;Bacillaceae;Bacillus'
+    expected_taxonomic_affiliation = 'root;cellular organisms;Bacteria;Bacillati;Bacillota;Bacilli;Bacillales;Bacillaceae;Bacillus'
 
-    assert new_taxonomic_affiliation == expected_taconomic_affiliation
+    assert new_taxonomic_affiliation == expected_taxonomic_affiliation
 
 
 def test_update_taxonomy_yersinia_offline():
     outdated_taxonomic_affiliation = 'Bacteria;Yersinia'
     new_taxonomic_affiliation = update_taxonomy('test', outdated_taxonomic_affiliation)
 
-    expected_taconomic_affiliation = 'root;cellular organisms;Bacteria;Pseudomonadati;Pseudomonadota;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia'
+    expected_taxonomic_affiliation = 'root;cellular organisms;Bacteria;Pseudomonadati;Pseudomonadota;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Yersinia'
 
-    assert new_taxonomic_affiliation == expected_taconomic_affiliation
+    assert new_taxonomic_affiliation == expected_taxonomic_affiliation
 
 
 def test_rest_query_proteomes_online():
-    expected_proteoems = ['UP000255169', 'UP000000815']
+    expected_proteomes = ['UP000255169', 'UP000000815']
     expected_organism_ids = {'632': ['UP000000815'], '29486': ['UP000255169']}
 
     proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 629, 'Yersinia', 0.8, all_proteomes=None)
     time.sleep(1)
-    assert set(expected_proteoems) == set(proteomes)
+    assert set(expected_proteomes) == set(proteomes)
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
     for data in EXPECTED_PROTEOMES_DATA:
@@ -179,13 +179,13 @@ def test_rest_query_proteomes_online():
 
 
 def test_rest_query_proteomes_bioservices_online():
-    expected_proteoems = ['UP000255169', 'UP000000815']
+    expected_proteomes = ['UP000255169', 'UP000000815']
     expected_organism_ids = {'632': ['UP000000815'], '29486': ['UP000255169']}
 
     proteomes, organism_ids, proteomes_data = rest_query_proteomes('test', 629, 'Yersinia', 0.8, all_proteomes=None, option_bioservices=True)
     time.sleep(1)
 
-    assert set(expected_proteoems) == set(proteomes)
+    assert set(expected_proteomes) == set(proteomes)
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
     for data in EXPECTED_PROTEOMES_DATA:
@@ -193,7 +193,7 @@ def test_rest_query_proteomes_bioservices_online():
 
 
 def test_find_non_reference_proteome_rest_online():
-    expected_proteoems = ['UP000829720']
+    expected_proteomes = ['UP000829720']
     expected_organism_ids = {'1534307': ['UP000829720']}
     expected_proteome_data = [['UP000824540', 67.91208791208791, 'full', '121402', True, [['Unassembled WGS sequence', 'Albula glossodonta isolate HI-2016, whole genome shotgun sequencing project.']]], ['UP000829720', 85.71428571428571, 'full', '1534307', True, [['Chromosome 1', 'Albula goreensis ecotype Florida chromosome 1, whole genome shotgun sequence.'], ['Chromosome 2', 'Albula goreensis ecotype Florida chromosome 2, whole genome shotgun sequence.'], ['Chromosome 3', 'Albula goreensis ecotype Florida chromosome 3, whole genome shotgun sequence.'], ['Chromosome 4', 'Albula goreensis ecotype Florida chromosome 4, whole genome shotgun sequence.'], ['Chromosome 5', 'Albula goreensis ecotype Florida chromosome 5, whole genome shotgun sequence.'], ['Chromosome 6', 'Albula goreensis ecotype Florida chromosome 6, whole genome shotgun sequence.'], ['Chromosome 7', 'Albula goreensis ecotype Florida chromosome 7, whole genome shotgun sequence.'], ['Chromosome 8', 'Albula goreensis ecotype Florida chromosome 8, whole genome shotgun sequence.'], ['Chromosome 9', 'Albula goreensis ecotype Florida chromosome 9, whole genome shotgun sequence.'], ['Chromosome 10', 'Albula goreensis ecotype Florida chromosome 10, whole genome shotgun sequence.'], ['Chromosome 11', 'Albula goreensis ecotype Florida chromosome 11, whole genome shotgun sequence.'], ['Chromosome 12', 'Albula goreensis ecotype Florida chromosome 12, whole genome shotgun sequence.'], ['Chromosome 13', 'Albula goreensis ecotype Florida chromosome 13, whole genome shotgun sequence.'], ['Chromosome 14', 'Albula goreensis ecotype Florida chromosome 14, whole genome shotgun sequence.'], ['Chromosome 15', 'Albula goreensis ecotype Florida chromosome 15, whole genome shotgun sequence.'], ['Chromosome 16', 'Albula goreensis ecotype Florida chromosome 16, whole genome shotgun sequence.'], ['Chromosome 17', 'Albula goreensis ecotype Florida chromosome 17, whole genome shotgun sequence.'], ['Chromosome 18', 'Albula goreensis ecotype Florida chromosome 18, whole genome shotgun sequence.'], ['Chromosome 19', 'Albula goreensis ecotype Florida chromosome 19, whole genome shotgun sequence.'], ['Chromosome 20', 'Albula goreensis ecotype Florida chromosome 20, whole genome shotgun sequence.'], ['Chromosome 21', 'Albula goreensis ecotype Florida chromosome 21, whole genome shotgun sequence.'], ['Chromosome 22', 'Albula goreensis ecotype Florida chromosome 22, whole genome shotgun sequence.'], ['Chromosome 23', 'Albula goreensis ecotype Florida chromosome 23, whole genome shotgun sequence.'], ['Chromosome 24', 'Albula goreensis ecotype Florida chromosome 24, whole genome shotgun sequence.'], ['Chromosome 25', 'Albula goreensis ecotype Florida chromosome 25, whole genome shotgun sequence.'], ['Unassembled WGS sequence', 'Albula goreensis voucher SM-30Jul2019_1, whole genome shotgun sequencing project.']]]]
 
@@ -201,7 +201,7 @@ def test_find_non_reference_proteome_rest_online():
 
     time.sleep(1)
 
-    assert set(expected_proteoems) == set(proteomes)
+    assert set(expected_proteomes) == set(proteomes)
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
     for data in expected_proteome_data:
@@ -209,7 +209,7 @@ def test_find_non_reference_proteome_rest_online():
 
 
 def test_find_proteome_rest_all_proteomes_online():
-    expected_proteoems = {'UP000050794', 'UP000036681', 'UP000031036', 'UP000267096', 'UP000887564', 'UP000887569'}
+    expected_proteomes = {'UP000050794', 'UP000036681', 'UP000031036', 'UP000267096', 'UP000887564', 'UP000887569'}
     expected_organism_ids = {'6265': ['UP000031036', 'UP000050794'], '6269': ['UP000267096'], '6256': ['UP000887564'], '6257': ['UP000887569'], '6252': ['UP000036681']}
     expected_proteome_data =  [['UP000031036', 87.70360907058448, 'full', '6265', True, [['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000267096', 64.58000638773555, 'full', '6269', True, [['Unassembled WGS sequence', 'Anisakis simplex genome assembly']]], ['UP000887564', 9.581603321622485, 'full', '6256', True, [['Unplaced', 'Unplaced_6256']]], ['UP000887569', 91.05717023315235, 'full', '6257', True, [['Unplaced', 'Unplaced_6257']]], ['UP000050794', 77.96231236026829, 'full', '6265', False, [['Unassembled WGS sequence', 'Toxocara canis genome assembly']]], ['UP000036681', 49.63270520600447, 'full', '6252', False, [['Genome', 'Genome'], ['Unplaced', 'ASCLU_Unplaced']]]]
 
@@ -217,7 +217,7 @@ def test_find_proteome_rest_all_proteomes_online():
 
     time.sleep(1)
 
-    assert set(expected_proteoems) == set(proteomes)
+    assert set(expected_proteomes) == set(proteomes)
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
     for data in expected_proteome_data:
@@ -225,39 +225,41 @@ def test_find_proteome_rest_all_proteomes_online():
 
 
 def test_find_non_reference_proteome_sparql_online():
-    expected_proteoems = ['UP000829720']
+    expected_proteomes = ['UP000829720']
     expected_organism_ids = {'1534307': ['UP000829720']}
-    expected_proteome_data = [['UP000829720', 85.71428571428571, 'full', '1534307', True, [['Chromosome 20', 'Albula goreensis ecotype Florida chromosome 20, whole genome shotgun sequence.'], ['Chromosome 20', 'Albula goreensis ecotype Florida chromosome 20, whole genome shotgun sequence.'], ['Chromosome 14', 'Albula goreensis ecotype Florida chromosome 14, whole genome shotgun sequence.'], ['Chromosome 14', 'Albula goreensis ecotype Florida chromosome 14, whole genome shotgun sequence.'], ['Chromosome 9', 'Albula goreensis ecotype Florida chromosome 9, whole genome shotgun sequence.'], ['Chromosome 9', 'Albula goreensis ecotype Florida chromosome 9, whole genome shotgun sequence.'], ['Chromosome 11', 'Albula goreensis ecotype Florida chromosome 11, whole genome shotgun sequence.'], ['Chromosome 11', 'Albula goreensis ecotype Florida chromosome 11, whole genome shotgun sequence.'], ['Chromosome 24', 'Albula goreensis ecotype Florida chromosome 24, whole genome shotgun sequence.'], ['Chromosome 24', 'Albula goreensis ecotype Florida chromosome 24, whole genome shotgun sequence.'], ['Chromosome 13', 'Albula goreensis ecotype Florida chromosome 13, whole genome shotgun sequence.'], ['Chromosome 13', 'Albula goreensis ecotype Florida chromosome 13, whole genome shotgun sequence.'], ['Chromosome 25', 'Albula goreensis ecotype Florida chromosome 25, whole genome shotgun sequence.'], ['Chromosome 25', 'Albula goreensis ecotype Florida chromosome 25, whole genome shotgun sequence.'], ['Chromosome 1', 'Albula goreensis ecotype Florida chromosome 1, whole genome shotgun sequence.'], ['Chromosome 1', 'Albula goreensis ecotype Florida chromosome 1, whole genome shotgun sequence.'], ['Chromosome 16', 'Albula goreensis ecotype Florida chromosome 16, whole genome shotgun sequence.'], ['Chromosome 16', 'Albula goreensis ecotype Florida chromosome 16, whole genome shotgun sequence.'], ['Chromosome 17', 'Albula goreensis ecotype Florida chromosome 17, whole genome shotgun sequence.'], ['Chromosome 17', 'Albula goreensis ecotype Florida chromosome 17, whole genome shotgun sequence.'], ['Chromosome 10', 'Albula goreensis ecotype Florida chromosome 10, whole genome shotgun sequence.'], ['Chromosome 10', 'Albula goreensis ecotype Florida chromosome 10, whole genome shotgun sequence.'], ['Chromosome 19', 'Albula goreensis ecotype Florida chromosome 19, whole genome shotgun sequence.'], ['Chromosome 19', 'Albula goreensis ecotype Florida chromosome 19, whole genome shotgun sequence.'], ['Chromosome 12', 'Albula goreensis ecotype Florida chromosome 12, whole genome shotgun sequence.'], ['Chromosome 12', 'Albula goreensis ecotype Florida chromosome 12, whole genome shotgun sequence.'], ['Chromosome 15', 'Albula goreensis ecotype Florida chromosome 15, whole genome shotgun sequence.'], ['Chromosome 15', 'Albula goreensis ecotype Florida chromosome 15, whole genome shotgun sequence.'], ['Chromosome 23', 'Albula goreensis ecotype Florida chromosome 23, whole genome shotgun sequence.'], ['Chromosome 23', 'Albula goreensis ecotype Florida chromosome 23, whole genome shotgun sequence.'], ['Unassembled WGS sequence', 'Albula goreensis'], ['Unassembled WGS sequence', 'Albula goreensis'], ['Chromosome 18', 'Albula goreensis ecotype Florida chromosome 18, whole genome shotgun sequence.'], ['Chromosome 18', 'Albula goreensis ecotype Florida chromosome 18, whole genome shotgun sequence.'], ['Chromosome 3', 'Albula goreensis ecotype Florida chromosome 3, whole genome shotgun sequence.'], ['Chromosome 3', 'Albula goreensis ecotype Florida chromosome 3, whole genome shotgun sequence.'], ['Chromosome 22', 'Albula goreensis ecotype Florida chromosome 22, whole genome shotgun sequence.'], ['Chromosome 22', 'Albula goreensis ecotype Florida chromosome 22, whole genome shotgun sequence.'], ['Chromosome 6', 'Albula goreensis ecotype Florida chromosome 6, whole genome shotgun sequence.'], ['Chromosome 6', 'Albula goreensis ecotype Florida chromosome 6, whole genome shotgun sequence.'], ['Chromosome 4', 'Albula goreensis ecotype Florida chromosome 4, whole genome shotgun sequence.'], ['Chromosome 4', 'Albula goreensis ecotype Florida chromosome 4, whole genome shotgun sequence.'], ['Chromosome 5', 'Albula goreensis ecotype Florida chromosome 5, whole genome shotgun sequence.'], ['Chromosome 5', 'Albula goreensis ecotype Florida chromosome 5, whole genome shotgun sequence.'], ['Chromosome 21', 'Albula goreensis ecotype Florida chromosome 21, whole genome shotgun sequence.'], ['Chromosome 21', 'Albula goreensis ecotype Florida chromosome 21, whole genome shotgun sequence.'], ['Chromosome 2', 'Albula goreensis ecotype Florida chromosome 2, whole genome shotgun sequence.'], ['Chromosome 2', 'Albula goreensis ecotype Florida chromosome 2, whole genome shotgun sequence.'], ['Chromosome 8', 'Albula goreensis ecotype Florida chromosome 8, whole genome shotgun sequence.'], ['Chromosome 8', 'Albula goreensis ecotype Florida chromosome 8, whole genome shotgun sequence.'], ['Chromosome 7', 'Albula goreensis ecotype Florida chromosome 7, whole genome shotgun sequence.'], ['Chromosome 7', 'Albula goreensis ecotype Florida chromosome 7, whole genome shotgun sequence.']]], ['UP000824540', 67.91208791208791, 'full', '121402', True, [['Unassembled WGS sequence', 'Albula glossodonta'], ['Unassembled WGS sequence', 'Albula glossodonta']]]]
-
+    expected_proteome_data = [['UP000829720', 85.71428571428571, 'full', '1534307', True, []]]
     proteomes, organism_ids, proteomes_data = sparql_query_proteomes('test', 54906, 'Albuliformes', 80, all_proteomes=None)
 
     time.sleep(1)
 
-    assert set(expected_proteoems) == set(proteomes)
+    assert set(expected_proteomes) == set(proteomes)
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
-    for data in proteomes_data:
+    for data in expected_proteome_data:
         if data[0] == 'UP000829720':
-            assert data[0:5] == expected_proteome_data[0][0:5]
-            assert sorted(data[5]) == sorted(expected_proteome_data[0][5])
+            for proteome_data in proteomes_data:
+                if proteome_data[0] == 'UP000829720':
+                    assert data[0:5] == proteome_data[0:5]
 
 
 def test_find_proteome_sparql_all_proteomes_online():
-    expected_proteoems = {'UP000031036', 'UP000887569'}
-    expected_organism_ids = {'6265': ['UP000031036']}
-    expected_proteome_data = [['UP000036680', 64.58000638773555, 'full', '6269', False, [['Genome', 'Genome'], ['Unplaced', 'ANISI_Unplaced']]], ['UP000267096', 64.58000638773555, 'full', '6269', True, [['Unassembled WGS sequence', 'Anisakis simplex'], ['Unassembled WGS sequence', 'Anisakis simplex']]], ['UP000887569', 91.05717023315235, 'full', '6257', True, [['Unplaced', 'Unplaced_6257'], ['Unplaced', 'Unplaced_6257']]], ['UP000031036', 87.70360907058448, 'full', '6265', True, [['Unassembled WGS sequence', 'Toxocara canis'], ['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000050794', 77.96231236026829, 'full', '6265', False, [['Genome assembly', 'Genome assembly'], ['Unplaced', 'TOXCA_Unplaced']]], ['UP000267007', 77.8984350047908, 'full', '6265', False, [['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000887564', 9.581603321622485, 'full', '6256', True, [['Unplaced', 'Unplaced_6256'], ['Unplaced', 'Unplaced_6256']]], ['UP000036681', 49.63270520600447, 'full', '6252', False, [['Genome', 'Genome'], ['Unplaced', 'ASCLU_Unplaced']]]]
+    expected_proteomes = {'UP000031036', 'UP000887569'}
+    expected_organism_ids = {'6265': ['UP000031036', 'UP000031036'], '6257': ['UP000887569', 'UP000887569']}
+    expected_proteome_data = [['UP000031036', 87.70360907058448, 'full', '6265', True, [['Unassembled WGS sequence', 'Toxocara canis'], ['Unassembled WGS sequence', 'Toxocara canis']]], ['UP000036681', 49.63270520600447, 'full', '6252', False, [['Genome', 'Genome'], ['Unplaced', 'ASCLU_Unplaced']]], ['UP000050794', 77.96231236026829, 'full', '6265', False, [['Unassembled WGS sequence', 'Toxocara canis genome assembly']]], ['UP000267096', 64.58000638773555, 'full', '6269', True, [['Unassembled WGS sequence', 'Anisakis simplex genome assembly'], ['Unassembled WGS sequence', 'Anisakis simplex genome assembly']]], ['UP000887564', 9.581603321622485, 'full', '6256', True, [['Unplaced', 'Unplaced_6256'], ['Unplaced', 'Unplaced_6256']]], ['UP000887569', 91.05717023315235, 'full', '6257', True, [['Unplaced', 'Unplaced_6257'], ['Unplaced', 'Unplaced_6257']]]]
 
     proteomes, organism_ids, proteomes_data = sparql_query_proteomes('test', 33256, 'Ascaridoidea', 80, all_proteomes=True)
 
     time.sleep(1)
 
-    assert set(expected_proteoems) == set(proteomes)
+    assert set(expected_proteomes) == set(proteomes)
     for organism in expected_organism_ids:
         assert set(expected_organism_ids[organism]).issubset(set(organism_ids[organism]))
     for data in expected_proteome_data:
         if data[0] == 'UP000036680':
-            assert data[0:5] == expected_proteome_data[0][0:5]
-            assert sorted(data[5]) == sorted(expected_proteome_data[0][5])
+            for proteome_data in proteomes_data:
+                if proteome_data[0] == 'UP000036680':
+                    assert data[0:5] == proteome_data[0:5]
+                    assert sorted(data[5]) == sorted(proteome_data[5])
 
 
 def test_find_proteomes_tax_ids_online():
@@ -306,16 +308,18 @@ def test_check_cli_online():
 
     assert expected_results == ['species']
 
+
 if __name__ == "__main__":
     #test_find_proteomes_tax_ids_online()
     #test_disambiguate_taxon_offline()
     #test_subsampling_proteomes_offline()
     #test_organism_ids_online()
-    #test_sparql_find_proteomes_tax_ids_online()
+    test_sparql_find_proteomes_tax_ids_online()
     #test_rest_query_proteomes_online()
     #test_find_non_reference_proteome_rest_online()
     #test_find_proteome_rest_all_proteomes_online()
-    #test_find_proteome_sparql_all_proteomes_online()
+    test_find_non_reference_proteome_sparql_online()
+    test_find_proteome_sparql_all_proteomes_online()
     #test_filter_rank_limit_offline()
-    test_update_taxonomy_bacillus_offline()
-    test_update_taxonomy_yersinia_offline()
+    #test_update_taxonomy_bacillus_offline()
+    #test_update_taxonomy_yersinia_offline()

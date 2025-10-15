@@ -872,28 +872,29 @@ def subsampling_proteomes(organism_ids, limit_maximal_number_proteomes, ncbi):
         raise KeyError()
 
     # For each direct descendant taxon of the tree root (our tax_id), we will look for the proteomes inside these subtaxons.
-    childs = {}
+    descendants = {}
     for parent_node in tree.get_children():
         parent_tax_id = str(parent_node.taxid)
-        if parent_node.descendants() != []:
-            for child_node in parent_node.descendants():
-                child_tax_id = str(child_node.taxid)
-                if parent_tax_id not in childs:
-                    if child_tax_id in organism_ids:
-                        childs[parent_tax_id] = organism_ids[child_tax_id]
+        parent_node_descendants = [descendant for descendant in parent_node.descendants()]
+        if parent_node_descendants != []:
+            for descendant_node in parent_node_descendants:
+                descendant_tax_id = str(descendant_node.taxid)
+                if parent_tax_id not in descendants:
+                    if descendant_tax_id in organism_ids:
+                        descendants[parent_tax_id] = organism_ids[descendant_tax_id]
                 else:
-                    if child_tax_id in organism_ids:
-                        childs[parent_tax_id].extend(organism_ids[child_tax_id])
+                    if descendant_tax_id in organism_ids:
+                        descendants[parent_tax_id].extend(organism_ids[descendant_tax_id])
         else:
-            if parent_tax_id not in childs:
+            if parent_tax_id not in descendants:
                 if parent_tax_id in organism_ids:
-                    childs[parent_tax_id] = organism_ids[parent_tax_id]
+                    descendants[parent_tax_id] = organism_ids[parent_tax_id]
             else:
                 if parent_tax_id in organism_ids:
-                    childs[parent_tax_id].extend(organism_ids[parent_tax_id])
+                    descendants[parent_tax_id].extend(organism_ids[parent_tax_id])
 
     # For each direct descendant taxon, compute the number of proteomes in their childrens.
-    elements = [v for k,v in childs.items()]
+    elements = [v for k,v in descendants.items()]
     elements_counts = [len(element) for element in elements]
     # Compute the percentage of proteomes for each direct descendant taxon compare to the total number of proteomes in all the descendant taxons.
     percentages = [(i/sum(elements_counts))*100  for i in elements_counts]

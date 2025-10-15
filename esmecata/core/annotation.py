@@ -418,7 +418,7 @@ def sparql_query_uniprot_to_retrieve_function(proteomes, uniprot_sparql_endpoint
             up:proteome ?genomicComponent .
         ?proteome skos:narrower ?genomicComponent .
         OPTIONAL {{
-            ?protein up:reviewed ?reviewed  .
+            ?protein up:reviewed ?reviewed .
         }}
         OPTIONAL {{
             ?protein up:annotation ?annot_catalytic .
