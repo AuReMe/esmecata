@@ -9,7 +9,7 @@
 ## Fix
 
 * Fix typos in readme, scripts and tests.
-* Fix issue with proteome subsampling: when iterating in the tree, the abscence of descendants was not triggering the corresponding condition.
+* Fix issue with proteome subsampling: when iterating in the tree, the absence of descendants was not triggering the corresponding condition.
 * Fix the test for proteome subsampling that was not asserting the correct dictionary.
 * Fix issue with SPARQL tests.
 
