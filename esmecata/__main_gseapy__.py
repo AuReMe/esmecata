@@ -69,7 +69,7 @@ def main():
         '--grouping',
         dest='grouping',
         required=True,
-        help='Grouping factor used for enrichment analysis (either "tax_rank" or "selected").',
+        help='Grouping factor used for enrichment analysis (either "tax_rank", "selected" or "selected_function").',
         metavar='STR',
         default='tax_rank')
 
@@ -90,6 +90,15 @@ def main():
         help='When using value "selected" for option "grouping", you have to give this file indicating the different groups of taxon to compare.',
         metavar='STR',
         default='tax_rank')
+
+    parent_parser_function_list = argparse.ArgumentParser(add_help=False)
+    parent_parser_function_list.add_argument(
+        '--function-list',
+        dest='function_list',
+        required=False,
+        help='When using value "selected_function" for option "grouping", you have to give this file indicating the different groups of functions to compare.',
+        metavar='STR',
+        default='function_list')
 
 
     parent_parser_e = argparse.ArgumentParser(add_help=False)
@@ -139,7 +148,7 @@ def main():
         'gseapy_enrichr',
         help='Extract enriched functions from groups (either chosen from tax_rank or manually selected) using gseapy enrichr and orsum.',
         parents=[
-            parent_parser_f, parent_parser_o, parent_parser_grouping, parent_parser_t, parent_parser_taxa_list,
+            parent_parser_f, parent_parser_o, parent_parser_grouping, parent_parser_t, parent_parser_taxa_list, parent_parser_function_list,
             parent_parser_e, parent_parser_g, parent_parser_orsumMinTermSize, parent_parser_gseapyCutOff
             ],
         allow_abbrev=False)
@@ -168,6 +177,7 @@ def main():
 
     if args.cmd == 'gseapy_enrichr':
         taxon_rank_annotation_enrichment(args.input_folder, args.output, args.grouping, taxon_rank=args.taxon_rank, taxa_lists_file=args.taxa_list,
+                                         function_lists_file=args.function_list,
                                          enzyme_data_file=args.enzyme_file, go_basic_obo_file=args.go_file, orsum_minterm_size=args.orsumMinTermSize,
                                          selected_adjust_pvalue_cutoff=args.gseapyCutOff)
 

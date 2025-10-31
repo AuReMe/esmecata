@@ -20,9 +20,9 @@ import logging
 import os
 import re
 import requests
+import pandas as pd
 import time
 import sys
-import urllib.parse
 import urllib.request
 import statistics
 
@@ -1214,33 +1214,37 @@ def create_dataset_annotation_file(annotation_reference_folder, dataset_annotati
         raise ValueError("Wrong content. Authorized values are 'EC', 'GO' or 'all.")
 
     dataset_annotation = {}
-    total_annotations = []
+    total_annotations = set()
     for annotation_file in os.listdir(annotation_reference_folder):
         annotation_file_name = os.path.splitext(annotation_file)[0]
         annotation_file_path = os.path.join(annotation_reference_folder, annotation_file)
 
         annotations = []
-        with open(annotation_file_path, 'r') as open_annotation_input_file_path:
-            csvreader = csv.DictReader(open_annotation_input_file_path, delimiter='\t')
-            for line in csvreader:
-                if content in ['EC', 'GO']:
-                    intermediary_annots = line[content].split(',')
-                if content == 'all':
-                    intermediary_annots = line['GO'].split(',')
-                    intermediary_annots.extend(line['EC'].split(','))
-                annotations.extend(intermediary_annots)
-        annotations = [annot for annot in annotations if annot != '']
-        total_annotations.extend(annotations)
-        dataset_annotation[annotation_file_name] = annotations
+        df_annot = pd.read_csv(annotation_file_path, sep='\t')
+        if content in ['EC', 'GO']:
+            annotations = [annot for annot_lists in df_annot[content].str.split(',').tolist()
+                           if isinstance(annot_lists, list)
+                           for annot in annot_lists if annot != '']
+        if content == 'all':
+            intermediary_gos = [annot for annot_lists in df_annot['GO'].str.split(',').tolist()
+                                if isinstance(annot_lists, list)
+                                for annot in annot_lists if annot != '']
+            intermediary_ecs = [annot for annot_lists in df_annot['EC'].str.split(',').tolist()
+                                if isinstance(annot_lists, list)
+                                for annot in annot_lists if annot != '']
 
-    total_annotations = list(set(total_annotations))
+            annotations.extend(intermediary_gos)
+            annotations.extend(intermediary_ecs)
+        total_annotations = total_annotations.union(set(annotations))
+        dataset_annotation[annotation_file_name] = Counter(annotations)
+
+    total_annotations = list(total_annotations)
 
     with open(dataset_annotation_file_path, 'w') as dataset_annotation_file:
         csvwriter = csv.writer(dataset_annotation_file, delimiter='\t')
         csvwriter.writerow(['observation_name'] + total_annotations)
         for observation_name in dataset_annotation:
-            occurrence_annotations = Counter(dataset_annotation[observation_name])
-            observation_name_annotations = [occurrence_annotations[annot] for annot in total_annotations]
+            observation_name_annotations = [dataset_annotation[observation_name][annot] for annot in total_annotations]
             csvwriter.writerow([observation_name] + observation_name_annotations)
 
     return dataset_annotation

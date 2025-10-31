@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def extract_annotation(annotation_reference_folder):
-    """ From annotation reference folder, creates a dict indicating the file associated with each annotation.
+    """ From esmecata annotation reference folder, creates a dict indicating the file associated with each annotation.
 
     Args:
         annotation_reference_folder (str): path to annotation reference folder
@@ -72,6 +72,43 @@ def extract_annotation(annotation_reference_folder):
                             annotation_sets[ec].append(annotation_file_name)
 
     return annotation_sets
+
+def extract_observation_name_annotation(annotation_reference_folder):
+    """ From esmecata annotation reference folder, creates a dict indicating the file associated with each annotation.
+
+    Args:
+        annotation_reference_folder (str): path to annotation reference folder
+        dataset_annotation_file_path (str): path to output dataset annotation file
+
+    Returns:
+        taxa_annotations_sets (dict): taxon name as key and annotation as value
+    """
+    taxa_annotations_sets = {}
+    for annotation_file in os.listdir(annotation_reference_folder):
+        annotation_file_name = os.path.splitext(annotation_file)[0]
+        annotation_file_path = os.path.join(annotation_reference_folder, annotation_file)
+
+        with open(annotation_file_path, 'r') as open_annotation_input_file_path:
+            csvreader = csv.DictReader(open_annotation_input_file_path, delimiter='\t')
+
+            for line in csvreader:
+                gos = line['GO'].split(',')
+                ecs = line['EC'].split(',')
+
+                if gos != ['']:
+                    for go in gos:
+                        if annotation_file_name not in taxa_annotations_sets:
+                            taxa_annotations_sets[annotation_file_name] = [go]
+                        else:
+                            taxa_annotations_sets[annotation_file_name].append(go)
+                if ecs != ['']:
+                    for ec in ecs:
+                        if annotation_file_name not in taxa_annotations_sets:
+                            taxa_annotations_sets[annotation_file_name] = [ec]
+                        else:
+                            taxa_annotations_sets[annotation_file_name].append(ec)
+
+    return taxa_annotations_sets
 
 
 def get_annot_name(enzyme_datfile, gobasic_file):
@@ -161,7 +198,7 @@ def extract_organisms_selected(taxa_lists_file):
 
 
 def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping="tax_rank",
-                                     taxon_rank='phylum', taxa_lists_file=None,
+                                     taxon_rank='phylum', taxa_lists_file=None, function_lists_file=None,
                                      enzyme_data_file=None, go_basic_obo_file=None, orsum_minterm_size=None,
                                      selected_adjust_pvalue_cutoff=0.05):
     """ Run an enrichment analysis on taxon from annotation results of esmecata using gseapy.
@@ -170,9 +207,10 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
     Args:
         annotation_folder (str): path to esmecata annotation folder
         output_folder (str): path to output folder
-        grouping (str): grouping factor, either "tax_rank" or "selected"
+        grouping (str): grouping factor, either "tax_rank", "selected" or "selected_function"
         taxon_rank (str): taxon rank to cluster the observation name together (by default, phylum) when selecting grouping "tax_rank"
         taxa_lists_file (str): path to manually created groups of observation names when selecting grouping "selected"
+        function_lists_file (str): path to manually created groups of functions (GO or EC) when selecting grouping "selected_function"
         enzyme_data_file (str): path to expasy enzyme.dat file, if not given, download it
         go_basic_obo_file (str): path to Gene Ontology go-basic.obo file, if not given, download it
         orsum_minterm_size (int): option minTermSize of orsum
@@ -202,10 +240,14 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
 
     elif grouping == "selected":
         if taxa_lists_file is None:
-            logger.critical('|EsMeCaTa|gseapy_enrichr| You have to specify a taxa lists file for this analysis with --taxa-list')
+            logger.critical('|EsMeCaTa|gseapy_enrichr| You have to specify a taxa lists file for this analysis with --taxa-list.')
+            sys.exit()
+    elif grouping == "selected_function":
+        if function_lists_file is None:
+            logger.critical('|EsMeCaTa|gseapy_enrichr| You have to specify a function lists file for this analysis with --function-list.')
             sys.exit()
     elif grouping is None:
-        logger.critical('|EsMeCaTa|gseapy_enrichr| You have to choose a grouping factor either "tax_rank" or "selected".')
+        logger.critical('|EsMeCaTa|gseapy_enrichr| You have to choose a grouping factor either "tax_rank", "selected" or "selected_function.')
         sys.exit()
 
     # Get metadata associated with run.
@@ -229,7 +271,7 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
     esmecata_metadata['access_time'] = date
     esmecata_metadata['tool_options'] = options
 
-    # If no enzyme.Dat available download it.
+    # If no enzyme.dat available download it.
     if enzyme_data_file is None:
         enzyme_data_file = os.path.join(output_folder, 'enzyme.dat')
         urllib.request.urlretrieve('https://ftp.expasy.org/databases/enzyme/enzyme.dat', enzyme_data_file)
@@ -246,22 +288,38 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         taxa_name = get_taxon_obs_name(proteome_tax_id_file_path, taxon_rank)
     elif grouping == "selected":
         taxa_name = extract_organisms_selected(taxa_lists_file)
+    elif grouping == "selected_function":
+        taxa_name = extract_organisms_selected(function_lists_file)
+        obs_names = {}
+        with open(proteome_tax_id_file_path, 'r') as proteome_tax_file:
+            csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
+            for line in csvreader:
+                observation_name = line['observation_name']
+                tax_name = line['name']
+                obs_names[observation_name] = tax_name
 
     annotation_reference_path = os.path.join(annotation_folder, 'annotation_reference')
-    annotation_sets = extract_annotation(annotation_reference_path)
+    if grouping in ["tax_rank", "selected"]:
+        element_sets = extract_annotation(annotation_reference_path)
+    elif grouping in ["selected_function"]:
+        element_sets = extract_observation_name_annotation(annotation_reference_path)
 
     # Create GMT file for orsum.
-    # The GMT file contains each annotation, their labels and the observation name in which they were found.
+    # When using tax_rank or selected parameters, the GMT file contains each annotation, their labels and the observation name in which they were found.
+    # When using selected_function, the GMT file contains each taxon, their associated taxon name and the annotations they are linked to. 
     annotation_file_gmt_file = os.path.join(output_folder, 'annotation_file.gmt')
     with open(annotation_file_gmt_file, 'w') as open_output_file:
         csvwriter = csv.writer(open_output_file, delimiter='\t')
-        for annotation in annotation_sets:
-            annot_name = 'na'
-            if annotation in enzyme_names:
-                annot_name = annotation + ' ' + enzyme_names[annotation]
-            if annotation in go_names:
-                annot_name = annotation + ' ' + go_names[annotation]
-            csvwriter.writerow([annotation, annot_name, *annotation_sets[annotation]])
+        for element in element_sets:
+            element_name = 'na'
+            if element in enzyme_names:
+                element_name = element + ' ' + enzyme_names[element]
+            if element in go_names:
+                element_name = element + ' ' + go_names[element]
+            if grouping in ["selected_function"]:
+                if element in obs_names:
+                    element_name = element + ' ' + obs_names[element]
+            csvwriter.writerow([element, element_name, *element_sets[element]])
 
     output_dir = os.path.join(output_folder, 'enrichr_module')
     orsum_input_folder = os.path.join(output_folder, 'orsum_input_folder')
@@ -276,17 +334,16 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         organisms = taxa_name[tax_name]
         # Try to run gseapy enrichr, if no enriched results, continue.
         try:
-            gseapy.enrichr(gene_list=organisms, gene_sets=annotation_sets, background=None,
+            gseapy.enrichr(gene_list=organisms, gene_sets=element_sets, background=None,
                         outdir=os.path.join(output_dir, tax_name), cutoff=selected_adjust_pvalue_cutoff)
         except ValueError as error:
-            logger.info('|EsMeCaTa|gseapy_enrichr| No enrichred functions with p-value cutoff < {0} for {1}.'.format(selected_adjust_pvalue_cutoff, tax_name))
+            logger.critical('|EsMeCaTa|gseapy_enrichr| No enrichred functions with p-value cutoff < {0} for {1}.'.format(selected_adjust_pvalue_cutoff, tax_name))
             continue
         if os.path.exists(os.path.join(output_dir, tax_name, 'gs_ind_0.human.enrichr.reports.pdf')):
-            # If enriched results, extract the ones with an adjusted p-value inferior to selected_adjust_pvalue_cutoff to output folder.
+            # If enriched results, extract the ones with an adjusted p-value inferior to selected_adjust_pvalue_cutoff to output folder (default 0.05).
             df = pd.read_csv(os.path.join(output_dir, tax_name, 'gs_ind_0.human.enrichr.reports.txt'), sep='\t')
             df = df[df['Adjusted P-value'] < selected_adjust_pvalue_cutoff]
             enriched_elements[tax_name] = df.set_index('Term')['Adjusted P-value'].to_dict()
-
             df.sort_values('Adjusted P-value', inplace=True)
             df = df['Term']
             df.to_csv(os.path.join(orsum_input_folder, tax_name), sep='\t', index=False, header=False)

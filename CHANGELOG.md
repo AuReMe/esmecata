@@ -1,5 +1,15 @@
 # Changelog
 
+# EsMeCaTa v0.6.8 (2025-10-28)
+
+## Add
+
+* `selected_function` and `function_lists_file` in gseapy_orsum.
+
+## Fix
+
+* Memory leak in function `create_dataset_annotation_file`.
+
 # EsMeCaTa v0.6.7 (2025-10-15)
 
 ## Add

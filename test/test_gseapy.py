@@ -110,3 +110,23 @@ def test_taxon_rank_annotation_enrichment_tax_rank_cli():
 
     assert sorted(representing_terms) == sorted(expected_terms)
     shutil.rmtree(output_folder)
+
+
+def test_taxon_rank_annotation_enrichment_function_selected():
+    input_folder = os.path.join('test_data', 'annotation_output')
+    output_folder = 'output_folder'
+    grouping = 'selected_function'
+    function_list_file = os.path.join('test_data', 'function_list.tsv')
+    expected_terms = ['org_06', 'org_01']
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+    taxon_rank_annotation_enrichment(input_folder, output_folder, grouping, function_lists_file=function_list_file, orsum_minterm_size=4,
+                                     selected_adjust_pvalue_cutoff=1)
+
+    result_file = os.path.join(output_folder, 'orsum_output_folder', 'filteredResult-Summary.tsv')
+    df = pd.read_csv(result_file, sep='\t')
+    representing_terms = df['Representing term id']
+    print(representing_terms)
+    assert sorted(representing_terms) == sorted(expected_terms)
+    shutil.rmtree(output_folder)
+
