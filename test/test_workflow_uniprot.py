@@ -28,7 +28,7 @@ def test_workflow_online():
             predicted_results[line[0]]['protein_clusters'] = int(line[7])
             predicted_results[line[0]]['GOs'] = int(line[8])
             predicted_results[line[0]]['ECs'] = int(line[9])
-    print(predicted_results)
+
     for observation_name in predicted_results:
         for data in predicted_results[observation_name]:
             assert predicted_results[observation_name][data] == RESULTS[observation_name][data]
