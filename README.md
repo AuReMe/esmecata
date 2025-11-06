@@ -1083,11 +1083,11 @@ There are currently three ways to use `gseapy_enrichr`:
 
 There are two parameters mandatory for the different modes:
 
-- the `-f` parameter takes as input the annotation folder of esmecata (either the output folder of `esmecata annotation` or the `2_annotation` of `esmecata workflow`) or a tabulated file containing annotation as columns and organism as rows (such as picrust2 predictions, example can be found in test_data folder).
+- the `-f` parameter takes as input the annotation folder of esmecata (either the output folder of `esmecata annotation` or the `2_annotation` of `esmecata workflow`) or a tabulated file containing annotation as columns and organism as rows (such as picrust2 predictions (for example by combining files `combined_EC_predicted.tsv` and `combined_KO_predicted.tsv`), [example](https://github.com/AuReMe/esmecata/blob/main/test/test_data/picrust_test_predicted_func.tsv) can be found in test_data folder).
 
 - the `-o` parameter corresponds to the path to the output folder.
 
-**Warning**: if a tabulated file is given as input (to `-f`), if you want to use the `tax_rank` grouping, you should give a taxon ID file to the `--taxon-id` parameter (example of such file can be found here). Example of taxon ID file (tax_id column corresponds to NCBI taxonomic ID):
+**Warning**: if a tabulated file is given as input (to `-f`), if you want to use the `tax_rank` grouping, you should give a taxon ID file to the `--taxon-id` parameter (example of such file can be found [here](https://github.com/AuReMe/esmecata/blob/esmecata_0.6.8/test/test_data/picrust_taxon_id.tsv)). Example of taxon ID file (tax_id column corresponds to NCBI taxonomic ID):
 
 | observation_name   | tax_id  | tax_rank   |
 |------------|-----------|-----------|

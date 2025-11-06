@@ -50,9 +50,9 @@ def main():
     parent_parser_f.add_argument(
         '-f',
         '--folder',
-        dest='input_folder',
+        dest='input_file_folder',
         required=True,
-        help='EsMeCaTa annotation output folder.',
+        help='Annotation input folder or file. For folder, it corresponds to EsMeCaTa annotation output folder. For file, it ocrresponds to a function table containing annotation as column and organism as row.',
         metavar='INPUT_FOLDER')
 
     parent_parser_o = argparse.ArgumentParser(add_help=False)
@@ -193,7 +193,7 @@ def main():
     logger.addHandler(console_handler)
 
     if args.cmd == 'gseapy_enrichr':
-        taxon_rank_annotation_enrichment(args.input_folder, args.output, args.grouping, taxon_rank=args.taxon_rank, taxa_lists_file=args.taxa_list,
+        taxon_rank_annotation_enrichment(args.input_file_folder, args.output, args.grouping, taxon_rank=args.taxon_rank, taxa_lists_file=args.taxa_list,
                                          function_lists_file=args.function_list,
                                          enzyme_data_file=args.enzyme_file, go_basic_obo_file=args.go_file, orsum_minterm_size=args.orsumMinTermSize,
                                          selected_adjust_pvalue_cutoff=args.gseapyCutOff, taxon_id_file=args.taxon_id, ko_annotation=args.ko)
