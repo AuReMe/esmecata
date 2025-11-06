@@ -39,7 +39,8 @@ ANALYSIS = ['arakawa',
   'kaleido',
   'ontosunburst'
 ]
-GSEAPY = ['gseapy',
+GSEAPY = ['bioservices',
+  'gseapy',
   'orsum',
   'pronto'
 ]

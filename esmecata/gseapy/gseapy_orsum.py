@@ -26,6 +26,7 @@ import subprocess
 import urllib.request
 import gseapy
 
+from bioservices import KEGG
 from Bio.ExPASy import Enzyme
 from matplotlib import __version__ as matplotlib_version
 from esmecata.core.proteomes import get_taxon_obs_name
@@ -179,8 +180,6 @@ def get_ko_names(ko_file):
         ko_df.set_index('KO', inplace=True)
         ko_names = ko_df['name'].to_dict()
     else:
-        from bioservices import KEGG
-
         k = KEGG()
         ko_names = {}
         ko_answer = k.list('ko')
@@ -344,7 +343,7 @@ def taxon_rank_annotation_enrichment(annotation_folder_or_file, output_folder, g
     if go_basic_obo_file is None:
         go_basic_obo_file = os.path.join(output_folder, 'go-basic.obo')
         urllib.request.urlretrieve('http://purl.obolibrary.org/obo/go/go-basic.obo', go_basic_obo_file)
-
+    # If --ko parameter, retrieves KO name from KEGG.
     if ko_annotation is not None:
         ko_file = os.path.join(output_folder, 'ko_names.tsv')
         ko_names = get_ko_names(ko_file)
@@ -354,14 +353,18 @@ def taxon_rank_annotation_enrichment(annotation_folder_or_file, output_folder, g
     if os.path.isdir(annotation_folder_or_file):
         proteome_tax_id_file_path = os.path.join(annotation_folder_or_file, 'proteome_tax_id.tsv')
 
+    # Extract the groups that will be search.
+    # Either: - taxonomic groups -> tax_rank.
+    #  - manually selected groups of organisms -> selected.
+    #  - manually selected groups of functions -> selected_function.
     if grouping == "tax_rank":
         if os.path.isfile(annotation_folder_or_file):
             proteome_tax_id_file_path = taxon_id_file
-        taxa_name = get_taxon_obs_name(proteome_tax_id_file_path, taxon_rank)
+        identified_groups = get_taxon_obs_name(proteome_tax_id_file_path, taxon_rank)
     elif grouping == "selected":
-        taxa_name = extract_organisms_selected(taxa_lists_file)
+        identified_groups = extract_organisms_selected(taxa_lists_file)
     elif grouping == "selected_function":
-        taxa_name = extract_organisms_selected(function_lists_file)
+        identified_groups = extract_organisms_selected(function_lists_file)
         obs_names = {}
         if os.path.isdir(annotation_folder_or_file):
             with open(proteome_tax_id_file_path, 'r') as proteome_tax_file:
@@ -371,13 +374,15 @@ def taxon_rank_annotation_enrichment(annotation_folder_or_file, output_folder, g
                     tax_name = line['name']
                     obs_names[observation_name] = tax_name
 
+    # Retrieve element that will be searched for over-representation.
+    # If input is esmecata annotation folder, iterates on annotation file to generate element sets.
     if os.path.isdir(annotation_folder_or_file):
         annotation_reference_path = os.path.join(annotation_folder_or_file, 'annotation_reference')
         if grouping in ["tax_rank", "selected"]:
             element_sets = extract_annotation(annotation_reference_path)
         elif grouping in ["selected_function"]:
             element_sets = extract_observation_name_annotation(annotation_reference_path)
-
+    # If input is a function table, read it and extract annotations/organisms.
     elif os.path.isfile(annotation_folder_or_file):
         if grouping in ["tax_rank", "selected"]:
             element_sets = read_function_table(annotation_folder_or_file)
@@ -415,32 +420,32 @@ def taxon_rank_annotation_enrichment(annotation_folder_or_file, output_folder, g
         os.mkdir(orsum_input_folder)
 
     enriched_elements = {}
-    for tax_name in taxa_name:
-        organisms = taxa_name[tax_name]
+    for group_name in identified_groups:
+        identified_group = identified_groups[group_name]
         # Try to run gseapy enrichr, if no enriched results, continue.
         try:
-            gseapy.enrichr(gene_list=organisms, gene_sets=element_sets, background=None,
-                        outdir=os.path.join(output_dir, tax_name), cutoff=selected_adjust_pvalue_cutoff)
+            gseapy.enrichr(gene_list=identified_group, gene_sets=element_sets, background=None,
+                        outdir=os.path.join(output_dir, group_name), cutoff=selected_adjust_pvalue_cutoff)
         except ValueError as error:
-            logger.critical('|EsMeCaTa|gseapy_enrichr| No enrichred functions with p-value cutoff < {0} for {1}.'.format(selected_adjust_pvalue_cutoff, tax_name))
+            logger.critical('|EsMeCaTa|gseapy_enrichr| No enrichred functions with p-value cutoff < {0} for {1}.'.format(selected_adjust_pvalue_cutoff, group_name))
             continue
-        if os.path.exists(os.path.join(output_dir, tax_name, 'gs_ind_0.human.enrichr.reports.pdf')):
+        if os.path.exists(os.path.join(output_dir, group_name, 'gs_ind_0.human.enrichr.reports.pdf')):
             # If enriched results, extract the ones with an adjusted p-value inferior to selected_adjust_pvalue_cutoff to output folder (default 0.05).
-            df = pd.read_csv(os.path.join(output_dir, tax_name, 'gs_ind_0.human.enrichr.reports.txt'), sep='\t')
+            df = pd.read_csv(os.path.join(output_dir, group_name, 'gs_ind_0.human.enrichr.reports.txt'), sep='\t')
             df = df[df['Adjusted P-value'] < selected_adjust_pvalue_cutoff]
-            enriched_elements[tax_name] = df.set_index('Term')['Adjusted P-value'].to_dict()
+            enriched_elements[group_name] = df.set_index('Term')['Adjusted P-value'].to_dict()
             df.sort_values('Adjusted P-value', inplace=True)
             df = df['Term']
-            df.to_csv(os.path.join(orsum_input_folder, tax_name), sep='\t', index=False, header=False)
+            df.to_csv(os.path.join(orsum_input_folder, group_name), sep='\t', index=False, header=False)
 
     all_elments = set([element for org in enriched_elements for element in enriched_elements[org]])
 
     enrich_matrix_file = os.path.join(output_folder, 'enrich_matrix.tsv')
     with open(enrich_matrix_file, 'w') as open_output_file:
         csvwriter = csv.writer(open_output_file, delimiter='\t')
-        csvwriter.writerow(['Organism', *all_elments])
-        for org in enriched_elements:
-            csvwriter.writerow([org, *[enriched_elements[org][element] if element in enriched_elements[org] else 'NA' for element in all_elments]])
+        csvwriter.writerow(['Group', *all_elments])
+        for group_name in enriched_elements:
+            csvwriter.writerow([group_name, *[enriched_elements[group_name][element] if element in enriched_elements[group_name] else 'NA' for element in all_elments]])
 
     # Check that there are files in orsum folder.
     orsum_input_folder_files = os.listdir(orsum_input_folder)

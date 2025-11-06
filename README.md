@@ -1034,7 +1034,7 @@ subcommands:
   {gseapy_enrichr}
     gseapy_enrichr  Extract enriched functions from taxon using gseapy and orsum.
 
-Requires: gseapy and orsum
+Requires: bioservices, pronto, gseapy and orsum
 ```
 
 ```
