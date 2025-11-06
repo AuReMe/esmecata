@@ -100,7 +100,6 @@ def main():
         metavar='STR',
         default='function_list')
 
-
     parent_parser_e = argparse.ArgumentParser(add_help=False)
     parent_parser_e.add_argument(
         '--enzyme',
@@ -118,6 +117,24 @@ def main():
         help='Pathname to go-basic.obo file. If no path is given, it will be downloaded and put in the output folder.',
         metavar='INPUT_FILE',
         default=None)
+
+    parent_parser_taxon_id = argparse.ArgumentParser(add_help=False)
+    parent_parser_taxon_id.add_argument(
+        '--taxon-id',
+        dest='taxon_id',
+        required=False,
+        help='Pathname to taxon ID file indicating taxonomic ID associated with organisms name. Required for tax_rank analysis if the annotation input is a file and not an esmecata annotation folder.',
+        metavar='INPUT_FILE',
+        default=None)
+
+    parent_parser_ko = argparse.ArgumentParser(add_help=False)
+    parent_parser_ko.add_argument(
+        '--ko',
+        dest='ko',
+        help='If KEGG Orthologs are in the function table, add this parameter to get their names (require bioservices).',
+        required=False,
+        action='store_true',
+        default=False)
 
     parent_parser_orsumMinTermSize = argparse.ArgumentParser(add_help=False)
     parent_parser_orsumMinTermSize.add_argument(
@@ -149,7 +166,7 @@ def main():
         help='Extract enriched functions from groups (either chosen from tax_rank or manually selected) using gseapy enrichr and orsum.',
         parents=[
             parent_parser_f, parent_parser_o, parent_parser_grouping, parent_parser_t, parent_parser_taxa_list, parent_parser_function_list,
-            parent_parser_e, parent_parser_g, parent_parser_orsumMinTermSize, parent_parser_gseapyCutOff
+            parent_parser_e, parent_parser_g, parent_parser_orsumMinTermSize, parent_parser_gseapyCutOff, parent_parser_taxon_id, parent_parser_ko
             ],
         allow_abbrev=False)
 
@@ -179,7 +196,7 @@ def main():
         taxon_rank_annotation_enrichment(args.input_folder, args.output, args.grouping, taxon_rank=args.taxon_rank, taxa_lists_file=args.taxa_list,
                                          function_lists_file=args.function_list,
                                          enzyme_data_file=args.enzyme_file, go_basic_obo_file=args.go_file, orsum_minterm_size=args.orsumMinTermSize,
-                                         selected_adjust_pvalue_cutoff=args.gseapyCutOff)
+                                         selected_adjust_pvalue_cutoff=args.gseapyCutOff, taxon_id_file=args.taxon_id, ko_annotation=args.ko)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

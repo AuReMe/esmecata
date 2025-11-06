@@ -111,6 +111,31 @@ def extract_observation_name_annotation(annotation_reference_folder):
     return taxa_annotations_sets
 
 
+def read_function_table(function_table_path, transpose_table=True):
+    """ Read function table and create dictionary compatible with enrichment analysis.
+    The table contains function/annotation as columns and organism as rows.
+
+    Args:
+        function_table_path (str): path to function table file.
+        transpose_table (bool): boolean
+
+    Returns:
+        annotation_sets (dict): if transpose_table is True: annotation as key and list of organism possessing them as values, if transpose_table is False: organism name as key and list of functions possessing them as values,
+    """
+    df_function_table = pd.read_csv(function_table_path, sep='\t|,', index_col=0, engine='python')
+
+    if transpose_table is True:
+        df_function_table = df_function_table.T
+
+    annotation_sets = {}
+    for index, row in df_function_table.iterrows():
+        annotation_sets[index] = [col for col in df_function_table.columns
+                    if row[col]>0
+                    for index_iter in range(int(row[col]))]
+
+    return annotation_sets
+
+
 def get_annot_name(enzyme_datfile, gobasic_file):
     """ Extract annotation names from enzyme.dat and go-baisc.obo.
 
@@ -138,6 +163,40 @@ def get_annot_name(enzyme_datfile, gobasic_file):
             go_names[go_term] = go.name
 
     return enzyme_names, go_names
+
+
+def get_ko_names(ko_file):
+    """ Extract KEGG Orthologs names from KEGG database.
+
+    Args:
+        ko_file (str): path to KEGG orthologs file
+
+    Returns:
+        ko_names (dict): KO as key and KO name as value
+    """
+    if os.path.exists(ko_file):
+        ko_df = pd.read_csv(ko_file, sep='\t')
+        ko_df.set_index('KO', inplace=True)
+        ko_names = ko_df['name'].to_dict()
+    else:
+        from bioservices import KEGG
+
+        k = KEGG()
+        ko_names = {}
+        ko_answer = k.list('ko')
+        for ko_line in ko_answer.split('\n'):
+            ko_dat = ko_line.split('\t')
+            ko_entry = 'ko:'+ko_dat[0]
+            if ko_entry.startswith('ko:K'):
+                if ';' in ko_dat[1]:
+                    ko_name = ko_dat[1].split(';')[1]
+                else:
+                    ko_name = ko_dat[1]
+                ko_names[ko_entry] = ko_name
+        ko_df = pd.DataFrame(ko_names.items(), columns=['KO', 'name'])
+        ko_df.to_csv(ko_file, sep='\t', index=None)
+
+    return ko_names
 
 
 def run_orsum(annotation_file_gmt_file, enrichr_module_phylum_output, orsum_output_folder, orsum_minterm_size=None):
@@ -197,15 +256,15 @@ def extract_organisms_selected(taxa_lists_file):
     return taxa_lists
 
 
-def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping="tax_rank",
+def taxon_rank_annotation_enrichment(annotation_folder_or_file, output_folder, grouping="tax_rank",
                                      taxon_rank='phylum', taxa_lists_file=None, function_lists_file=None,
                                      enzyme_data_file=None, go_basic_obo_file=None, orsum_minterm_size=None,
-                                     selected_adjust_pvalue_cutoff=0.05):
+                                     selected_adjust_pvalue_cutoff=0.05, taxon_id_file=None, ko_annotation=None):
     """ Run an enrichment analysis on taxon from annotation results of esmecata using gseapy.
     Then filter this list with orsum.
 
     Args:
-        annotation_folder (str): path to esmecata annotation folder
+        annotation_folder_or_file (str): path to esmecata annotation folder or function table (from esmecata or other methods)
         output_folder (str): path to output folder
         grouping (str): grouping factor, either "tax_rank", "selected" or "selected_function"
         taxon_rank (str): taxon rank to cluster the observation name together (by default, phylum) when selecting grouping "tax_rank"
@@ -215,11 +274,16 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         go_basic_obo_file (str): path to Gene Ontology go-basic.obo file, if not given, download it
         orsum_minterm_size (int): option minTermSize of orsum
         selected_adjust_pvalue_cutoff (float): adjust-Pval cutoff for gseapy enrichr, default: 0.05
+        taxon_id_file (str): path to taxon ID file if annotation_folder_or_file is a file
+        ko_annotation (bool): boolean if there are KEGG Orthologs in the annotation file to search for their names
     """
     starttime = time.time()
     logger.info('|EsMeCaTa|gseapy_enrichr| Begin enrichment analysis.')
 
     if grouping == "tax_rank":
+        if os.path.isfile(annotation_folder_or_file) and taxon_id_file is None:
+            logger.critical('|EsMeCaTa|gseapy_enrichr| If you give an input annotation file for tax_rank analysis, you have to give a taxon_id_file indicating taxon ID associated with organisms.')
+            sys.exit()
         domain_superkingdom_tax_rank_name = get_domain_or_superkingdom_from_ncbi_tax_database()
         if taxon_rank is None:
             logger.critical('|EsMeCaTa|gseapy_enrichr| You have to specify a taxon rank for this analysis with --taxon-rank')
@@ -251,9 +315,10 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         sys.exit()
 
     # Get metadata associated with run.
-    options = {'annotation_folder': annotation_folder, 'output_folder': output_folder, 'grouping': grouping,
+    options = {'annotation_folder_or_file': annotation_folder_or_file, 'output_folder': output_folder, 'grouping': grouping,
                'taxon_rank': taxon_rank, 'taxa_lists_file': taxa_lists_file,
-               'enzyme_data_file': enzyme_data_file, 'go_basic_obo_file': go_basic_obo_file, 'orsum_minterm_size': orsum_minterm_size}
+               'enzyme_data_file': enzyme_data_file, 'go_basic_obo_file': go_basic_obo_file, 'orsum_minterm_size': orsum_minterm_size,
+               'taxon_id_file': taxon_id_file, 'ko_annotation': ko_annotation}
 
     options['tool_dependencies'] = {}
     options['tool_dependencies']['python_package'] = {}
@@ -280,29 +345,44 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
         go_basic_obo_file = os.path.join(output_folder, 'go-basic.obo')
         urllib.request.urlretrieve('http://purl.obolibrary.org/obo/go/go-basic.obo', go_basic_obo_file)
 
+    if ko_annotation is not None:
+        ko_file = os.path.join(output_folder, 'ko_names.tsv')
+        ko_names = get_ko_names(ko_file)
+
     enzyme_names, go_names = get_annot_name(enzyme_data_file, go_basic_obo_file)
 
-    proteome_tax_id_file_path = os.path.join(annotation_folder, 'proteome_tax_id.tsv')
+    if os.path.isdir(annotation_folder_or_file):
+        proteome_tax_id_file_path = os.path.join(annotation_folder_or_file, 'proteome_tax_id.tsv')
 
     if grouping == "tax_rank":
+        if os.path.isfile(annotation_folder_or_file):
+            proteome_tax_id_file_path = taxon_id_file
         taxa_name = get_taxon_obs_name(proteome_tax_id_file_path, taxon_rank)
     elif grouping == "selected":
         taxa_name = extract_organisms_selected(taxa_lists_file)
     elif grouping == "selected_function":
         taxa_name = extract_organisms_selected(function_lists_file)
         obs_names = {}
-        with open(proteome_tax_id_file_path, 'r') as proteome_tax_file:
-            csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
-            for line in csvreader:
-                observation_name = line['observation_name']
-                tax_name = line['name']
-                obs_names[observation_name] = tax_name
+        if os.path.isdir(annotation_folder_or_file):
+            with open(proteome_tax_id_file_path, 'r') as proteome_tax_file:
+                csvreader = csv.DictReader(proteome_tax_file, delimiter='\t')
+                for line in csvreader:
+                    observation_name = line['observation_name']
+                    tax_name = line['name']
+                    obs_names[observation_name] = tax_name
 
-    annotation_reference_path = os.path.join(annotation_folder, 'annotation_reference')
-    if grouping in ["tax_rank", "selected"]:
-        element_sets = extract_annotation(annotation_reference_path)
-    elif grouping in ["selected_function"]:
-        element_sets = extract_observation_name_annotation(annotation_reference_path)
+    if os.path.isdir(annotation_folder_or_file):
+        annotation_reference_path = os.path.join(annotation_folder_or_file, 'annotation_reference')
+        if grouping in ["tax_rank", "selected"]:
+            element_sets = extract_annotation(annotation_reference_path)
+        elif grouping in ["selected_function"]:
+            element_sets = extract_observation_name_annotation(annotation_reference_path)
+
+    elif os.path.isfile(annotation_folder_or_file):
+        if grouping in ["tax_rank", "selected"]:
+            element_sets = read_function_table(annotation_folder_or_file)
+        elif grouping in ["selected_function"]:
+            element_sets = read_function_table(annotation_folder_or_file, transpose_table=False)
 
     # Create GMT file for orsum.
     # When using tax_rank or selected parameters, the GMT file contains each annotation, their labels and the observation name in which they were found.
@@ -314,11 +394,16 @@ def taxon_rank_annotation_enrichment(annotation_folder, output_folder, grouping=
             element_name = 'na'
             if element in enzyme_names:
                 element_name = element + ' ' + enzyme_names[element]
-            if element in go_names:
+            elif element in go_names:
                 element_name = element + ' ' + go_names[element]
+            if ko_annotation is not None:
+                if element in ko_names:
+                    element_name = element + ' ' + ko_names[element]
             if grouping in ["selected_function"]:
                 if element in obs_names:
                     element_name = element + ' ' + obs_names[element]
+                else:
+                    element_name = element
             csvwriter.writerow([element, element_name, *element_sets[element]])
 
     output_dir = os.path.join(output_folder, 'enrichr_module')

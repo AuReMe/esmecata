@@ -5,6 +5,8 @@
 ## Add
 
 * `selected_function` and `function_lists_file` in gseapy_orsum.
+* Use of function table as input for `esmecata_gseapy gseapy_enrichr` (for example to be used on PICRUSt2 results).
+* Use of KEGG Orthologs in `esmecata_gseapy gseapy_enrichr` with `--ko` parameter.
 * Tests for function `create_dataset_annotation_file`.
 
 ## Fix
@@ -14,6 +16,7 @@
 ## Modify
 
 * Update variable names in `gseapy_orsum.py`.
+* Update readme on enrichment analysis.
 
 # EsMeCaTa v0.6.7 (2025-10-15)
 
