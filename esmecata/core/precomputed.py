@@ -185,37 +185,56 @@ def search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path,
         df_annotation = df_annotation[df_annotation['cluster_ratio'] >= clust_threshold]
 
         kept_protein_ids = set(df_annotation['representative_protein'].tolist())
-        for observation_name in tax_id_obs_names[tax_id]:
-            # Create an annotaiton_reference file for the observation name.
-            output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
-            if 'KEGG_reaction' in df_annotation.columns:
-                selected_df_annotation = df_annotation[['representative_protein', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']]
-                selected_df_annotation.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
+        for index, observation_name in enumerate(tax_id_obs_names[tax_id]):
+            # If there are multiple observation names with the same tax_id, use the first to generate annotation and pathologic files and then copy them.
+            if index == 0:
+                # Create an annotaiton_reference file for the observation name.
+                output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
+                if 'KEGG_reaction' in df_annotation.columns:
+                    selected_df_annotation = df_annotation[['representative_protein', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']]
+                    selected_df_annotation.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC', 'KEGG_reaction']
+                else:
+                    selected_df_annotation = df_annotation[['representative_protein', 'cluster_members', 'gene_name', 'GO', 'EC']]
+                    selected_df_annotation.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC']
+                if not os.path.exists(output_path_annotation_file):
+                    selected_df_annotation.to_csv(output_path_annotation_file, sep='\t', index=None)
+
+                # Create pathologic files.
+                pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
+                # Add _1 to pathologic file as genetic element cannot have the same name as the organism.
+                pathologic_file = os.path.join(pathologic_organism_folder, observation_name+'_1.pf')
+
+                if not os.path.exists(pathologic_file):
+                    # Replace NA by empty string.
+                    selected_df_annotation = selected_df_annotation.fillna('')
+                    reference_proteins_string = selected_df_annotation.set_index('protein_cluster')['cluster_members'].to_dict()
+                    reference_proteins = {protein: reference_proteins_string[protein].split(',') for protein in reference_proteins_string}
+                    sub_annotated_proteins = selected_df_annotation.set_index('protein_cluster').to_dict('index')
+                    # Rename dictionary keys according to the ones expected in write_pathologic.
+                    sub_annotated_proteins = [(protein, {'Preferred_name': sub_annotated_proteins[protein]['gene_name'],
+                                                        'GOs': sub_annotated_proteins[protein]['GO'],
+                                                        'EC': sub_annotated_proteins[protein]['EC']})
+                                                        for protein in sub_annotated_proteins]
+                    if len(sub_annotated_proteins) > 0:
+                        is_valid_dir(pathologic_organism_folder)
+                        write_pathologic(observation_name, sub_annotated_proteins, pathologic_file, reference_proteins)
+                reference_path_annotation_file = output_path_annotation_file
+                reference_pathologic_file = pathologic_file
             else:
-                selected_df_annotation = df_annotation[['representative_protein', 'cluster_members', 'gene_name', 'GO', 'EC']]
-                selected_df_annotation.columns = ['protein_cluster', 'cluster_members', 'gene_name', 'GO', 'EC']
-            if not os.path.exists(output_path_annotation_file):
-                selected_df_annotation.to_csv(output_path_annotation_file, sep='\t', index=None)
+                # Copy annotation file.
+                output_path_annotation_file = os.path.join(annotation_reference_output_folder, observation_name+'.tsv')
+                shutil.copyfile(reference_path_annotation_file, output_path_annotation_file)
 
-            # Create pathologic files.
-            pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
-            # Add _1 to pathologic file as genetic element cannot have the same name as the organism.
-            pathologic_file = os.path.join(pathologic_organism_folder, observation_name+'_1.pf')
+                if os.path.exists(reference_pathologic_file):
+                    # Create pathologic files.
+                    pathologic_organism_folder = os.path.join(pathologic_folder, observation_name)
+                    # Add _1 to pathologic file as genetic element cannot have the same name as the organism.
+                    pathologic_file = os.path.join(pathologic_organism_folder, observation_name+'_1.pf')
 
-            if not os.path.exists(pathologic_file):
-                # Replace NA by empty string.
-                selected_df_annotation = selected_df_annotation.fillna('')
-                reference_proteins_string = selected_df_annotation.set_index('protein_cluster')['cluster_members'].to_dict()
-                reference_proteins = {protein: reference_proteins_string[protein].split(',') for protein in reference_proteins_string}
-                sub_annotated_proteins = selected_df_annotation.set_index('protein_cluster').to_dict('index')
-                # Rename dictionary keys according to the ones expected in write_pathologic.
-                sub_annotated_proteins = [(protein, {'Preferred_name': sub_annotated_proteins[protein]['gene_name'],
-                                                    'GOs': sub_annotated_proteins[protein]['GO'],
-                                                    'EC': sub_annotated_proteins[protein]['EC']})
-                                                    for protein in sub_annotated_proteins]
-                if len(sub_annotated_proteins) > 0:
+                    # Copy pathologic file.
                     is_valid_dir(pathologic_organism_folder)
-                    write_pathologic(observation_name, sub_annotated_proteins, pathologic_file, reference_proteins)
+                    shutil.copyfile(reference_pathologic_file, pathologic_file)
+
 
         # Create a consensus proteomes file.
         clustering_consensus_file = os.path.join(tax_id_name, tax_id_name+'.faa')
@@ -475,6 +494,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     create_comp_taxonomy_file(json_taxonomic_affiliations, proteomes_ids, tax_id_names, proteomes_output_folder)
 
+    logger.info('|EsMeCaTa|proteomes| Compute proteome stat.')
     # Create stat_proteome.
     run_proteome_tax_id_file = os.path.join(proteomes_output_folder, 'stat_number_proteome.tsv')
     with open(run_proteome_tax_id_file, 'w') as out_file:
@@ -524,9 +544,11 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         with open(organism_not_found_in_database_file_path, 'w'):
             pass
 
+    logger.info('|EsMeCaTa|proteomes| Generate function table.')
     function_table_file_path = os.path.join(annotation_output_folder, 'function_table.tsv')
     create_dataset_annotation_file(annotation_reference_output_folder, function_table_file_path, 'all')
 
+    logger.info('|EsMeCaTa|proteomes| Compute clustering stat.')
     tax_name_clustering_numbers = {}
     for clustering_file in os.listdir(computed_threshold_folder):
         clustering_file_path = os.path.join(computed_threshold_folder, clustering_file)
@@ -565,10 +587,12 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             cluster_0_95 = len(clustering_numbers[observation_name][2])
             csvwriter.writerow([observation_name, cluster_0, selected_threshold_cluster, cluster_0_95])
 
+    logger.info('|EsMeCaTa|proteomes| Compute openness.')
     # Compute openness of proteomes.
     proteome_openness_file = os.path.join(clustering_output_folder, 'stat_openness_proteomes.tsv')
     compute_openness_pan_proteomes(computed_threshold_folder, proteome_openness_file, clustering_threhsold=0.5, iteration_nb=100)
 
+    logger.info('|EsMeCaTa|proteomes| Compute annotation stat.')
     annotation_stat_file = os.path.join(annotation_output_folder, 'stat_number_annotation.tsv')
     compute_stat_annotation(annotation_reference_output_folder, annotation_stat_file)
 

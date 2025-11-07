@@ -27,7 +27,7 @@ MESSAGE = '''
 Create enrichment analysis files from esmecata results.
 '''
 REQUIRES = '''
-Requires: pronto, gseapy and orsum
+Requires: bioservices, pronto, gseapy and orsum
 '''
 
 logger = logging.getLogger()
@@ -50,9 +50,9 @@ def main():
     parent_parser_f.add_argument(
         '-f',
         '--folder',
-        dest='input_folder',
+        dest='input_file_folder',
         required=True,
-        help='EsMeCaTa annotation output folder.',
+        help='Annotation input folder or file. For folder, it corresponds to EsMeCaTa annotation output folder. For file, it ocrresponds to a function table containing annotation as column and organism as row.',
         metavar='INPUT_FOLDER')
 
     parent_parser_o = argparse.ArgumentParser(add_help=False)
@@ -69,7 +69,7 @@ def main():
         '--grouping',
         dest='grouping',
         required=True,
-        help='Grouping factor used for enrichment analysis (either "tax_rank" or "selected").',
+        help='Grouping factor used for enrichment analysis (either "tax_rank", "selected" or "selected_function").',
         metavar='STR',
         default='tax_rank')
 
@@ -91,24 +91,41 @@ def main():
         metavar='STR',
         default='tax_rank')
 
-
-    parent_parser_e = argparse.ArgumentParser(add_help=False)
-    parent_parser_e.add_argument(
-        '--enzyme',
-        dest='enzyme_file',
+    parent_parser_function_list = argparse.ArgumentParser(add_help=False)
+    parent_parser_function_list.add_argument(
+        '--function-list',
+        dest='function_list',
         required=False,
-        help='Pathanme to enzyme.dat file of expasy. If no path is given, it will be downloaded and put in the output folder.',
+        help='When using value "selected_function" for option "grouping", you have to give this file indicating the different groups of functions to compare.',
+        metavar='STR',
+        default='function_list')
+
+    parent_parser_annot_names = argparse.ArgumentParser(add_help=False)
+    parent_parser_annot_names.add_argument(
+        '--annot-names',
+        dest='annot_names_file',
+        required=False,
+        help='Pathname to json file indicating annotation names.',
+        metavar='INPUT_FILE',
+        default='download')
+
+    parent_parser_taxon_id = argparse.ArgumentParser(add_help=False)
+    parent_parser_taxon_id.add_argument(
+        '--taxon-id',
+        dest='taxon_id',
+        required=False,
+        help='Pathname to taxon ID file indicating taxonomic ID associated with organisms name. Required for tax_rank analysis if the annotation input is a file and not an esmecata annotation folder.',
         metavar='INPUT_FILE',
         default=None)
 
-    parent_parser_g = argparse.ArgumentParser(add_help=False)
-    parent_parser_g.add_argument(
-        '--go',
-        dest='go_file',
+    parent_parser_ko = argparse.ArgumentParser(add_help=False)
+    parent_parser_ko.add_argument(
+        '--ko',
+        dest='ko',
+        help='If KEGG Orthologs are in the function table, add this parameter to get their names (require bioservices).',
         required=False,
-        help='Pathname to go-basic.obo file. If no path is given, it will be downloaded and put in the output folder.',
-        metavar='INPUT_FILE',
-        default=None)
+        action='store_true',
+        default=False)
 
     parent_parser_orsumMinTermSize = argparse.ArgumentParser(add_help=False)
     parent_parser_orsumMinTermSize.add_argument(
@@ -139,8 +156,8 @@ def main():
         'gseapy_enrichr',
         help='Extract enriched functions from groups (either chosen from tax_rank or manually selected) using gseapy enrichr and orsum.',
         parents=[
-            parent_parser_f, parent_parser_o, parent_parser_grouping, parent_parser_t, parent_parser_taxa_list,
-            parent_parser_e, parent_parser_g, parent_parser_orsumMinTermSize, parent_parser_gseapyCutOff
+            parent_parser_f, parent_parser_o, parent_parser_grouping, parent_parser_t, parent_parser_taxa_list, parent_parser_function_list,
+            parent_parser_annot_names, parent_parser_orsumMinTermSize, parent_parser_gseapyCutOff, parent_parser_taxon_id
             ],
         allow_abbrev=False)
 
@@ -167,9 +184,10 @@ def main():
     logger.addHandler(console_handler)
 
     if args.cmd == 'gseapy_enrichr':
-        taxon_rank_annotation_enrichment(args.input_folder, args.output, args.grouping, taxon_rank=args.taxon_rank, taxa_lists_file=args.taxa_list,
-                                         enzyme_data_file=args.enzyme_file, go_basic_obo_file=args.go_file, orsum_minterm_size=args.orsumMinTermSize,
-                                         selected_adjust_pvalue_cutoff=args.gseapyCutOff)
+        taxon_rank_annotation_enrichment(args.input_file_folder, args.output, args.grouping, taxon_rank=args.taxon_rank, taxa_lists_file=args.taxa_list,
+                                         function_lists_file=args.function_list,
+                                         annot_names_file=args.annot_names_file, orsum_minterm_size=args.orsumMinTermSize,
+                                         selected_adjust_pvalue_cutoff=args.gseapyCutOff, taxon_id_file=args.taxon_id)
 
     logger.info("--- Total runtime %.2f seconds ---" % (time.time() - start_time))
     logger.warning(f'--- Logs written in {log_file_path} ---')

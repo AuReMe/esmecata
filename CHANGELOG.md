@@ -1,5 +1,24 @@
 # Changelog
 
+# EsMeCaTa v0.6.8 (2025-11-07)
+
+## Add
+
+* `selected_function` and `function_lists_file` in gseapy_orsum.
+* Use of function table as input for `esmecata_gseapy gseapy_enrichr` (for example to be used on PICRUSt2 results).
+* `--annot-names` parameter to give a json dict for annotation names. Default downloads annotation names from EC/GO/KO.
+* Tests for function `create_dataset_annotation_file` and paramaeters `selected_function` and `function_lists_file`.
+
+## Fix
+
+* Memory leak in function `create_dataset_annotation_file`.
+
+## Modify
+
+* Remove old parameters to download EC and GO names in `esmecata_gseapy gseapy_enrichr`.
+* Update variable names in `gseapy_orsum.py`.
+* Update readme on enrichment analysis.
+
 # EsMeCaTa v0.6.7 (2025-10-15)
 
 ## Add

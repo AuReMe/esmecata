@@ -1034,13 +1034,37 @@ subcommands:
   {gseapy_enrichr}
     gseapy_enrichr  Extract enriched functions from taxon using gseapy and orsum.
 
-Requires: gseapy and orsum
+Requires: bioservices, pronto, gseapy and orsum
 ```
 
-There are currently two ways to use `gseapy_enrichr`:
+```
+usage: esmecata_gseapy gseapy_enrichr [-h] -f INPUT_FOLDER -o OUPUT_DIR --grouping STR [--taxon-rank INPUT_TAXON] [--taxa-list STR] [--function-list STR] [--annot-names INPUT_FILE] [--orsumMinTermSize INT] [--gseapyCutOff FLOAT] [--taxon-id INPUT_FILE]
 
-- by grouping observation names according to their taxonomic ranks (by default `phylum`) with the parameter `--grouping tax_rank`.
-- by grouping observation names into groups defined by the user with a tsv file with the parameter `--grouping selected`. The input file is given by  the suer with the parameter `--taxa-list` and should look like this:
+options:
+  -h, --help            show this help message and exit
+  -f INPUT_FOLDER, --folder INPUT_FOLDER
+                        Annotation input folder or file. For folder, it corresponds to EsMeCaTa annotation output folder. For file, it ocrresponds to a function table containing annotation as column and organism as row.
+  -o OUPUT_DIR, --output OUPUT_DIR
+                        Output directory path.
+  --grouping STR        Grouping factor used for enrichment analysis (either "tax_rank", "selected" or "selected_function").
+  --taxon-rank INPUT_TAXON
+                        Taxon rank to cluster observation names of EsMeCaTa together (default "phylum").
+  --taxa-list STR       When using value "selected" for option "grouping", you have to give this file indicating the different groups of taxon to compare.
+  --function-list STR   When using value "selected_function" for option "grouping", you have to give this file indicating the different groups of functions to compare.
+  --annot-names INPUT_FILE
+                        Pathname to json file indicating annotation names.
+  --orsumMinTermSize INT
+                        MinTermSize of orsum.
+  --gseapyCutOff FLOAT  Adjust-Pval cutoff for gseapy enrichr, default: 0.05 (--cut-off argument of gseapy).
+  --taxon-id INPUT_FILE
+                        Pathname to taxon ID file indicating taxonomic ID associated with organisms name. Required for tax_rank analysis if the annotation input is a file and not an esmecata annotation folder.
+```
+
+There are currently three ways to use `gseapy_enrichr`:
+
+- by grouping observation names according to their taxonomic ranks (by default `phylum`) with the parameter `--grouping tax_rank`. If you give a function table as input to `-f`, you will have to provide a taxon ID file with the `--taxon-id` parameter.
+
+- by grouping observation names into groups defined by the user with a tsv file with the parameter `--grouping selected`. The tabulated input file is given by the user with the parameter `--taxa-list` and should look like this:
 
 | Group 1    | Group 2   | Group 3   |
 |------------|-----------|-----------|
@@ -1048,23 +1072,56 @@ There are currently two ways to use `gseapy_enrichr`:
 | Cluster_5  | Cluster_3 | Cluster_7 |
 | Cluster_10 | Cluster_4 | Cluster_8 |
 
-There are two parameters mandatory for both modes:
+- by grouping set of functions to find in which observation names they are enriched with paramater `--grouping selected_function`. If the annotation input corresponds to esmecata annotation results, it expects EC number and GO Terms. But by giving a function table instead, you can choose your own annotation type. The tabulated input file showing the group is given by the user with the parameter `--function-list` and should look like this:
 
-- the `-f` parameter takes as input the annotation folder of esmecata (either the output folder of `esmecata annotation` or the `2_annotation` of `esmecata workflow`).
+| Group 1    | Group 2   |
+|------------|-----------|
+| 1.1.1.86  | 2.8.4.1 |
+| GO:2000112  | GO:0009326 
+| 7.2.1.4 |  |
+| GO:2001141 |  |
+
+There are two parameters mandatory for the different modes:
+
+- the `-f` parameter takes as input the annotation folder of esmecata (either the output folder of `esmecata annotation` or the `2_annotation` of `esmecata workflow`) or a tabulated file containing annotation as columns and organism as rows (such as picrust2 predictions (for example by combining files `combined_EC_predicted.tsv` and `combined_KO_predicted.tsv`), [example](https://github.com/AuReMe/esmecata/blob/main/test/test_data/picrust_test_predicted_func.tsv) can be found in test_data folder).
+
 - the `-o` parameter corresponds to the path to the output folder.
 
- So you can either call `esmecata_gseapy gseapy_enrichr` with:
+**Warning**: if a tabulated file is given as input (to `-f`), if you want to use the `tax_rank` grouping, you should give a taxon ID file to the `--taxon-id` parameter (example of such file can be found [here](https://github.com/AuReMe/esmecata/blob/esmecata_0.6.8/test/test_data/picrust_taxon_id.tsv)). Example of taxon ID file (tax_id column corresponds to NCBI taxonomic ID):
+
+| observation_name   | tax_id  | tax_rank   |
+|------------|-----------|-----------|
+| org_01  | 2207 | genus |
+| org_06  | 1508657 | genus |
+
+So you can either call `esmecata_gseapy gseapy_enrichr` with `tax_rank` grouping parameter:
 
 `esmecata_gseapy gseapy_enrichr -f esmecata_annotation_output_folder -o output_folder --grouping tax_rank --taxon-rank phylum`
 
-Or by using one input file with:
+Or by using a taxa list file with `selected` grouping parameter:
 
 `esmecata_gseapy gseapy_enrichr -f esmecata_annotation_output_folder -o output_folder --grouping selected --taxa-list manually_selected_groups.tsv`
+
+Or by using a function list file with `selected` grouping parameter:
+
+`esmecata_gseapy gseapy_enrichr -f esmecata_annotation_output_folder -o output_folder --grouping selected_function --function-list manually_selected_function_groups.tsv`
+
+It can also be used by giving an annotation file:
+
+`esmecata_gseapy gseapy_enrichr -f function_table.tsv -o output_folder --grouping selected_function --function-list manually_selected_function_groups.tsv --annot-names annotation_names.json`
 
 Additional arguments can be given to use gseapy or orsum options such as:
 
 - `--gseapyCutOff` to set adjusted p-value cut-off for gseapy enrichr term (by default it is 0.05).
-- `--orsumMinTermSize` to set the MinTermSize of orsum (the minimum size of the terms to be processed.).
+- `--orsumMinTermSize` to set the MinTermSize of orsum (the minimum size of the terms to be processed).
+- `--annot-names` to give enriched element names (for example annotation names). It expects a json file, the default one is present [here](https://github.com/AuReMe/esmecata/blob/main/test/test_data/annotation_names.json). But you can make your won by putting as key the ID of the annotation/element and as value the annotaiton/element name. By default, it downloads annotation names for EC numbr, GO Terms and KEGG Orthologs.
+
+This generates several ouputs among them:
+
+- `enrichr_module`: raw results from gseapy enrichr with subfolder associated with the different groups and the resulting files generated by gseapy. Gseapy enrichr is explained in the [gseapy doc](https://gseapy.readthedocs.io/en/latest/gseapy_example.html#Over-representation-analysis-(hypergeometric-test)-by-offline).
+- `enrich_matrix.tsv`: resulting from gseapy enrichr analysis, it shows enriched element as row, group in which they are enriched in column and the adjusted p-value (inferior to 0.05 or the `gseapyCutOff` parameter) as value. If element is not enriched in a group, a `NA` is shown.
+- `orsum_input_folder`: input files generated by `esmecata gseapy` from `gseapy enrichr` results to provide input to orsum.
+- `orsum_output_folder`: output files generated by orsum. Description of these outputs can be found on [orsum github page](https://github.com/ozanozisik/orsum).
 
 ### SPARTA
 

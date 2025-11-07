@@ -1,8 +1,10 @@
 import os
+import pandas as pd
 
 from esmecata.core.annotation import extract_protein_cluster, search_already_annotated_protein, query_uniprot_annotation_rest, \
-                                query_uniprot_annotation_sparql, propagate_annotation_in_cluster, extract_protein_annotation_from_files
-
+                                query_uniprot_annotation_sparql, propagate_annotation_in_cluster, extract_protein_annotation_from_files, \
+                                create_dataset_annotation_file
+from pandas.testing import assert_frame_equal
 from Bio import SeqIO
 
 ANOTATIONS = {'Q7CGB6': ['Protein translocase subunit SecA', 'UniProtKB reviewed (Swiss-Prot)',
@@ -169,11 +171,59 @@ def test_annotation_from_files_offline():
     compare_annotation_dict(expected_dict, output_dict)
 
 
+def test_create_dataset_annotation_file_ec():
+    input_annotation_folder = os.path.join('test_data', 'annotation_output', 'annotation_reference')
+    dataset_annotation_file_path  = 'output_dataset_annotation.tsv'
+    create_dataset_annotation_file(input_annotation_folder, dataset_annotation_file_path, content="EC")
+
+    df = pd.read_csv(dataset_annotation_file_path, sep='\t')
+    expected_dataset_annotation_file_path  = os.path.join('test_data', 'annotation_output', 'dataset_annotation_ec.tsv')
+    expected_df = pd.read_csv(expected_dataset_annotation_file_path, sep='\t')
+
+    # Set df with same order of columns and rows than expected_df for the comparison.
+    df = df[expected_df.columns]
+    df = df.reindex(expected_df.index)
+    assert_frame_equal(df, expected_df)
+
+
+def test_create_dataset_annotation_file_go():
+    input_annotation_folder = os.path.join('test_data', 'annotation_output', 'annotation_reference')
+    dataset_annotation_file_path  = 'output_dataset_annotation.tsv'
+    create_dataset_annotation_file(input_annotation_folder, dataset_annotation_file_path, content="GO")
+
+    df = pd.read_csv(dataset_annotation_file_path, sep='\t')
+    expected_dataset_annotation_file_path  = os.path.join('test_data', 'annotation_output', 'dataset_annotation_go.tsv')
+    expected_df = pd.read_csv(expected_dataset_annotation_file_path, sep='\t')
+
+    # Set df with same order of columns and rows than expected_df for the comparison.
+    df = df[expected_df.columns]
+    df = df.reindex(expected_df.index)
+    assert_frame_equal(df, expected_df)
+
+
+def test_create_dataset_annotation_file_all():
+    input_annotation_folder = os.path.join('test_data', 'annotation_output', 'annotation_reference')
+    dataset_annotation_file_path  = 'output_dataset_annotation.tsv'
+    create_dataset_annotation_file(input_annotation_folder, dataset_annotation_file_path, content="all")
+
+    df = pd.read_csv(dataset_annotation_file_path, sep='\t')
+    expected_dataset_annotation_file_path  = os.path.join('test_data', 'annotation_output', 'dataset_annotation.tsv')
+    expected_df = pd.read_csv(expected_dataset_annotation_file_path, sep='\t')
+
+    # Set df with same order of columns and rows than expected_df for the comparison.
+    df = df[expected_df.columns]
+    df = df.reindex(expected_df.index)
+    assert_frame_equal(df, expected_df)
+
+
 if __name__ == "__main__":
-    test_extract_protein_cluster_offline()
-    test_search_already_annotated_protein_offline()
-    test_query_uniprot_annotation_rest_online()
-    test_query_uniprot_annotation_rest_bioservices_online()
-    test_query_uniprot_annotation_sparql_online()
-    test_propagate_annotation_in_cluster_offline()
-    test_annotation_from_files_offline()
+    #test_extract_protein_cluster_offline()
+    #test_search_already_annotated_protein_offline()
+    #test_query_uniprot_annotation_rest_online()
+    #test_query_uniprot_annotation_rest_bioservices_online()
+    #test_query_uniprot_annotation_sparql_online()
+    #test_propagate_annotation_in_cluster_offline()
+    #test_annotation_from_files_offline()
+    test_create_dataset_annotation_file_ec()
+    test_create_dataset_annotation_file_go()
+    test_create_dataset_annotation_file_all()
