@@ -357,7 +357,7 @@ def taxon_rank_annotation_enrichment(annotation_folder_or_file, output_folder, g
             with open(annot_names_file, 'r') as open_annotation_names_file:
                 annot_names = json.load(open_annotation_names_file)
         else:
-            logger.critical('|EsMeCaTa|gseapy_enrichr| annot_names_file must be a valid file or "download" to either use your own annotation names or EC/GO/KO names.')
+            logger.critical('|EsMeCaTa|gseapy_enrichr| --annot-names/annot_names_file must be a valid file or "download" to either use your own annotation names or EC/GO/KO names.')
             sys.exit()
 
     if os.path.isdir(annotation_folder_or_file):
