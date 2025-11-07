@@ -1,6 +1,6 @@
 # Changelog
 
-# EsMeCaTa v0.6.8 (2025-11-06)
+# EsMeCaTa v0.6.8 (2025-11-07)
 
 ## Add
 
