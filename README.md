@@ -1072,7 +1072,7 @@ There are currently three ways to use `gseapy_enrichr`:
 | Cluster_5  | Cluster_3 | Cluster_7 |
 | Cluster_10 | Cluster_4 | Cluster_8 |
 
-- by grouping set of functions to find in which observation names they are enriched with paramater `--grouping selected_function`. If the annotation input corresponds to esmecata annotation results, it expects EC number and GO Terms. But it can also handle KEGG Orthologs by using the ``--ko`` parameter. The tabulated input file showing the group is given by the user with the parameter `--function-list` and should look like this:
+- by grouping set of functions to find in which observation names they are enriched with paramater `--grouping selected_function`. If the annotation input corresponds to esmecata annotation results, it expects EC number and GO Terms. But by giving a function table instead, you can choose your own annotation type. The tabulated input file showing the group is given by the user with the parameter `--function-list` and should look like this:
 
 | Group 1    | Group 2   |
 |------------|-----------|
@@ -1114,7 +1114,6 @@ Additional arguments can be given to use gseapy or orsum options such as:
 
 - `--gseapyCutOff` to set adjusted p-value cut-off for gseapy enrichr term (by default it is 0.05).
 - `--orsumMinTermSize` to set the MinTermSize of orsum (the minimum size of the terms to be processed).
-- `--ko` to specify that KEGG Orthologs are present in the annotation so their names would be retrieved and used.
 - `--annot-names` to give enriched element names (for example annotation names). It expects a json file, the default one is present [here](https://github.com/AuReMe/esmecata/blob/main/test/test_data/annotation_names.json). But you can make your won by putting as key the ID of the annotation/element and as value the annotaiton/element name. By default, it downloads annotation names for EC numbr, GO Terms and KEGG Orthologs.
 
 This generates several ouputs among them:
