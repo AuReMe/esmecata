@@ -42,6 +42,7 @@ EsMeCaTa is a method to estimate consensus proteomes and metabolic capabilities 
   - [EsMeCaTa create\_db](#esmecata-create_db)
   - [Troubleshooting](#troubleshooting)
     - [Issue with incompatible versions of ete4 and UniProt NCBI Taxonomy databases](#issue-with-incompatible-versions-of-ete4-and-uniprot-ncbi-taxonomy-databases)
+    - [Issue with ete4 trying to reach NCBI server on computer/HPC without internet access](#issue-with-ete4-trying-to-reach-ncbi-server-on-computerhpc-without-internet-access)
   - [Citation](#citation)
   - [License](#license)
 
@@ -1072,7 +1073,7 @@ There are currently three ways to use `gseapy_enrichr`:
 | Cluster_5  | Cluster_3 | Cluster_7 |
 | Cluster_10 | Cluster_4 | Cluster_8 |
 
-- by grouping set of functions to find in which observation names they are enriched with paramater `--grouping selected_function`. If the annotation input corresponds to esmecata annotation results, it expects EC number and GO Terms. But by giving a function table instead, you can choose your own annotation type. The tabulated input file showing the group is given by the user with the parameter `--function-list` and should look like this:
+- by grouping set of functions to find in which observation names they are enriched with parameter `--grouping selected_function`. If the annotation input corresponds to esmecata annotation results, it expects EC number and GO Terms. But by giving a function table instead, you can choose your own annotation type. The tabulated input file showing the group is given by the user with the parameter `--function-list` and should look like this:
 
 | Group 1    | Group 2   |
 |------------|-----------|
@@ -1173,9 +1174,19 @@ To merge several precomputed databases, you can use the following command:
 
 A common issue encountered when using EsMeCaTa is that the NCBI Taxonomy database present in the ete4 package (and used to parse the input taxonomic affiliations) is different from the ones used by UniProt. This can lead to several issues at different levels of EsMeCaTa. A possible solution is to update the NCBI Taxonomy database of ete4 with the following command:
 
-```
+```sh
 python3 -c "from ete4 import NCBITaxa; ncbi = NCBITaxa(); ncbi.update_taxonomy_database()"
 ```
+
+### Issue with ete4 trying to reach NCBI server on computer/HPC without internet access
+
+This issue has been discussed in this [GitHub issue](https://github.com/ArnaudBelcour/tabigecy/issues/3). After a fresh install of ete4, a first call of EsMeCaTa makes ete4 installs its database. To achieve this, ete4 needs an internet connection to download the NCBI Taxonomy database file. This can be an issue on system without internet access or with limited internet. A workaround is to generate ete4 SQL database before using EsMeCaTa. To do this, install ete4, download the NCBI Taxonomy database file (`taxdump.tar.gz`) and use the following command:
+
+```sh
+python3 -c "from ete4 import NCBITaxa; ncbi = NCBITaxa(taxdump_file='taxdump.tar.gz')"
+```
+
+This command makes ete4 generate its SQL database from the local `taxdump.tar.gz` file instead of downloading it from NCBI server. In this way, you can bypass the need of an internet connection. After this, ete4 should work without an internet connectionwhcih can be useful if you try to work with esmecata precomputed command (such as with Tabigecy).
 
 ## Citation
 
