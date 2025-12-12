@@ -177,8 +177,10 @@ def test_create_dataset_annotation_file_ec():
     create_dataset_annotation_file(input_annotation_folder, dataset_annotation_file_path, content="EC")
 
     df = pd.read_csv(dataset_annotation_file_path, sep='\t')
+    df.set_index('observation_name', inplace=True)
     expected_dataset_annotation_file_path  = os.path.join('test_data', 'annotation_output', 'dataset_annotation_ec.tsv')
     expected_df = pd.read_csv(expected_dataset_annotation_file_path, sep='\t')
+    expected_df.set_index('observation_name', inplace=True)
 
     # Set df with same order of columns and rows than expected_df for the comparison.
     df = df[expected_df.columns]
@@ -192,8 +194,10 @@ def test_create_dataset_annotation_file_go():
     create_dataset_annotation_file(input_annotation_folder, dataset_annotation_file_path, content="GO")
 
     df = pd.read_csv(dataset_annotation_file_path, sep='\t')
+    df.set_index('observation_name', inplace=True)
     expected_dataset_annotation_file_path  = os.path.join('test_data', 'annotation_output', 'dataset_annotation_go.tsv')
     expected_df = pd.read_csv(expected_dataset_annotation_file_path, sep='\t')
+    expected_df.set_index('observation_name', inplace=True)
 
     # Set df with same order of columns and rows than expected_df for the comparison.
     df = df[expected_df.columns]
@@ -207,12 +211,13 @@ def test_create_dataset_annotation_file_all():
     create_dataset_annotation_file(input_annotation_folder, dataset_annotation_file_path, content="all")
 
     df = pd.read_csv(dataset_annotation_file_path, sep='\t')
+    df.set_index('observation_name', inplace=True)
     expected_dataset_annotation_file_path  = os.path.join('test_data', 'annotation_output', 'dataset_annotation.tsv')
     expected_df = pd.read_csv(expected_dataset_annotation_file_path, sep='\t')
+    expected_df.set_index('observation_name', inplace=True)
 
     # Set df with same order of columns and rows than expected_df for the comparison.
-    df = df[expected_df.columns]
-    df = df.reindex(expected_df.index)
+    expected_df, df = expected_df.align(df, join="outer", axis=None)
     assert_frame_equal(df, expected_df)
 
 
