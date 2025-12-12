@@ -217,7 +217,8 @@ def test_create_dataset_annotation_file_all():
     expected_df.set_index('observation_name', inplace=True)
 
     # Set df with same order of columns and rows than expected_df for the comparison.
-    expected_df, df = expected_df.align(df, join="outer", axis=None)
+    df = df[expected_df.columns]
+    df = df.reindex(expected_df.index)
     assert_frame_equal(df, expected_df)
 
 
