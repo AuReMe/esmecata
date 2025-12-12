@@ -33,7 +33,7 @@ from Bio import SeqIO
 from Bio import __version__ as biopython_version
 
 from esmecata.utils import is_valid_dir, get_domain_or_superkingdom_from_ncbi_tax_database
-from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file
+from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file, taxon_id_to_taxonomic_affiliation
 from esmecata.core.eggnog import compute_stat_annotation, write_pathologic
 from esmecata.core.clustering import get_proteomes_tax_id_name, compute_openness_pan_proteomes
 from esmecata.core.annotation import create_dataset_annotation_file
@@ -345,12 +345,23 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     df.set_index('observation_name', inplace=True)
 
     # taxonomic_affiliation is the column containing the taxonomic affiliation separated by ';': phylum;class;order;family;genus;genus + species
-    taxonomies = df.to_dict()['taxonomic_affiliation']
+    if 'taxonomic_affiliation' in df.columns:
+        taxonomies = df.to_dict()['taxonomic_affiliation']
+    else:
+        if 'ncbi_taxid' in df.columns:
+            ncbi_taxon_ids = df.to_dict()['ncbi_taxid']
+        else:
+            logger.critical('|EsMeCaTa|proteomes| Missing required columns either: taxonomic_affiliation or ncbi_taxid.')
+            sys.exit(1)
 
     ncbi = NCBITaxa()
 
     # Parse taxonomic affiliations with ete4 to find matching taxon name.
-    tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi, output_folder)
+    if 'taxonomic_affiliation' in df.columns:
+        tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi, output_folder)
+    else:
+        if 'ncbi_taxid' in df.columns:
+            tax_id_names, json_taxonomic_affiliations = taxon_id_to_taxonomic_affiliation(ncbi_taxon_ids, update_affiliations, ncbi, output_folder)
 
     # Disambiguate taxon name using other taxon from the taxonomic affiliations.
     json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)

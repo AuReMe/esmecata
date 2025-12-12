@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.6.9 (2025-12-12)
+
+## Add
+* New possible input column `ncbi_taxid` to give NCBI taxon ID instead of `taxonomic_affiliation` (for both `proteomes` and `precomputed`).
+* New test associated with new input column.
+
 # EsMeCaTa v0.6.8 (2025-11-07)
 
 ## Add

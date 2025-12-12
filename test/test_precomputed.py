@@ -61,6 +61,48 @@ def test_precomputed_parse_affiliation_offline():
     shutil.rmtree(output_folder)
 
 
+def test_precomputed_parse_taxon_id_offline():
+    output_folder = 'output_folder'
+    input_file = os.path.join('test_data', 'buchnera_workflow_ncb_taxid.tsv')
+    esmecata_precomputed_db = os.path.join('test_data', 'buchnera_database.zip')
+    # Check md5 database.
+    md5_database = hashlib.md5(open(esmecata_precomputed_db,'rb').read()).hexdigest()
+    assert md5_database == EXPECTED_MD5_BUCHNERA
+
+    precomputed_parse_affiliation(input_file, esmecata_precomputed_db, output_folder)
+
+    proteome_tax_id_file = os.path.join(output_folder, '1_clustering', 'proteome_tax_id.tsv')
+    clustering_stat_file = os.path.join(output_folder, '1_clustering', 'stat_number_clustering.tsv')
+    annotation_stat_file = os.path.join(output_folder, '2_annotation', 'stat_number_annotation.tsv')
+
+    predicted_results = {}
+    with open(proteome_tax_id_file, 'r') as open_proteome_tax_id_file:
+        csvreader = csv.DictReader(open_proteome_tax_id_file, delimiter='\t')
+        for line in csvreader:
+            observation_name = line['observation_name']
+            predicted_results[observation_name] = {}
+            predicted_results[observation_name]['proteomes'] = len(line['proteome'].split(','))
+
+    with open(clustering_stat_file, 'r') as open_clustering_stat_file:
+        csvreader = csv.DictReader(open_clustering_stat_file, delimiter='\t')
+        for line in csvreader:
+            observation_name = line['observation_name']
+            predicted_results[observation_name]['protein_clusters'] = int(line['Number_protein_clusters_kept'])
+
+    with open(annotation_stat_file, 'r') as open_annotation_stat_file:
+        csvreader = csv.DictReader(open_annotation_stat_file, delimiter='\t')
+        for line in csvreader:
+            observation_name = line['observation_name']
+            predicted_results[observation_name]['GOs'] = int(line['Number_go_terms'])
+            predicted_results[observation_name]['ECs'] = int(line['Number_ecs'])
+
+    for observation_name in EXPECTED_RESULTS:
+        for data in EXPECTED_RESULTS[observation_name]:
+            assert predicted_results[observation_name][data] == EXPECTED_RESULTS[observation_name][data]
+
+    shutil.rmtree(output_folder)
+
+
 def test_precomputed_parse_affiliation_cli_offline():
     output_folder = 'output_folder'
     input_file = os.path.join('test_data', 'buchnera_workflow.tsv')

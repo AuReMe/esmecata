@@ -310,17 +310,32 @@ def test_check_cli_online():
     assert expected_results == ['species']
 
 
+def test_check_cli_online_ncbi_taxid():
+    output_folder = 'proteomes_output'
+    buchnera_workflow_file = os.path.join('test_data', 'buchnera_workflow_ncb_taxid.tsv')
+    subprocess.call(['esmecata', 'check', '-i', buchnera_workflow_file, '-o', output_folder])
+    expected_results = []
+    output_stat_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
+    with open(output_stat_file, 'r') as stat_file_read:
+        csvreader = csv.DictReader(stat_file_read, delimiter='\t')
+        for line in csvreader:
+            expected_results.append(line['tax_rank'])
+
+    assert expected_results == ['species']
+
+
 if __name__ == "__main__":
     #test_find_proteomes_tax_ids_online()
     #test_disambiguate_taxon_offline()
     #test_subsampling_proteomes_offline()
     #test_organism_ids_online()
-    test_sparql_find_proteomes_tax_ids_online()
+    #test_sparql_find_proteomes_tax_ids_online()
     #test_rest_query_proteomes_online()
     #test_find_non_reference_proteome_rest_online()
     #test_find_proteome_rest_all_proteomes_online()
-    test_find_non_reference_proteome_sparql_online()
-    test_find_proteome_sparql_all_proteomes_online()
+    #test_find_non_reference_proteome_sparql_online()
+    #test_find_proteome_sparql_all_proteomes_online()
     #test_filter_rank_limit_offline()
     #test_update_taxonomy_bacillus_offline()
     #test_update_taxonomy_yersinia_offline()
+    test_check_cli_online_ncbi_taxid()

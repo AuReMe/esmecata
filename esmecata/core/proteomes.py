@@ -282,6 +282,60 @@ def associate_taxon_to_taxon_id(taxonomic_affiliations, update_affiliations=None
     return tax_id_names, json_taxonomic_affiliations
 
 
+def taxon_id_to_taxonomic_affiliation(ncbi_taxon_ids, update_affiliations=None, ncbi=None, output_folder=None):
+    """ From a dictionary containing multiple taxonomic affiliations, find the taxon ID for each.
+
+    Args:
+        ncbi_taxon_ids (dict): dictionary with observation name as key and taxon ID as value
+        update_affiliations (str): option to update taxonomic affiliations.
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database.
+        output_folder (str): pathname to output folder.
+
+    Returns:
+        tax_id_names (dict): mapping between taxon ID and taxon name
+        json_taxonomic_affiliations (dict): observation name and dictionary with mapping betwenn taxon name and taxon ID
+    """
+    tax_id_names = {}
+    json_taxonomic_affiliations = {}
+
+    if ncbi_taxon_ids == {}:
+        logger.critical('|EsMeCaTa|proteomes| Empty taxonomy dictionary.')
+        return
+
+    new_taxonomic_affiliations = []
+    # For each taxon ID find the associated taxononomic affiliation.
+    for observation_name in ncbi_taxon_ids:
+        taxon_id = ncbi_taxon_ids[observation_name]
+        try:
+            tax_id_lineages = ncbi.get_lineage(taxon_id)
+        except ValueError:
+            logger.critical('|EsMeCaTa|proteomes| Taxon ID {0} not found .'.format(taxon_id))
+            tax_id_lineages = {"not_found": "not_found"}
+        ordered_taxonomic_affilaition = OrderedDict()
+        for taxon_id in tax_id_lineages:
+            if taxon_id == "not_found":
+                taxon_translations = {"not_found": "not_found"}
+            else:
+                taxon_translations = {ncbi.get_taxid_translator([taxon_id])[int(taxon_id)]: [taxon_id]}
+                ordered_taxonomic_affilaition.update(taxon_translations)
+        if tax_id_lineages == {"not_found": "not_found"}:
+            tax_id_names.update({"not_found": "not_found"})
+        else:
+            tax_id_names.update({tax_id: ncbi.get_taxid_translator([tax_id])[int(tax_id)] for tax_id in tax_id_lineages})
+        json_taxonomic_affiliations[observation_name] = ordered_taxonomic_affilaition
+
+    if update_affiliations:
+        # Write new taxonomic file if update-affiliations.
+        new_taxon_file = os.path.join(output_folder, 'new_taxonomic_affiliation.tsv')
+        with open(new_taxon_file, 'w') as output_file:
+            csvwriter = csv.writer(output_file, delimiter='\t')
+            csvwriter.writerow(['observation_name', 'taxonomic_affiliation'])
+            for new_taxonomic_affiliation in new_taxonomic_affiliations:
+                csvwriter.writerow(new_taxonomic_affiliation)
+
+    return tax_id_names, json_taxonomic_affiliations
+
+
 def disambiguate_taxon(json_taxonomic_affiliations, ncbi):
     """ From json_taxonomic_affiliations (output of associate_taxon_to_taxon_id), disambiguate taxon name having multiples taxon IDs.
     For example, Yersinia is associated with both taxon ID 629 and 444888. By using the other taxon in the taxonomic affiliation, this function selects the correct taxon ID.
@@ -1357,14 +1411,25 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
     df.set_index('observation_name', inplace=True)
 
     # taxonomic_affiliation is the column containing the taxonomic affiliation separated by ';': phylum;class;order;family;genus;genus + species
-    taxonomies = df.to_dict()['taxonomic_affiliation']
+    if 'taxonomic_affiliation' in df.columns:
+        taxonomies = df.to_dict()['taxonomic_affiliation']
+    else:
+        if 'ncbi_taxid' in df.columns:
+            ncbi_taxon_ids = df.to_dict()['ncbi_taxid']
+        else:
+            logger.critical('|EsMeCaTa|proteomes| Missing required columns either: taxonomic_affiliation or ncbi_taxid.')
+            sys.exit(1)
 
     proteome_tax_id_file = os.path.join(output_folder, 'proteome_tax_id.tsv')
 
     if not os.path.exists(proteome_tax_id_file):
         ncbi = NCBITaxa()
 
-        tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi, output_folder)
+        if 'taxonomic_affiliation' in df.columns:
+            tax_id_names, json_taxonomic_affiliations = associate_taxon_to_taxon_id(taxonomies, update_affiliations, ncbi, output_folder)
+        else:
+            if 'ncbi_taxid' in df.columns:
+                tax_id_names, json_taxonomic_affiliations = taxon_id_to_taxonomic_affiliation(ncbi_taxon_ids, update_affiliations, ncbi, output_folder)
 
         json_taxonomic_affiliations = disambiguate_taxon(json_taxonomic_affiliations, ncbi)
 
