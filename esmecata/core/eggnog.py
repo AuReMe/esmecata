@@ -260,6 +260,7 @@ def write_pathologic(base_filename, annotated_proteins, pathologic_output_file, 
                 element_file.write('NAME\t' + protein_name + '\n')
             else:
                 element_file.write('NAME\t' + protein + '\n')
+            element_file.write('FUNCTION\tORF\n')
             element_file.write('PRODUCT-TYPE\tP' + '\n')
             element_file.write('PRODUCT-ID\tprot ' + protein + '\n')
             for uniprot_protein in reference_proteins[protein]:
