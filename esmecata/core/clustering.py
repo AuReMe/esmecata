@@ -31,9 +31,11 @@ from scipy import __version__ as scipy_version
 from Bio import SeqIO
 from Bio import __version__ as biopython_version
 from shutil import which
+from pastml.acr import pastml_pipeline
 
 from esmecata import __version__ as esmecata_version
 from esmecata.utils import is_valid_path, is_valid_dir
+from esmecata.core.proteomes import get_proteome_tax_id
 
 logger = logging.getLogger(__name__)
 
@@ -232,6 +234,35 @@ def extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated, cluster_p
 
     return protein_clusters
 
+def generate_protein_clusters_table(protein_clusters, observation_name_proteomes, used_proteomes, input_proteome_to_tax_id, output_file):
+    organism_prots = retrieve_proteome_protein_link(observation_name_proteomes)
+    sorted_protein_clusters = sorted(list(protein_clusters.keys()))
+    data = []
+
+    for proteome_id in input_proteome_to_tax_id:
+        if proteome_id in used_proteomes:
+            proteome_tax_id = input_proteome_to_tax_id[proteome_id]
+            protein_cluster_presence = [len([prot for prot in protein_clusters[rep_protein] if proteome_id==organism_prots[prot]]) for rep_protein in sorted_protein_clusters]
+            proteome_row = [proteome_tax_id] + protein_cluster_presence
+            data.append(proteome_row)
+    df = pd.DataFrame(data, columns=['proteome_tax_id', *sorted_protein_clusters])
+    df.to_csv(output_file, sep='\t', index=False)
+
+def retrieve_proteome_protein_link(observation_name_proteomes):
+    # Retrieve protein ID and the corresponding proteome.
+    organism_prots = {}
+    for fasta_file in observation_name_proteomes:
+        with gzip.open(fasta_file, 'rt') as fasta_handle:
+            for record in SeqIO.parse(fasta_handle, 'fasta'):
+                compressed_filebasename = os.path.basename(fasta_file)
+                fasta_filebasename = os.path.splitext(compressed_filebasename)[0]
+                filebasename = os.path.splitext(fasta_filebasename)[0]
+                if '|' in record.id:
+                    prot_id = record.id.split('|')[1]
+                else:
+                    prot_id = record.id
+                organism_prots[prot_id] = filebasename
+    return organism_prots
 
 def compute_proteome_representativeness_ratio(protein_clusters, observation_name_proteomes, computed_threshold_file=None):
     """Compute for each protein cluster the ratio of representation of each proteomes in the cluster.
@@ -246,21 +277,9 @@ def compute_proteome_representativeness_ratio(protein_clusters, observation_name
         rep_prot_organims (dict): names of each proteomes associated with each protein cluster
         computed_threshold_cluster (dict): ratio of proteomes representativeness for each protein cluster
     """
-    # Retrieve protein ID and the corresponding proteome.
-    organism_prots = {}
-    for fasta_file in observation_name_proteomes:
-        with gzip.open(fasta_file, 'rt') as fasta_handle:
-            for record in SeqIO.parse(fasta_handle, 'fasta'):
-                compressed_filebasename = os.path.basename(fasta_file)
-                fasta_filebasename = os.path.splitext(compressed_filebasename)[0]
-                filebasename = os.path.splitext(fasta_filebasename)[0]
-                if '|' in record.id:
-                    prot_id = record.id.split('|')[1]
-                else:
-                    prot_id = record.id
-                organism_prots[prot_id] = filebasename
 
     number_proteomes = len(observation_name_proteomes)
+    organism_prots = retrieve_proteome_protein_link(observation_name_proteomes)
 
     # Compute the ratio between the number of proteome represented by a protein in the cluster and the total number of proteome.
     rep_prot_organims = {}
@@ -314,6 +333,14 @@ def filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims
 
     return protein_cluster_to_keeps
 
+
+def hidden_state_prediction(proteome_gene_tip_table, tree_file, output_file):
+    df = pd.read_csv(proteome_gene_tip_table, sep='\t')
+    df.set_index('proteome_tax_id', inplace=True)
+
+    columns = list(df.columns)
+
+    pastml_pipeline(data=proteome_gene_tip_table, data_sep='\t', columns=columns, tree=tree_file, out_data=output_file)
 
 def heap_law_curve_fitting(nb_proteomes, nb_new_protein_discovered):
     """ Curve fitting accordng to Heap's Law.
@@ -441,6 +468,8 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
 
     # Use the proteomes folder created by retrieve_proteome.py.
     proteome_tax_id_pathname = os.path.join(proteome_folder, 'proteome_tax_id.tsv')
+    proteomes_description_folder = os.path.join(proteome_folder, 'proteomes_description')
+    proteomes_tree_folder = os.path.join(proteome_folder, 'taxonomic_tree')
 
     if not is_valid_path(proteome_tax_id_pathname):
         logger.critical(f"|EsMeCaTa|clustering| Missing output from esmecata proteomes in {proteome_tax_id_pathname}.")
@@ -454,6 +483,12 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
 
     computed_threshold_path = os.path.join(output_folder, 'computed_threshold')
     is_valid_dir(computed_threshold_path)
+
+    proteome_table_tip_path = os.path.join(output_folder, 'proteome_table_tip')
+    is_valid_dir(proteome_table_tip_path)
+
+    hidden_state_prediciton_path = os.path.join(output_folder, 'hidden_state_prediciton')
+    is_valid_dir(hidden_state_prediciton_path)
 
     already_performed_clustering = [reference_protein_file.replace('.tsv', '') for reference_protein_file in os.listdir(reference_proteins_path)]
 
@@ -513,6 +548,9 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
         shutil.copyfile(proteome_taxon_id_file, clustering_taxon_id_file)
 
     proteomes_taxa_names = get_proteomes_tax_id_name(proteome_taxon_id_file)
+    obs_name_proteomes = get_proteomes_tax_id_name(proteome_taxon_id_file, header_to_extract='proteome')
+    used_proteomes = [proteome for obs_name in obs_name_proteomes for proteome in obs_name_proteomes[obs_name].split(',')]
+    input_proteome_to_tax_id = get_proteome_tax_id(proteomes_description_folder)
 
     all_tax_names = set(list(proteomes_taxa_names.values())) - set(already_performed_clustering)
     nb_taxa_names = len(all_tax_names)
@@ -540,6 +578,14 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
         # Extract protein clusters from mmseqs results.
         cluster_proteomes_output_file = os.path.join(cluster_founds_path, proteomes_tax_name+'.tsv')
         protein_clusters = extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated, cluster_proteomes_output_file)
+
+        proteome_table_tip_file = os.path.join(proteome_table_tip_path, proteomes_tax_name+'.tsv')
+        generate_protein_clusters_table(protein_clusters, observation_name_proteomes, used_proteomes, input_proteome_to_tax_id, proteome_table_tip_file)
+
+        used_obs_name = [obs_name for obs_name in proteomes_taxa_names if proteomes_taxa_names[obs_name]==proteomes_tax_name][0]
+        tmp_proteomes_tree_file = os.path.join(proteomes_tree_folder, used_obs_name+'.nk')
+        hsp_state_prediciton = os.path.join(hidden_state_prediciton_path, proteomes_tax_name+'.tsv')
+        hidden_state_prediction(proteome_table_tip_file, tmp_proteomes_tree_file, hsp_state_prediciton)
 
         # Compute proteome representativeness ratio.
         computed_threshold_file = os.path.join(computed_threshold_path, proteomes_tax_name+'.tsv')

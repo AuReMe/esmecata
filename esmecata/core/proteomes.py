@@ -1348,6 +1348,36 @@ def get_taxon_obs_name(proteome_tax_id_file, selected_taxon_rank='family'):
     return taxa_names
 
 
+def generate_tree(proteomes_tax_id_file, proteomes_description_folder, output_folder, ncbi):
+    proteomes_tax_id_df = pd.read_csv(proteomes_tax_id_file, sep='\t')
+
+    for index, row in proteomes_tax_id_df.iterrows():
+        observation_name = row['observation_name']
+        tax_id = row['tax_id']
+        proteomes = row['proteome'].split(',')
+        proteomes_description_file = os.path.join(proteomes_description_folder, observation_name+".tsv")
+        proteomes_description_df = pd.read_csv(proteomes_description_file, sep='\t')
+        proteomes_description_df.set_index('proteome_id', inplace=True)
+        proteome_to_tax_id = proteomes_description_df['org_tax_id'].to_dict()
+        tax_ids = [tax_id] + [proteome_to_tax_id[proteome] for proteome in proteomes]
+        tree = ncbi.get_topology([tax_id for tax_id in tax_ids])
+        output_tree_file = os.path.join(output_folder, observation_name+'.nk')
+        tree.write(output_tree_file, parser=8)
+
+
+def get_proteome_tax_id(proteomes_description_folder):
+    input_proteome_to_tax_id = {}
+    for proteome_filename in os.listdir(proteomes_description_folder):
+        observation_name = proteome_filename.replace('.tsv', '')
+        proteomes_description_file = os.path.join(proteomes_description_folder, proteome_filename)
+        proteomes_description_df = pd.read_csv(proteomes_description_file, sep='\t')
+        proteomes_description_df.set_index('proteome_id', inplace=True)
+        proteome_to_tax_id = proteomes_description_df['org_tax_id'].to_dict()
+        input_proteome_to_tax_id.update(proteome_to_tax_id)
+
+    return input_proteome_to_tax_id
+
+
 def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
                         ignore_taxadb_update=None, all_proteomes=None, uniprot_sparql_endpoint=None,
                         limit_maximal_number_proteomes=99, rank_limit=None, minimal_number_proteomes=1,
@@ -1392,6 +1422,9 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     proteomes_description_folder = os.path.join(output_folder, 'proteomes_description')
     is_valid_dir(proteomes_description_folder)
+
+    taxonomic_tree_folder = os.path.join(output_folder, 'taxonomic_tree')
+    is_valid_dir(taxonomic_tree_folder)
 
     known_extensions = ['.xlsx', '.tsv', '.csv']
     file_name, file_extension = os.path.splitext(input_file)
@@ -1490,8 +1523,12 @@ def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
                 logger.info('|EsMeCaTa|proteomes| %s will be associated with the taxon "%s" with %d proteomes.', observation_name, name, len(proteomes))
 
         proteome_to_download = set(proteome_to_download)
+
     # Create heatmap comparing input taxon and taxon used by esmecata to find proteomes.
     create_taxon_heatmap_from_complete_run(output_folder)
+
+    # Generate tree for each observation name.
+    generate_tree(proteome_tax_id_file, proteomes_description_folder, taxonomic_tree_folder, ncbi)
 
     check_endtime = time.time()
     check_duration = check_endtime - check_starttime
