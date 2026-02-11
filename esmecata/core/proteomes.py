@@ -1348,24 +1348,15 @@ def get_taxon_obs_name(proteome_tax_id_file, selected_taxon_rank='family'):
     return taxa_names
 
 
-def generate_tree(proteomes_tax_id_file, proteomes_description_folder, output_folder, ncbi):
-    proteomes_tax_id_df = pd.read_csv(proteomes_tax_id_file, sep='\t')
-
-    for index, row in proteomes_tax_id_df.iterrows():
-        observation_name = row['observation_name']
-        tax_id = row['tax_id']
-        proteomes = row['proteome'].split(',')
-        proteomes_description_file = os.path.join(proteomes_description_folder, observation_name+".tsv")
-        proteomes_description_df = pd.read_csv(proteomes_description_file, sep='\t')
-        proteomes_description_df.set_index('proteome_id', inplace=True)
-        proteome_to_tax_id = proteomes_description_df['org_tax_id'].to_dict()
-        tax_ids = [tax_id] + [proteome_to_tax_id[proteome] for proteome in proteomes]
-        tree = ncbi.get_topology([tax_id for tax_id in tax_ids])
-        output_tree_file = os.path.join(output_folder, observation_name+'.nk')
-        tree.write(output_tree_file, parser=8)
-
-
 def get_proteome_tax_id(proteomes_description_folder):
+    """ Extract from files in proteomes_description_folder the tax_id associated with each proteome.
+
+    Args:
+        proteomes_description_folder (str): path to proteomes description folder in esmecata output folder.
+
+    Returns:
+        input_proteome_to_tax_id (dict): dicitonary linking tax_id to proteome IDs.
+    """
     input_proteome_to_tax_id = {}
     for proteome_filename in os.listdir(proteomes_description_folder):
         observation_name = proteome_filename.replace('.tsv', '')
@@ -1376,6 +1367,33 @@ def get_proteome_tax_id(proteomes_description_folder):
         input_proteome_to_tax_id.update(proteome_to_tax_id)
 
     return input_proteome_to_tax_id
+
+
+def generate_tree(proteomes_tax_id_file, proteomes_description_folder, output_folder, ncbi):
+    """ From tax IDs associated with proteomes selected for inference, generate taxonomic tree (in newick format) using ete package.
+
+    Args:
+        proteomes_tax_id_file_path (str): pathname to the proteomes_tax_id file.
+        proteomes_description_folder (str): path to proteomes description folder in esmecata output folder.
+        output_folder (str): path to output folder that will contained newick tree.
+        ncbi (ete4.NCBITaxa()): ete4 NCBI database
+    """
+    proteomes_tax_id_df = pd.read_csv(proteomes_tax_id_file, sep='\t')
+
+    for index, row in proteomes_tax_id_df.iterrows():
+        observation_name = row['observation_name']
+        tax_id = row['tax_id']
+        proteomes = row['proteome'].split(',')
+        # For each observation name, read the associated proteomes_description and extract tax IDs associatd with proteomes.
+        proteomes_description_file = os.path.join(proteomes_description_folder, observation_name+".tsv")
+        proteomes_description_df = pd.read_csv(proteomes_description_file, sep='\t')
+        proteomes_description_df.set_index('proteome_id', inplace=True)
+        proteome_to_tax_id = proteomes_description_df['org_tax_id'].to_dict()
+        tax_ids = [tax_id] + [proteome_to_tax_id[proteome] for proteome in proteomes]
+        # Generate tree from tax IDs.
+        tree = ncbi.get_topology([tax_id for tax_id in tax_ids])
+        output_tree_file = os.path.join(output_folder, observation_name+'.nk')
+        tree.write(output_tree_file, parser=8)
 
 
 def check_proteomes(input_file, output_folder, busco_percentage_keep=80,

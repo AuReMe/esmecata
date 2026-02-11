@@ -18,6 +18,7 @@ import gzip
 import json
 import logging
 import os
+import math
 import shutil
 import subprocess
 import sys
@@ -234,7 +235,17 @@ def extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated, cluster_p
 
     return protein_clusters
 
+
 def generate_protein_clusters_table(protein_clusters, observation_name_proteomes, used_proteomes, input_proteome_to_tax_id, output_file):
+    """ Generate table as input for hidden state prediction with pastml.
+
+    Args:
+        protein_clusters (dict): protein clusters found by mmseqs (representative protein as key and all the protein in the cluster as value)
+        observation_name_proteomes (list): list of pathname to each proteomes associated to the observation_name
+        used_proteomes (list): list of proteome IDs used by EsMeCaTa for inference of consensus proteomes
+        input_proteome_to_tax_id (dict): dicitonary linking tax_id to proteome IDs
+        output_file (str): path to output file
+    """
     organism_prots = retrieve_proteome_protein_link(observation_name_proteomes)
     sorted_protein_clusters = sorted(list(protein_clusters.keys()))
     data = []
@@ -248,7 +259,16 @@ def generate_protein_clusters_table(protein_clusters, observation_name_proteomes
     df = pd.DataFrame(data, columns=['proteome_tax_id', *sorted_protein_clusters])
     df.to_csv(output_file, sep='\t', index=False)
 
+
 def retrieve_proteome_protein_link(observation_name_proteomes):
+    """ Generate table as input for hidden state prediction with pastml.
+
+    Args:
+        observation_name_proteomes (list): list of pathname to each proteomes associated to the observation_name
+
+    Returns:
+        organism_prots (dict): dictionary with protein ID as key and proteome ID as value
+    """
     # Retrieve protein ID and the corresponding proteome.
     organism_prots = {}
     for fasta_file in observation_name_proteomes:
@@ -262,7 +282,9 @@ def retrieve_proteome_protein_link(observation_name_proteomes):
                 else:
                     prot_id = record.id
                 organism_prots[prot_id] = filebasename
+
     return organism_prots
+
 
 def compute_proteome_representativeness_ratio(protein_clusters, observation_name_proteomes, computed_threshold_file=None):
     """Compute for each protein cluster the ratio of representation of each proteomes in the cluster.
@@ -277,7 +299,6 @@ def compute_proteome_representativeness_ratio(protein_clusters, observation_name
         rep_prot_organims (dict): names of each proteomes associated with each protein cluster
         computed_threshold_cluster (dict): ratio of proteomes representativeness for each protein cluster
     """
-
     number_proteomes = len(observation_name_proteomes)
     organism_prots = retrieve_proteome_protein_link(observation_name_proteomes)
 
@@ -335,12 +356,52 @@ def filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims
 
 
 def hidden_state_prediction(proteome_gene_tip_table, tree_file, output_file):
+    """Filter protein cluster according to the representation of each proteomes in the cluster.
+
+    Args:
+        proteome_gene_tip_table (str): path to file showing presence/absence of protein clusters in each of the proteome 
+        tree_file (str): path to the taxonomic tree showing the position of the proteomes in the tree
+        output_file (str): path for the file created by pastml pipeline
+    """
     df = pd.read_csv(proteome_gene_tip_table, sep='\t')
     df.set_index('proteome_tax_id', inplace=True)
 
     columns = list(df.columns)
 
     pastml_pipeline(data=proteome_gene_tip_table, data_sep='\t', columns=columns, tree=tree_file, out_data=output_file)
+
+
+def extract_hsp_results(hsp_result_filepath):
+    """Parse result files from pastml inference to extract predicted protein clusters.
+
+    Args:
+        hsp_result_filepath (str): path to result fiel from pastml showing the predicted protein clusters for the taxon
+
+    Returns:
+        selected_clusters (dict): dictionary with protein clsuters as key and the inferred occurrence of it in the taxon
+    """
+    hsp_result_df = pd.read_csv(hsp_result_filepath, sep='\t')
+    hsp_result_df = hsp_result_df[hsp_result_df['node']=='root']
+    hsp_result_df = hsp_result_df.drop('node', axis=1)
+
+    selected_clusters = {}
+    # Column corresponds to protein cluster.
+    for column in hsp_result_df.columns:
+        results = hsp_result_df[column].tolist()
+        nan_values = [math.isnan(result) for result in results]
+        # If the only predicted value is the first, keep it.
+        if all(nan_values[1:]) is True:
+            predicted_value = results[0]
+        else:
+            # If there are multiple predictions, if there are a 0 among them, keep 0 otherwise keep the lowest value predicted.
+            if 0 in results:
+                predicted_value = 0
+            else:
+                predicted_value = min(results)
+        selected_clusters[column] = predicted_value
+
+    return selected_clusters
+
 
 def heap_law_curve_fitting(nb_proteomes, nb_new_protein_discovered):
     """ Curve fitting accordng to Heap's Law.
@@ -579,13 +640,16 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
         cluster_proteomes_output_file = os.path.join(cluster_founds_path, proteomes_tax_name+'.tsv')
         protein_clusters = extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated, cluster_proteomes_output_file)
 
+        # Create a table containing the presence of protein clusters in the different proteomes (input for hsp analysis).
         proteome_table_tip_file = os.path.join(proteome_table_tip_path, proteomes_tax_name+'.tsv')
         generate_protein_clusters_table(protein_clusters, observation_name_proteomes, used_proteomes, input_proteome_to_tax_id, proteome_table_tip_file)
 
+        # Perform Hidden State Prediction.
         used_obs_name = [obs_name for obs_name in proteomes_taxa_names if proteomes_taxa_names[obs_name]==proteomes_tax_name][0]
         tmp_proteomes_tree_file = os.path.join(proteomes_tree_folder, used_obs_name+'.nk')
-        hsp_state_prediciton = os.path.join(hidden_state_prediciton_path, proteomes_tax_name+'.tsv')
-        hidden_state_prediction(proteome_table_tip_file, tmp_proteomes_tree_file, hsp_state_prediciton)
+        hsp_result_filepath = os.path.join(hidden_state_prediciton_path, proteomes_tax_name+'.tsv')
+        hidden_state_prediction(proteome_table_tip_file, tmp_proteomes_tree_file, hsp_result_filepath)
+        protein_clusters_kept_from_hsp = extract_hsp_results(hsp_result_filepath)
 
         # Compute proteome representativeness ratio.
         computed_threshold_file = os.path.join(computed_threshold_path, proteomes_tax_name+'.tsv')
