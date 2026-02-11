@@ -1,0 +1,3 @@
+tax_id	tax_name	proteome_id	busco_percentage	completness	org_tax_id	reference_proteome	components
+9	Buchnera aphidicola	UP000000601	81.81818181818183	full	224915	True	[['Chromosome', 'Buchnera aphidicola str. Bp (Baizongia pistaciae), complete genome.'], ['Plasmid pBBp1', 'Buchnera aphidicola str. Bp (Baizongia pistaciae) plasmid pBBp1, complete sequence.']]
+9	Buchnera aphidicola	UP000001806	86.13636363636363	full	107806	True	[['Chromosome', 'Buchnera aphidicola str. APS (Acyrthosiphon pisum) genomic DNA, complete sequence.'], ['Plasmid pLeu', 'Buchnera aphidicola str. APS (Acyrthosiphon pisum) plasmid pLeu DNA, complete sequence.'], ['Plasmid pTrp', 'Buchnera aphidicola str. APS (Acyrthosiphon pisum) plasmid pTrp DNA, complete sequence.']]
