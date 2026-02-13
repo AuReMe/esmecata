@@ -236,24 +236,28 @@ def extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated, cluster_p
     return protein_clusters
 
 
-def generate_protein_clusters_table(protein_clusters, observation_name_proteomes, used_proteomes, input_proteome_to_tax_id, output_file):
+def generate_protein_clusters_table(protein_clusters, observation_name_proteomes, used_proteomes, selected_proteome_ids, input_proteome_to_tax_id, computed_threshold_cluster,
+                                    output_file):
     """ Generate table as input for hidden state prediction with pastml.
 
     Args:
         protein_clusters (dict): protein clusters found by mmseqs (representative protein as key and all the protein in the cluster as value)
         observation_name_proteomes (list): list of pathname to each proteomes associated to the observation_name
         used_proteomes (list): list of proteome IDs used by EsMeCaTa for inference of consensus proteomes
+        selected_proteome_ids (list): list of proteome IDs associated with observation name.
         input_proteome_to_tax_id (dict): dicitonary linking tax_id to proteome IDs
         output_file (str): path to output file
     """
     organism_prots = retrieve_proteome_protein_link(observation_name_proteomes)
-    sorted_protein_clusters = sorted(list(protein_clusters.keys()))
+    tmp_protein_clusters = {protein_cluster: protein_clusters[protein_cluster] for protein_cluster in protein_clusters if computed_threshold_cluster[protein_cluster]>0.4}
+    sorted_protein_clusters = sorted(list(tmp_protein_clusters.keys()))
     data = []
 
-    for proteome_id in input_proteome_to_tax_id:
+    for proteome_id in selected_proteome_ids:
+        proteome_id = proteome_id.replace('.faa', '')
         if proteome_id in used_proteomes:
             proteome_tax_id = input_proteome_to_tax_id[proteome_id]
-            protein_cluster_presence = [len([prot for prot in protein_clusters[rep_protein] if proteome_id==organism_prots[prot]]) for rep_protein in sorted_protein_clusters]
+            protein_cluster_presence = [len([prot for prot in tmp_protein_clusters[rep_protein] if proteome_id==organism_prots[prot]]) for rep_protein in sorted_protein_clusters]
             proteome_row = [proteome_tax_id] + protein_cluster_presence
             data.append(proteome_row)
     df = pd.DataFrame(data, columns=['proteome_tax_id', *sorted_protein_clusters])
@@ -624,6 +628,7 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
     for index, proteomes_tax_name in enumerate(all_tax_names):
         # Get proteomes associated with taxon name.
         observation_name_proteomes = observation_name_fasta_files[proteomes_tax_name]
+        selected_proteome_ids = [os.path.splitext(os.path.basename(proteome_filepath))[0] for proteome_filepath in observation_name_proteomes]
 
         # Change space with '_' to avoid issue.
         proteomes_tax_name = proteomes_tax_name
@@ -640,9 +645,16 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
         cluster_proteomes_output_file = os.path.join(cluster_founds_path, proteomes_tax_name+'.tsv')
         protein_clusters = extrat_protein_cluster_from_mmseqs(mmseqs_tmp_clustered_tabulated, cluster_proteomes_output_file)
 
+
+        # Compute proteome representativeness ratio.
+        computed_threshold_file = os.path.join(computed_threshold_path, proteomes_tax_name+'.tsv')
+        number_proteomes, rep_prot_organims, computed_threshold_cluster = compute_proteome_representativeness_ratio(protein_clusters,
+                                                                                                                    observation_name_proteomes, computed_threshold_file)
+
         # Create a table containing the presence of protein clusters in the different proteomes (input for hsp analysis).
         proteome_table_tip_file = os.path.join(proteome_table_tip_path, proteomes_tax_name+'.tsv')
-        generate_protein_clusters_table(protein_clusters, observation_name_proteomes, used_proteomes, input_proteome_to_tax_id, proteome_table_tip_file)
+        generate_protein_clusters_table(protein_clusters, observation_name_proteomes, used_proteomes, selected_proteome_ids, input_proteome_to_tax_id, computed_threshold_cluster,
+                                        proteome_table_tip_file)
 
         # Perform Hidden State Prediction.
         used_obs_name = [obs_name for obs_name in proteomes_taxa_names if proteomes_taxa_names[obs_name]==proteomes_tax_name][0]
@@ -650,17 +662,13 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
         hsp_result_filepath = os.path.join(hidden_state_prediciton_path, proteomes_tax_name+'.tsv')
         hidden_state_prediction(proteome_table_tip_file, tmp_proteomes_tree_file, hsp_result_filepath)
         protein_clusters_kept_from_hsp = extract_hsp_results(hsp_result_filepath)
-
-        # Compute proteome representativeness ratio.
-        computed_threshold_file = os.path.join(computed_threshold_path, proteomes_tax_name+'.tsv')
-        number_proteomes, rep_prot_organims, computed_threshold_cluster = compute_proteome_representativeness_ratio(protein_clusters,
-                                                                                                                    observation_name_proteomes, computed_threshold_file)
-
+    
         # Filter protein cluster for each protein cluster.
         cluster_proteomes_filtered_output_file = os.path.join(reference_proteins_path, proteomes_tax_name+'.tsv')
         protein_cluster_to_keeps = filter_protein_cluster(protein_clusters, number_proteomes, rep_prot_organims, computed_threshold_cluster,
                                                         clust_threshold, cluster_proteomes_filtered_output_file)
 
+        protein_cluster_to_keeps = [protein_cluster for protein_cluster in protein_clusters_kept_from_hsp]
         logger.info('|EsMeCaTa|clustering| %d protein clusters kept for %s (%d on %d).', len(protein_cluster_to_keeps), proteomes_tax_name, index+1, nb_taxa_names)
 
         # Create BioPython records with the representative proteins kept.

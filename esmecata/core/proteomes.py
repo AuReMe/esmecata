@@ -1364,7 +1364,9 @@ def get_proteome_tax_id(proteomes_description_folder):
         proteomes_description_df = pd.read_csv(proteomes_description_file, sep='\t')
         proteomes_description_df.set_index('proteome_id', inplace=True)
         proteome_to_tax_id = proteomes_description_df['org_tax_id'].to_dict()
-        input_proteome_to_tax_id.update(proteome_to_tax_id)
+        for proteome_id in proteome_to_tax_id:
+            if proteome_id not in input_proteome_to_tax_id:
+                input_proteome_to_tax_id[proteome_id] = proteome_to_tax_id[proteome_id]
 
     return input_proteome_to_tax_id
 
