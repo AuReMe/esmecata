@@ -1,5 +1,11 @@
 # Changelog
 
+# EsMeCaTa v0.6.10 (2026-03-20)
+
+## Fix
+
+* Issue in `esmecata_gseapy` with new version of gseapy (`1.1.12`).
+
 # EsMeCaTa v0.6.9 (2025-12-12)
 
 ## Add

@@ -340,7 +340,7 @@ def taxon_rank_annotation_enrichment(annotation_folder_or_file, output_folder, g
         urllib.request.urlretrieve('https://ftp.expasy.org/databases/enzyme/enzyme.dat', enzyme_data_file)
         # Download go-basic.obo.
         go_basic_obo_file = os.path.join(output_folder, 'go-basic.obo')
-        urllib.request.urlretrieve('http://purl.obolibrary.org/obo/go/go-basic.obo', go_basic_obo_file)
+        urllib.request.urlretrieve('https://purl.obolibrary.org/obo/go/go-basic.obo', go_basic_obo_file)
         # Retrieves KO name from KEGG.
         ko_file = os.path.join(output_folder, 'ko_names.tsv')
         ko_names = get_ko_names(ko_file)
@@ -437,9 +437,9 @@ def taxon_rank_annotation_enrichment(annotation_folder_or_file, output_folder, g
         except ValueError as error:
             logger.critical('|EsMeCaTa|gseapy_enrichr| No enrichred functions with p-value cutoff < {0} for {1}.'.format(selected_adjust_pvalue_cutoff, group_name))
             continue
-        if os.path.exists(os.path.join(output_dir, group_name, 'gs_ind_0.human.enrichr.reports.pdf')):
+        if os.path.exists(os.path.join(output_dir, group_name, 'Enrichr.human.enrichr.reports.pdf')):
             # If enriched results, extract the ones with an adjusted p-value inferior to selected_adjust_pvalue_cutoff to output folder (default 0.05).
-            df = pd.read_csv(os.path.join(output_dir, group_name, 'gs_ind_0.human.enrichr.reports.txt'), sep='\t')
+            df = pd.read_csv(os.path.join(output_dir, group_name, 'Enrichr.human.enrichr.reports.txt'), sep='\t')
             df = df[df['Adjusted P-value'] < selected_adjust_pvalue_cutoff]
             enriched_elements[group_name] = df.set_index('Term')['Adjusted P-value'].to_dict()
             df.sort_values('Adjusted P-value', inplace=True)
