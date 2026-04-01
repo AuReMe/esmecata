@@ -1,5 +1,12 @@
 # Changelog
 
+# EsMeCaTa v0.6.11 (2026-04-01)
+
+## Modify
+
+* Reduce number of UniProt IDs written in PathoLogic files to decrease output size.
+* Update license year.
+
 # EsMeCaTa v0.6.10 (2026-03-20)
 
 ## Fix
@@ -9,6 +16,7 @@
 # EsMeCaTa v0.6.9 (2025-12-12)
 
 ## Add
+
 * New possible input column `ncbi_taxid` to give NCBI taxon ID instead of `taxonomic_affiliation` (for both `proteomes` and `precomputed`).
 * New test associated with new input column.
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2025 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2021-2026 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -263,8 +263,7 @@ def write_pathologic(base_filename, annotated_proteins, pathologic_output_file, 
             element_file.write('FUNCTION\tORF\n')
             element_file.write('PRODUCT-TYPE\tP' + '\n')
             element_file.write('PRODUCT-ID\tprot ' + protein + '\n')
-            for uniprot_protein in reference_proteins[protein]:
-                element_file.write('DBLINK\tUNIPROT:' + uniprot_protein + '\n')
+            element_file.write('DBLINK\tUNIPROT:' + protein + '\n')
             if 'GOs' in protein_annot:
                 gos = [go for go in protein_annot['GOs'].split(',') if go not in ['', '-']]
                 for go in gos:

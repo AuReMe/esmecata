@@ -1,4 +1,4 @@
-# Copyright (C) 2024-2025 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
+# Copyright (C) 2024-2026 Arnaud Belcour - Inria, Univ Rennes, CNRS, IRISA Dyliss
 # Univ. Grenoble Alpes, Inria, Microcosme
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -209,6 +209,7 @@ def search_taxon_database(json_taxonomic_affiliations, database_taxon_file_path,
                     selected_df_annotation = selected_df_annotation.fillna('')
                     reference_proteins_string = selected_df_annotation.set_index('protein_cluster')['cluster_members'].to_dict()
                     reference_proteins = {protein: reference_proteins_string[protein].split(',') for protein in reference_proteins_string}
+
                     sub_annotated_proteins = selected_df_annotation.set_index('protein_cluster').to_dict('index')
                     # Rename dictionary keys according to the ones expected in write_pathologic.
                     sub_annotated_proteins = [(protein, {'Preferred_name': sub_annotated_proteins[protein]['gene_name'],
