@@ -1,0 +1,172 @@
+{
+    "Cluster_1": {
+        "Bacteria": [
+            2
+        ],
+        "Spirochaetes": [
+            203691
+        ],
+        "Spirochaetia": [
+            203692
+        ],
+        "Spirochaetales": [
+            136
+        ],
+        "Spirochaetaceae": [
+            137
+        ],
+        "Sphaerochaeta": [
+            399320
+        ],
+        "unknown species": [
+            "not_found"
+        ]
+    },
+    "Cluster_2": {
+        "Bacteria": [
+            2
+        ],
+        "Chloroflexi": [
+            32061
+        ],
+        "Anaerolineae": [
+            292625
+        ],
+        "Anaerolineales": [
+            292629
+        ],
+        "Anaerolineaceae": [
+            292628
+        ],
+        "ADurb.Bin120": [
+            "not_found"
+        ],
+        "unknown species": [
+            "not_found"
+        ]
+    },
+    "Cluster_3": {
+        "Bacteria": [
+            2
+        ],
+        "Cloacimonetes": [
+            "not_found"
+        ],
+        "Cloacimonadia": [
+            3039863
+        ],
+        "Cloacimonadales": [
+            3039864
+        ],
+        "Cloacimonadaceae": [
+            3039865
+        ],
+        "Candidatus Cloacimonas": [
+            456826
+        ],
+        "unknown species": [
+            "not_found"
+        ]
+    },
+    "Cluster_4": {
+        "Bacteria": [
+            2
+        ],
+        "Bacteroidetes": [
+            976
+        ],
+        "Bacteroidia": [
+            200643
+        ],
+        "Bacteroidales": [
+            171549
+        ],
+        "Rikenellaceae": [
+            171550
+        ],
+        "Rikenellaceae RC9 gut group": [
+            "not_found"
+        ],
+        "unknown species": [
+            "not_found"
+        ]
+    },
+    "Cluster_5": {
+        "Bacteria": [
+            2
+        ],
+        "Cloacimonetes": [
+            "not_found"
+        ],
+        "Cloacimonadia": [
+            3039863
+        ],
+        "Cloacimonadales": [
+            3039864
+        ],
+        "Cloacimonadaceae": [
+            3039865
+        ],
+        "W5": [
+            "not_found"
+        ],
+        "unknown species": [
+            "not_found"
+        ]
+    },
+    "Cluster_6": {
+        "Bacteria": [
+            2
+        ],
+        "Bacteroidetes": [
+            976
+        ],
+        "Bacteroidia": [
+            200643
+        ],
+        "Bacteroidales": [
+            171549
+        ],
+        "Dysgonomonadaceae": [
+            2005520
+        ],
+        "unknown genus": [
+            "not_found"
+        ],
+        "unknown species": [
+            "not_found"
+        ]
+    },
+    "Cluster_8": {
+        "Viruses": [
+            10239
+        ],
+        "Riboviria": [
+            2559587
+        ],
+        "Orthornavirae": [
+            2732396
+        ],
+        "Kitrinoviricota": [
+            2732406
+        ],
+        "Alsuviricetes": [
+            2732461
+        ],
+        "Tymovirales": [
+            675063
+        ],
+        "Betaflexiviridae": [
+            675068
+        ],
+        "Trivirinae": [
+            1914298
+        ],
+        "Chordovirus": [
+            1914296
+        ],
+        "Carrot Ch virus 1": [
+            1425363
+        ]
+    }
+}
