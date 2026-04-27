@@ -701,6 +701,7 @@ output_folder
 ├── esmecata_metadata_proteomes.json
 ├── stat_number_proteome.tsv
 ├── taxon_status.tsv
+├── taxonomy_diff.tsv
 ````
 
 The `proteomes_description` contains list of proteomes find by esmecata on Uniprot associated with the taxonomic affiliation.
@@ -720,6 +721,8 @@ The file `esmecata_proteomes.log` contains the log associated with the command.
 `stat_number_proteome.tsv` is a tabulated file containing the number of proteomes found for each observation name.
 
 `taxon_status.tsv` is a tabulated file indicating for the different observation names, for which reason their associated taxon names were selected or discarded.
+
+`taxonomy_diff.tsv` is a tabulated file indicating the taxon selected by EsMeCaTa compared to the lowest taxon in the taxonomic affiliations.
 
 ### EsMeCaTa clustering
 
@@ -750,7 +753,6 @@ output_folder
 ├── esmecata_metadata_clustering.json
 ├── stat_number_clustering.tsv
 ├── stat_openness_proteomes.tsv
-├── taxonomy_diff.tsv
 ````
 
 The `cluster_founds` contains one tsv file per taxon name used by EsMeCaTa. So multiple `observation_name` can be represented by a similar taxon name to avoid redundancy and limit the disk space used. These files contain the clustered proteins The first column contains the representative proteins of a cluster and the following columns correspond to the other proteins of the same cluster. The first protein occurs two time: one as the representative member of the cluster and a second time as a member of the cluster.
@@ -783,8 +785,6 @@ Where `nb gene families` is the number of newly discovered protein clusters when
 
 If alpha is superior to 1, pangenome is closed: adding more proteomes do not increase number of newly discovered gene families (here protein clusters). The consensus proteome should be a good estimator of the protein contents for the taxon.
 If alpha is inferior to 1, pangenome is open: adding more proteomes increase the number of newly discovered gene families. It is possible that genes specific to the taxon are missed and then the estimation is more uncertain.
-
-`taxonomy_diff.tsv` is a tabulated file indicating the taxon selected by EsMeCaTa compared to the lowest taxon in the taxonomic affiliations.
 
 ### EsMeCaTa annotation
 
@@ -889,6 +889,7 @@ output_folder
   ├── proteome_tax_id.tsv
   ├── esmecata_metadata_proteomes.json
   ├── stat_number_proteome.tsv
+  ├── taxon_status.tsv
   ├── taxonomy_diff.tsv
 ├── 1_clustering
   ├── cluster_founds
@@ -962,6 +963,7 @@ output_folder
   ├── proteome_tax_id.tsv
   ├── esmecata_metadata_proteomes.json
   ├── stat_number_proteome.tsv
+  ├── taxon_status.tsv
   ├── taxonomy_diff.tsv
 ├── 1_clustering
   ├── computed_threshold
@@ -989,7 +991,6 @@ output_folder
 ├── esmecata_metadata_precomputed.json
 ├── stat_number_precomputed.tsv
 ````
-
 
 ## Post-processing analysis
 
