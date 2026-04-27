@@ -33,7 +33,8 @@ from Bio import SeqIO
 from Bio import __version__ as biopython_version
 
 from esmecata.utils import is_valid_dir, get_domain_or_superkingdom_from_ncbi_tax_database
-from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file, taxon_id_to_taxonomic_affiliation
+from esmecata.core.proteomes import associate_taxon_to_taxon_id, disambiguate_taxon, filter_rank_limit, create_comp_taxonomy_file, taxon_id_to_taxonomic_affiliation, \
+                                    generate_information_about_discarded_taxon
 from esmecata.core.eggnog import compute_stat_annotation, write_pathologic
 from esmecata.core.clustering import get_proteomes_tax_id_name, compute_openness_pan_proteomes
 from esmecata.core.annotation import create_dataset_annotation_file
@@ -281,10 +282,10 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
     domain_superkingdom_tax_rank_name = get_domain_or_superkingdom_from_ncbi_tax_database()
     if rank_limit is not None:
         if rank_limit == 'superkingdom' and rank_limit != domain_superkingdom_tax_rank_name and domain_superkingdom_tax_rank_name == 'domain':
-            logger.info('|EsMeCaTa|proteomes| Rank limit sets as superkingdom but it is called domain inside NCBI Taxonomy database, use domain instead.')
+            logger.info('|EsMeCaTa|precomputed| Rank limit sets as superkingdom but it is called domain inside NCBI Taxonomy database, use domain instead.')
             rank_limit = 'domain'
         elif rank_limit == 'domain' and rank_limit != domain_superkingdom_tax_rank_name and domain_superkingdom_tax_rank_name == 'superkingdom':
-            logger.info('|EsMeCaTa|proteomes| Rank limit sets as domain but it is called superkingdom inside NCBI Taxonomy database, use superkingdom instead.')
+            logger.info('|EsMeCaTa|precomputed| Rank limit sets as domain but it is called superkingdom inside NCBI Taxonomy database, use superkingdom instead.')
             rank_limit = 'superkingdom'
 
     is_valid_dir(output_folder)
@@ -352,7 +353,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         if 'ncbi_taxid' in df.columns:
             ncbi_taxon_ids = df.to_dict()['ncbi_taxid']
         else:
-            logger.critical('|EsMeCaTa|proteomes| Missing required columns either: taxonomic_affiliation or ncbi_taxid.')
+            logger.critical('|EsMeCaTa|precomputed| Missing required columns either: taxonomic_affiliation or ncbi_taxid.')
             sys.exit(1)
 
     ncbi = NCBITaxa()
@@ -506,7 +507,7 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
 
     create_comp_taxonomy_file(json_taxonomic_affiliations, proteomes_ids, tax_id_names, proteomes_output_folder)
 
-    logger.info('|EsMeCaTa|proteomes| Compute proteome stat.')
+    logger.info('|EsMeCaTa|precomputed| Compute proteome stat.')
     # Create stat_proteome.
     run_proteome_tax_id_file = os.path.join(proteomes_output_folder, 'stat_number_proteome.tsv')
     with open(run_proteome_tax_id_file, 'w') as out_file:
@@ -553,14 +554,15 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
         df_not_found = df.loc[observation_name_not_founds]
         df_not_found.to_csv(organism_not_found_in_database_file_path, sep='\t')
     else:
+        df_not_found = None
         with open(organism_not_found_in_database_file_path, 'w'):
             pass
 
-    logger.info('|EsMeCaTa|proteomes| Generate function table.')
+    logger.info('|EsMeCaTa|precomputed| Generate function table.')
     function_table_file_path = os.path.join(annotation_output_folder, 'function_table.tsv')
     create_dataset_annotation_file(annotation_reference_output_folder, function_table_file_path, 'all')
 
-    logger.info('|EsMeCaTa|proteomes| Compute clustering stat.')
+    logger.info('|EsMeCaTa|precomputed| Compute clustering stat.')
     tax_name_clustering_numbers = {}
     for clustering_file in os.listdir(computed_threshold_folder):
         clustering_file_path = os.path.join(computed_threshold_folder, clustering_file)
@@ -599,14 +601,16 @@ def precomputed_parse_affiliation(input_file, database_taxon_file_path, output_f
             cluster_0_95 = len(clustering_numbers[observation_name][2])
             csvwriter.writerow([observation_name, cluster_0, selected_threshold_cluster, cluster_0_95])
 
-    logger.info('|EsMeCaTa|proteomes| Compute openness.')
+    logger.info('|EsMeCaTa|precomputed| Compute openness.')
     # Compute openness of proteomes.
     proteome_openness_file = os.path.join(clustering_output_folder, 'stat_openness_proteomes.tsv')
     compute_openness_pan_proteomes(computed_threshold_folder, proteome_openness_file, clustering_threhsold=0.5, iteration_nb=100)
 
-    logger.info('|EsMeCaTa|proteomes| Compute annotation stat.')
+    logger.info('|EsMeCaTa|precomputed| Compute annotation stat.')
     annotation_stat_file = os.path.join(annotation_output_folder, 'stat_number_annotation.tsv')
     compute_stat_annotation(annotation_reference_output_folder, annotation_stat_file)
+
+    generate_information_about_discarded_taxon(proteomes_output_folder, df_not_found)
 
     endtime = time.time()
     duration = endtime - starttime

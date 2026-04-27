@@ -700,6 +700,7 @@ output_folder
 ├── esmecata_proteomes.log
 ├── esmecata_metadata_proteomes.json
 ├── stat_number_proteome.tsv
+├── taxon_status.tsv
 ````
 
 The `proteomes_description` contains list of proteomes find by esmecata on Uniprot associated with the taxonomic affiliation.
@@ -717,6 +718,8 @@ The file `esmecata_proteomes.log` contains the log associated with the command.
 `esmecata_metadata_proteomes.json` is a log about the Uniprot release used and how the queries ware made (REST or SPARQL). It also gets the metadata associated with the command used with esmecata and the dependencies.
 
 `stat_number_proteome.tsv` is a tabulated file containing the number of proteomes found for each observation name.
+
+`taxon_status.tsv` is a tabulated file indicating for the different observation names, for which reason their associated taxon names were selected or discarded.
 
 ### EsMeCaTa clustering
 

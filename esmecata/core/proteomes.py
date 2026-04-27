@@ -453,7 +453,7 @@ def filter_rank_limit(json_taxonomic_affiliations, ncbi, rank_limit):
 
         # Delete the removed rank and all its superior.
         for tax_id in tax_id_to_deletes:
-            # Iterate through tax_name to find tax_name with tax_id, because their can be synonym.
+            # Iterate through tax_name to find tax_name with tax_id, because there can be synonym.
             for tax_name in json_taxonomic_affiliations[observation_name]:
                 if tax_id in json_taxonomic_affiliations[observation_name][tax_name]:
                     del output_json_taxonomic_affiliations[observation_name][tax_name]
@@ -1337,7 +1337,7 @@ def get_taxon_obs_name(proteome_tax_id_file, selected_taxon_rank='family'):
 
     selected_obs_name = set(selected_obs_name)
 
-    logger.info('|EsMeCaTa|analysis| {0} of {1} could been associated with taxon rank {2}.'.format(len(selected_obs_name), len(total_obs_name), selected_taxon_rank))
+    logger.info('|EsMeCaTa|proteomes| {0} of {1} could been associated with taxon rank {2}.'.format(len(selected_obs_name), len(total_obs_name), selected_taxon_rank))
 
     # Translate taxon IDs into names.
     taxa_names = {}
@@ -1346,6 +1346,73 @@ def get_taxon_obs_name(proteome_tax_id_file, selected_taxon_rank='family'):
         taxa_names[taxid2name] = taxa_name_ids[tax_id]
 
     return taxa_names
+
+
+def generate_information_about_discarded_taxon(esmecata_proteomes_output_folder, precomputed_df_not_found=None):
+    """From esmecata output folder, identifies reason for discarded taxon.
+
+    Args:
+        esmecata_proteomes_output_folder (str): path to esmecata output folder.
+        precomputed_df_not_found (pd.DataFrame): observation_name not found in precomputed_db
+    """
+    proteome_tax_id_file = os.path.join(esmecata_proteomes_output_folder, 'proteome_tax_id.tsv')
+    proteome_tax_id_df = pd.read_csv(proteome_tax_id_file, sep='\t')
+    obs_name_selected_tax_ids = proteome_tax_id_df.set_index('observation_name')['tax_id']
+
+    association_taxon_taxID_file = os.path.join(esmecata_proteomes_output_folder, 'association_taxon_taxID.json')
+
+    with open(association_taxon_taxID_file, 'r') as input_json_file:
+        json_taxonomic_affiliations = json.load(input_json_file)
+
+    max_length = 0
+    obs_name_taxon_data = []
+    for observation_name in json_taxonomic_affiliations:
+        taxon_status = None
+        taxon_status_data = [observation_name]
+        taxon_names = json_taxonomic_affiliations[observation_name]
+        for index, taxon_name in enumerate(taxon_names):
+            taxon_status_data.append(taxon_name)
+            taxon_id = taxon_names[taxon_name][0]
+            # Find if a taxon ID from NCBI Taxonomy has been linked to taxon name.
+            if taxon_id == 'not_found':
+                taxon_status = 'Not found in NCBI Taxonomy database'
+            else:
+                taxon_status = 'Found in NCBI Taxonomy database'
+                # Find if the observation name has been linked to proteome prediction.
+                if observation_name in obs_name_selected_tax_ids:
+                    selected_taxon_id = obs_name_selected_tax_ids[observation_name]
+                    # Find which taxon ID has been used for estimation.
+                    if taxon_id == selected_taxon_id:
+                        taxon_status += ' AND used for estimation'
+                    else:
+                        taxon_status += ' AND not used for estimation'
+                    taxon_ids = [taxon_names[tax_name][0] for tax_name in taxon_names]
+                    # For taxon ID with a more precise rank than the one used for estimation, they were not used due to having not enough proteomes.
+                    if selected_taxon_id in taxon_ids:
+                        selected_taxon_name_index = list(taxon_names.values()).index(selected_taxon_id)
+                        if index > selected_taxon_name_index:
+                            if taxon_status is not None:
+                                taxon_status += ' AND not enough proteomes in UniProt'
+                            else:
+                                taxon_status = 'Not enough proteomes in UniProt'
+            if precomputed_df_not_found is not None:
+                if observation_name in precomputed_df_not_found.index:
+                    if taxon_status is not None:
+                        taxon_status += ' AND Not found in precomputed database'
+                    else:
+                        taxon_status += 'Not found in precomputed database'
+            taxon_status_data.append(taxon_status)
+        if max_length < len(taxon_status_data):
+            max_length = len(taxon_status_data)
+        obs_name_taxon_data.append(taxon_status_data)
+
+    # Generate column names.
+    nb_status_taxon_association = int((max_length - 1)/2)
+    columns = ['observation_name', *['Taxon', 'Taxon status']*nb_status_taxon_association]
+    # Write output file.
+    taxon_status_df = pd.DataFrame(obs_name_taxon_data, columns=columns)
+    taxon_status_file = os.path.join(esmecata_proteomes_output_folder, 'taxon_status.tsv')
+    taxon_status_df.to_csv(taxon_status_file, sep='\t', index=False)
 
 
 def check_proteomes(input_file, output_folder, busco_percentage_keep=80,
@@ -1682,6 +1749,8 @@ def retrieve_proteomes(input_file, output_folder, busco_percentage_keep=80,
 
     stat_file = os.path.join(output_folder, 'stat_number_proteome.tsv')
     compute_stat_proteomes(output_folder, stat_file)
+
+    generate_information_about_discarded_taxon(output_folder)
 
     endtime = time.time()
     duration = endtime - starttime
