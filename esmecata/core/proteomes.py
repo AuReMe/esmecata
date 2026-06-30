@@ -518,9 +518,9 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
 
     if option_bioservices is None:
         # Find proteomes associated with taxon.
-        # Search for both representative and non-representative proteomes (with proteome_type%3A2 for non-representative proteome (or Other proteome) and proteome_type%3A1 for representative proteome).
-        # Remove redundant (proteome_type%3A3) and excluded proteomes (proteome_type%3A4) by not selecting these proteome types..
-        httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND((proteome_type%3A2)OR(proteome_type%3A1))&format=json&size=500'.format(tax_id)
+        # Search for both representative and non-representative proteomes (with proteome_type%3ANON_REFERENCE for non-representative proteome (or Other proteome) and proteome_type%3AREFERENCE for representative proteome).
+        # Remove excluded proteomes (proteome_type%3AEXCLUDED) by not selecting these proteome types.
+        httpt_str = 'https://rest.uniprot.org/proteomes/stream?query=(taxonomy_id%3A{0})AND((proteome_type%3ANON_REFERENCE)OR(proteome_type%3AREFERENCE))&format=json&size=500'.format(tax_id)
 
         data = {}
         data['results'] = []
@@ -530,7 +530,7 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
     else:
         import bioservices
         uniprot_bioservices = bioservices.UniProt()
-        data = uniprot_bioservices.search(f'(taxonomy_id={tax_id})AND((proteome_type=2)OR(proteome_type=1))',
+        data = uniprot_bioservices.search(f'(taxonomy_id={tax_id})AND((proteome_type=NON_REFERENCE)OR(proteome_type=REFERENCE))',
                                             database='proteomes', frmt='json', progress=False)
 
     organism_ids = {}
@@ -563,14 +563,17 @@ def rest_query_proteomes(observation_name, tax_id, tax_name, busco_percentage_ke
 
         if proteome_type in ['Representative proteome', 'Reference and representative proteome', 'Reference proteome']:
             representative_proteome = True
-        elif proteome_type == 'Other proteome':
+        elif proteome_type in ['Non Reference proteome', 'Other proteome']:
             representative_proteome = False
 
         if 'components' in proteome_data:
             component_elements = []
             for component in  proteome_data['components']:
                 component_name = component['name']
-                component_description = component['description']
+                if 'description' in component:
+                    component_description = component['description']
+                else:
+                    component_description = []
                 component_elements.append([component_name, component_description])
         else:
             component_elements = None

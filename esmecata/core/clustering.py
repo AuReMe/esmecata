@@ -38,12 +38,13 @@ from esmecata.utils import is_valid_path, is_valid_dir
 logger = logging.getLogger(__name__)
 
 
-def compute_stat_clustering(output_folder, stat_file=None):
+def compute_stat_clustering(output_folder, stat_file=None, clust_threshold=0.5):
     """Compute stat associated to the number of proteome for each taxonomic affiliations.
 
     Args:
         output_folder (str): pathname to the result folder containing mmseqs results
         stat_file (str): pathname to the tsv stat file
+        clust_threshold (float): threshold to select protein cluster according to the representation of protein proteome in the cluster
 
     Returns:
         clustering_numbers (dict): dict containing observation names (as key) associated with the number of protein clusters
@@ -60,18 +61,18 @@ def compute_stat_clustering(output_folder, stat_file=None):
             csvreader = csv.reader(open_clustering_file_path, delimiter='\t')
             next(csvreader)
             cluster_0 = []
-            cluster_0_5 = []
+            cluster_kepts = []
             cluster_0_95 = []
             for line in csvreader:
                 protein_cluster_threshold = float(line[1])
                 if protein_cluster_threshold >= 0.95:
                     cluster_0_95.append(line[0])
-                if protein_cluster_threshold >= 0.5:
-                    cluster_0_5.append(line[0])
+                if protein_cluster_threshold >= clust_threshold:
+                    cluster_kepts.append(line[0])
                 if protein_cluster_threshold >= 0:
                     cluster_0.append(line[0])
 
-        tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = [cluster_0, cluster_0_5, cluster_0_95]
+        tax_name_clustering_numbers[clustering_file.replace('.tsv', '')] = [cluster_0, cluster_kepts, cluster_0_95]
 
     clustering_numbers = {}
     for observation_name in proteomes_taxa_id_names:
@@ -84,9 +85,9 @@ def compute_stat_clustering(output_folder, stat_file=None):
             csvwriter.writerow(['observation_name', 'Number_protein_clusters_panproteome', 'Number_protein_clusters_kept', 'Number_protein_clusters_coreproteome'])
             for observation_name in clustering_numbers:
                 cluster_0 = len(clustering_numbers[observation_name][0])
-                cluster_0_5 = len(clustering_numbers[observation_name][1])
+                cluster_kepts = len(clustering_numbers[observation_name][1])
                 cluster_0_95 = len(clustering_numbers[observation_name][2])
-                csvwriter.writerow([observation_name, cluster_0, cluster_0_5, cluster_0_95])
+                csvwriter.writerow([observation_name, cluster_0, cluster_kepts, cluster_0_95])
 
     return clustering_numbers
 
@@ -584,7 +585,7 @@ def make_clustering(proteome_folder, output_folder, nb_core, clust_threshold, mm
 
     # Compute number of protein clusters kept.
     stat_file = os.path.join(output_folder, 'stat_number_clustering.tsv')
-    compute_stat_clustering(output_folder, stat_file)
+    compute_stat_clustering(output_folder, stat_file, clust_threshold)
     # Compute openness of proteomes.
     proteome_openness_file = os.path.join(output_folder, 'stat_openness_proteomes.tsv')
     compute_openness_pan_proteomes(computed_threshold_path, proteome_openness_file, clustering_threhsold=0.5, iteration_nb=100)

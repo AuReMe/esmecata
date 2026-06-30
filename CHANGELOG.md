@@ -1,10 +1,14 @@
 # Changelog
 
-# EsMeCaTa v0.6.12 (2026-04-27)
+# EsMeCaTa v0.6.13 (2026-06-30)
 
-## Add
+## Fix
 
-* New function `generate_information_about_discarded_taxon` which generates a new output file `taxon_status.tsv` indicating the reason for which a taxon has been used or not.
+* Wrong number of protein clusters in stat file of `clustering`.
+* Issue with logging.
+* Issue with new names for excluded, reference and non-reference proteomes in UniProt URL (leading to no predictions).
+* Issue with missing description for proteomes from UniProt API answer.
+* Issue in `create_dataset_annotation_file` when having empty annotations.
 
 # EsMeCaTa v0.6.11 (2026-04-01)
 

@@ -1224,16 +1224,28 @@ def create_dataset_annotation_file(annotation_reference_folder, dataset_annotati
         annotations = []
         df_annot = pd.read_csv(annotation_file_path, sep='\t')
         if content in ['EC', 'GO']:
-            annotations = [annot for annot_lists in df_annot[content].str.split(',').tolist()
-                           if isinstance(annot_lists, list)
-                           for annot in annot_lists if annot != '']
+            if df_annot[content].empty is False:
+                list_of_annotations = [annot_str.split(',') for annot_str in df_annot[content].tolist() if isinstance(annot_str, str)]
+                annotations = [annot for annot_lists in list_of_annotations
+                            if isinstance(annot_lists, list)
+                            for annot in annot_lists if annot != '']
+            else:
+                annotations = []
         if content == 'all':
-            intermediary_gos = [annot for annot_lists in df_annot['GO'].str.split(',').tolist()
-                                if isinstance(annot_lists, list)
-                                for annot in annot_lists if annot != '']
-            intermediary_ecs = [annot for annot_lists in df_annot['EC'].str.split(',').tolist()
-                                if isinstance(annot_lists, list)
-                                for annot in annot_lists if annot != '']
+            if df_annot['GO'].empty is False:
+                list_of_annotations = [annot_str.split(',') for annot_str in df_annot['GO'].tolist() if isinstance(annot_str, str)]
+                intermediary_gos = [annot for annot_lists in list_of_annotations
+                                    if isinstance(annot_lists, list)
+                                    for annot in annot_lists if annot != '']
+            else:
+                intermediary_gos = []
+            if df_annot['EC'].empty is False:
+                list_of_annotations = [annot_str.split(',') for annot_str in df_annot['EC'].tolist() if isinstance(annot_str, str)]
+                intermediary_ecs = [annot for annot_lists in list_of_annotations
+                                    if isinstance(annot_lists, list)
+                                    for annot in annot_lists if annot != '']
+            else:
+                intermediary_ecs = []
 
             annotations.extend(intermediary_gos)
             annotations.extend(intermediary_ecs)

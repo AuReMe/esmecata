@@ -54,7 +54,7 @@ jobs:
     - name: Test with pytest
       run: |
         pip install pytest pytest-mock
-        cd test
+        cd tests
         pytest test_proteomes.py -k 'not sparql'
         pytest test_clustering.py
         pytest test_annotation.py -k 'not sparql'

@@ -38,7 +38,7 @@ Annotation can be performed with UniProt or eggnog-mapper (which is then a requi
 Precomputed requires the esmecata_database.zip file.
 '''
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 def main():

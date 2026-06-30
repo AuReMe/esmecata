@@ -8,13 +8,13 @@ from esmecata.core.precomputed import precomputed_parse_affiliation
 from esmecata.report.workflow_create_report import run_create_workflow_report
 
 RESULTS = {
-    'Cluster_1': {'proteomes': 3, 'protein_clusters': 557, 'GOs': 833, 'ECs': 302}
+    'Cluster_1': {'proteomes': 6, 'protein_clusters': 413, 'GOs': 422, 'ECs': 103}
 }
 
 def test_workflow_online():
-    buchnera_workflow_file = os.path.join('test_data', 'buchnera_workflow.tsv')
+    mycoplasma_workflow_file = os.path.join('test_data', 'mycoplasma_workflow.tsv')
 
-    subprocess.call(['esmecata', 'workflow_uniprot', '-i', buchnera_workflow_file, '-o', 'test_output', '-p', '1', '--minimal-nb-proteomes', '2', '--bioservices'])
+    subprocess.call(['esmecata', 'workflow_uniprot', '-i', mycoplasma_workflow_file, '-o', 'test_output', '-p', '0.1', '--minimal-nb-proteomes', '2', '--bioservices'])
 
     output_stat_file = os.path.join('test_output', 'stat_number_workflow.tsv')
 
@@ -35,7 +35,7 @@ def test_workflow_online():
 
 
 def test_create_database_from_workflow_online():
-    buchnera_workflow_file = os.path.join('test_data', 'buchnera_workflow.tsv')
+    mycoplasma_workflow_file = os.path.join('test_data', 'mycoplasma_workflow.tsv')
     esmecata_result_folder = 'test_output'
     esmecata_database_output_folder = 'output_database'
     output_folder = 'output_folder'
@@ -44,9 +44,9 @@ def test_create_database_from_workflow_online():
     create_database_from_esmecata_workflow_run(esmecata_result_folder, esmecata_database_output_folder, '0.1.0')
 
     esmecata_database = os.path.join(esmecata_database_output_folder, 'esmecata_database.zip')
-    precomputed_parse_affiliation(buchnera_workflow_file, esmecata_database, output_folder)
+    precomputed_parse_affiliation(mycoplasma_workflow_file, esmecata_database, output_folder)
 
-    run_create_workflow_report(buchnera_workflow_file, output_folder, report_output_folder)
+    run_create_workflow_report(mycoplasma_workflow_file, output_folder, report_output_folder)
 
     html_report_file = os.path.join(report_output_folder, 'esmecata_summary.html')
     # Check creation of HTML report file.
@@ -58,7 +58,7 @@ def test_create_database_from_workflow_online():
 
 
 def test_create_database_from_workflow_cli_online():
-    buchnera_workflow_file = os.path.join('test_data', 'buchnera_workflow.tsv')
+    mycoplasma_workflow_file = os.path.join('test_data', 'mycoplasma_workflow.tsv')
     esmecata_result_folder = 'test_output'
     esmecata_database_output_folder = 'output_database'
     output_folder = 'output_folder'
@@ -66,10 +66,10 @@ def test_create_database_from_workflow_cli_online():
     subprocess.call(['esmecata_create_db', 'from_workflow', '-i', esmecata_result_folder, '-o', esmecata_database_output_folder, '--db-version', '0.1.0'])
 
     esmecata_database = os.path.join(esmecata_database_output_folder, 'esmecata_database.zip')
-    precomputed_parse_affiliation(buchnera_workflow_file, esmecata_database, output_folder)
+    precomputed_parse_affiliation(mycoplasma_workflow_file, esmecata_database, output_folder)
 
     report_output_folder = 'output_report_folder'
-    run_create_workflow_report(buchnera_workflow_file, output_folder, report_output_folder)
+    run_create_workflow_report(mycoplasma_workflow_file, output_folder, report_output_folder)
 
     html_report_file = os.path.join(report_output_folder, 'esmecata_summary.html')
     # Check creation of HTML report file.
